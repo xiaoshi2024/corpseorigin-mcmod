@@ -1,5 +1,6 @@
 package com.phagens.corpseorigin.register;
 
+import com.phagens.corpseorigin.entity.CorpseGibEntity;
 import com.phagens.corpseorigin.entity.GuigunEntity;
 import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import com.phagens.corpseorigin.entity.LongyouEntity;
@@ -49,4 +50,13 @@ public class EntityRegistry {
             () -> EntityType.Builder.<LongyouEarthquakeEntity>of(LongyouEarthquakeEntity::new, MobCategory.MISC)
                     .sized(0.0F, 0.0F)
                     .build("longyou_earthquake"));
+
+    // 尸体残肢实体 - 完全参照 Mob-Dismemberment 的 EntityGib
+    // 合并尸体和残肢为一个实体类型
+    public static final DeferredHolder<EntityType<?>, EntityType<CorpseGibEntity>> CORPSE_GIB = ENTITIES.register("corpse_gib",
+            () -> EntityType.Builder.<CorpseGibEntity>of(CorpseGibEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F) // 基础尺寸，根据类型动态调整
+                    .clientTrackingRange(64)
+                    .updateInterval(1)
+                    .build("corpse_gib"));
 }

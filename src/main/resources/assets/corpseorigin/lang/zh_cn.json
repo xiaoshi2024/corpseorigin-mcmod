@@ -251,11 +251,17 @@
   "item.corpseorigin.dr_mu_eye.effect2": "  §a• 失去意识的尸兄可恢复人类智慧",
   "item.corpseorigin.dr_mu_eye.effect3": "  §e• 已有意识的尸兄获得智慧增强",
 
+  "entity.corpseorigin.corpse": "尸体",
+  "entity.corpseorigin.corpse_gib": "尸体残肢",
+  "message.corpseorigin.corpse_infected": "§c§l尸体开始被尸水感染...",
+  "message.corpseorigin.corpse_transformed": "§4§l尸体变成了尸兄！",
+
   "skill.corpseorigin.multi_eye_perception": "多眼感知",
   "skill.corpseorigin.multi_eye_perception.desc": "触发多眼的力量，感知周围32格内的敌意生物，高亮显示24格内的敌人",
   "skill.corpseorigin.multi_eye.activated": "§c§l多眼感知已激活！你感受到了周围的敌意！",
   "skill.corpseorigin.multi_eye.ended": "§7多眼感知效果已结束",
   "skill.corpseorigin.multi_eye.cooldown": "§c技能冷却中，还需 %d 秒",
   "skill.corpseorigin.multi_eye.detected": "§e感知到 %d 个敌意目标",
-  "skill.corpseorigin.multi_eye.auto_learned": "§c§l你的多眼觉醒了！获得了多眼感知能力！"
+  "skill.corpseorigin.multi_eye.auto_learned": "§c§l你的多眼觉醒了！获得了多眼感知能力！",
+  "entity.corpseorigin.guigun": "鬼棍"
 }

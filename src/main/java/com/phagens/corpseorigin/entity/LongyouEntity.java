@@ -121,9 +121,11 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, true));
-        this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
-        this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 16.0F));
-        this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
+        // 龙右作为尸王可以开门
+        this.goalSelector.addGoal(3, new OpenDoorGoal(this, true));
+        this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 16.0F));
+        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
 
         // 龙右作为尸王，不会攻击尸兄（同类），但会攻击其他生物
         // 使用自定义条件判断是否攻击：只有饥饿或被攻击时才会主动出击
@@ -131,6 +133,13 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Animal.class, 0, true, false, this::shouldAttackTarget));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, 0, true, false, this::shouldAttackTarget));
         // 不会主动攻击 LowerLevelZbEntity（尸兄同类）
+    }
+
+    @Override
+    protected net.minecraft.world.entity.ai.navigation.PathNavigation createNavigation(Level level) {
+        net.minecraft.world.entity.ai.navigation.GroundPathNavigation navigation = new net.minecraft.world.entity.ai.navigation.GroundPathNavigation(this, level);
+        navigation.setCanOpenDoors(true);
+        return navigation;
     }
     
     /**

@@ -20,6 +20,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -201,6 +202,28 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         // 客户端字段已经在声明时初始化，不需要在这里处理
     }
 
+    @Override
+    protected net.minecraft.world.entity.ai.navigation.PathNavigation createNavigation(Level level) {
+        // 如果有翅膀，使用飞行导航
+        if (this.entityData.get(DATA_HAS_WING)) {
+            FlyingPathNavigation flyingNavigation = new FlyingPathNavigation(this, level);
+            flyingNavigation.setCanOpenDoors(true);
+            flyingNavigation.setCanFloat(true);
+            return flyingNavigation;
+        } else {
+            net.minecraft.world.entity.ai.navigation.GroundPathNavigation navigation = new net.minecraft.world.entity.ai.navigation.GroundPathNavigation(this, level);
+            navigation.setCanOpenDoors(true);
+            return navigation;
+        }
+    }
+
+    /**
+     * 更新导航类型（当翅膀状态改变时调用）
+     */
+    public void updateNavigation() {
+        this.navigation = createNavigation(this.level());
+    }
+
     public LowerLevelZbEntity(EntityType<? extends PathfinderMob> entityType, Level level, Player player) {
         this(entityType, level);
         if (player != null) {
@@ -279,45 +302,93 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         this.goalSelector.addGoal(1, new FloatGoal(this));
         // 近战攻击行为 - 当找到目标时会执行攻击
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true));
-        this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
-        this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 16.0F));
-        this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
+        // 高阶尸兄可以开门
+        this.goalSelector.addGoal(3, new OpenDoorGoal(this, true));
+        this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 16.0F));
+        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
 
-        // 主动攻击活人（排除主人）
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackPlayer));
+        // 第一优先级：攻击非尸兄玩家（正常活人）
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackNormalPlayer));
 
-        // 攻击其他生物
+        // 第二优先级：攻击其他生物（动物）
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.animal.Animal.class, true));
 
-        // 攻击其他怪物（包括其他尸兄），但排除龙右（真王）
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackMob));
+        // 第三优先级：攻击尸兄玩家（同类）- 只有在极度饥饿时才会攻击
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackCorpsePlayer));
+
+        // 第四优先级：攻击其他怪物（包括其他尸兄），但排除龙右（真王）
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackMob));
     }
 
     /**
-     * 判断是否应该攻击玩家
-     * 有主人的尸兄不会攻击主人
+     * 判断是否应该攻击非尸兄玩家（正常活人）
+     * 这是第一优先级目标
      */
-    private boolean shouldAttackPlayer(net.minecraft.world.entity.LivingEntity entity) {
+    private boolean shouldAttackNormalPlayer(net.minecraft.world.entity.LivingEntity entity) {
         // 不攻击龙右（真王）
         if (entity instanceof LongyouEntity) {
             return false;
         }
 
-        // 如果有主人，不攻击主人
-        if (this.masterUUID != null && entity instanceof Player player) {
-            if (player.getUUID().equals(this.masterUUID)) {
-                return false;
-            }
+        // 只攻击玩家
+        if (!(entity instanceof Player player)) {
+            return false;
         }
 
-        return true;
+        // 如果有主人，不攻击主人
+        if (this.masterUUID != null && player.getUUID().equals(this.masterUUID)) {
+            return false;
+        }
+
+        // 只攻击非尸兄玩家（正常活人）
+        return !com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player);
+    }
+
+    /**
+     * 判断是否应该攻击尸兄玩家（已成为尸兄的玩家）
+     * 这是第三优先级目标，只有在极度饥饿时才会攻击
+     */
+    private boolean shouldAttackCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
+        // 不攻击龙右（真王）
+        if (entity instanceof LongyouEntity) {
+            return false;
+        }
+
+        // 只攻击玩家
+        if (!(entity instanceof Player player)) {
+            return false;
+        }
+
+        // 如果有主人，不攻击主人
+        if (this.masterUUID != null && player.getUUID().equals(this.masterUUID)) {
+            return false;
+        }
+
+        // 只攻击已成为尸兄的玩家
+        if (!com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
+            return false;
+        }
+
+        // 被攻击时允许反击
+        boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
+        if (wasRecentlyHurt) {
+            return true;
+        }
+
+        // 极度饥饿且没有尸王领导时才攻击同类
+        boolean isHungry = this.hunger <= HUNGER_THRESHOLD_FOR_CANNIBALISM;
+        boolean notUnderKing = !isUnderZombieKingLeadership();
+
+        return isHungry && notUnderKing;
     }
     
     /**
-     * 判断是否应该攻击某个生物
+     * 判断是否应该攻击某个生物（Mob类，不包括玩家）
      * 尸兄不会攻击龙右（真王）
-     * 尸兄不会主动攻击已成为尸兄的玩家（同类），除非极度饥饿或被攻击
+     * 尸兄不会主动攻击其他尸兄实体，除非极度饥饿或被攻击
      * 有主人的尸兄不会攻击主人，会帮助主人攻击
+     * 注意：玩家目标由 shouldAttackNormalPlayer 和 shouldAttackCorpsePlayer 处理
      */
     private boolean shouldAttackMob(net.minecraft.world.entity.LivingEntity entity) {
         // 不攻击龙右（真王）
@@ -325,23 +396,13 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
             return false;
         }
 
-        // 如果有主人，不攻击主人
-        if (this.masterUUID != null && entity instanceof Player player) {
-            if (player.getUUID().equals(this.masterUUID)) {
-                return false;
-            }
+        // 不攻击玩家（玩家由单独的目标处理）
+        if (entity instanceof Player) {
+            return false;
         }
 
-        // 检查目标是否是同类（尸兄玩家或其他尸兄）
-        boolean isZombie = false;
+        // 检查目标是否是同类（其他尸兄实体）
         if (entity instanceof LowerLevelZbEntity) {
-            isZombie = true;
-        } else if (entity instanceof Player player) {
-            isZombie = com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player);
-        }
-
-        // 如果是同类目标
-        if (isZombie) {
             // 如果被攻击了，允许反击
             boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
             if (wasRecentlyHurt) {
@@ -367,30 +428,33 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     }
     
     /**
-     * 检查周围是否存在非同类目标
+     * 检查周围是否存在非同类目标（非尸兄的目标）
+     * 非尸兄玩家和动物都是优先攻击目标
      */
     private boolean hasNonZombieTargets() {
         if (!(this.level() instanceof ServerLevel level)) return false;
-        
-        // 检查周围16格内是否有非同类目标
-        return level.getEntitiesOfClass(
-                net.minecraft.world.entity.LivingEntity.class,
+
+        // 检查周围16格内是否有非尸兄玩家（第一优先级目标）
+        var normalPlayers = level.getEntitiesOfClass(
+                Player.class,
                 this.getBoundingBox().inflate(16.0D),
-                entity -> {
-                    if (entity == this) return false;
-                    if (entity instanceof LowerLevelZbEntity) return false; // 排除其他尸兄
-                    if (entity instanceof Player player) {
-                        // 排除主人和同类尸兄玩家
-                        if (this.masterUUID != null && player.getUUID().equals(this.masterUUID)) {
-                            return false;
-                        }
-                        if (com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
-                            return false;
-                        }
-                    }
-                    return shouldAttackMob(entity);
-                }
-        ).size() > 0;
+                entity -> shouldAttackNormalPlayer(entity)
+        );
+        if (!normalPlayers.isEmpty()) {
+            return true;
+        }
+
+        // 检查周围16格内是否有可攻击的动物
+        var animals = level.getEntitiesOfClass(
+                net.minecraft.world.entity.animal.Animal.class,
+                this.getBoundingBox().inflate(16.0D),
+                entity -> entity.isAlive()
+        );
+        if (!animals.isEmpty()) {
+            return true;
+        }
+
+        return false;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -462,6 +526,19 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     
     @Override
     public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
+        // 飞行时免疫摔落伤害
+        if (source.is(net.minecraft.tags.DamageTypeTags.IS_FALL) && this.entityData.get(DATA_IS_FLYING)) {
+            return false;
+        }
+
+        // 有翅膀的尸兄在落地前如果还在飞行状态，免疫摔落伤害
+        if (source.is(net.minecraft.tags.DamageTypeTags.IS_FALL) && this.entityData.get(DATA_HAS_WING)) {
+            // 检查是否刚从飞行状态落下（给一点缓冲时间）
+            if (this.fallDistance < 5.0F) {
+                return false;
+            }
+        }
+
         // 检查攻击者是否是主人，如果是则不记录（不反击）
         if (source.getEntity() instanceof Player player) {
             if (this.masterUUID != null && player.getUUID().equals(this.masterUUID)) {
@@ -496,6 +573,19 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
             }
         }
         return super.hurt(source, amount);
+    }
+
+    @Override
+    public boolean causeFallDamage(float fallDistance, float multiplier, net.minecraft.world.damagesource.DamageSource source) {
+        // 飞行时完全免疫摔落伤害
+        if (this.entityData.get(DATA_IS_FLYING)) {
+            return false;
+        }
+        // 有翅膀的尸兄免疫小额摔落伤害
+        if (this.entityData.get(DATA_HAS_WING) && fallDistance < 5.0F) {
+            return false;
+        }
+        return super.causeFallDamage(fallDistance, multiplier, source);
     }
 
     @Override
@@ -651,6 +741,17 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
             handleFlight();
         }
 
+        // 确保飞行状态和重力状态同步
+        if (!this.level().isClientSide) {
+            if (this.entityData.get(DATA_IS_FLYING) && !this.isNoGravity()) {
+                // 飞行状态但重力未取消，修复
+                this.setNoGravity(true);
+            } else if (!this.entityData.get(DATA_IS_FLYING) && this.isNoGravity() && !this.isPassenger()) {
+                // 非飞行状态但有重力取消，修复（排除乘坐载具的情况）
+                this.setNoGravity(false);
+            }
+        }
+
         // 服务端：饥饿度系统
         if (!this.level().isClientSide) {
             // 每100 tick（5秒）减少1点饥饿度
@@ -723,29 +824,183 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      * 处理飞行逻辑
      */
     private void handleFlight() {
+        // 如果有主人且主人在空中，由 handleFlyingFollow 处理飞行逻辑
+        if (shouldFollowMasterFlying()) {
+            return;
+        }
+
         // 检查是否在地面上
         boolean onGround = this.onGround();
-        
-        // 如果在地面上且饥饿度足够，有概率起飞
-        if (onGround && hunger > 20 && this.random.nextFloat() < 0.05F) {
-            setFlying(true);
+
+        // 如果在地面上且饥饿度足够（>10），有概率起飞（随机起飞）
+        if (onGround && hunger > 10 && this.random.nextFloat() < 0.05F) {
+            startFlying();
         }
-        
-        // 如果在空中且饥饿度不足，降落
-        if (!onGround && hunger <= 0) {
-            setFlying(false);
+
+        // 如果在飞行中但饥饿度不足（<=5），强制降落
+        if (this.entityData.get(DATA_IS_FLYING) && hunger <= 5) {
+            stopFlying();
+            CorpseOrigin.LOGGER.info("尸兄 {} 饥饿度不足，被迫降落", this.getId());
+            return;
         }
-        
-        // 飞行时的移动逻辑
+
+        // 飞行时的移动逻辑（仅在没有主人或主人不在空中时执行）
         if (this.entityData.get(DATA_IS_FLYING)) {
-            // 增加飞行速度
-            this.setDeltaMovement(this.getDeltaMovement().add(0, 0.05, 0));
-            
-            // 限制飞行高度
-            if (this.getY() > 128) {
-                this.setDeltaMovement(this.getDeltaMovement().add(0, -0.1, 0));
+            // 自由飞行模式 - 像创造模式玩家一样
+            handleFreeFlight();
+        }
+
+        // 有翅膀但未飞行时（如下落中），添加缓降效果
+        if (!this.entityData.get(DATA_IS_FLYING) && this.entityData.get(DATA_HAS_WING) && !this.onGround()) {
+            applySlowFalling();
+        }
+    }
+
+    /**
+     * 应用缓降效果 - 有翅膀的尸兄下落时会缓慢降落
+     */
+    private void applySlowFalling() {
+        // 获取当前速度
+        double dy = this.getDeltaMovement().y;
+
+        // 如果正在下落（y速度为负）
+        if (dy < 0) {
+            // 限制下落速度，实现缓降
+            double slowFallSpeed = -0.15; // 最大下落速度
+            if (dy < slowFallSpeed) {
+                this.setDeltaMovement(
+                        this.getDeltaMovement().x * 0.9,
+                        slowFallSpeed,
+                        this.getDeltaMovement().z * 0.9
+                );
+            }
+
+            // 添加粒子效果（可选）
+            if (this.level() instanceof ServerLevel serverLevel && this.tickCount % 5 == 0) {
+                serverLevel.sendParticles(
+                        net.minecraft.core.particles.ParticleTypes.CLOUD,
+                        this.getX(), this.getY() + 0.5, this.getZ(),
+                        1, 0.2, 0.1, 0.2, 0.01
+                );
             }
         }
+    }
+
+    /**
+     * 开始飞行
+     */
+    private void startFlying() {
+        setFlying(true);
+        this.setNoGravity(true);
+    }
+
+    /**
+     * 停止飞行
+     */
+    private void stopFlying() {
+        setFlying(false);
+        this.setNoGravity(false);
+    }
+
+    /**
+     * 自由飞行处理 - 像创造模式玩家一样自由移动
+     */
+    private void handleFreeFlight() {
+        // 确保不受重力影响
+        this.setNoGravity(true);
+
+        // 基础飞行速度
+        double speed = 0.15;
+
+        // 如果有目标，向目标飞行
+        if (this.getTarget() != null && this.getTarget().isAlive()) {
+            flyTowardsTarget(this.getTarget(), speed);
+        } else {
+            // 没有目标时悬停或缓慢移动
+            hoverOrWander(speed);
+        }
+    }
+
+    /**
+     * 向目标飞行
+     */
+    private void flyTowardsTarget(net.minecraft.world.entity.LivingEntity target, double speed) {
+        double dx = target.getX() - this.getX();
+        double dy = target.getY() + target.getEyeHeight() - this.getY() - this.getEyeHeight();
+        double dz = target.getZ() - this.getZ();
+        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        if (distance > 2.0) {
+            // 归一化并设置速度
+            dx /= distance;
+            dy /= distance;
+            dz /= distance;
+
+            this.setDeltaMovement(
+                    dx * speed,
+                    dy * speed,
+                    dz * speed
+            );
+
+            // 面向目标
+            this.getLookControl().setLookAt(target, 30.0F, 30.0F);
+        } else {
+            // 距离足够近，悬停
+            this.setDeltaMovement(0, 0, 0);
+        }
+    }
+
+    /**
+     * 悬停或随机漫游
+     */
+    private void hoverOrWander(double speed) {
+        // 简单的悬停逻辑 - 保持当前位置
+        if (this.getDeltaMovement().lengthSqr() > 0.001) {
+            // 减速到停止
+            this.setDeltaMovement(
+                    this.getDeltaMovement().x * 0.8,
+                    this.getDeltaMovement().y * 0.8,
+                    this.getDeltaMovement().z * 0.8
+            );
+        } else {
+            // 完全悬停
+            this.setDeltaMovement(0, 0, 0);
+        }
+
+        // 偶尔随机移动（模拟自由飞行）
+        if (this.random.nextFloat() < 0.02F) {
+            double rx = (this.random.nextDouble() - 0.5) * speed;
+            double ry = (this.random.nextDouble() - 0.5) * speed * 0.5;
+            double rz = (this.random.nextDouble() - 0.5) * speed;
+            this.setDeltaMovement(rx, ry, rz);
+        }
+    }
+
+    /**
+     * 检查是否应该跟随主人飞行
+     * 当主人在空中且距离较远时，有翅膀的尸兄应该起飞跟随
+     */
+    private boolean shouldFollowMasterFlying() {
+        if (this.masterUUID == null) return false;
+        if (!this.entityData.get(DATA_HAS_WING)) return false;
+
+        if (!(this.level() instanceof ServerLevel serverLevel)) return false;
+        Player master = serverLevel.getServer().getPlayerList().getPlayer(this.masterUUID);
+        if (master == null || !master.isAlive()) return false;
+
+        // 如果主人在空中（飞行或鞘翅滑翔）
+        boolean masterInAir = !master.onGround() || master.isFallFlying();
+        if (!masterInAir) return false;
+
+        // 计算与主人的距离
+        double verticalDistance = master.getY() - this.getY();
+        double horizontalDistance = Math.sqrt(
+                Math.pow(this.getX() - master.getX(), 2) +
+                        Math.pow(this.getZ() - master.getZ(), 2)
+        );
+
+        // 如果主人在上方超过1格，或者水平距离超过3格，应该起飞跟随
+        return verticalDistance > 1.0 || horizontalDistance > 3.0;
     }
 
     /**
@@ -863,11 +1118,125 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
             return;
         }
 
-        // 如果距离超出跟随范围，向主人移动
-        if (distanceToMaster > FOLLOW_RANGE * FOLLOW_RANGE) {
+        // 处理有翅膀尸兄的飞行跟随
+        if (this.entityData.get(DATA_HAS_WING)) {
+            handleFlyingFollow(master);
+        }
+
+        // 如果距离超出跟随范围，向主人移动（只在不飞行时使用地面导航）
+        if (distanceToMaster > FOLLOW_RANGE * FOLLOW_RANGE && !this.entityData.get(DATA_IS_FLYING)) {
             this.getNavigation().moveTo(master, 1.2D);
             followCooldown = 20; // 1秒冷却
         }
+    }
+
+    /**
+     * 处理飞行跟随逻辑
+     * 有主人的尸兄会保持与主人相同的高度飞行
+     */
+    private void handleFlyingFollow(Player master) {
+        // 检查主人在空中
+        boolean masterInAir = !master.onGround() || master.isFallFlying();
+
+        // 计算与主人的距离
+        double verticalDistance = master.getY() - this.getY();
+        double horizontalDistance = Math.sqrt(
+                Math.pow(this.getX() - master.getX(), 2) +
+                        Math.pow(this.getZ() - master.getZ(), 2)
+        );
+
+        // 如果主人在地面且尸兄在飞行，降落
+        if (!masterInAir) {
+            if (this.entityData.get(DATA_IS_FLYING)) {
+                stopFlying();
+            }
+            return;
+        }
+
+        // 检查饥饿度 - 如果饥饿度不足，不能起飞或必须降落
+        if (hunger <= 5) {
+            // 饥饿度不足，如果在飞行中则降落
+            if (this.entityData.get(DATA_IS_FLYING)) {
+                stopFlying();
+                CorpseOrigin.LOGGER.info("尸兄 {} 饥饿度不足({})，停止跟随降落", this.getId(), hunger);
+            }
+            return;
+        }
+
+        // 主人在空中，检查是否应该起飞跟随
+        // 条件：主人在上方超过1格，或者水平距离超过3格
+        boolean shouldFly = verticalDistance > 1.0 || horizontalDistance > 3.0;
+
+        // 饥饿度中等（6-15）时，只在必要距离才起飞
+        // 饥饿度高（>15）时，更容易起飞
+        int hungerThreshold = hunger > 15 ? 3 : 5;
+        if (hunger <= 15 && !shouldFly) {
+            // 饥饿度中等且距离不够，不起飞
+            if (this.entityData.get(DATA_IS_FLYING)) {
+                stopFlying();
+            }
+            return;
+        }
+
+        if (shouldFly && hunger > 5) {
+            // 起飞
+            if (!this.entityData.get(DATA_IS_FLYING)) {
+                startFlying();
+                CorpseOrigin.LOGGER.info("尸兄 {} 起飞跟随主人（饥饿度：{}）", this.getId(), hunger);
+            }
+
+            // 如果在飞行中，向主人移动（保持相同高度）
+            if (this.entityData.get(DATA_IS_FLYING)) {
+                flyAtSameHeightAsMaster(master, horizontalDistance);
+            }
+        } else if (!shouldFly && this.entityData.get(DATA_IS_FLYING)) {
+            // 距离很近且主人在附近，降落
+            stopFlying();
+        }
+    }
+
+    /**
+     * 保持与主人相同高度飞行
+     */
+    private void flyAtSameHeightAsMaster(Player master, double horizontalDistance) {
+        // 水平方向朝向主人移动
+        double dx = master.getX() - this.getX();
+        double dz = master.getZ() - this.getZ();
+        double horizontalDist = Math.sqrt(dx * dx + dz * dz);
+
+        // 基础飞行速度
+        double speed = 0.15;
+
+        // 水平方向移动
+        double moveX = 0;
+        double moveZ = 0;
+        if (horizontalDist > 2.0) {
+            moveX = (dx / horizontalDist) * speed;
+            moveZ = (dz / horizontalDist) * speed;
+        }
+
+        // 垂直方向：保持与主人相同高度
+        double targetY = master.getY();
+        double dy = targetY - this.getY();
+        double moveY;
+
+        // 根据高度差调整垂直速度
+        if (Math.abs(dy) < 0.5) {
+            // 高度接近，保持悬停
+            moveY = 0;
+        } else if (dy > 0) {
+            // 主人在上方，向上飞
+            moveY = Math.min(dy * 0.1, speed);
+        } else {
+            // 主人在下方，向下飞
+            moveY = Math.max(dy * 0.1, -speed);
+        }
+
+        // 设置移动速度
+        this.setDeltaMovement(moveX, moveY, moveZ);
+
+        // 面向主人
+        this.getLookControl().setLookAt(master, 30.0F, 30.0F);
     }
 
     /**
@@ -1351,7 +1720,12 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     }
     
     public void setHasWing(boolean hasWing) {
+        boolean wasWing = this.entityData.get(DATA_HAS_WING);
         this.entityData.set(DATA_HAS_WING, hasWing);
+        // 如果翅膀状态改变，更新导航
+        if (wasWing != hasWing) {
+            updateNavigation();
+        }
     }
     
     public void setHasTail(boolean hasTail) {
@@ -1366,7 +1740,15 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     }
     
     public void setFlying(boolean flying) {
+        boolean wasFlying = this.entityData.get(DATA_IS_FLYING);
         this.entityData.set(DATA_IS_FLYING, flying);
+
+        // 同步更新重力状态
+        if (flying && !wasFlying) {
+            this.setNoGravity(true);
+        } else if (!flying && wasFlying) {
+            this.setNoGravity(false);
+        }
     }
     
     /**

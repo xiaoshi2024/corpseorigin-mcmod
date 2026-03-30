@@ -1,16 +1,19 @@
 /**
- * 被污染的水源事件处理器 - 处理玩家和实体接触感染水源时的感染效果
+ * 被污染的水源事件处理器 - 处理玩家接触感染水源时的中毒效果
  *
  * 【功能说明】
  * 1. 检测玩家是否接触到被七星棺感染的水源
  * 2. 根据水源能量值决定是否施加中毒效果（玩家）
- * 3. 检测村民接触感染水源并施加感染效果
- * 4. 支持水源感染的扩散（放置水源时检查相邻感染水源）
- * 5. 冷却机制防止效果频繁触发
+ * 3. 支持水源感染的扩散（放置水源时检查相邻感染水源）
+ * 4. 冷却机制防止效果频繁触发
+ *
+ * 【注意】
+ * 村民不再通过接触尸水直接获得变异buff
+ * 村民感染改为通过尸体感染系统实现（参见 CorpseInfectionHandler）
+ * 或龙右的主动感染能力
  *
  * 【工作原理】
  * - 每500毫秒检查一次玩家位置
- * - 每500毫秒检查一次村民位置
  * - 检查实体所在方块是否为感染水源
  * - 满足条件则施加对应效果
  * - 中毒效果有3000毫秒冷却时间
@@ -22,32 +25,28 @@
  *
  * 【关联系统】
  * - InfectionData: 水源感染数据存储
- * - EffectRegister.QIANS: 村民感染效果
  * - MobEffects.POISON: 玩家中毒效果
  * - BlockEvent.EntityPlaceEvent: 水源放置事件
+ * - CorpseInfectionHandler: 尸体感染系统（村民感染新途径）
  *
  * @author Phagens
- * @version 1.0
+ * @version 1.1
  */
 package com.phagens.corpseorigin.event;
 
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.data.InfectionData;
-import com.phagens.corpseorigin.register.EffectRegister;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.BlockEvent;
-import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 import java.util.HashMap;
@@ -93,64 +92,8 @@ public class ByWaterEventHandler {
         }
     }
 
-    // 方法1：使用 EntityTickEvent（推荐）
-    @SubscribeEvent
-    public static void onEntityTick(EntityTickEvent.Post event) {
-        if (event.getEntity() instanceof LivingEntity entity && !(entity instanceof Player)) {
-            Level level = entity.level();
-            if (level.isClientSide) return;
-            // 处理非玩家生物的逻辑
-            handleLivingEntityInfection(entity, level);
-        }
-
-    }
-
-    private static void handleLivingEntityInfection(LivingEntity entity, Level level) {
-        // 只处理村民
-        if (!(entity instanceof Villager)) {
-            return;
-        }
-        
-        UUID entityUUID = entity.getUUID();
-        long currentTime = System.currentTimeMillis();
-        Long lastCheckTime = playerCheckCooldowns.get(entityUUID); // 使用统一的检查冷却
-
-        if (lastCheckTime == null || (currentTime - lastCheckTime) >= CHECK_INTERVAL) {
-            BlockPos entityPos = entity.blockPosition();
-
-            if (isEntityInInfectedWater(level, entityPos)) {
-                // 只给村民应用 BYeffect 效果
-                applyPoisonEffectToEntity(entity);
-            }
-
-            playerCheckCooldowns.put(entityUUID, currentTime); // 使用统一的冷却映射
-        }
-    }
-
-    private static void applyPoisonEffectToEntity(LivingEntity entity) {
-        UUID entityUUID = entity.getUUID();
-        long currentTime = System.currentTimeMillis();
-        Long lastPoisonTime = playerPoisonCooldowns.get(entityUUID); // 使用统一的中毒冷却
-
-        if (lastPoisonTime == null || (currentTime - lastPoisonTime) >= POISON_COOLDOWN) {
-            entity.addEffect(new MobEffectInstance(
-                    EffectRegister.QIANS,
-                    POISON_DURATION,
-                    POISON_AMPLIFIER
-            ));
-            playerPoisonCooldowns.put(entityUUID, currentTime); // 使用统一的冷却映射
-        }
-    }
-
-    private static boolean isEntityInInfectedWater(Level level, BlockPos entityPos) {
-        BlockState blockState = level.getBlockState(entityPos);
-        if (blockState.getFluidState().is(FluidTags.WATER)) {
-            if (level instanceof ServerLevel serverLevel) {
-                return InfectionData.isWaterInfectedStatic(serverLevel, entityPos);
-            }
-        }
-        return false;
-    }
+    // 村民接触尸水不再直接获得变异buff，改为通过尸体感染系统实现
+    // 参见 CorpseInfectionHandler 和龙右感染机制
 
 
     @SubscribeEvent
