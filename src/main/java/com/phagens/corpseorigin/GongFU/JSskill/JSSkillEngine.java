@@ -43,10 +43,8 @@ public class JSSkillEngine {
      */
     private void bindJavaClasses() {
         try {
-            // 绑定 Minecraft 常用类
-            engine.put("Packages", engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE));
-
-            // 可以在这里预加载一些常用类
+            engine.put("SkillEffects", com.phagens.corpseorigin.GongFU.JSskill.SkillEffects.class);
+            engine.put("ParticlePattern", com.phagens.corpseorigin.GongFU.JSskill.SkillEffects.class);
             CorpseOrigin.LOGGER.debug("JS 引擎初始化完成");
         } catch (Exception e) {
             CorpseOrigin.LOGGER.error("JS 引擎绑定 Java 类失败", e);
@@ -80,22 +78,22 @@ public class JSSkillEngine {
                 scriptCache.put(scriptPath, script);
             }
 
-            // 准备执行上下文
-            Bindings bindings = engine.createBindings();
-            bindings.put("player", player);
-            bindings.put("world", player.serverLevel());
-            bindings.put("data", gongFaData);
-            bindings.put("skillName", skillName);
+            ScriptContext context = engine.getContext();
+            context.setAttribute("player", player, ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("world", player.serverLevel(), ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("data", gongFaData, ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("skillName", skillName, ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("SkillEffects", com.phagens.corpseorigin.GongFU.JSskill.SkillEffects.class, ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("ParticlePattern", com.phagens.corpseorigin.GongFU.JSskill.SkillEffects.class, ScriptContext.ENGINE_SCOPE);
 
-            // 执行脚本
-            Object scriptObj = script.eval(bindings);
+            Object scriptObj = script.eval(context);
             // 脚本应该返回一个包含 activate 方法的对象
             if (scriptObj instanceof org.openjdk.nashorn.api.scripting.ScriptObjectMirror) {
                 org.openjdk.nashorn.api.scripting.ScriptObjectMirror scriptMirror =
                         (org.openjdk.nashorn.api.scripting.ScriptObjectMirror) scriptObj;
 
                 if (scriptMirror.hasMember("activate")) {
-                    // ✅ 正确方式：从对象中获取 activate 函数成员，然后调用
+                    // 从对象中获取 activate 函数成员，然后调用
                     var activateFunc = scriptMirror.getMember("activate");
                     if (activateFunc instanceof org.openjdk.nashorn.api.scripting.ScriptObjectMirror) {
                         try {
@@ -136,10 +134,7 @@ public class JSSkillEngine {
             }
 
             try (InputStreamReader reader = new InputStreamReader(resource)) {
-                ScriptEngine scriptEngine = engineFactory.getScriptEngine(
-                );
-
-                CompiledScript compiled = ((Compilable) scriptEngine).compile(reader);
+                CompiledScript compiled = ((Compilable) engine).compile(reader);
                 CorpseOrigin.LOGGER.info("成功编译脚本：{}", path);
                 return compiled;
             }

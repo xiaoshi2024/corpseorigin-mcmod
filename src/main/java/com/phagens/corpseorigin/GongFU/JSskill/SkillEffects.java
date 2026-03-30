@@ -1,6 +1,7 @@
 package com.phagens.corpseorigin.GongFU.JSskill;
 
 import com.phagens.corpseorigin.CorpseOrigin;
+import com.phagens.corpseorigin.GongFU.JSskill.Factory.ParticlePatternFactory;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -247,5 +248,248 @@ public class SkillEffects {
             CorpseOrigin.LOGGER.error("创建魔法伤害来源失败", e);
         }
         return null;
+    }
+
+    /**
+     * 生成龙卷风粒子图案
+     */
+    public static void spawnTornadoPattern(ServerPlayer player, double x, double y, double z,
+                                           double height, double radius, String particleId,
+                                           int count, double speed) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnTornado(player.serverLevel(), x, y, z, height, radius, particle, count, speed);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成龙卷风粒子失败", e);
+        }
+    }
+
+    /**
+     * 生成椭圆形粒子环
+     */
+    public static void spawnEllipsePattern(ServerPlayer player, double x, double y, double z,
+                                           double radiusX, double radiusZ, String particleId,
+                                           int count, double yOffset) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnEllipse(player.serverLevel(), x, y, z, radiusX, radiusZ, particle, count, yOffset);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成椭圆形粒子失败", e);
+        }
+    }
+
+    /**
+     * 生成圆弧形粒子
+     */
+    public static void spawnArcPattern(ServerPlayer player, double x, double y, double z,
+                                       double radius, double startAngle, double endAngle,
+                                       String particleId, int count, double yOffset) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnArc(player.serverLevel(), x, y, z, radius, startAngle, endAngle, particle, count, yOffset);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成圆弧形粒子失败", e);
+        }
+    }
+
+    /**
+     * 生成奥运五环图案
+     */
+    public static void spawnOlympicRingsPattern(ServerPlayer player, double x, double y, double z,
+                                                double ringRadius, String particleId, int particlesPerRing) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnOlympicRings(player.serverLevel(), x, y, z, ringRadius, particle, particlesPerRing);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成奥运五环失败", e);
+        }
+    }
+
+    /**
+     * 生成地面图案
+     */
+    public static void spawnGroundPattern(ServerPlayer player, double x, double y, double z,
+                                          String pattern, double size, String particleId, int density) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnGroundPattern(player.serverLevel(), x, y, z, pattern, size, particle, density);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成地面图案失败", e);
+        }
+    }
+
+    /**
+     * 生成球形粒子
+     */
+    public static void spawnSpherePattern(ServerPlayer player, double x, double y, double z,
+                                          double radius, String particleId, int count) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnSphere(player.serverLevel(), x, y, z, radius, particle, count);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成球形粒子失败", e);
+        }
+    }
+
+    /**
+     * 生成柱状粒子
+     */
+    public static void spawnCylinderPattern(ServerPlayer player, double x, double y, double z,
+                                            double radius, double height, String particleId, int count) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnCylinder(player.serverLevel(), x, y, z, radius, height, particle, count);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成柱状粒子失败", e);
+        }
+    }
+
+    /**
+     * 生成心形图案
+     */
+    public static void spawnHeartPattern(ServerPlayer player, double x, double y, double z,
+                                         double size, String particleId, int count) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnHeart(player.serverLevel(), x, y, z, size, particle, count);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成心形图案失败", e);
+        }
+    }
+    /**
+     * 生成斩击特效
+     */
+    public static void spawnSlashingAttack(ServerPlayer player, double startX, double startY, double startZ,
+                                           double dirX, double dirZ, double distance,
+                                           double width, double height, String particleId,
+                                           int segments, double speed) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnSlashingAttack(player.serverLevel(), startX, startY, startZ,
+                    dirX, dirZ, distance, width, height, particle, segments, speed);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成斩击特效失败", e);
+        }
+    }
+
+    /**
+     * 生成旋转魔法阵
+     */
+    public static void spawnRotatingMagicCircle(ServerPlayer player, double x, double y, double z,
+                                                double radius, int layers, double rotationAngle,
+                                                String particleId, int particlesPerLayer,
+                                                double rotationSpeed) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnRotatingMagicCircle(player.serverLevel(), x, y, z,
+                    radius, layers, rotationAngle, particle, particlesPerLayer, rotationSpeed);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成旋转魔法阵失败", e);
+        }
+    }
+
+    /**
+     * 生成升腾漩涡
+     */
+    public static void spawnAscendingSwirl(ServerPlayer player, double x, double y, double z,
+                                           double height, double radius, String particleId,
+                                           int count, double swirlIntensity) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnAscendingSwirl(player.serverLevel(), x, y, z,
+                    height, radius, particle, count, swirlIntensity);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成升腾漩涡失败", e);
+        }
+    }
+
+    /**
+     * 生成环绕轨道
+     */
+    public static void spawnOrbitRings(ServerPlayer player, double x, double y, double z,
+                                       int orbits, double orbitRadius, double tiltAngle,
+                                       String particleId, int particlesPerOrbit) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnOrbitRings(player.serverLevel(), x, y, z,
+                    orbits, orbitRadius, tiltAngle, particle, particlesPerOrbit);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成环绕轨道失败", e);
+        }
+    }
+
+    /**
+     * 生成爆炸冲击波
+     */
+    public static void spawnShockwave(ServerPlayer player, double x, double y, double z,
+                                      double maxRadius, String particleId, int density) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnShockwave(player.serverLevel(), x, y, z,
+                    maxRadius, particle, density);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成冲击波失败", e);
+        }
+    }
+
+    /**
+     * 生成螺旋弹道
+     */
+    public static void spawnSpiralProjectile(ServerPlayer player, double startX, double startY, double startZ,
+                                             double endX, double endY, double endZ,
+                                             double rotations, double radius, String particleId,
+                                             int count) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnSpiralProjectile(player.serverLevel(), startX, startY, startZ,
+                    endX, endY, endZ, rotations, radius, particle, count);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成螺旋弹道失败", e);
+        }
+    }
+
+    /**
+     * 生成羽翼展开
+     */
+    public static void spawnWingExpansion(ServerPlayer player, double x, double y, double z,
+                                          double wingspan, double featherLength, String particleId,
+                                          int density) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnWingExpansion(player.serverLevel(), x, y, z,
+                    wingspan, featherLength, particle, density);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成羽翼展开失败", e);
+        }
+    }
+
+    /**
+     * 生成锁链连接
+     */
+    public static void spawnChainLinks(ServerPlayer player, double x1, double y1, double z1,
+                                       double x2, double y2, double z2,
+                                       int chainCount, double sagAmount, String particleId) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnChainLinks(player.serverLevel(), x1, y1, z1,
+                    x2, y2, z2, chainCount, sagAmount, particle);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成锁链失败", e);
+        }
+    }
+
+    /**
+     * 生成领域展开
+     */
+    public static void spawnDomainExpansion(ServerPlayer player, double x, double y, double z,
+                                            double maxRadius, int shells, String particleId,
+                                            int particlesPerShell) {
+        try {
+            ParticleOptions particle = getParticle(particleId);
+            ParticlePatternFactory.spawnDomainExpansion(player.serverLevel(), x, y, z,
+                    maxRadius, shells, particle, particlesPerShell);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("生成领域展开失败", e);
+        }
     }
 }

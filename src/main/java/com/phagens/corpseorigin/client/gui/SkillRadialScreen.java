@@ -1,5 +1,6 @@
 package com.phagens.corpseorigin.client.gui;
 
+import com.phagens.corpseorigin.Config;
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.client.gui.radialmenu.*;
 import com.phagens.corpseorigin.network.ActivateSkillPacket;
@@ -12,6 +13,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -65,11 +67,49 @@ public class SkillRadialScreen extends GuiRadialMenu<ISkill> {
     private final Player player;
     private final ISkillHandler skillHandler;
 
+    // 当前选中的技能（占位）- 静态字段，跨界面保存
+    public static ISkill selectedSkill = null;
+    // 静态引用，方便按键调用
+    private static SkillRadialScreen instance = null;
+
     public SkillRadialScreen(Player player) {
         super(createRadialMenu(player));
         this.player = player;
         this.skillHandler = SkillAttachment.getSkillHandler(player);
+        instance = this;
     }
+
+
+    public static SkillRadialScreen getInstance() {
+        return instance;
+    }
+
+
+    /**
+     * 获取选中的技能
+     */
+    public static ISkill getSelectedSkill() {
+        return selectedSkill;
+    }
+
+    //释放选中
+    public void releaseSkill() {
+        if (selectedSkill == null) {
+            return;
+        }
+
+        if (skillHandler.isOnCooldown(selectedSkill)) {
+            int remaining = skillHandler.getCooldownRemaining(selectedSkill);
+            player.sendSystemMessage(Component.translatable(
+                    "time", remaining / 20));
+            return;
+        }
+
+        // 发送激活技能包到服务器
+        net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                new ActivateSkillPacket(selectedSkill.getId()));
+    }
+
 
     // 修改 createRadialMenu 方法，添加调试日志
 
@@ -130,24 +170,26 @@ public class SkillRadialScreen extends GuiRadialMenu<ISkill> {
     }
 
     private static void onSkillSelected(Player player, int index) {
-        ISkillHandler handler = SkillAttachment.getSkillHandler(player);
-        List<ISkill> activatableSkills = getSortedActivatableSkills(handler);
+//        ISkillHandler handler = SkillAttachment.getSkillHandler(player);
+//        List<ISkill> activatableSkills = getSortedActivatableSkills(handler);
+//
+//        if (index >= 0 && index < activatableSkills.size()) {
+//            ISkill selectedSkill = activatableSkills.get(index);
+//
+//            CorpseOrigin.LOGGER.info("选中技能: index={}, skill={}", index, selectedSkill.getId());
+//
+//            if (handler.isOnooldown(selectedSkill)) {
+//                int remaining = handler.getCooldownRemaining(selectedSkill);
+//                player.sendSystemMessage(Component.translatable(
+//                        "skill.corpseorigin.cooldown", remaining / 20));
+//                return;
+//            }
+//
+//            net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+//                    new ActivateSkillPacket(selectedSkill.getId()));
+//        }
+        CorpseOrigin.LOGGER.info("轮盘选中技能：index={}", index);
 
-        if (index >= 0 && index < activatableSkills.size()) {
-            ISkill selectedSkill = activatableSkills.get(index);
-
-            CorpseOrigin.LOGGER.info("选中技能: index={}, skill={}", index, selectedSkill.getId());
-
-            if (handler.isOnCooldown(selectedSkill)) {
-                int remaining = handler.getCooldownRemaining(selectedSkill);
-                player.sendSystemMessage(Component.translatable(
-                        "skill.corpseorigin.cooldown", remaining / 20));
-                return;
-            }
-
-            net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                    new ActivateSkillPacket(selectedSkill.getId()));
-        }
     }
 
     @Override
@@ -203,6 +245,7 @@ public class SkillRadialScreen extends GuiRadialMenu<ISkill> {
     protected void drawSecondaryIcon(GuiGraphics graphics, ISkill icon, int x, int y) {
         // 技能没有次要图标
     }
+
 
     @Override
     protected int getSliceColor(IRadialMenuSlot<ISkill> slot, boolean highlighted, int index) {
@@ -279,6 +322,47 @@ public class SkillRadialScreen extends GuiRadialMenu<ISkill> {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player != null) {
             minecraft.setScreen(new SkillRadialScreen(minecraft.player));
+        }
+    }
+
+    @Override
+    public void onClose() {
+        super.onClose();
+
+        // 关闭时如果有选中的技能，设置为占位（持久保存）
+        if (selectedItem >= 0 && selectedItem < radialMenuSlots.size()) {
+            IRadialMenuSlot<ISkill> slot = radialMenuSlots.get(selectedItem);
+            ISkill skill = slot.primarySlotIcon();
+
+            if (skill != null && !skillHandler.isOnCooldown(skill)) {
+                selectedSkill = skill;
+
+                CorpseOrigin.LOGGER.info("设置占位技能：{}", skill.getName().getString());
+
+//                if (player != null) {
+//                    player.sendSystemMessage(Component.translatable(
+//                            "message.corpseorigin.skill_selected", skill.getName()));
+//                }
+            }
+        }
+
+        // 注意：instance 设为 null，但 selectedSkill 保持不变为持久保存
+        instance = null;
+    }
+
+    public static void validateSelectedSkill(Player player) {
+        if (selectedSkill == null) {
+            return;
+        }
+
+        ISkillHandler handler = SkillAttachment.getSkillHandler(player);
+
+        // 如果技能不再存在或不在已学技能列表中，清除占位
+        boolean stillValid = handler.getLearnedSkills().contains(selectedSkill);
+
+        if (!stillValid) {
+            CorpseOrigin.LOGGER.warn("占位技能 {} 已无效，清除占位", selectedSkill.getName().getString());
+            selectedSkill = null;
         }
     }
 }

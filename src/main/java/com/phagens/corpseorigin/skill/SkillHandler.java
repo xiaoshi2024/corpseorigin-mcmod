@@ -170,8 +170,8 @@ public class SkillHandler implements ISkillHandler {
                     new HashMap<>(cooldowns)
             );
 
-            CorpseOrigin.LOGGER.debug("【同步到客户端】玩家 {}: {} 个技能, {} 进化点",
-                    player.getName().getString(), learnedSkills.size(), evolutionPoints);
+//            CorpseOrigin.LOGGER.debug("【同步到客户端】玩家 {}: {} 个技能, {} 进化点",
+//                    player.getName().getString(), learnedSkills.size(), evolutionPoints);
 
             PacketDistributor.sendToPlayer(serverPlayer, packet);
             dirty = false;
@@ -524,9 +524,22 @@ public class SkillHandler implements ISkillHandler {
      * 从同步数据加载（客户端使用）
      */
     public void loadFromSyncData(List<ResourceLocation> skills, int points, Map<ResourceLocation, Integer> cds) {
-        CorpseOrigin.LOGGER.info("loadFromSyncData - 当前技能数量: {}, 新技能数量: {}",
-                learnedSkills.size(), skills.size());
+        // ⭐ 正确的数据比较逻辑
+        boolean skillsChanged = this.learnedSkills.size() != skills.size()
+                || !this.learnedSkills.containsAll(skills);
+        boolean pointsChanged = this.evolutionPoints != points;
+        boolean cooldownsChanged = this.cooldowns.size() != cds.size()
+                || !this.cooldowns.entrySet().containsAll(cds.entrySet());
 
+        // 如果数据没变化，直接返回（避免重复应用被动技能）
+        if (!skillsChanged && !pointsChanged && !cooldownsChanged) {
+            return;
+        }
+
+//        CorpseOrigin.LOGGER.debug("loadFromSyncData - 数据发生变化，重新加载");
+//        CorpseOrigin.LOGGER.debug("  - skillsChanged: {}, pointsChanged: {}, cooldownsChanged: {}",
+//                skillsChanged, pointsChanged, cooldownsChanged);
+        boolean needReapplyPassives = skillsChanged;
         // 清除现有数据
         learnedSkills.clear();
         cooldowns.clear();
@@ -545,10 +558,29 @@ public class SkillHandler implements ISkillHandler {
             }
         }
 
-        CorpseOrigin.LOGGER.info("loadFromSyncData 完成 - 最终技能数量: {}, 进化点: {}",
-                learnedSkills.size(), evolutionPoints);
+//        CorpseOrigin.LOGGER.info("loadFromSyncData 完成 - 最终技能数量: {}, 进化点: {}",
+//                learnedSkills.size(), evolutionPoints);
 
-        dirty = true;
+        if (needReapplyPassives && player != null) {
+            reapplyPassiveSkillsInternal();
+        }
+    }
+
+    private void reapplyPassiveSkillsInternal() {
+        if (player == null) return;
+
+        for (ResourceLocation skillId : learnedSkills) {
+            ISkill skill = SkillManager.getInstance().getSkill(skillId);
+            if (skill != null && skill.isPassive()) {
+                // 先移除再添加，避免重复
+                if (skill instanceof BaseSkill baseSkill) {
+                    baseSkill.removeAttributeModifiers(player);
+                    baseSkill.applyAttributeModifiers(player);
+                } else {
+                    skill.onLearn(player);
+                }
+            }
+        }
     }
 
     @Override
@@ -597,24 +629,38 @@ public class SkillHandler implements ISkillHandler {
      * 更新冷却（每tick调用）
      */
     public void updateCooldowns() {
+        if (cooldowns.isEmpty()) {
+            return;
+        }
         boolean hasChanges = false;
+
         Iterator<Map.Entry<ResourceLocation, Integer>> iterator = cooldowns.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<ResourceLocation, Integer> entry = iterator.next();
             int newCooldown = entry.getValue() - 1;
+
             if (newCooldown <= 0) {
+                // CD 结束，移除
                 iterator.remove();
                 hasChanges = true;
             } else {
+                // CD 进行中，更新时间
                 entry.setValue(newCooldown);
+                hasChanges = true;
             }
         }
+
+        // 只有在 CD 实际变化时才同步
         if (hasChanges) {
             dirty = true;
-            // 只有冷却实际发生变化（有冷却结束）时才同步
             syncToClient();
+
         }
-    }
+        }
+
+
+
+
 
     /**
      * 检查两个技能是否互斥

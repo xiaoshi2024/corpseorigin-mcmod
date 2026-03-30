@@ -65,8 +65,8 @@ public record SyncSkillDataPacket(
      */
     public static void handleClient(SyncSkillDataPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            CorpseOrigin.LOGGER.info("客户端收到技能同步包 - 玩家ID: {}, 技能数量: {}, 进化点: {}",
-                    packet.playerId(), packet.learnedSkills().size(), packet.evolutionPoints());
+//            CorpseOrigin.LOGGER.info("客户端收到技能同步包 - 玩家ID: {}, 技能数量: {}, 进化点: {}",
+//                    packet.playerId(), packet.learnedSkills().size(), packet.evolutionPoints());
 
             Level level = context.player().level();
             Entity entity = level.getEntity(packet.playerId());
@@ -80,23 +80,23 @@ public record SyncSkillDataPacket(
                     handler.loadFromSyncData(packet.learnedSkills(), packet.evolutionPoints(), packet.cooldowns());
 
                     // 重新应用被动技能
-                    handler.reapplyPassiveSkills();
+//                    handler.reapplyPassiveSkills();
 
-                    CorpseOrigin.LOGGER.info("客户端技能数据更新完成 - 玩家: {}, 技能数量: {}, 进化点: {}",
-                            player.getName().getString(),
-                            handler.getLearnedSkills().size(),
-                            handler.getEvolutionPoints());
+//                    CorpseOrigin.LOGGER.info("客户端技能数据更新完成 - 玩家: {}, 技能数量: {}, 进化点: {}",
+//                            player.getName().getString(),
+//                            handler.getLearnedSkills().size(),
+//                            handler.getEvolutionPoints());
 
                     // 打印所有技能
-                    for (ResourceLocation skillId : handler.getLearnedSkillIds()) {
-                        CorpseOrigin.LOGGER.debug("  - 已学习技能: {}", skillId);
-                    }
-                } else {
-                    CorpseOrigin.LOGGER.error("无法获取玩家 {} 的技能处理器", player.getName().getString());
-                }
-            } else {
-                CorpseOrigin.LOGGER.warn("未找到玩家实体 ID: {}", packet.playerId());
-            }
-        });
+//                    for (ResourceLocation skillId : handler.getLearnedSkillIds()) {
+////                        CorpseOrigin.LOGGER.debug("  - 已学习技能: {}", skillId);
+//                    }
+//                } else {
+//                    CorpseOrigin.LOGGER.error("无法获取玩家 {} 的技能处理器", player.getName().getString());
+//                }
+//            } else {
+//                CorpseOrigin.LOGGER.warn("未找到玩家实体 ID: {}", packet.playerId());
+//            }
+        }
     }
-}
+});}}
