@@ -190,7 +190,7 @@ public class SkillHandler implements ISkillHandler {
                     new HashMap<>(cooldowns)
             );
 
-            CorpseOrigin.LOGGER.debug("【强制同步】玩家 {}: {} 个技能, {} 进化点",
+            CorpseOrigin.LOGGER.debug("【强制同步】玩家{}: {} 个技能, {} 进化点",
                     player.getName().getString(), learnedSkills.size(), evolutionPoints);
 
             PacketDistributor.sendToPlayer(serverPlayer, packet);
