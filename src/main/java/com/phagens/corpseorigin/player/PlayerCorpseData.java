@@ -223,6 +223,14 @@ public class PlayerCorpseData {
         return isCorpse(player) && !hasConsciousness(player);
     }
 
+    /**
+     * 检查玩家是否是尸兄（包括有意识和无意识的）
+     * 用于判断是否可以食用尸体
+     */
+    public static boolean isCorpseBrother(Player player) {
+        return isCorpse(player);
+    }
+
     private static void syncToClient(Player player) {
         if (player instanceof ServerPlayer serverPlayer) {
             PlayerCorpseSyncPacket packet = new PlayerCorpseSyncPacket(

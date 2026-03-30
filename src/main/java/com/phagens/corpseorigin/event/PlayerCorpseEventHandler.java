@@ -195,23 +195,6 @@ public class PlayerCorpseEventHandler {
             }
         }
 
-        // 神志系统：随机说话（只有有意识的尸兄才会说话）
-        if (player.tickCount % 200 == 0 && PlayerCorpseData.hasConsciousness(player)) {
-            if (player.getRandom().nextFloat() < 0.3f) {
-                String[] phrases = {
-                        "救...救我...",
-                        "好饿...",
-                        "我...我怎么了...",
-                        "不要...不要杀我...",
-                        "肉...肉...",
-                        "谁来...救救我...",
-                        "好疼...好疼...",
-                        "我不想死..."
-                };
-                String phrase = phrases[player.getRandom().nextInt(phrases.length)];
-                player.sendSystemMessage(net.minecraft.network.chat.Component.literal(phrase));
-            }
-        }
     }
 
     /**

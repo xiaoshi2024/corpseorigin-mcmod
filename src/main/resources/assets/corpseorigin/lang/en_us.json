@@ -23,6 +23,7 @@
   "entity.corpseorigin.lower_level_zb": "Zombie Brothers",
   "entity.corpseorigin.lower_level_zb.named": "Zombie Brothers-%s",
   "entity.corpseorigin.lower_level_zb.default": "Zombie Brothers",
+  "entity.corpseorigin.guigun": "Gui Gun",
   "entity.corpseorigin.longyou": "Long you",
 
   "effect.corpseorigin.by": "Corpse Water Infection",
@@ -250,6 +251,11 @@
   "item.corpseorigin.dr_mu_eye.effect1": "§7Consumption Effects:",
   "item.corpseorigin.dr_mu_eye.effect2": "  §a• Mindless corpses can restore human consciousness",
   "item.corpseorigin.dr_mu_eye.effect3": "  §e• Conscious corpses gain wisdom enhancement",
+
+  "entity.corpseorigin.corpse": "Corpse",
+  "entity.corpseorigin.corpse_gib": "Corpse Gib",
+  "message.corpseorigin.corpse_infected": "§c§lThe corpse is being infected by corpse water...",
+  "message.corpseorigin.corpse_transformed": "§4§lThe corpse has transformed into a Zombie Brother!",
 
   "skill.corpseorigin.multi_eye_perception": "Multi-Eye Perception",
   "skill.corpseorigin.multi_eye_perception.desc": "Activate the power of multiple eyes to detect hostile entities within 32 blocks, highlighting enemies within 24 blocks",
