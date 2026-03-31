@@ -84,6 +84,7 @@ public class CorpseInfectionHandler {
 
     /**
      * 检查是否应该为该生物生成残肢
+     * 重新设定：只有僵尸和村民死亡时才会生成尸体
      */
     private static boolean shouldCreateGibs(LivingEntity entity) {
         // 不生成残肢的生物类型
@@ -93,8 +94,25 @@ public class CorpseInfectionHandler {
             return false;
         }
 
-        // 只给有身体的生物生成残肢
-        return entity.getBbHeight() >= 1.0F;
+        // 只给僵尸和村民生成残肢
+        return isZombieOrVillager(entity);
+    }
+
+    /**
+     * 检查是否是僵尸或村民
+     */
+    private static boolean isZombieOrVillager(LivingEntity entity) {
+        // 检查是否是僵尸类生物
+        if (entity instanceof net.minecraft.world.entity.monster.Zombie) {
+            return true;
+        }
+        // 检查是否是村民
+        if (entity instanceof net.minecraft.world.entity.npc.Villager) {
+            return true;
+        }
+        // 检查实体类型名称
+        String entityType = entity.getType().toString().toLowerCase();
+        return entityType.contains("zombie") || entityType.contains("villager");
     }
 
     /**
