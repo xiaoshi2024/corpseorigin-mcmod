@@ -51,6 +51,7 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
         JsonObject json = jsonElement.getAsJsonObject();
         // 读取基础字段（带默认值）
         String typeId = json.has("type_id") ? json.get("type_id").getAsString() : "UNKNOWN";
+        String type = json.has("type") ? json.get("type").getAsString() : "?";
         String name = json.has("name") ? json.get("name").getAsString() : "Name";
         int rarity = json.has("rarity") ? json.get("rarity").getAsInt() : 1;
         String ceng = json.has("ceng") ? json.get("ceng").getAsString() : "copy_1";
@@ -72,7 +73,7 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
             });
         }
 
-        return new GongFaData(typeId,name,attributes, skills, rarity, ceng,cooldown, icon);
+        return new GongFaData(typeId,type,name,attributes, skills, rarity, ceng,cooldown, icon);
     }
     /**
      * 获取特定的功法数据

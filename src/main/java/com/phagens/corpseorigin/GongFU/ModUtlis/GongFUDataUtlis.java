@@ -90,14 +90,37 @@ public class GongFUDataUtlis {
             if (!stack.isEmpty() && stack.getItem() instanceof BaseGongFaItem gongFaItem) {
                 GongFaData data = gongFaItem.getDataFromItem(stack);
                 if (data != null) {
+                    double cengMultiplier = getCengMultiplier(data.getCeng());
                     data.getAttributes().forEach((attr, value) -> {
-                        totalAttributes.merge(attr, value, Double::sum);  //value合
+                        // 属性值 * 层级倍率
+                        double boostedValue = value * cengMultiplier;
+                        totalAttributes.merge(attr, boostedValue, Double::sum);
                     });
                 }
             }
         }
 
         return totalAttributes;
+    }
+
+    /**
+     * 根据层级获取属性倍率
+     * @param ceng 层级标识（copy_1 ~ copy_9）
+     * @return 属性倍率（1.0 ~ 3.0）
+     */
+    public static double getCengMultiplier(String ceng) {
+        return switch (ceng) {
+            case "copy_1" -> 1.0;   // 一重天：100%
+            case "copy_2" -> 1.2;   // 二重天：120%
+            case "copy_3" -> 1.4;   // 三重天：140%
+            case "copy_4" -> 1.6;   // 四重天：160%
+            case "copy_5" -> 1.8;   // 五重天：180%
+            case "copy_6" -> 2.0;   // 六重天：200%
+            case "copy_7" -> 2.2;   // 七重天：220%
+            case "copy_8" -> 2.5;   // 八重天：250%
+            case "copy_9" -> 3.0;   // 九重天：300%
+            default -> 1.0;         // 默认 100%
+        };
     }
 
     /**

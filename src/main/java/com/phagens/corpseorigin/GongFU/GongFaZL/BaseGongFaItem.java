@@ -11,6 +11,8 @@ import net.minecraft.world.item.component.CustomData;
 
 import java.util.List;
 
+import static com.phagens.corpseorigin.GongFU.ModUtlis.GongFUDataUtlis.getCengMultiplier;
+
 
 //模板
 public class BaseGongFaItem extends Item {
@@ -55,24 +57,94 @@ public class BaseGongFaItem extends Item {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         GongFaData data = getDataFromItem(stack);
         if (data != null){
-            // 注意：物品名称已经在 getName() 中返回，MC 会自动显示在顶部
-            // 这里不需要再添加名称，只添加其他信息
+//            // 注意：物品名称已经在 getName() 中返回，MC 会自动显示在顶部
+//            // 这里不需要再添加名称，只添加其他信息
+//            tooltipComponents.add(Component.literal(getCultivationTypeName(data.getType())));
+//            // 显示稀有度
+//            tooltipComponents.add(Component.literal(getRarityColor(data.getRarity()) +
+//                    "品级: " + getRarityName(data.getRarity())));
+//            tooltipComponents.add(Component.literal("§e功法层级: " + getCengName(data.getCeng())));
+//            // 显示属性
+//            tooltipComponents.add(Component.literal("§6武学加持:"));
+//            data.getAttributes().forEach((attr, value) ->
+//                    tooltipComponents.add(Component.literal("§7" + getAttributeName(attr) + ": §a+" + String.format("%.1f", value))));
+//            // 显示技能
+//            if (!data.getSkills().isEmpty()) {
+//                tooltipComponents.add(Component.literal("§d技艺:"));
+//                data.getSkills().forEach(skill ->
+//                        tooltipComponents.add(Component.literal("§7• " + skill)));
+//            }
+            String type = data.getType();
+            String cengPrefix = getCengPrefix(type);
+            String attrPrefix = getAttributePrefix(type);
 
-            // 显示稀有度
             tooltipComponents.add(Component.literal(getRarityColor(data.getRarity()) +
-                    "品级: " + getRarityName(data.getRarity())));
-            tooltipComponents.add(Component.literal("§e功法层级: " + getCengName(data.getCeng())));
-            // 显示属性
-            tooltipComponents.add(Component.literal("§6武学加持:"));
+                    "品级：" + getRarityName(data.getRarity())));
+            // 显示层级（根据 type 使用不同前缀）
+            tooltipComponents.add(Component.literal("§e" + cengPrefix + getCengName(data.getCeng())));
+            double multiplier = getCengMultiplier(data.getCeng());
+            tooltipComponents.add(Component.literal("§7等级加成：§ax" + String.format("%.1f", multiplier)));
+            // 显示属性（根据 type 使用不同前缀）
+            tooltipComponents.add(Component.literal(attrPrefix));
             data.getAttributes().forEach((attr, value) ->
                     tooltipComponents.add(Component.literal("§7" + getAttributeName(attr) + ": §a+" + String.format("%.1f", value))));
-            // 显示技能
             if (!data.getSkills().isEmpty()) {
-                tooltipComponents.add(Component.literal("§d技艺:"));
+                tooltipComponents.add(Component.literal(getSkillPrefix(type)));
                 data.getSkills().forEach(skill ->
                         tooltipComponents.add(Component.literal("§7• " + skill)));
             }
         }
+    }
+    // 根据 type 返回体系名称
+    private String getTypeName(String type) {
+        return switch (type) {
+            case "gf" -> "功法";
+            case "yn" -> "异能";
+            case "xm" -> "血脉";
+            default -> "未知体系";
+        };
+    }
+
+    // 根据 type 返回颜色代码
+    private String getTypeColor(String type) {
+        return switch (type) {
+            case "gf" -> "§9";      // 蓝色 - 功法
+            case "yn" -> "§6";      // 金色 - 异能
+            case "xm" -> "§c";      // 红色 - 血脉
+            default -> "§7";
+        };
+    }
+    private int getTypeColortwo(String type) {
+        return switch (type) {
+            case "gf" -> 0x4169E1;   // 皇家蓝 - 功法
+            case "yn" -> 0xFFD700;   // 金色 - 异能
+            case "xm" -> 0xDC143C;   // 深红色 - 血脉
+            default -> 0x808080;     // 灰色 - 默认
+        };
+    }
+
+    // 根据 type 返回层级前缀
+    private String getCengPrefix(String type) {
+        return switch (type) {
+            case "gf" -> "功法";case "yn" -> "异能";case "xm" -> "血脉";
+            default -> "";
+        };
+    }
+
+    // 根据 type 返回属性前缀标题
+    private String getAttributePrefix(String type) {
+        return switch (type) {
+            case "gf" -> "§6武学加持:";case "yn" -> "§6异能增幅:";case "xm" -> "§6血脉之力:";
+            default -> "§6属性加成:";
+        };
+    }
+
+    // 根据 type 返回技能前缀标题
+    private String getSkillPrefix(String type) {
+        return switch (type) {
+            case "gf" -> "§d武学技艺:";case "yn" -> "§d异能权柄:";case "xm" -> "§d血脉神通:";
+            default -> "§d技能:";
+        };
     }
 
     public static GongFaData getDataFromItem(ItemStack stack) {
@@ -106,15 +178,9 @@ public class BaseGongFaItem extends Item {
 
     private String getCengName(String attrKey) {
         return switch (attrKey) {
-            case "copy_1" -> "一重天";
-            case "copy_2" -> "二重天";
-            case "copy_3" -> "三重天";
-            case "copy_4" -> "四重天";
-            case "copy_5" -> "五重天";
-            case "copy_6" -> "六重天";
-            case "copy_7" -> "七重天";
-            case "copy_8" -> "八重天";
-            case "copy_9" -> "九重天";
+            case "copy_1" -> "一级";case "copy_2" -> "二级";case "copy_3" -> "三级";
+            case "copy_4" -> "四级";case "copy_5" -> "五级";case "copy_6" -> "六级";
+            case "copy_7" -> "七级";case "copy_8" -> "八级";case "copy_9" -> "九级";
             default -> attrKey;
         };
     }
@@ -123,14 +189,18 @@ public class BaseGongFaItem extends Item {
     private String getRarityName(int rarity) {
         return switch (rarity) {
             case 1 -> "人"; case 2 -> "地"; case 3 -> "天";
-            case 4 -> "神"; case 5 -> "超神"; default -> "？";
+            case 4 -> "神"; case 5 -> "超神";case 6 -> "地阴";
+            case 7 -> "天阳";case 8 -> "黑洞级";case 9 -> "白洞级";
+            case 10 -> "星海";case 11 -> "寰宇";default -> "？";
         };
     }
 
     private String getRarityColor(int rarity) {
         return switch (rarity) {
             case 1 -> "§f"; case 2 -> "§a"; case 3 -> "§b";
-            case 4 -> "§d"; case 5 -> "§6"; default -> "§7";
+            case 4 -> "§d"; case 5 -> "§6";case 6 -> "§9";
+            case 7 -> "§c";case 8 -> "§0";case 9 -> "§f";
+            case 10 -> "§5";case 11 -> "§6"; default -> "§7";
         };
     }
 
@@ -138,11 +208,8 @@ public class BaseGongFaItem extends Item {
     public Component getName(ItemStack stack) {
         GongFaData data = getDataFromItem(stack);
         if (data != null && data.getName() != null) {
-            // 使用翻译组件，自动根据游戏语言切换
-            // 格式：XXX + 功法（如：雷系功法）
-            return Component.translatable(data.getName())
-                    .append(Component.literal("功法"))
-                    .withStyle(style -> style.withBold(true).withColor(0xFFAA00));
+            return Component.literal(data.getName())
+                    .withStyle(style -> style.withBold(true).withColor(getTypeColortwo(data.getType())));
         }
         return super.getName(stack);
     }

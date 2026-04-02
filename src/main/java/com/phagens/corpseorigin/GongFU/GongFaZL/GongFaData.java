@@ -20,17 +20,19 @@ public class GongFaData {
     /// nbt:Attributes 属性
     /// nbt:Skills 技能
     private final String typeId;  // 类型标识
-    private final String name;  // 属性加成
+    private final String Type;
+    private final String name;  // 名字
     private final Map<String, Double> attributes;  // 属性加成
 
     private final List<String> skills;  // 技能列表
     private final int rarity;  // 稀有度 1-9
     private final String Ceng;//层级
-    private final int cooldown;
-    private final String iconPath;
+    private final int cooldown;   //冷却时间
+    private final String iconPath;   //图片路径
 
-    public GongFaData(String typeId, String name, Map<String, Double> attributes, List<String> skills, int rarity, String ceng, int cooldown, String iconPath) {
+    public GongFaData(String typeId, String type, String name, Map<String, Double> attributes, List<String> skills, int rarity, String ceng, int cooldown, String iconPath) {
         this.typeId = typeId;
+        this.Type = type;
         this.name = name;
         this.attributes = new HashMap<>(attributes);
         this.skills = new ArrayList<>(skills);
@@ -49,10 +51,12 @@ public class GongFaData {
     public String getName() { return name; }
     public int getCooldown() {return cooldown;}
     public String getIconPath() {return iconPath;}
+    public String getType() { return Type; }
     //序列化到nbt
     public CompoundTag toNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString("TypeId", typeId);
+        tag.putString("Type", Type);
         tag.putString("Name", name);
         tag.putInt("Rarity", rarity);
         tag.putString("Ceng", Ceng);
@@ -72,6 +76,7 @@ public class GongFaData {
     // 从NBT反序列化
     public static GongFaData fromNBT(CompoundTag tag) {
         String typeId = tag.getString("TypeId");
+        String type = tag.getString("Type");
         String name = tag.getString("Name");
         int rarity = tag.getInt("Rarity");
         String ceng =tag.getString("Ceng");
@@ -96,7 +101,7 @@ public class GongFaData {
             }
         }
 
-        return new GongFaData(typeId, name,attributes, skills, rarity,ceng, cooldown,icon);
+        return new GongFaData(typeId, type,name,attributes, skills, rarity,ceng, cooldown,icon);
     }
 
 

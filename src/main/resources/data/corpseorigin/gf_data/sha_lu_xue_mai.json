@@ -1,7 +1,8 @@
 {
   "type_id": "SHA_LU_XUE_MAI",
+  "type": "xm",
   "name": "杀戮血脉",
-  "rarity": 7,
+  "rarity": 5,
   "ceng": "copy_1",
   "cooldown": 300,
   "attributes": {

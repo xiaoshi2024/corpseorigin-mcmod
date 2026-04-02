@@ -18,11 +18,11 @@ var activate = function(player, world, data) {
             player,
             startX, startY, startZ,
             dirX, dirZ, distance,
-            3.0,   // 宽度
-            2.0,   // 高度
-            "minecraft:crit",  // 粒子类型
-            30,    // 分段数
-            0.3    // 速度
+            5.0,   // 宽度
+            5.0,   // 高度
+            "minecraft:sweep_attack",  // 粒子类型
+            90,    // 分段数
+            0.1    // 速度
         );
     }
 
