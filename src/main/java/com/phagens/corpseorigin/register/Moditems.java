@@ -27,6 +27,10 @@ public class Moditems {
     public static final DeferredItem<BlockItem> QI_XING_GUAN_ITEM = ITEMS.register("qi_xings_guan_item",
             () -> new BlockItem(BlockRegistry.QI_XING_GUAN.get(), new Item.Properties()));
 
+    // 尸兄肉块物品
+    public static final DeferredItem<BlockItem> ZBR_FLESH_ITEM = ITEMS.register("zbr_flesh_item",
+            () -> new BlockItem(BlockRegistry.ZBR_FLESH.get(), new Item.Properties()));
+
     public static final DeferredItem<Item> BYWATER_BUCKET = ITEMS.register("bywater_bucket",
             () -> new ByWaterBucketItem(new Item.Properties().stacksTo(1)));
 

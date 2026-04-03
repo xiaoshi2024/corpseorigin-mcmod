@@ -1,7 +1,8 @@
 {
   "itemGroup.corpseorigin": "Corpse Origin Mod",
 
-  "block.corpseorigin.qi_xing_guan": "Seven Star Coffin",
+  "block.corpseorigin.qi_xing_guan": "Seven Star Corpse Coffin",
+  "block.corpseorigin.zbr_flesh": "Zombie Brother Flesh",
 
   "item.corpseorigin.qi_xings_guan_item": "Seven Star Coffin",
   "item.corpseorigin.bywater_bucket": "Corpse Water Bucket",
