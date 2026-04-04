@@ -29,6 +29,7 @@ public class JSSkillEngine {
 
         // 绑定常用类到 JS 上下文
         bindJavaClasses();
+        loadUtilityFunctions();
     }
 
     public static JSSkillEngine getInstance() {
@@ -38,13 +39,31 @@ public class JSSkillEngine {
         return INSTANCE;
     }
 
+    private void loadUtilityFunctions() {
+        try {
+            String utilsPath = "/assets/corpseorigin/scripts/gongfu/gongfu_utils.js";
+            var resource = getClass().getResourceAsStream(utilsPath);
+
+            if (resource != null) {
+                try (InputStreamReader reader = new InputStreamReader(resource)) {
+                    engine.eval(reader);
+                    CorpseOrigin.LOGGER.info("成功加载工具函数库");
+                }
+            } else {
+                CorpseOrigin.LOGGER.warn("未找到工具函数文件：{}", utilsPath);
+            }
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("加载工具函数失败", e);
+        }
+    }
+
     /**
      * 绑定 Java 类到 JS 环境
      */
     private void bindJavaClasses() {
         try {
             engine.put("SkillEffects", com.phagens.corpseorigin.GongFU.JSskill.SkillEffects.class);
-            engine.put("ParticlePattern", com.phagens.corpseorigin.GongFU.JSskill.SkillEffects.class);
+            engine.put("ProjectileManager", com.phagens.corpseorigin.GongFU.JSskill.Factory.ProjectileManager.getInstance());
             CorpseOrigin.LOGGER.debug("JS 引擎初始化完成");
         } catch (Exception e) {
             CorpseOrigin.LOGGER.error("JS 引擎绑定 Java 类失败", e);
@@ -84,8 +103,15 @@ public class JSSkillEngine {
             context.setAttribute("data", gongFaData, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("skillName", skillName, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("SkillEffects", com.phagens.corpseorigin.GongFU.JSskill.SkillEffects.class, ScriptContext.ENGINE_SCOPE);
-            context.setAttribute("ParticlePattern", com.phagens.corpseorigin.GongFU.JSskill.SkillEffects.class, ScriptContext.ENGINE_SCOPE);
-
+            context.setAttribute("ProjectileManager", com.phagens.corpseorigin.GongFU.JSskill.Factory.ProjectileManager.getInstance(), ScriptContext.ENGINE_SCOPE);
+            var lookAngle = player.getLookAngle();
+            context.setAttribute("lookX", lookAngle.x, ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("lookY", lookAngle.y, ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("lookZ", lookAngle.z, ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("playerX", player.getX(), ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("playerY", player.getY(), ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("playerZ", player.getZ(), ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("eyeY", player.getEyeY(), ScriptContext.ENGINE_SCOPE);
             Object scriptObj = script.eval(context);
             // 脚本应该返回一个包含 activate 方法的对象
             if (scriptObj instanceof org.openjdk.nashorn.api.scripting.ScriptObjectMirror) {

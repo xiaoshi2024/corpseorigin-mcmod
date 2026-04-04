@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class GongFuMenu extends AbstractContainerMenu {
 
-    private static final int CONTAINER_SIZE = 6; // 或其他你需要的数量
+    private static final int CONTAINER_SIZE = 10; // 或其他你需要的数量
     // 使用持久化数据存储
     private final SimpleContainer container;
 
@@ -55,6 +55,7 @@ public class GongFuMenu extends AbstractContainerMenu {
                 GongFuMenu.this.slotsChanged(this);
                 GongFUDataUtlis.applyGongFaAttributes(player);
             }
+
         };
         // 从NBT恢复物品
         if (!containerData.isEmpty()) {   // 如果存在保存的数据
@@ -71,6 +72,19 @@ public class GongFuMenu extends AbstractContainerMenu {
         ContainerHelper.saveAllItems(containerData, container.getItems(), player.registryAccess()); // 序列化所有物品到NBT
 
         playerData.put("GongFuContainer", containerData);  // 将容器数据保存到玩家数据中
+    }
+
+    private boolean hasGongFaType(String typeId) {
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            ItemStack stack = container.getItem(i);
+            if (!stack.isEmpty() && stack.getItem() instanceof BaseGongFaItem gongFaItem) {
+                GongFaData data = gongFaItem.getDataFromItem(stack);
+                if (data != null && data.getTypeId().equals(typeId)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
 
@@ -97,14 +111,20 @@ public class GongFuMenu extends AbstractContainerMenu {
 
     private void addCustomSlots() {
         //1列
-        this.addSlot(new Slot(container, 0, 16, 20));
-        this.addSlot(new Slot(container, 1, 16, 45));
+        this.addSlot(new GongFuSlot(container, 0, 16, 20));
+        this.addSlot(new GongFuSlot(container, 1, 16, 45));
         //2列
-        this.addSlot(new Slot(container, 2, 48, 20));
-        this.addSlot(new Slot(container, 3, 48, 45));
+        this.addSlot(new GongFuSlot(container, 2, 48, 20));
+        this.addSlot(new GongFuSlot(container, 3, 48, 45));
         //3列
-        this.addSlot(new Slot(container, 4, 80, 20));
-        this.addSlot(new Slot(container, 5, 80, 45));
+        this.addSlot(new GongFuSlot(container, 4, 80, 20));
+        this.addSlot(new GongFuSlot(container, 5, 80, 45));
+
+        this.addSlot(new GongFuSlot(container, 6, 110, 20));
+        this.addSlot(new GongFuSlot(container, 7, 110, 45));
+
+        this.addSlot(new GongFuSlot(container, 8, 140, 20));
+        this.addSlot(new GongFuSlot(container, 9, 140, 45));
 
     }
 
@@ -194,6 +214,35 @@ public class GongFuMenu extends AbstractContainerMenu {
                     handler.forgetSkill(skill);
                 }
             }
+        }
+    }
+
+    public class GongFuSlot extends Slot {
+        public GongFuSlot(Container container, int slot, int x, int y) {
+            super(container, slot, x, y);
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            if (stack.getItem() instanceof BaseGongFaItem gongFaItem) {
+                GongFaData newData = gongFaItem.getDataFromItem(stack);
+                if (newData != null) {
+                    if (hasGongFaType(newData.getTypeId())) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            return 1;
+        }
+
+        @Override
+        public int getMaxStackSize(ItemStack stack) {
+            return 1;
         }
     }
 

@@ -57,23 +57,6 @@ public class BaseGongFaItem extends Item {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
         GongFaData data = getDataFromItem(stack);
         if (data != null){
-//            // 注意：物品名称已经在 getName() 中返回，MC 会自动显示在顶部
-//            // 这里不需要再添加名称，只添加其他信息
-//            tooltipComponents.add(Component.literal(getCultivationTypeName(data.getType())));
-//            // 显示稀有度
-//            tooltipComponents.add(Component.literal(getRarityColor(data.getRarity()) +
-//                    "品级: " + getRarityName(data.getRarity())));
-//            tooltipComponents.add(Component.literal("§e功法层级: " + getCengName(data.getCeng())));
-//            // 显示属性
-//            tooltipComponents.add(Component.literal("§6武学加持:"));
-//            data.getAttributes().forEach((attr, value) ->
-//                    tooltipComponents.add(Component.literal("§7" + getAttributeName(attr) + ": §a+" + String.format("%.1f", value))));
-//            // 显示技能
-//            if (!data.getSkills().isEmpty()) {
-//                tooltipComponents.add(Component.literal("§d技艺:"));
-//                data.getSkills().forEach(skill ->
-//                        tooltipComponents.add(Component.literal("§7• " + skill)));
-//            }
             String type = data.getType();
             String cengPrefix = getCengPrefix(type);
             String attrPrefix = getAttributePrefix(type);
