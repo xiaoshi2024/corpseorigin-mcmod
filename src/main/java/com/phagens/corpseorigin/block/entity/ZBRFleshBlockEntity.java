@@ -25,6 +25,7 @@ package com.phagens.corpseorigin.block.entity;
 
 import com.phagens.corpseorigin.register.BlockEntityRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
@@ -44,6 +45,13 @@ public class ZBRFleshBlockEntity extends BlockEntity implements GeoBlockEntity {
     /** GeckoLib动画实例缓存 */
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
+    /** 击杀数 - 用于触发结构生成 */
+    private int kills = 0;
+    /** 生成结构所需的击杀数 */
+    public static final int REQUIRED_KILLS = 10;
+    /** 尸巢主人UUID */
+    private java.util.UUID owner = null;
+
     /**
      * 构造函数
      *
@@ -52,6 +60,37 @@ public class ZBRFleshBlockEntity extends BlockEntity implements GeoBlockEntity {
      */
     public ZBRFleshBlockEntity(BlockPos pos, BlockState state) {
         super(BlockEntityRegistry.ZBR_FLESH.get(), pos, state);
+    }
+
+    /**
+     * 获取当前击杀数
+     */
+    public int getKills() {
+        return kills;
+    }
+
+    /**
+     * 添加击杀数
+     */
+    public void addKills() {
+        kills++;
+        setChanged();
+        com.phagens.corpseorigin.CorpseOrigin.LOGGER.info("尸巢肉块击杀数增加，当前击杀数: {}/{}", kills, REQUIRED_KILLS);
+    }
+
+    /**
+     * 获取尸巢主人
+     */
+    public java.util.UUID getOwner() {
+        return owner;
+    }
+
+    /**
+     * 设置尸巢主人
+     */
+    public void setOwner(java.util.UUID owner) {
+        this.owner = owner;
+        setChanged();
     }
 
     /**
@@ -86,4 +125,6 @@ public class ZBRFleshBlockEntity extends BlockEntity implements GeoBlockEntity {
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return this.cache;
     }
+
+
 }

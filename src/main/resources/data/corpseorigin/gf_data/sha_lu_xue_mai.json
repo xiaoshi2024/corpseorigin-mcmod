@@ -8,7 +8,7 @@
   "attributes": {
     "attack_damage": 35.0,
     "max_health": 40.0,
-    "movement_speed": 0.4
+    "movement_speed": 0.15
   },
   "skills": [
     "sha_lu_xue_mai"
