@@ -3,6 +3,7 @@ package com.phagens.corpseorigin.GongFU.JSskill;
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.GongFU.GongFaZL.GongFaData;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import org.jline.utils.InputStreamReader;
 import org.openjdk.nashorn.api.scripting.NashornScriptEngineFactory;
 
@@ -90,7 +91,7 @@ public class JSSkillEngine {
     /**
      * 执行功法技能脚本（支持任意实体）
      */
-    public boolean executeSkillForEntity(String skillName, net.minecraft.world.entity.LivingEntity entity, GongFaData gongFaData) {
+    public boolean executeSkillForEntity(String skillName, LivingEntity entity, GongFaData gongFaData) {
         try {
             String scriptPath = "/assets/corpseorigin/scripts/gongfu/" +
                     skillName.toLowerCase().replace(" ", "_") + ".js";
