@@ -70,6 +70,22 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
     private int niPoQuanCooldown = 0;
     private int poGangCooldown = 0;
     private int tianGangPoCooldown = 0;
+    
+    // 逆破拳状态（修复Thread.sleep问题）
+    private boolean niPoQuanActive = false;
+    private int niPoQuanTick = 0;
+    private int niPoQuanHits = 0;
+    private static final int NI_PO_QUAN_HIT_INTERVAL = 5; // 每5tick攻击一次
+    private static final int NI_PO_QUAN_MAX_HITS = 3; // 最多攻击3次
+    
+    // 属性重置系统（修复属性不恢复问题）
+    private int attributeResetTick = 0;
+    private double originalScale = 1.0D;
+    private double originalSpeed = 0.4D;
+    private double originalDamage = 15.0D;
+    private double originalArmor = 10.0D;
+    private boolean attributesModified = false;
+    private static final int ATTRIBUTE_RESET_DELAY = 600; // 30秒后重置属性
 
     // 龙右的智能系统
     private int intelligenceCheckCooldown = 0;
@@ -352,6 +368,16 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
         // 服务端：技能触发逻辑
         if (!this.level().isClientSide && this.isAlive()) {
             useSkills();
+        }
+        
+        // 服务端：逆破拳连续攻击处理
+        if (!this.level().isClientSide && niPoQuanActive) {
+            tickNiPoQuan();
+        }
+        
+        // 服务端：属性重置处理
+        if (!this.level().isClientSide && attributesModified) {
+            tickAttributeReset();
         }
 
         // 服务端：状态系统更新
@@ -1167,5 +1193,98 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
                 }
             }
         }
+    }
+    
+    /**
+     * 启动逆破拳技能
+     * 由 LongyouTianGangQi.useNiPoQuan 调用
+     */
+    public void startNiPoQuan() {
+        this.niPoQuanActive = true;
+        this.niPoQuanTick = 0;
+        this.niPoQuanHits = 0;
+    }
+    
+    /**
+     * 逆破拳连续攻击处理（每tick调用）
+     * 替代原来的Thread.sleep阻塞方式
+     */
+    private void tickNiPoQuan() {
+        niPoQuanTick++;
+        
+        // 每隔NI_PO_QUAN_HIT_INTERVAL tick执行一次攻击
+        if (niPoQuanTick % NI_PO_QUAN_HIT_INTERVAL == 0 && niPoQuanHits < NI_PO_QUAN_MAX_HITS) {
+            LivingEntity target = this.getTarget();
+            if (target != null && target.isAlive() && this.isWithinMeleeAttackRange(target)) {
+                ServerLevel serverLevel = (ServerLevel) this.level();
+                
+                // 生成拳击粒子
+                for (int j = 0; j < 10; j++) {
+                    double x = target.getX() + (this.random.nextDouble() - 0.5) * 1.0;
+                    double y = target.getY() + target.getBbHeight() * 0.5 + (this.random.nextDouble() - 0.5) * 1.0;
+                    double z = target.getZ() + (this.random.nextDouble() - 0.5) * 1.0;
+                    serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, x, y, z, 1, 0.1, 0.1, 0.1, 0.1);
+                }
+                
+                // 造成伤害
+                target.hurt(serverLevel.damageSources().mobAttack(this), 10.0F);
+                
+                // 播放攻击音效
+                serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), 
+                        net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_STRONG, 
+                        net.minecraft.sounds.SoundSource.HOSTILE, 
+                        1.0F, 0.8F + this.random.nextFloat() * 0.2F);
+                
+                niPoQuanHits++;
+            }
+        }
+        
+        // 攻击完成或目标丢失，结束技能
+        if (niPoQuanHits >= NI_PO_QUAN_MAX_HITS || this.getTarget() == null || !this.getTarget().isAlive()) {
+            niPoQuanActive = false;
+            niPoQuanTick = 0;
+            niPoQuanHits = 0;
+        }
+    }
+    
+    /**
+     * 标记属性已被修改，启动重置计时器
+     */
+    public void markAttributesModified() {
+        if (!attributesModified) {
+            // 保存原始属性值
+            originalScale = this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE).getBaseValue();
+            originalSpeed = this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).getBaseValue();
+            originalDamage = this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE).getBaseValue();
+            originalArmor = this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR).getBaseValue();
+        }
+        attributesModified = true;
+        attributeResetTick = ATTRIBUTE_RESET_DELAY;
+    }
+    
+    /**
+     * 属性重置处理（每tick调用）
+     */
+    private void tickAttributeReset() {
+        attributeResetTick--;
+        
+        if (attributeResetTick <= 0) {
+            resetAttributes();
+        }
+    }
+    
+    /**
+     * 重置所有属性到原始值
+     */
+    public void resetAttributes() {
+        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE).setBaseValue(originalScale);
+        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).setBaseValue(originalSpeed);
+        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE).setBaseValue(originalDamage);
+        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR).setBaseValue(originalArmor);
+        attributesModified = false;
+        attributeResetTick = 0;
+        
+        CorpseOrigin.LOGGER.debug("龙右属性已重置: scale={}, speed={}, damage={}, armor={}", 
+                originalScale, originalSpeed, originalDamage, originalArmor);
     }
 }
