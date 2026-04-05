@@ -4,6 +4,7 @@ import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.entity.EntityAI.Vibrationsys.ModVibrationUser;
 import com.phagens.corpseorigin.client.skin.ZbSkinLoader;
 import com.phagens.corpseorigin.client.skin.ZbSkinState;
+import com.phagens.corpseorigin.entity.skills.InnateSkillManager;
 import com.phagens.corpseorigin.network.ZbSkinUpdatePacket;
 import com.phagens.corpseorigin.register.Moditems;
 import com.phagens.corpseorigin.register.ModSounds;
@@ -787,6 +788,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
 
             // 服务端：随机触发special技能
             tickSpecialSkill();
+
+            InnateSkillManager.tick(this);
         }
 
         // 客户端：加载皮肤
