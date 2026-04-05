@@ -306,15 +306,15 @@ public class PlayerCorpseEventHandler {
                             if (handler != null) {
                                 handler.addEvolutionPoints(1);
                                 player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.corpseorigin.evolution_point_gained"));
-                                CorpseOrigin.LOGGER.info("尸族玩家 {} 攻击村民后获得 1 点进化点",
-                                        player.getName().getString());
+//                                CorpseOrigin.LOGGER.info("尸族玩家 {} 攻击村民后获得 1 点进化点",
+//                                        player.getName().getString());
                             }
                         }
                     }
 
-                    CorpseOrigin.LOGGER.debug("尸族玩家 {} 攻击 {} 恢复 {} 饥饿度和 {} 生命值",
-                            player.getName().getString(), target.getName().getString(),
-                            newHunger - currentHunger, healAmount);
+//                    CorpseOrigin.LOGGER.debug("尸族玩家 {} 攻击 {} 恢复 {} 饥饿度和 {} 生命值",
+//                            player.getName().getString(), target.getName().getString(),
+//                            newHunger - currentHunger, healAmount);
                 }
             }
         }

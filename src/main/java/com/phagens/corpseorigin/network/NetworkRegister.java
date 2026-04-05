@@ -58,6 +58,20 @@ public class NetworkRegister {
                 LongyouEarthquakeBlockPacket::handleClient
         );
 
-        CorpseOrigin.LOGGER.info("NetworkRegister 网络包注册完成 - 共注册了 5 个包");
+        // ⭐ 新增：注册龙右对话包 (客户端 → 服务端)
+        registrar.playToServer(
+                LongyouDialoguePacket.TYPE,
+                LongyouDialoguePacket.STREAM_CODEC,
+                LongyouDialoguePacket::handle
+        );
+
+        // ⭐ 新增：注册龙右对话选项包 (服务端 → 客户端)
+        registrar.playToClient(
+                LongyouDialogueOptionsPacket.TYPE,
+                LongyouDialogueOptionsPacket.STREAM_CODEC,
+                LongyouDialogueOptionsPacket::handle
+        );
+
+        CorpseOrigin.LOGGER.info("NetworkRegister 网络包注册完成 - 共注册了 7 个包");
     }
 }

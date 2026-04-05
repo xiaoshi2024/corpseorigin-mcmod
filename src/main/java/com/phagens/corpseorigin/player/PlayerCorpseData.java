@@ -25,8 +25,8 @@ public class PlayerCorpseData {
     public static final float CONSCIOUSNESS_RETAIN_CHANCE = 0.05f; // 5%概率保留意识
 
     public static void setPlayerAsCorpse(Player player, int corpseType) {
-        player.setData(CorpsePlayerAttachment.IS_CORPSE, true);
-        player.setData(CorpsePlayerAttachment.CORPSE_TYPE, corpseType);
+        player.setData(CorpsePlayerAttachment.IS_CORPSE.get(), true);
+        player.setData(CorpsePlayerAttachment.CORPSE_TYPE.get(), corpseType);
 
         CompoundTag data = new CompoundTag();
         data.putString(KEY_ORIGINAL_NAME, player.getName().getString());
@@ -46,27 +46,27 @@ public class PlayerCorpseData {
         data.putBoolean(KEY_HAS_CONSCIOUSNESS, hasConsciousness);
         data.putBoolean(KEY_CONSCIOUSNESS_RESTORED, false);
 
-        player.setData(CorpsePlayerAttachment.CORPSE_DATA, data);
+        player.setData(CorpsePlayerAttachment.CORPSE_DATA.get(), data);
         syncToClient(player);
     }
 
     public static void removeCorpseState(Player player) {
-        player.setData(CorpsePlayerAttachment.IS_CORPSE, false);
-        player.setData(CorpsePlayerAttachment.CORPSE_TYPE, 0);
-        player.setData(CorpsePlayerAttachment.CORPSE_DATA, new CompoundTag());
+        player.setData(CorpsePlayerAttachment.IS_CORPSE.get(), false);
+        player.setData(CorpsePlayerAttachment.CORPSE_TYPE.get(), 0);
+        player.setData(CorpsePlayerAttachment.CORPSE_DATA.get(), new CompoundTag());
         syncToClient(player);
     }
 
     public static boolean isCorpse(Player player) {
-        return player.getData(CorpsePlayerAttachment.IS_CORPSE);
+        return player.getData(CorpsePlayerAttachment.IS_CORPSE.get());
     }
 
     public static int getCorpseType(Player player) {
-        return player.getData(CorpsePlayerAttachment.CORPSE_TYPE);
+        return player.getData(CorpsePlayerAttachment.CORPSE_TYPE.get());
     }
 
     public static CompoundTag getCorpseData(Player player) {
-        return player.getData(CorpsePlayerAttachment.CORPSE_DATA);
+        return player.getData(CorpsePlayerAttachment.CORPSE_DATA.get());
     }
 
     public static String getOriginalName(Player player) {
@@ -84,7 +84,7 @@ public class PlayerCorpseData {
     public static void setEvolutionLevel(Player player, int level) {
         CompoundTag data = getCorpseData(player);
         data.putInt(KEY_EVOLUTION_LEVEL, Math.max(1, Math.min(5, level)));
-        player.setData(CorpsePlayerAttachment.CORPSE_DATA, data);
+        player.setData(CorpsePlayerAttachment.CORPSE_DATA.get(), data);
         syncToClient(player);
     }
 
@@ -95,7 +95,7 @@ public class PlayerCorpseData {
     public static void addKill(Player player) {
         CompoundTag data = getCorpseData(player);
         data.putInt(KEY_KILLS, data.getInt(KEY_KILLS) + 1);
-        player.setData(CorpsePlayerAttachment.CORPSE_DATA, data);
+        player.setData(CorpsePlayerAttachment.CORPSE_DATA.get(), data);
         syncToClient(player);
     }
 
@@ -106,7 +106,7 @@ public class PlayerCorpseData {
     public static void setHunger(Player player, int hunger) {
         CompoundTag data = getCorpseData(player);
         data.putInt(KEY_HUNGER, Math.max(0, Math.min(100, hunger)));
-        player.setData(CorpsePlayerAttachment.CORPSE_DATA, data);
+        player.setData(CorpsePlayerAttachment.CORPSE_DATA.get(), data);
         syncToClient(player);
     }
 
@@ -125,7 +125,7 @@ public class PlayerCorpseData {
     public static void setHasWing(Player player, boolean hasWing) {
         CompoundTag data = getCorpseData(player);
         data.putBoolean(KEY_HAS_WING, hasWing);
-        player.setData(CorpsePlayerAttachment.CORPSE_DATA, data);
+        player.setData(CorpsePlayerAttachment.CORPSE_DATA.get(), data);
         syncToClient(player);
     }
 
@@ -136,7 +136,7 @@ public class PlayerCorpseData {
     public static void setHasTail(Player player, boolean hasTail) {
         CompoundTag data = getCorpseData(player);
         data.putBoolean(KEY_HAS_TAIL, hasTail);
-        player.setData(CorpsePlayerAttachment.CORPSE_DATA, data);
+        player.setData(CorpsePlayerAttachment.CORPSE_DATA.get(), data);
         syncToClient(player);
     }
 
@@ -147,7 +147,7 @@ public class PlayerCorpseData {
     public static void setDisguised(Player player, boolean isDisguised) {
         CompoundTag data = getCorpseData(player);
         data.putBoolean(KEY_IS_DISGUISED, isDisguised);
-        player.setData(CorpsePlayerAttachment.CORPSE_DATA, data);
+        player.setData(CorpsePlayerAttachment.CORPSE_DATA.get(), data);
         syncToClient(player);
     }
 
@@ -158,7 +158,7 @@ public class PlayerCorpseData {
     public static void setExtraEyeCount(Player player, int count) {
         CompoundTag data = getCorpseData(player);
         data.putInt(KEY_EXTRA_EYE_COUNT, Math.max(0, Math.min(9, count)));
-        player.setData(CorpsePlayerAttachment.CORPSE_DATA, data);
+        player.setData(CorpsePlayerAttachment.CORPSE_DATA.get(), data);
         syncToClient(player);
     }
 
@@ -211,7 +211,7 @@ public class PlayerCorpseData {
     public static void restoreConsciousness(Player player) {
         CompoundTag data = getCorpseData(player);
         data.putBoolean(KEY_CONSCIOUSNESS_RESTORED, true);
-        player.setData(CorpsePlayerAttachment.CORPSE_DATA, data);
+        player.setData(CorpsePlayerAttachment.CORPSE_DATA.get(), data);
         syncToClient(player);
     }
 

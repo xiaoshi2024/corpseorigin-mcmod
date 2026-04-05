@@ -12,6 +12,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -170,6 +171,11 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
     private int lastHurtTick = -1000; // 上次被攻击的游戏刻
     private static final int HURT_MEMORY_DURATION = 200; // 被攻击记忆持续时间（10秒）
     
+    // 尸兄玩家攻击计数（用于判断是否造反）
+    private final java.util.Map<java.util.UUID, Integer> corpsePlayerAttacks = new java.util.HashMap<>();
+    private static final int CORPSE_PLAYER_ATTACK_THRESHOLD = 3; // 尸兄玩家攻击阈值（超过此值视为造反）
+    private static final int ATTACK_RESET_DURATION = 600; // 攻击计数重置时间（30秒）
+    
     // 战斗阶段系统
     private enum Phase {
         PHASE_1, // 第一阶段：普通形态
@@ -286,13 +292,19 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
     /**
      * 判断是否应该攻击某个目标
      * 用于AI目标选择
-     * 龙右不会主动攻击已成为尸兄的玩家（同类）
+     * 龙右不会主动攻击已成为尸兄的玩家（同类），但会攻击造反的尸兄玩家
      */
     private boolean shouldAttackTarget(net.minecraft.world.entity.LivingEntity entity) {
-        // 不攻击已成为尸兄的玩家（同类）
+        // 检查是否为造反的尸兄玩家
         if (entity instanceof Player player) {
             if (com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
-                return false; // 龙右作为尸王，不会攻击同类尸兄玩家
+                // 检查该尸兄玩家是否造反（攻击次数超过阈值）
+                java.util.UUID playerId = player.getUUID();
+                int attackCount = corpsePlayerAttacks.getOrDefault(playerId, 0);
+                if (attackCount >= CORPSE_PLAYER_ATTACK_THRESHOLD) {
+                    return true; // 造反的尸兄玩家，应该攻击
+                }
+                return false; // 普通尸兄玩家，不攻击
             }
         }
         
@@ -400,9 +412,31 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
             // 播放气场技能动画（任何攻击都要播放）
             this.triggerAuraSkill();
 
+            // 检测尸兄玩家攻击
+            Entity attackerEntity = source.getEntity();
+            if (attackerEntity instanceof Player player && com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
+                // 增加尸兄玩家攻击计数
+                java.util.UUID playerId = player.getUUID();
+                int attackCount = corpsePlayerAttacks.getOrDefault(playerId, 0) + 1;
+                corpsePlayerAttacks.put(playerId, attackCount);
+                
+                // 检查是否达到攻击阈值
+                if (attackCount >= CORPSE_PLAYER_ATTACK_THRESHOLD) {
+                    // 视为造反，发送警告消息
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§4§l[尸王·龙右] §r你竟敢对我动手，视为造反！"));
+                    // 广播消息给附近玩家
+                    if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                        for (Player nearbyPlayer : serverLevel.getEntitiesOfClass(Player.class, this.getBoundingBox().inflate(64))) {
+                            if (!nearbyPlayer.getUUID().equals(playerId)) {
+                                nearbyPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("§4§l[尸王·龙右] §r" + player.getName().getString() + " 竟敢对我动手，视为造反！"));
+                            }
+                        }
+                    }
+                }
+            }
+
             // 远程攻击特殊处理
             if (isRangedAttack) {
-                Entity attackerEntity = source.getEntity();
                 if (attackerEntity instanceof LivingEntity attacker && attacker.isAlive()) {
                     // 获取攻击者手持物品
                     ItemStack mainHandItem = attacker.getItemBySlot(EquipmentSlot.MAINHAND);
@@ -656,6 +690,13 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
             // 兴趣值自然衰减（每150 tick减少1点）
             if (this.tickCount % 150 == 0 && interest > 0) {
                 interest--;
+            }
+            
+            // 每30秒重置攻击计数（如果玩家停止攻击）
+            if (this.tickCount % ATTACK_RESET_DURATION == 0) {
+                // 清空攻击计数，给玩家改过自新的机会
+                corpsePlayerAttacks.clear();
+                CorpseOrigin.LOGGER.debug("龙右重置尸兄玩家攻击计数");
             }
         }
 
@@ -1238,15 +1279,25 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
 
     /**
      * 判断是否应该攻击某个目标
-     * 龙右作为尸王，不会食用同类（尸兄）
+     * 龙右作为尸王，不会食用同类（尸兄），但会攻击造反的尸兄玩家
      * 在不饿或高兴时不会主动攻击其他生物
      */
     @Override
     public boolean doHurtTarget(net.minecraft.world.entity.Entity entity) {
-        // 龙右不会攻击尸兄（同类）
+        // 龙右不会攻击尸兄（同类），但会攻击造反的尸兄玩家
         if (entity instanceof LowerLevelZbEntity) {
             CorpseOrigin.LOGGER.debug("龙右拒绝攻击尸兄（同类）");
             return false;
+        }
+        
+        // 检查是否为造反的尸兄玩家
+        if (entity instanceof Player player && com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
+            java.util.UUID playerId = player.getUUID();
+            int attackCount = corpsePlayerAttacks.getOrDefault(playerId, 0);
+            if (attackCount < CORPSE_PLAYER_ATTACK_THRESHOLD) {
+                CorpseOrigin.LOGGER.debug("龙右拒绝攻击普通尸兄玩家（同类）");
+                return false;
+            }
         }
         
         // 检查状态是否允许攻击
@@ -1909,4 +1960,113 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
         CorpseOrigin.LOGGER.debug("龙右属性已重置: scale={}, speed={}, damage={}, armor={}", 
                 originalScale, originalSpeed, originalDamage, originalArmor);
     }
-}
+    
+    // ==================== 右键交互系统 ====================
+
+    /**
+     * 处理实体交互
+     */
+    public net.minecraft.world.InteractionResult mobInteract(Player player, InteractionHand hand) {
+        // 只处理主手右键
+        if (hand != InteractionHand.MAIN_HAND) {
+            return net.minecraft.world.InteractionResult.PASS;
+        }
+
+        // 只在服务端处理逻辑
+        if (player.level().isClientSide) {
+            return net.minecraft.world.InteractionResult.PASS;
+        }
+
+        // 检查玩家是否为尸兄
+        if (com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
+            // 发送打开对话框的数据包
+            openDialogueGui(player);
+            return net.minecraft.world.InteractionResult.SUCCESS;
+        } else {
+            // 非尸兄玩家，显示警告信息
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§4§l只有尸兄才能与尸王对话！"));
+            return net.minecraft.world.InteractionResult.PASS;
+        }
+    }
+    
+    /**
+     * 打开对话框GUI
+     */
+    private void openDialogueGui(Player player) {
+        // 发送对话选项数据包到客户端
+        if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+            String question = "[尸王·龙右] 你来了，我的部下。";
+            java.util.List<String> options = java.util.Arrays.asList(
+                "大人您有何吩咐？",
+                "任务升级系统",
+                "尸王钦点",
+                "关于尸族"
+            );
+            
+            com.phagens.corpseorigin.network.LongyouDialogueOptionsPacket packet = 
+                new com.phagens.corpseorigin.network.LongyouDialogueOptionsPacket(question, options);
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(serverPlayer, packet);
+        }
+    }
+    
+    /**
+     * 处理对话选项选择
+     */
+    public void handleDialogueOption(Player player, String option) {
+        switch (option) {
+            case "大人您有何吩咐？":
+                handleWhatDoYouCommand(player);
+                break;
+            case "任务升级系统":
+                handleTaskUpgradeSystem(player);
+                break;
+            case "尸王钦点":
+                handleCorpseKingAppointment(player);
+                break;
+            case "关于尸族":
+                handleAboutCorpseClan(player);
+                break;
+            default:
+                player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§4§l无效的选项！"));
+                break;
+        }
+    }
+    
+    /**
+     * 处理"大人您有何吩咐？"选项
+     */
+    private void handleWhatDoYouCommand(Player player) {
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r我的部下，去为我收集更多的生命力，壮大我尸族的势力。"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r消灭那些反抗我们的人类，将他们转化为我们的同类。"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r当你变得足够强大时，我会赐予你更强大的力量。"));
+    }
+    
+    /**
+     * 处理"任务升级系统"选项
+     */
+    private void handleTaskUpgradeSystem(Player player) {
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r我已为你开通了任务系统，完成任务可获得进化点和特殊奖励。"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r任务分为：消灭人类、感染村民、收集资源等多种类型。"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r完成的任务越多，你的等级越高，获得的奖励也越丰厚。"));
+    }
+    
+    /**
+     * 处理"尸王钦点"选项
+     */
+    private void handleCorpseKingAppointment(Player player) {
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r作为我的部下，你展现出了非凡的潜力。"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r我钦点你为尸族的精英战士，赐予你特殊的能力。"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r好好利用这份力量，为尸族的崛起而战！"));
+        
+        // 可以在这里添加实际的能力赐予逻辑
+    }
+    
+    /**
+     * 处理"关于尸族"选项
+     */
+    private void handleAboutCorpseClan(Player player) {
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r我们尸族是这个世界的新主宰，将取代脆弱的人类。"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r通过不断进化，我们将变得更加强大，无可匹敌。"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r尸族的未来，就掌握在你们这些部下的手中。"));
+    }
+} 
