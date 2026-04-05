@@ -18,6 +18,9 @@ public class LongyouSkills {
             // 播放玄武体激活动画
             entity.triggerAuraSkill();
             
+            // 标记属性已修改（30秒后自动重置）
+            entity.markAttributesModified();
+            
             // 增加护甲和抗性
             entity.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR).setBaseValue(
                     entity.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR).getBaseValue() + 10.0D

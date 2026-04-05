@@ -22,6 +22,9 @@ public class LongyouTianGangQi {
             // 播放技能动画
             entity.triggerAuraSkill();
             
+            // 标记属性已修改（30秒后自动重置）
+            entity.markAttributesModified();
+            
             // 大幅度提高速度
             entity.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).setBaseValue(
                     entity.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).getBaseValue() * 2.0D
@@ -57,6 +60,9 @@ public class LongyouTianGangQi {
             
             // 播放技能动画
             entity.triggerAuraSkill();
+            
+            // 标记属性已修改（30秒后自动重置）
+            entity.markAttributesModified();
             
             // 身体变小 - 使用实体尺寸属性
             entity.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.SCALE).setBaseValue(0.75D);
@@ -244,6 +250,9 @@ public class LongyouTianGangQi {
             // 播放技能动画
             entity.triggerAuraSkill();
             
+            // 标记属性已修改（30秒后自动重置）
+            entity.markAttributesModified();
+            
             // 八重合一，增强所有属性
             entity.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).setBaseValue(
                     entity.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).getBaseValue() * 1.5D
@@ -291,38 +300,14 @@ public class LongyouTianGangQi {
     // 逆破拳
     public static void useNiPoQuan(LongyouEntity entity) {
         if (!entity.level().isClientSide) {
-            ServerLevel level = (ServerLevel) entity.level();
-            
             // 播放技能动画
             entity.triggerAuraSkill();
             
-            // 打出强有力的连续拳击
-            LivingEntity target = entity.getTarget();
-            if (target != null) {
-                // 连续攻击3次
-                for (int i = 0; i < 3; i++) {
-                    // 生成拳击粒子
-                    for (int j = 0; j < 10; j++) {
-                        double x = target.getX() + (entity.getRandom().nextDouble() - 0.5) * 1.0;
-                        double y = target.getY() + target.getBbHeight() * 0.5 + (entity.getRandom().nextDouble() - 0.5) * 1.0;
-                        double z = target.getZ() + (entity.getRandom().nextDouble() - 0.5) * 1.0;
-                        level.sendParticles(ParticleTypes.POOF, x, y, z, 1, 0.1, 0.1, 0.1, 0.1);
-                    }
-                    
-                    // 造成伤害
-                    target.hurt(level.damageSources().mobAttack(entity), 10.0F);
-                    
-                    // 短暂延迟
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
+            // 启动逆破拳状态（由tick方法处理连续攻击）
+            entity.startNiPoQuan();
             
             // 播放音效
-            level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), 
+            entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), 
                     SoundEvents.PLAYER_ATTACK_STRONG, 
                     net.minecraft.sounds.SoundSource.HOSTILE, 
                     2.0F, 0.8F);
