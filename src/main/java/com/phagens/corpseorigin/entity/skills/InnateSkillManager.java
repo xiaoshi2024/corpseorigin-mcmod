@@ -61,6 +61,39 @@ public class InnateSkillManager {
     }
 
 
+    public static void forceCastSkill(LivingEntity entity, String skillName) {
+        if (entity.level().isClientSide) {
+            return;
+        }
+
+        try {
+            JSSkillEngine engine = JSSkillEngine.getInstance();
+            boolean success = engine.executeSkillForEntity(skillName, entity, null);
+
+            if (success) {
+                CorpseOrigin.LOGGER.info("实体 {} 强制释放技能: {}", entity.getId(), skillName);
+            } else {
+                CorpseOrigin.LOGGER.warn("实体 {} 强制释放技能失败: {}", entity.getId(), skillName);
+            }
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("实体 {} 强制释放技能异常: {}", entity.getId(), skillName, e);
+        }
+    }
+
+    public static void forceCastRandomSkill(LivingEntity entity) {
+        UUID uuid = entity.getUUID();
+        SkillData data = entitySkills.get(uuid);
+
+        if (data == null || data.skills.isEmpty()) {
+            CorpseOrigin.LOGGER.warn("实体 {} 没有设置天生技能", entity.getId());
+            return;
+        }
+
+        String skillName = data.skills.get(entity.getRandom().nextInt(data.skills.size()));
+        forceCastSkill(entity, skillName);
+    }
+
+
     private static void executeSkill(LivingEntity entity, String skillName) {
         if (entity.level().isClientSide) {
             return;
