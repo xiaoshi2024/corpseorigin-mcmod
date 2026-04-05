@@ -10,6 +10,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -91,11 +92,36 @@ public class GongFaSkillManager {
             }
         }
     }
+
+    /**
+     * 激活功法技能的实现 - 支持任意实体
+     * @param entity 任意生物实体（玩家、怪物、NPC等）
+     * @param data 功法数据
+     */
+    public static void activateGongFuSkillsForEntity(LivingEntity entity, GongFaData data) {
+        if (entity.level().isClientSide) {
+            return;  // 只在服务器端执行
+        }
+
+        for (String skillName : data.getSkills()) {
+            CorpseOrigin.LOGGER.debug("尝试激活功法技艺（实体）：{}", skillName);
+
+            // 调用 JS 引擎执行脚本（支持任意实体）
+            boolean success = JSSkillEngine.getInstance()
+                    .executeSkillForEntity(skillName, entity, data);
+
+            if (success) {
+                CorpseOrigin.LOGGER.info("功法技艺执行成功（实体）：{}", skillName);
+            } else {
+                CorpseOrigin.LOGGER.warn("功法技艺执行失败（实体）：{}", skillName);
+            }
+        }
+    }
     /**
      * 检查玩家是否装备了指定功法
      */
     private static boolean hasGongFaEquipped(Player player, GongFaData data) {
-        // ✅ 从修行容器中获取物品，而不是玩家物品栏
+        //从修行容器中获取物品
         NonNullList<ItemStack> gongFuItems = GongFUDataUtlis.getGongFuItems(player);
 
         for (ItemStack stack : gongFuItems) {

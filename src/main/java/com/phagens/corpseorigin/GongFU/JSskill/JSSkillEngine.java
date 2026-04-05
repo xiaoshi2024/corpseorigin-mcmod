@@ -71,6 +71,15 @@ public class JSSkillEngine {
     }
 
     /**
+     * 执行功法技能脚本（仅玩家 - 向后兼容）
+     */
+    public boolean executeSkill(String skillName, ServerPlayer player, GongFaData gongFaData) {
+        return executeSkillForEntity(skillName, player, gongFaData);
+    }
+
+
+
+    /**
      * 执行功法技能脚本
      *
      * @param skillName 技能名称（如"shi_xian_jian"）
@@ -78,53 +87,52 @@ public class JSSkillEngine {
      * @param gongFaData 功法数据
      * @return 是否成功执行
      */
-    public boolean executeSkill(String skillName, ServerPlayer player, GongFaData gongFaData) {
+    /**
+     * 执行功法技能脚本（支持任意实体）
+     */
+    public boolean executeSkillForEntity(String skillName, net.minecraft.world.entity.LivingEntity entity, GongFaData gongFaData) {
         try {
-            // 获取脚本路径
             String scriptPath = "/assets/corpseorigin/scripts/gongfu/" +
                     skillName.toLowerCase().replace(" ", "_") + ".js";
 
-            // 检查缓存
             CompiledScript script = scriptCache.get(scriptPath);
-
-            // 如果没缓存，加载并编译
             if (script == null) {
                 script = loadAndCompileScript(scriptPath);
                 if (script == null) {
-                    CorpseOrigin.LOGGER.error("找不到技能脚本：{}", skillName);
                     return false;
                 }
                 scriptCache.put(scriptPath, script);
             }
-
             ScriptContext context = engine.getContext();
-            context.setAttribute("player", player, ScriptContext.ENGINE_SCOPE);
-            context.setAttribute("world", player.serverLevel(), ScriptContext.ENGINE_SCOPE);
+            var lookAngle = entity.getLookAngle();
+
+            context.setAttribute("entity", entity, ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("player", entity instanceof ServerPlayer ? (ServerPlayer) entity : null, ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("world", entity.level(), ScriptContext.ENGINE_SCOPE);
             context.setAttribute("data", gongFaData, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("skillName", skillName, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("SkillEffects", com.phagens.corpseorigin.GongFU.JSskill.SkillEffects.class, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("ProjectileManager", com.phagens.corpseorigin.GongFU.JSskill.Factory.ProjectileManager.getInstance(), ScriptContext.ENGINE_SCOPE);
-            var lookAngle = player.getLookAngle();
             context.setAttribute("lookX", lookAngle.x, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("lookY", lookAngle.y, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("lookZ", lookAngle.z, ScriptContext.ENGINE_SCOPE);
-            context.setAttribute("playerX", player.getX(), ScriptContext.ENGINE_SCOPE);
-            context.setAttribute("playerY", player.getY(), ScriptContext.ENGINE_SCOPE);
-            context.setAttribute("playerZ", player.getZ(), ScriptContext.ENGINE_SCOPE);
-            context.setAttribute("eyeY", player.getEyeY(), ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("playerX", entity.getX(), ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("playerY", entity.getY(), ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("playerZ", entity.getZ(), ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("eyeY", entity.getEyeY(), ScriptContext.ENGINE_SCOPE);
+
             Object scriptObj = script.eval(context);
-            // 脚本应该返回一个包含 activate 方法的对象
+
             if (scriptObj instanceof org.openjdk.nashorn.api.scripting.ScriptObjectMirror) {
                 org.openjdk.nashorn.api.scripting.ScriptObjectMirror scriptMirror =
                         (org.openjdk.nashorn.api.scripting.ScriptObjectMirror) scriptObj;
 
                 if (scriptMirror.hasMember("activate")) {
-                    // 从对象中获取 activate 函数成员，然后调用
                     var activateFunc = scriptMirror.getMember("activate");
                     if (activateFunc instanceof org.openjdk.nashorn.api.scripting.ScriptObjectMirror) {
                         try {
                             Object result = ((org.openjdk.nashorn.api.scripting.ScriptObjectMirror) activateFunc)
-                                    .call(scriptMirror, player, player.serverLevel(), gongFaData);
+                                    .call(scriptMirror, entity, entity.level(), gongFaData);
                             CorpseOrigin.LOGGER.info("【JS 技能】{} 执行结果：{}", skillName, result);
                             return result instanceof Boolean ? (Boolean) result : true;
                         } catch (org.openjdk.nashorn.internal.runtime.ECMAException e) {
@@ -148,6 +156,7 @@ public class JSSkillEngine {
             return false;
         }
     }
+
     /**
      * 加载并编译 JS 脚本
      */
