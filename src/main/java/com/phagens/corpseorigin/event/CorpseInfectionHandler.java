@@ -159,8 +159,8 @@ public class CorpseInfectionHandler {
         }
 
         if (gibTypes.length > 0) {
-            CorpseOrigin.LOGGER.info("生成 {} 个残肢来自 {} (人类: {}, 强者: {}, 爆炸: {})",
-                    gibTypes.length, entity.getName().getString(), isHuman, isStrong, isExplosion);
+//            CorpseOrigin.LOGGER.info("生成 {} 个残肢来自 {} (人类: {}, 强者: {}, 爆炸: {})",
+//                    gibTypes.length, entity.getName().getString(), isHuman, isStrong, isExplosion);
         }
     }
 
