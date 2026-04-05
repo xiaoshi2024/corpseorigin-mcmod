@@ -48,7 +48,7 @@ public class LongyouCommand {
 
         // 对第一个尸王执行 JS 技能测试
         LongyouEntity longyou = longyouEntities.get(0);
-        boolean success = JSSkillEngine.getInstance().executeEntitySkill("尸巢召唤", longyou);
+        boolean success = JSSkillEngine.getInstance().executeSkillForEntity("尸巢召唤", longyou, null);
 
         if (success) {
             player.sendSystemMessage(Component.literal("§a已成功触发尸王的 JS 技能！"));

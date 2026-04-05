@@ -1,13 +1,13 @@
 // 尸巢召唤 - 尸兄玩家的终极技能
 var skill = {
-    activate: function(player, world, data) {
-        // 1. 检查玩家是否在服务器端
+    activate: function(entity, world, data) {
+        // 1. 检查实体是否在服务器端
         if (!world.isClientSide) {
             // 2. 播放召唤特效粒子
             for (var i = 0; i < 100; i++) {
-                var spawnX = player.getX() + (Math.random() - 0.5) * 8;
-                var spawnY = player.getY() + (Math.random() - 0.5) * 6;
-                var spawnZ = player.getZ() + (Math.random() - 0.5) * 8;
+                var spawnX = entity.getX() + (Math.random() - 0.5) * 8;
+                var spawnY = entity.getY() + (Math.random() - 0.5) * 6;
+                var spawnZ = entity.getZ() + (Math.random() - 0.5) * 8;
                 
                 world.sendParticles(
                     Packages.net.minecraft.core.particles.ParticleTypes.DRAGON_BREATH,
@@ -18,13 +18,13 @@ var skill = {
 
             // 3. 播放血肉生长音效
             world.playSound(
-                null, player.getX(), player.getY(), player.getZ(),
+                null, entity.getX(), entity.getY(), entity.getZ(),
                 Packages.net.minecraft.sounds.SoundEvents.SLIME_BLOCK_PLACE,
                 Packages.net.minecraft.sounds.SoundSource.PLAYERS, 2.0, 0.5
             );
 
-            // 4. 在玩家脚下生成尸巢肉块
-            var blockPos = player.blockPosition();
+            // 4. 在实体脚下生成尸巢肉块
+            var blockPos = entity.blockPosition();
             var newPos = new Packages.net.minecraft.core.BlockPos(blockPos.getX(), blockPos.getY() - 1, blockPos.getZ());
             
             // 5. 生成尸巢肉块方块
@@ -46,7 +46,7 @@ var skill = {
                         
                         var ownerField = blockEntity.getClass().getDeclaredField("owner");
                         ownerField.setAccessible(true);
-                        ownerField.set(blockEntity, player.getUUID()); // 设置主人
+                        ownerField.set(blockEntity, entity.getUUID()); // 设置主人
                     } catch (e) {
                         // 如果无法设置，就保持默认值
                     }
@@ -55,8 +55,8 @@ var skill = {
             
             // 7. 通知周围64格内的所有尸兄奴仆
             var searchBox = new Packages.net.minecraft.world.phys.AABB(
-                player.getX() - 64, player.getY() - 64, player.getZ() - 64,
-                player.getX() + 64, player.getY() + 64, player.getZ() + 64
+                entity.getX() - 64, entity.getY() - 64, entity.getZ() - 64,
+                entity.getX() + 64, entity.getY() + 64, entity.getZ() + 64
             );
             
             var zbEntities = world.getEntitiesOfClass(
@@ -64,23 +64,21 @@ var skill = {
                 searchBox
             );
             
-            // 添加调试日志
-            if (isPlayer) {
-                player.sendSystemMessage(
-                    Packages.net.minecraft.network.chat.Component.literal("找到 " + zbEntities.size() + " 个尸兄奴仆")
-                );
-            }
-            
             // 8. 命令尸兄奴仆自我吞噬，为尸巢贡献击杀数
             var totalKillsAdded = 0;
             var isCreative = false;
-            var isPlayer = player instanceof Packages.net.minecraft.server.level.ServerPlayer;
+            var isPlayer = entity instanceof Packages.net.minecraft.server.level.ServerPlayer;
             
             // 只有玩家才有 isCreative 和 sendSystemMessage 方法
             if (isPlayer) {
-                isCreative = player.isCreative();
-                player.sendSystemMessage(
+                isCreative = entity.isCreative();
+                entity.sendSystemMessage(
                     Packages.net.minecraft.network.chat.Component.literal("玩家模式: " + (isCreative ? "创造" : "生存"))
+                );
+                
+                // 添加调试日志
+                entity.sendSystemMessage(
+                    Packages.net.minecraft.network.chat.Component.literal("找到 " + zbEntities.size() + " 个尸兄奴仆")
                 );
             }
             
@@ -95,7 +93,7 @@ var skill = {
                         var masterField = zb.getClass().getDeclaredField("masterUUID");
                         masterField.setAccessible(true);
                         var master = masterField.get(zb);
-                        if (master && master.equals(player.getUUID())) {
+                        if (master && master.equals(entity.getUUID())) {
                             isPlayerServant = true;
                         } else {
                             isPlayerServant = false;
@@ -103,7 +101,7 @@ var skill = {
                     } catch (e) {
                         // 如果无法获取主人信息，跳过这个尸兄
                         if (isPlayer) {
-                            player.sendSystemMessage(
+                            entity.sendSystemMessage(
                                 Packages.net.minecraft.network.chat.Component.literal("无法获取尸兄主人信息: " + e)
                             );
                         }
@@ -113,14 +111,14 @@ var skill = {
                 
                 // 创造模式或非玩家实体下不检查，否则只有被玩家奴役的尸兄才行
                 if (isPlayer && !isCreative && !isPlayerServant) {
-                    player.sendSystemMessage(
+                    entity.sendSystemMessage(
                         Packages.net.minecraft.network.chat.Component.literal("跳过非玩家奴仆的尸兄")
                     );
                     continue; // 跳过不是玩家奴仆的尸兄
                 }
                 
                 if (isPlayer) {
-                    player.sendSystemMessage(
+                    entity.sendSystemMessage(
                         Packages.net.minecraft.network.chat.Component.literal("处理尸兄 " + (isPlayerServant ? "玩家奴仆" : "非玩家奴仆"))
                     );
                 }
@@ -173,13 +171,13 @@ var skill = {
                         killsField.setInt(finalBlockEntity, currentKills + totalKillsAdded); // 增加击杀数
                         
                         if (isPlayer) {
-                            player.sendSystemMessage(
+                            entity.sendSystemMessage(
                                 Packages.net.minecraft.network.chat.Component.literal("尸巢肉块击杀数更新: " + currentKills + " -> " + (currentKills + totalKillsAdded))
                             );
                         }
                     } catch (e) {
                         if (isPlayer) {
-                            player.sendSystemMessage(
+                            entity.sendSystemMessage(
                                 Packages.net.minecraft.network.chat.Component.literal("设置击杀数失败: " + e)
                             );
                         }
@@ -187,7 +185,7 @@ var skill = {
                 }
             } else {
                 if (isPlayer) {
-                    player.sendSystemMessage(
+                    entity.sendSystemMessage(
                         Packages.net.minecraft.network.chat.Component.literal("没有尸兄贡献击杀数")
                     );
                 }
@@ -195,14 +193,14 @@ var skill = {
 
             // 9. 播放震撼音效
             world.playSound(
-                null, player.getX(), player.getY(), player.getZ(),
+                null, entity.getX(), entity.getY(), entity.getZ(),
                 Packages.net.minecraft.sounds.SoundEvents.ENDER_DRAGON_GROWL,
                 Packages.net.minecraft.sounds.SoundSource.PLAYERS, 1.5, 0.8
             );
             
             // 10. 发送消息给玩家
             if (isPlayer) {
-                player.sendSystemMessage(
+                entity.sendSystemMessage(
                     Packages.net.minecraft.network.chat.Component.literal("尸巢已召唤！奴仆们正在自我吞噬为尸巢贡献力量...")
                 );
             }

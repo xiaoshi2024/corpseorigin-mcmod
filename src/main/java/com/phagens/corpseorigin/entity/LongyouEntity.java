@@ -1661,7 +1661,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
         // 尸巢召唤 - 当生命值较低且手下数量较多时使用
         if (nestSummonCooldown <= 0 && this.getHealth() < this.getMaxHealth() * 0.3 && this.getMinionCount() >= 3 && this.random.nextFloat() < 0.01F) {
             // 执行尸巢召唤技能
-            com.phagens.corpseorigin.GongFU.JSskill.JSSkillEngine.getInstance().executeEntitySkill("尸巢召唤", this);
+            com.phagens.corpseorigin.GongFU.JSskill.JSSkillEngine.getInstance().executeSkillForEntity("尸巢召唤", this, null);
             nestSummonCooldown = 1200; // 60秒冷却
         }
         
