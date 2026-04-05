@@ -1,13 +1,21 @@
 package com.phagens.corpseorigin.entity.skills;
 
 import com.phagens.corpseorigin.entity.LongyouEntity;
+import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.NeutralMob;
+import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.animal.PolarBear;
+import net.minecraft.world.entity.monster.Spider;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.List;
 
 public class LongyouSkills {
     
@@ -17,6 +25,9 @@ public class LongyouSkills {
             
             // 播放玄武体激活动画
             entity.triggerAuraSkill();
+            // 触发技能1动画
+            entity.getEntityData().set(LongyouEntity.DATA_PLAYING_SKILL_1, true);
+            entity.skill1AnimationTicks = 40; // 2秒动画
             
             // 标记属性已修改（30秒后自动重置）
             entity.markAttributesModified();
@@ -147,32 +158,71 @@ public class LongyouSkills {
             // 播放召唤动画
             entity.triggerAuraSkill();
             
-            // 召唤尸兄手下
-            for (int i = 0; i < 3; i++) {
-                double x = entity.getX() + (entity.getRandom().nextDouble() - 0.5) * 4.0;
-                double z = entity.getZ() + (entity.getRandom().nextDouble() - 0.5) * 4.0;
-                double y = entity.getY(); // 简化为实体当前高度
-                
-                // 生成粒子效果
-                for (int j = 0; j < 5; j++) {
-                    level.sendParticles(ParticleTypes.SMOKE, x, y, z, 1, 0.2, 0.2, 0.2, 0.1);
+            // 检测附近的尸兄
+            List<LowerLevelZbEntity> nearbyZombies = level.getEntitiesOfClass(
+                    com.phagens.corpseorigin.entity.LowerLevelZbEntity.class,
+                    entity.getBoundingBox().inflate(64.0) // 次声波范围
+            );
+            
+            if (!nearbyZombies.isEmpty()) {
+                // 召集附近的尸兄
+                for (com.phagens.corpseorigin.entity.LowerLevelZbEntity zb : nearbyZombies) {
+                    // 让尸兄朝向龙右并开始移动
+                    zb.getNavigation().moveTo(entity, 1.2);
+                    
+                    // 生成粒子效果
+                    for (int j = 0; j < 3; j++) {
+                        double x = zb.getX() + (entity.getRandom().nextDouble() - 0.5) * 1.0;
+                        double y = zb.getY() + entity.getRandom().nextDouble() * zb.getBbHeight();
+                        double z = zb.getZ() + (entity.getRandom().nextDouble() - 0.5) * 1.0;
+                        level.sendParticles(ParticleTypes.SMOKE, x, y, z, 1, 0.2, 0.2, 0.2, 0.1);
+                    }
                 }
                 
-                // 召唤尸兄
-                com.phagens.corpseorigin.entity.LowerLevelZbEntity zb = 
-                        new com.phagens.corpseorigin.entity.LowerLevelZbEntity(
-                                com.phagens.corpseorigin.register.EntityRegistry.LOWER_LEVEL_ZB.get(),
-                                level
-                        );
-                zb.setPos(x, y, z);
-                level.addFreshEntity(zb);
+                // 播放次声波音效
+                level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), 
+                        SoundEvents.WARDEN_SONIC_BOOM, 
+                        net.minecraft.sounds.SoundSource.HOSTILE, 
+                        3.0F, 0.8F);
+            } else {
+                // 如果没有尸兄，使附近的中立生物发怒
+                AABB bounds = entity.getBoundingBox().inflate(32.0);
+                List<LivingEntity> nearbyNeutralMobs = level.getEntitiesOfClass(
+                        LivingEntity.class,
+                        bounds,
+                        (mob) -> {
+                            // 过滤出中立生物
+                            return mob instanceof IronGolem ||
+                                    mob instanceof Spider ||
+                                    mob instanceof PolarBear;
+                        }
+                );
+
+                for (LivingEntity livingEntity : nearbyNeutralMobs) {
+                    // 使中立生物发怒
+                    if (livingEntity instanceof IronGolem ironGolem) {
+                        ironGolem.setTarget(entity);
+                    } else if (livingEntity instanceof Spider spider) {
+                        spider.setTarget(entity);
+                    } else if (livingEntity instanceof PolarBear polarBear) {
+                        polarBear.setTarget(entity);
+                    }
+
+                    // 生成粒子效果
+                    for (int j = 0; j < 3; j++) {
+                        double x = livingEntity.getX() + (entity.getRandom().nextDouble() - 0.5) * 1.0;
+                        double y = livingEntity.getY() + entity.getRandom().nextDouble() * livingEntity.getBbHeight();
+                        double z = livingEntity.getZ() + (entity.getRandom().nextDouble() - 0.5) * 1.0;
+                        level.sendParticles(ParticleTypes.ANGRY_VILLAGER, x, y, z, 1, 0.2, 0.2, 0.2, 0.1);
+                    }
+                }
+
+                // 播放次声波音效
+                level.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+                        SoundEvents.WARDEN_SONIC_BOOM,
+                        net.minecraft.sounds.SoundSource.HOSTILE,
+                        3.0F, 0.6F);
             }
-            
-            // 播放音效
-            level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), 
-                    SoundEvents.ZOMBIE_VILLAGER_CONVERTED, 
-                    net.minecraft.sounds.SoundSource.HOSTILE, 
-                    2.0F, 0.8F);
         }
     }
 }

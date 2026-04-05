@@ -204,9 +204,9 @@ public class SkillEventHandler {
                 ISkillHandler handler = SkillAttachment.getSkillHandler(player);
 
                 if (handler != null) {
-                    CorpseOrigin.LOGGER.info("重生后技能数据: {} 个技能, {} 进化点",
-                            handler.getLearnedSkills().size(),
-                            handler.getEvolutionPoints());
+//                    CorpseOrigin.LOGGER.info("重生后技能数据: {} 个技能, {} 进化点",
+//                            handler.getLearnedSkills().size(),
+//                            handler.getEvolutionPoints());
 
                     // 重新应用被动技能
                     if (handler instanceof SkillHandler skillHandler) {
@@ -216,10 +216,10 @@ public class SkillEventHandler {
                         skillHandler.markDirty();
                         skillHandler.syncToClient();
 
-                        CorpseOrigin.LOGGER.info("技能数据已同步到客户端");
+//                        CorpseOrigin.LOGGER.info("技能数据已同步到客户端");
                     }
                 } else {
-                    CorpseOrigin.LOGGER.warn("玩家 {} 重生后没有技能处理器", player.getName().getString());
+//                    CorpseOrigin.LOGGER.warn("玩家 {} 重生后没有技能处理器", player.getName().getString());
                 }
             });
         }
@@ -239,10 +239,10 @@ public class SkillEventHandler {
             ISkillHandler handler = SkillAttachment.getSkillHandler(player);
 
             if (handler != null) {
-                CorpseOrigin.LOGGER.info("玩家 {} 登录，技能数据: {} 个技能, {} 进化点",
-                        player.getName().getString(),
-                        handler.getLearnedSkills().size(),
-                        handler.getEvolutionPoints());
+//                CorpseOrigin.LOGGER.info("玩家 {} 登录，技能数据: {} 个技能, {} 进化点",
+//                        player.getName().getString(),
+//                        handler.getLearnedSkills().size(),
+//                        handler.getEvolutionPoints());
 
                 // 重新应用被动技能
                 if (handler instanceof SkillHandler skillHandler) {
@@ -270,10 +270,10 @@ public class SkillEventHandler {
         Player original = event.getOriginal();
         Player newPlayer = event.getEntity();
 
-        CorpseOrigin.LOGGER.info("玩家克隆事件 - 原玩家: {}, 新玩家: {}, 是否死亡: {}",
-                original.getName().getString(),
-                newPlayer.getName().getString(),
-                event.isWasDeath());
+//        CorpseOrigin.LOGGER.info("玩家克隆事件 - 原玩家: {}, 新玩家: {}, 是否死亡: {}",
+//                original.getName().getString(),
+//                newPlayer.getName().getString(),
+//                event.isWasDeath());
 
         // 如果只是数据同步，不需要做任何事，copyOnDeath() 已经处理
 
@@ -288,9 +288,9 @@ public class SkillEventHandler {
 
                 ISkillHandler handler = SkillAttachment.getSkillHandler(newPlayer);
                 if (handler != null) {
-                    CorpseOrigin.LOGGER.info("重生后技能数据: {} 个技能, {} 进化点",
-                            handler.getLearnedSkills().size(),
-                            handler.getEvolutionPoints());
+//                    CorpseOrigin.LOGGER.info("重生后技能数据: {} 个技能, {} 进化点",
+//                            handler.getLearnedSkills().size(),
+//                            handler.getEvolutionPoints());
 
                     // 重新应用被动技能
                     if (handler instanceof SkillHandler skillHandler) {

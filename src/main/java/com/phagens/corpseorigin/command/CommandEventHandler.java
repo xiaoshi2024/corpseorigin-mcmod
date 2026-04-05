@@ -16,5 +16,7 @@ public class CommandEventHandler {
         CorpsePlayerCommand.register(event.getDispatcher());
         // 注册尸兄手下命令系统
         MinionCommand.register(event.getDispatcher());
+        // 注册尸王命令系统
+        LongyouCommand.register(event.getDispatcher());
     }
 }

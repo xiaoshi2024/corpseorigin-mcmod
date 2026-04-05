@@ -304,7 +304,7 @@ public class SkillHandler implements ISkillHandler {
                 }
             }
         }
-        CorpseOrigin.LOGGER.info("重新应用 {} 个被动技能到玩家 {}", learnedSkills.size(), player.getName().getString());
+//        CorpseOrigin.LOGGER.info("重新应用 {} 个被动技能到玩家 {}", learnedSkills.size(), player.getName().getString());
     }
 
     @Override

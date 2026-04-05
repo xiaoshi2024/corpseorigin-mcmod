@@ -71,8 +71,8 @@ public record LongyouEarthquakeBlockPacket(
 
             if (entity instanceof LongyouEarthquakeEntity earthquake) {
                 earthquake.addBlockInstance(packet.pos(), packet.getBlockState(), packet.getDirection());
-                CorpseOrigin.LOGGER.debug("客户端收到地震方块翻动包: 实体ID={}, 位置={}, 方块={}",
-                        packet.entityId(), packet.pos(), packet.blockId());
+//                CorpseOrigin.LOGGER.debug("客户端收到地震方块翻动包: 实体ID={}, 位置={}, 方块={}",
+//                        packet.entityId(), packet.pos(), packet.blockId());
             }
         });
     }

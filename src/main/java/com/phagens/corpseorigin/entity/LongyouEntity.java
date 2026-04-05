@@ -43,15 +43,31 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
     protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
     protected static final RawAnimation ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");
     protected static final RawAnimation SHIEYE_ANIM = RawAnimation.begin().thenPlay("shieye");
+    protected static final RawAnimation DODGE_ANIM = RawAnimation.begin().thenPlay("dodge");
+    protected static final RawAnimation SKILL_1_ANIM = RawAnimation.begin().thenPlay("skill_1");
+    protected static final RawAnimation SKILL_2_ANIM = RawAnimation.begin().thenPlay("skill_2");
+    protected static final RawAnimation SKILL_3_ANIM = RawAnimation.begin().thenPlay("skill_3");
 
-    private static final EntityDataAccessor<Boolean> DATA_PLAYING_SHIEYE =
+    public static final EntityDataAccessor<Boolean> DATA_PLAYING_SHIEYE = 
             SynchedEntityData.defineId(LongyouEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> DATA_PLAYING_AURA_SKILL =
+    public static final EntityDataAccessor<Boolean> DATA_PLAYING_AURA_SKILL = 
+            SynchedEntityData.defineId(LongyouEntity.class, EntityDataSerializers.BOOLEAN);
+    public static final EntityDataAccessor<Boolean> DATA_PLAYING_DODGE = 
+            SynchedEntityData.defineId(LongyouEntity.class, EntityDataSerializers.BOOLEAN);
+    public static final EntityDataAccessor<Boolean> DATA_PLAYING_SKILL_1 = 
+            SynchedEntityData.defineId(LongyouEntity.class, EntityDataSerializers.BOOLEAN);
+    public static final EntityDataAccessor<Boolean> DATA_PLAYING_SKILL_2 = 
+            SynchedEntityData.defineId(LongyouEntity.class, EntityDataSerializers.BOOLEAN);
+    public static final EntityDataAccessor<Boolean> DATA_PLAYING_SKILL_3 = 
             SynchedEntityData.defineId(LongyouEntity.class, EntityDataSerializers.BOOLEAN);
 
     private int shieyeCooldown = 0;
     private int shieyeAnimationTicks = 0;
     private int auraSkillTicks = 0;
+    public int dodgeAnimationTicks = 0;
+    public int skill1AnimationTicks = 0;
+    public int skill2AnimationTicks = 0;
+    public int skill3AnimationTicks = 0;
     
     // 技能冷却
     private int xuanwuBodyCooldown = 0;
@@ -59,6 +75,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
     private int tianGangQiCooldown = 0;
     private int earthquakeCooldown = 0;
     private int summonMinionsCooldown = 0;
+    private int nestSummonCooldown = 0; // 尸巢召唤冷却
     
     // 天罡气技能冷却
     private int tianGangQiJiCooldown = 0;
@@ -86,6 +103,34 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
     private double originalArmor = 10.0D;
     private boolean attributesModified = false;
     private static final int ATTRIBUTE_RESET_DELAY = 600; // 30秒后重置属性
+    
+    // 连招系统
+    private enum SkillType {
+        MELEE,    // 近战技能
+        RANGED,   // 远程技能
+        AOE,      // 范围技能
+        BUFF      // 增益技能
+    }
+    
+    private static class Skill {
+        final String name;
+        final SkillType type;
+        final int cooldown;
+        final Runnable execute;
+        
+        Skill(String name, SkillType type, int cooldown, Runnable execute) {
+            this.name = name;
+            this.type = type;
+            this.cooldown = cooldown;
+            this.execute = execute;
+        }
+    }
+    
+    private final List<Skill> availableSkills = new ArrayList<>();
+    private int comboTick = 0;
+    private int comboChain = 0;
+    private static final int COMBO_RESET_DELAY = 20; // 1秒内没有技能释放则重置连招
+    private static final int MAX_COMBO_CHAIN = 5; // 最大连招链长度
 
     // 龙右的智能系统
     private int intelligenceCheckCooldown = 0;
@@ -114,16 +159,92 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
     private int interest = 0; // 兴趣值 (0-100, 0为无兴趣)
     
     // 状态阈值
-    private static final int HUNGER_THRESHOLD = 30; // 饥饿度低于此值才会攻击
+    private static final int HUNGER_THRESHOLD = 20; // 饥饿度低于此值才会攻击（龙右作为尸兄始祖，饥饿阈值更低）
     private static final int MOOD_THRESHOLD = 70; // 心情值高于此值不会攻击
     private static final int INTEREST_THRESHOLD = 60; // 兴趣值高于此值不会攻击
+    
+    // 饥饿度减少速度（龙右作为尸兄始祖，饿得更慢）
+    private static final int HUNGER_DECREASE_INTERVAL = 600; // 每30秒减少1点饥饿度
     
     // 被攻击状态
     private int lastHurtTick = -1000; // 上次被攻击的游戏刻
     private static final int HURT_MEMORY_DURATION = 200; // 被攻击记忆持续时间（10秒）
+    
+    // 战斗阶段系统
+    private enum Phase {
+        PHASE_1, // 第一阶段：普通形态
+        PHASE_2, // 第二阶段：愤怒形态
+        PHASE_3  // 第三阶段：终极形态
+    }
+    
+    private Phase currentPhase = Phase.PHASE_1;
+    private boolean phaseTransitioning = false;
+    private int phaseTransitionTicks = 0;
+    private static final int PHASE_TRANSITION_DURATION = 40; // 阶段转换动画持续时间（2秒）
+    
+    // 阶段转换阈值
+    private static final double PHASE_1_TO_2_THRESHOLD = 0.7; // 70%生命值
+    private static final double PHASE_2_TO_3_THRESHOLD = 0.3; // 30%生命值
+    
+    // 战术性闪避系统
+    private boolean dodging = false;
+    private int dodgeTicks = 0;
+    private static final int DODGE_DURATION = 10; // 闪避持续时间（0.5秒）
+    private static final int DODGE_COOLDOWN = 40; // 闪避冷却时间（2秒）
+    private int dodgeCooldown = 0;
+    private static final double DODGE_CHANCE = 0.3; // 闪避概率
+    private static final double DODGE_SPEED = 1.5; // 闪避速度
 
     public LongyouEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
+        initializeSkills();
+    }
+    
+    /**
+     * 初始化可用技能列表
+     */
+    private void initializeSkills() {
+        availableSkills.add(new Skill("逆破拳", SkillType.MELEE, 200, () -> {
+            if (niPoQuanCooldown <= 0) {
+                com.phagens.corpseorigin.entity.skills.LongyouTianGangQi.useNiPoQuan(this);
+                niPoQuanCooldown = 200;
+            }
+        }));
+        
+        availableSkills.add(new Skill("天罡气", SkillType.RANGED, 200, () -> {
+            if (tianGangQiCooldown <= 0) {
+                LongyouSkills.useTianGangQi(this);
+                tianGangQiCooldown = 200;
+            }
+        }));
+        
+        availableSkills.add(new Skill("地震", SkillType.AOE, 400, () -> {
+            if (earthquakeCooldown <= 0) {
+                LongyouSkills.useEarthquake(this);
+                earthquakeCooldown = 400;
+            }
+        }));
+        
+        availableSkills.add(new Skill("玄武体", SkillType.BUFF, 600, () -> {
+            if (xuanwuBodyCooldown <= 0) {
+                LongyouSkills.useXuanwuBody(this);
+                xuanwuBodyCooldown = 600;
+            }
+        }));
+        
+        availableSkills.add(new Skill("天罡气·灭", SkillType.RANGED, 300, () -> {
+            if (tianGangQiMieCooldown <= 0) {
+                com.phagens.corpseorigin.entity.skills.LongyouTianGangQi.useTianGangQiMie(this);
+                tianGangQiMieCooldown = 300;
+            }
+        }));
+        
+        availableSkills.add(new Skill("天罡破", SkillType.AOE, 1000, () -> {
+            if (tianGangPoCooldown <= 0) {
+                com.phagens.corpseorigin.entity.skills.LongyouTianGangQi.useTianGangPo(this);
+                tianGangPoCooldown = 1000;
+            }
+        }));
     }
 
     @Override
@@ -131,6 +252,10 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
         super.defineSynchedData(builder);
         builder.define(DATA_PLAYING_SHIEYE, false);
         builder.define(DATA_PLAYING_AURA_SKILL, false);
+        builder.define(DATA_PLAYING_DODGE, false);
+        builder.define(DATA_PLAYING_SKILL_1, false);
+        builder.define(DATA_PLAYING_SKILL_2, false);
+        builder.define(DATA_PLAYING_SKILL_3, false);
     }
 
     @Override
@@ -223,6 +348,22 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
         if (this.entityData.get(DATA_PLAYING_SHIEYE)) {
             return event.setAndContinue(SHIEYE_ANIM);
         }
+        
+        if (this.entityData.get(DATA_PLAYING_DODGE)) {
+            return event.setAndContinue(DODGE_ANIM);
+        }
+        
+        if (this.entityData.get(DATA_PLAYING_SKILL_1)) {
+            return event.setAndContinue(SKILL_1_ANIM);
+        }
+        
+        if (this.entityData.get(DATA_PLAYING_SKILL_2)) {
+            return event.setAndContinue(SKILL_2_ANIM);
+        }
+        
+        if (this.entityData.get(DATA_PLAYING_SKILL_3)) {
+            return event.setAndContinue(SKILL_3_ANIM);
+        }
 
         if (this.getAttackAnim(event.getPartialTick()) > 0) {
             if (!this.level().isClientSide && shieyeCooldown <= 0 && this.random.nextFloat() < 0.4F) {
@@ -248,6 +389,11 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
     public boolean hurt(DamageSource source, float amount) {
         // 1.21.1 正确判断远程投射物攻击（NeoForge 兼容）
         boolean isRangedAttack = source != null && source.is(DamageTypeTags.IS_PROJECTILE);
+
+        // 尝试闪避
+        if (tryDodge(source)) {
+            return false; // 闪避成功，没有受到伤害
+        }
 
         // 仅服务端处理 - 任何攻击都播放动画
         if (this.level() != null && !this.level().isClientSide()) {
@@ -318,6 +464,66 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
         }
         return super.hurt(source, amount);
     }
+    
+    /**
+     * 尝试闪避攻击
+     */
+    private boolean tryDodge(DamageSource source) {
+        if (dodging || dodgeCooldown > 0 || !this.isAlive()) {
+            return false;
+        }
+        
+        // 只有来自生物的攻击才闪避
+        if (!(source.getEntity() instanceof LivingEntity)) {
+            return false;
+        }
+        
+        // 闪避概率
+        if (this.random.nextFloat() < DODGE_CHANCE) {
+            startDodge((LivingEntity) source.getEntity());
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 开始闪避
+     */
+    private void startDodge(LivingEntity attacker) {
+        dodging = true;
+        dodgeTicks = DODGE_DURATION;
+        dodgeCooldown = DODGE_COOLDOWN;
+        
+        // 计算闪避方向（远离攻击者）
+        Vec3 direction = this.position().subtract(attacker.position()).normalize();
+        direction = direction.add(0, 0.2, 0); // 稍微向上
+        
+        // 应用闪避速度
+        this.setDeltaMovement(direction.scale(DODGE_SPEED));
+        this.hasImpulse = true;
+        
+        // 播放闪避动画和音效
+        if (!this.level().isClientSide) {
+            // 触发闪避动画
+            this.entityData.set(DATA_PLAYING_DODGE, true);
+            this.dodgeAnimationTicks = 20; // 1秒动画
+            
+            ServerLevel serverLevel = (ServerLevel) this.level();
+            serverLevel.playSound(null, this.getX(), this.getY(), this.getZ(), 
+                    net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_SWEEP, 
+                    net.minecraft.sounds.SoundSource.HOSTILE, 
+                    1.0F, 1.2F);
+            
+            // 生成闪避粒子
+            for (int i = 0; i < 10; i++) {
+                double x = this.getX() + (this.random.nextDouble() - 0.5) * 1.0;
+                double y = this.getY() + this.getBbHeight() * 0.5 + (this.random.nextDouble() - 0.5) * 1.0;
+                double z = this.getZ() + (this.random.nextDouble() - 0.5) * 1.0;
+                serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, x, y, z, 1, 0.1, 0.1, 0.1, 0.1);
+            }
+        }
+    }
 
     @Override
     public void tick() {
@@ -365,8 +571,63 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
             }
         }
         
-        // 服务端：技能触发逻辑
+        // 闪避动画计时
+        if (!this.level().isClientSide && this.entityData.get(DATA_PLAYING_DODGE)) {
+            dodgeAnimationTicks--;
+            if (dodgeAnimationTicks <= 0) {
+                this.entityData.set(DATA_PLAYING_DODGE, false);
+            }
+        }
+        
+        // 技能1动画计时
+        if (!this.level().isClientSide && this.entityData.get(DATA_PLAYING_SKILL_1)) {
+            skill1AnimationTicks--;
+            if (skill1AnimationTicks <= 0) {
+                this.entityData.set(DATA_PLAYING_SKILL_1, false);
+            }
+        }
+        
+        // 技能2动画计时
+        if (!this.level().isClientSide && this.entityData.get(DATA_PLAYING_SKILL_2)) {
+            skill2AnimationTicks--;
+            if (skill2AnimationTicks <= 0) {
+                this.entityData.set(DATA_PLAYING_SKILL_2, false);
+            }
+        }
+        
+        // 技能3动画计时
+        if (!this.level().isClientSide && this.entityData.get(DATA_PLAYING_SKILL_3)) {
+            skill3AnimationTicks--;
+            if (skill3AnimationTicks <= 0) {
+                this.entityData.set(DATA_PLAYING_SKILL_3, false);
+            }
+        }
+        
+        // 服务端：阶段系统处理
         if (!this.level().isClientSide && this.isAlive()) {
+            handlePhaseTransition();
+        }
+        
+        // 服务端：连招系统处理
+        if (!this.level().isClientSide && this.isAlive()) {
+            handleComboSystem();
+        }
+        
+        // 处理闪避状态
+        if (dodging) {
+            dodgeTicks--;
+            if (dodgeTicks <= 0) {
+                dodging = false;
+            }
+        }
+        
+        // 减少闪避冷却
+        if (dodgeCooldown > 0) {
+            dodgeCooldown--;
+        }
+        
+        // 服务端：技能触发逻辑
+        if (!this.level().isClientSide && this.isAlive() && !phaseTransitioning) {
             useSkills();
         }
         
@@ -382,8 +643,8 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
 
         // 服务端：状态系统更新
         if (!this.level().isClientSide) {
-            // 每100 tick（5秒）减少1点饥饿度
-            if (this.tickCount % 100 == 0 && hunger > 0) {
+            // 每600 tick（30秒）减少1点饥饿度（龙右作为尸兄始祖，饿得更慢）
+            if (this.tickCount % HUNGER_DECREASE_INTERVAL == 0 && hunger > 0) {
                 hunger--;
             }
             
@@ -411,11 +672,213 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
             tickDoorInteraction();
         }
     }
+    
+    /**
+     * 处理阶段转换
+     */
+    private void handlePhaseTransition() {
+        if (phaseTransitioning) {
+            phaseTransitionTicks++;
+            if (phaseTransitionTicks >= PHASE_TRANSITION_DURATION) {
+                phaseTransitioning = false;
+                phaseTransitionTicks = 0;
+                applyPhaseEffects(currentPhase);
+            }
+            return;
+        }
+        
+        double healthPercent = this.getHealth() / this.getMaxHealth();
+        Phase newPhase = currentPhase;
+        
+        if (healthPercent <= PHASE_2_TO_3_THRESHOLD && currentPhase != Phase.PHASE_3) {
+            newPhase = Phase.PHASE_3;
+        } else if (healthPercent <= PHASE_1_TO_2_THRESHOLD && currentPhase != Phase.PHASE_2) {
+            newPhase = Phase.PHASE_2;
+        }
+        
+        if (newPhase != currentPhase) {
+            startPhaseTransition(newPhase);
+        }
+    }
+    
+    /**
+     * 开始阶段转换
+     */
+    private void startPhaseTransition(Phase newPhase) {
+        currentPhase = newPhase;
+        phaseTransitioning = true;
+        phaseTransitionTicks = 0;
+        
+        // 播放阶段转换动画
+        triggerAuraSkill();
+        
+        // 发送消息给附近的玩家
+        if (this.level() instanceof ServerLevel serverLevel) {
+            String phaseMessage = switch (newPhase) {
+                case PHASE_2 -> "§c§l龙右进入愤怒形态！";
+                case PHASE_3 -> "§4§l龙右进入终极形态！";
+                default -> "§e§l龙右进入战斗形态！";
+            };
+            
+            for (Player player : serverLevel.getEntitiesOfClass(Player.class, this.getBoundingBox().inflate(64))) {
+                player.sendSystemMessage(net.minecraft.network.chat.Component.literal(phaseMessage));
+            }
+        }
+    }
+    
+    /**
+     * 应用阶段效果
+     */
+    private void applyPhaseEffects(Phase phase) {
+        switch (phase) {
+            case PHASE_2 -> {
+                // 愤怒形态：增加攻击速度和伤害
+                this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).setBaseValue(0.5D);
+                this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE).setBaseValue(20.0D);
+                this.markAttributesModified();
+            }
+            case PHASE_3 -> {
+                // 终极形态：大幅增加所有属性
+                this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).setBaseValue(0.6D);
+                this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE).setBaseValue(25.0D);
+                this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR).setBaseValue(15.0D);
+                this.markAttributesModified();
+                
+                // 添加强度效果
+                this.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                        net.minecraft.world.effect.MobEffects.DAMAGE_BOOST,
+                        1200, // 60秒
+                        2    // 等级3
+                ));
+            }
+            default -> {
+                // 普通形态：恢复默认属性
+                this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED).setBaseValue(0.4D);
+                this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE).setBaseValue(15.0D);
+                this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR).setBaseValue(10.0D);
+                this.markAttributesModified();
+            }
+        }
+    }
+    
+    /**
+     * 处理连招系统
+     */
+    private void handleComboSystem() {
+        comboTick++;
+        
+        // 如果超过重置延迟，重置连招
+        if (comboTick > COMBO_RESET_DELAY) {
+            comboChain = 0;
+            comboTick = 0;
+        }
+        
+        // 当有目标且不在阶段转换时，尝试执行连招
+        if (this.getTarget() != null && !phaseTransitioning && this.random.nextFloat() < 0.1F) {
+            executeCombo();
+        }
+    }
+    
+    /**
+     * 执行连招
+     */
+    private void executeCombo() {
+        // 根据当前阶段和连招链长度选择技能
+        List<Skill> eligibleSkills = getEligibleSkills();
+        if (eligibleSkills.isEmpty()) return;
+        
+        // 选择技能
+        Skill selectedSkill = selectSkill(eligibleSkills);
+        if (selectedSkill != null) {
+            // 执行技能
+            selectedSkill.execute.run();
+            
+            // 增加连招链长度
+            comboChain = Math.min(comboChain + 1, MAX_COMBO_CHAIN);
+            comboTick = 0;
+            
+            // 连招链长度超过3时，增加伤害加成
+            if (comboChain >= 3) {
+                applyComboBonus();
+            }
+        }
+    }
+    
+    /**
+     * 获取当前可使用的技能
+     */
+    private List<Skill> getEligibleSkills() {
+        List<Skill> eligible = new ArrayList<>();
+        for (Skill skill : availableSkills) {
+            // 检查技能冷却
+            boolean isReady = switch (skill.name) {
+                case "逆破拳" -> niPoQuanCooldown <= 0;
+                case "天罡气" -> tianGangQiCooldown <= 0;
+                case "地震" -> earthquakeCooldown <= 0;
+                case "玄武体" -> xuanwuBodyCooldown <= 0;
+                case "天罡气·灭" -> tianGangQiMieCooldown <= 0;
+                case "天罡破" -> tianGangPoCooldown <= 0;
+                default -> false;
+            };
+            
+            if (isReady) {
+                eligible.add(skill);
+            }
+        }
+        return eligible;
+    }
+    
+    /**
+     * 选择技能
+     */
+    private Skill selectSkill(List<Skill> eligibleSkills) {
+        if (eligibleSkills.isEmpty()) return null;
+        
+        // 根据当前情况选择合适的技能
+        LivingEntity target = this.getTarget();
+        double distance = this.distanceToSqr(target);
+        
+        // 近战范围内优先选择近战技能
+        if (distance < 4.0D) {
+            List<Skill> meleeSkills = eligibleSkills.stream()
+                    .filter(skill -> skill.type == SkillType.MELEE)
+                    .toList();
+            if (!meleeSkills.isEmpty()) {
+                return meleeSkills.get(this.random.nextInt(meleeSkills.size()));
+            }
+        }
+        
+        // 生命值低时优先选择增益技能
+        if (this.getHealth() < this.getMaxHealth() * 0.5) {
+            List<Skill> buffSkills = eligibleSkills.stream()
+                    .filter(skill -> skill.type == SkillType.BUFF)
+                    .toList();
+            if (!buffSkills.isEmpty()) {
+                return buffSkills.get(0);
+            }
+        }
+        
+        // 随机选择
+        return eligibleSkills.get(this.random.nextInt(eligibleSkills.size()));
+    }
+    
+    /**
+     * 应用连招加成
+     */
+    private void applyComboBonus() {
+        // 增加伤害加成
+        this.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                net.minecraft.world.effect.MobEffects.DAMAGE_BOOST,
+                60, // 3秒
+                comboChain - 3 // 加成等级
+        ));
+    }
 
     /**
      * 龙右的智能判断系统
      * 评估周围的尸兄，决定哪些是手下，哪些是粮仓
      * 评估周围的村民，决定哪些作为食物，哪些有利用价值感染
+     * 体现龙右的高傲性格，对弱者不屑动手
      */
     private void performIntelligenceCheck() {
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
@@ -474,16 +937,21 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
             if (targetVillager != null) {
                 // 评估村民的价值
                 VillagerValue value = evaluateVillager(targetVillager);
-
-                if (value == VillagerValue.INFECT) {
-                    // 感染村民
-                    infectVillager(targetVillager, serverLevel);
+                
+                // 龙右对弱者的态度：只有在饥饿时才会对村民下手
+                if (shouldAttackVillager()) {
+                    if (value == VillagerValue.INFECT) {
+                        // 感染村民
+                        infectVillager(targetVillager, serverLevel);
+                    } else {
+                        // 作为食物
+                        consumeVillager(targetVillager, serverLevel);
+                    }
+                    // 设置冷却时间
+                    villagerConsumeCooldown = VILLAGER_CONSUME_INTERVAL;
                 } else {
-                    // 作为食物
-                    consumeVillager(targetVillager, serverLevel);
+                    CorpseOrigin.LOGGER.info("龙右对村民不屑动手，认为他们太弱了");
                 }
-                // 设置冷却时间
-                villagerConsumeCooldown = VILLAGER_CONSUME_INTERVAL;
             }
         }
 
@@ -513,24 +981,128 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
             
             // 只处理最近的一个玩家
             if (targetPlayer != null) {
-                // 评估玩家的价值
-                PlayerValue value = evaluatePlayer(targetPlayer);
+                // 评估玩家的实力
+                float playerThreat = evaluatePlayerThreat(targetPlayer);
+                
+                // 龙右对玩家的态度：根据玩家实力和自身状态决定
+                if (shouldAttackPlayer(playerThreat)) {
+                    // 评估玩家的价值
+                    PlayerValue value = evaluatePlayer(targetPlayer);
 
-                if (value == PlayerValue.INFECT) {
-                    // 感染玩家
-                    infectPlayer(targetPlayer, serverLevel);
-                } else {
-                    // 作为食物
-                    consumePlayer(targetPlayer, serverLevel);
+                    if (value == PlayerValue.INFECT) {
+                        // 感染玩家
+                        infectPlayer(targetPlayer, serverLevel);
+                    } else {
+                        // 作为食物
+                        consumePlayer(targetPlayer, serverLevel);
+                    }
+                    // 设置冷却时间
+                    villagerConsumeCooldown = VILLAGER_CONSUME_INTERVAL;
+                } else if (playerThreat < 0.3) {
+                    CorpseOrigin.LOGGER.info("龙右对玩家不屑动手，认为他们太弱了");
+                } else if (mood > MOOD_THRESHOLD) {
+                    CorpseOrigin.LOGGER.info("龙右心情不错，暂时不想动手");
                 }
-                // 设置冷却时间
-                villagerConsumeCooldown = VILLAGER_CONSUME_INTERVAL;
             }
         }
 
         // 清理已死亡的尸兄
         minions.removeIf(id -> serverLevel.getEntity(id) == null || !(serverLevel.getEntity(id) instanceof LowerLevelZbEntity));
         foodReserves.removeIf(id -> serverLevel.getEntity(id) == null || !(serverLevel.getEntity(id) instanceof LowerLevelZbEntity));
+    }
+    
+    /**
+     * 评估玩家的威胁程度
+     * 0.0-1.0，越高表示威胁越大
+     */
+    private float evaluatePlayerThreat(Player player) {
+        float threat = 0.0F;
+        
+        // 根据玩家生命值
+        float healthPercent = player.getHealth() / player.getMaxHealth();
+        threat += healthPercent * 0.3;
+        
+        // 根据玩家装备
+        for (ItemStack item : player.getArmorSlots()) {
+            if (!item.isEmpty()) {
+                // 检查装备的品质
+                if (item.isEnchanted()) {
+                    threat += 0.15;
+                } else {
+                    threat += 0.05;
+                }
+            }
+        }
+        
+        // 根据玩家手持武器
+        ItemStack mainHand = player.getMainHandItem();
+        if (!mainHand.isEmpty()) {
+            if (mainHand.isEnchanted()) {
+                threat += 0.2;
+            } else {
+                threat += 0.1;
+            }
+        }
+        
+        // 根据玩家经验等级
+        threat += Math.min(player.experienceLevel / 50.0F, 0.2);
+        
+        // 限制威胁等级在0-1之间
+        return Math.min(threat, 1.0F);
+    }
+    
+    /**
+     * 判断龙右是否应该攻击村民
+     * 龙右作为尸兄始祖，非常有人格，不会随便食用村民
+     * 只有在特殊时刻才会：1. 被攻击时反击 2. 极度饥饿时 3. 心情极差时
+     */
+    private boolean shouldAttackVillager() {
+        boolean isHungry = hunger < HUNGER_THRESHOLD;
+        boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
+        boolean isExtremelyHungry = hunger < HUNGER_THRESHOLD / 2; // 极度饥饿
+        boolean isBadMood = mood < 20; // 心情极差
+        
+        // 被攻击时可以反击
+        if (wasRecentlyHurt) {
+            return true;
+        }
+        
+        // 只有在极度饥饿或心情极差时才会主动攻击村民
+        // 体现龙右的人格和高傲，不会随便对弱者下手
+        return isExtremelyHungry || isBadMood;
+    }
+    
+    /**
+     * 判断龙右是否应该攻击玩家
+     * 考虑玩家威胁程度和自身状态
+     */
+    private boolean shouldAttackPlayer(float playerThreat) {
+        boolean isHungry = hunger < HUNGER_THRESHOLD;
+        boolean isHappy = mood > MOOD_THRESHOLD;
+        boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
+        
+        // 被攻击时可以反击
+        if (wasRecentlyHurt) {
+            return true;
+        }
+        
+        // 心情好时不会主动攻击
+        if (isHappy) {
+            return false;
+        }
+        
+        // 对实力强的玩家，即使不饿也会感兴趣
+        if (playerThreat > 0.7) {
+            return true;
+        }
+        
+        // 对实力中等的玩家，只有在饥饿时才会攻击
+        if (playerThreat > 0.3) {
+            return isHungry;
+        }
+        
+        // 对实力弱的玩家，不屑动手
+        return false;
     }
 
     /**
@@ -857,6 +1429,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
         compound.putInt("TianGangQiCooldown", this.tianGangQiCooldown);
         compound.putInt("EarthquakeCooldown", this.earthquakeCooldown);
         compound.putInt("SummonMinionsCooldown", this.summonMinionsCooldown);
+        compound.putInt("NestSummonCooldown", this.nestSummonCooldown);
         
         // 保存天罡气技能冷却
         compound.putInt("TianGangQiJiCooldown", this.tianGangQiJiCooldown);
@@ -920,6 +1493,9 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
         }
         if (compound.contains("SummonMinionsCooldown")) {
             this.summonMinionsCooldown = compound.getInt("SummonMinionsCooldown");
+        }
+        if (compound.contains("NestSummonCooldown")) {
+            this.nestSummonCooldown = compound.getInt("NestSummonCooldown");
         }
         
         // 读取天罡气技能冷却
@@ -1047,6 +1623,11 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
      * 技能触发逻辑
      */
     private void useSkills() {
+        if (this.getTarget() == null) return;
+        
+        // 评估目标实力
+        float targetThreat = evaluateTargetThreat(this.getTarget());
+        
         // 玄武体 - 当生命值低于50%时使用
         if (this.getHealth() < this.getMaxHealth() * 0.5 && xuanwuBodyCooldown <= 0) {
             LongyouSkills.useXuanwuBody(this);
@@ -1059,58 +1640,99 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
             geckoTechniqueCooldown = 300; // 15秒冷却
         }
         
-        // 天罡气 - 有目标时使用
-        if (this.getTarget() != null && tianGangQiCooldown <= 0 && this.random.nextFloat() < 0.1F) {
+        // 天罡气 - 根据目标威胁等级使用
+        if (tianGangQiCooldown <= 0 && targetThreat > 0.3 && this.random.nextFloat() < 0.05F) {
             LongyouSkills.useTianGangQi(this);
             tianGangQiCooldown = 200; // 10秒冷却
         }
         
-        // 地震 - 随机使用
-        if (earthquakeCooldown <= 0 && this.random.nextFloat() < 0.05F) {
+        // 地震 - 根据目标威胁等级使用
+        if (earthquakeCooldown <= 0 && targetThreat > 0.5 && this.random.nextFloat() < 0.03F) {
             LongyouSkills.useEarthquake(this);
             earthquakeCooldown = 400; // 20秒冷却
         }
         
-        // 召唤手下 - 当手下数量较少时使用
-        if (summonMinionsCooldown <= 0 && this.getMinionCount() < 5 && this.random.nextFloat() < 0.03F) {
+        // 召唤手下 - 当手下数量较少且目标威胁较高时使用
+        if (summonMinionsCooldown <= 0 && this.getMinionCount() < 5 && targetThreat > 0.4 && this.random.nextFloat() < 0.02F) {
             LongyouSkills.useSummonMinions(this);
             summonMinionsCooldown = 600; // 30秒冷却
         }
         
+        // 尸巢召唤 - 当生命值较低且手下数量较多时使用
+        if (nestSummonCooldown <= 0 && this.getHealth() < this.getMaxHealth() * 0.3 && this.getMinionCount() >= 3 && this.random.nextFloat() < 0.01F) {
+            // 执行尸巢召唤技能
+            com.phagens.corpseorigin.GongFU.JSskill.JSSkillEngine.getInstance().executeEntitySkill("尸巢召唤", this);
+            nestSummonCooldown = 1200; // 60秒冷却
+        }
+        
         // 天罡气技能
-        useTianGangQiSkills();
+        useTianGangQiSkills(targetThreat);
+    }
+    
+    /**
+     * 评估目标威胁等级
+     */
+    private float evaluateTargetThreat(LivingEntity target) {
+        float threat = 0.0F;
+        
+        // 根据目标生命值
+        float healthPercent = target.getHealth() / target.getMaxHealth();
+        threat += healthPercent * 0.3;
+        
+        // 根据目标装备
+        for (ItemStack item : target.getArmorSlots()) {
+            if (!item.isEmpty()) {
+                threat += 0.1;
+            }
+        }
+        
+        // 根据目标手持武器
+        ItemStack mainHand = target.getMainHandItem();
+        if (!mainHand.isEmpty()) {
+            threat += 0.2;
+        }
+        
+        // 根据目标是否为玩家
+        if (target instanceof Player) {
+            threat += 0.2;
+        }
+        
+        // 限制威胁等级在0-1之间
+        return Math.min(threat, 1.0F);
     }
     
     /**
      * 天罡气技能触发逻辑
      */
-    private void useTianGangQiSkills() {
+    private void useTianGangQiSkills(float targetThreat) {
+        if (this.getTarget() == null) return;
+        
         // 天罡气二重·疾 - 追击目标时使用
-        if (this.getTarget() != null && !this.isWithinMeleeAttackRange(this.getTarget()) && tianGangQiJiCooldown <= 0 && this.random.nextFloat() < 0.15F) {
+        if (!this.isWithinMeleeAttackRange(this.getTarget()) && tianGangQiJiCooldown <= 0 && this.random.nextFloat() < 0.1F) {
             com.phagens.corpseorigin.entity.skills.LongyouTianGangQi.useTianGangQiJi(this);
             tianGangQiJiCooldown = 600; // 30秒冷却
         }
         
         // 天罡气三重·力 - 近距离战斗时使用
-        if (this.getTarget() != null && this.isWithinMeleeAttackRange(this.getTarget()) && tianGangQiLiCooldown <= 0 && this.random.nextFloat() < 0.1F) {
+        if (this.isWithinMeleeAttackRange(this.getTarget()) && tianGangQiLiCooldown <= 0 && this.random.nextFloat() < 0.08F) {
             com.phagens.corpseorigin.entity.skills.LongyouTianGangQi.useTianGangQiLi(this);
             tianGangQiLiCooldown = 600; // 30秒冷却
         }
         
-        // 天罡气六重·毁 - 随机使用，造成大范围破坏
-        if (tianGangQiHuiCooldown <= 0 && this.random.nextFloat() < 0.05F) {
+        // 天罡气六重·毁 - 根据目标威胁等级使用，造成大范围破坏
+        if (tianGangQiHuiCooldown <= 0 && targetThreat > 0.6 && this.random.nextFloat() < 0.03F) {
             com.phagens.corpseorigin.entity.skills.LongyouTianGangQi.useTianGangQiHui(this);
             tianGangQiHuiCooldown = 800; // 40秒冷却
         }
         
-        // 天罡气七重·灭 - 有目标时使用，发出红色冲击波
-        if (this.getTarget() != null && tianGangQiMieCooldown <= 0 && this.random.nextFloat() < 0.1F) {
+        // 天罡气七重·灭 - 根据目标威胁等级使用，发出红色冲击波
+        if (tianGangQiMieCooldown <= 0 && targetThreat > 0.4 && this.random.nextFloat() < 0.05F) {
             com.phagens.corpseorigin.entity.skills.LongyouTianGangQi.useTianGangQiMie(this);
             tianGangQiMieCooldown = 300; // 15秒冷却
         }
         
-        // 天罡气八重·无 - 随机使用，可破除防御
-        if (tianGangQiWuCooldown <= 0 && this.random.nextFloat() < 0.08F) {
+        // 天罡气八重·无 - 根据目标威胁等级使用，可破除防御
+        if (tianGangQiWuCooldown <= 0 && targetThreat > 0.5 && this.random.nextFloat() < 0.05F) {
             com.phagens.corpseorigin.entity.skills.LongyouTianGangQi.useTianGangQiWu(this);
             tianGangQiWuCooldown = 400; // 20秒冷却
         }
@@ -1122,19 +1744,19 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
         }
         
         // 逆破拳 - 近距离战斗时使用，连续拳击
-        if (this.getTarget() != null && this.isWithinMeleeAttackRange(this.getTarget()) && niPoQuanCooldown <= 0 && this.random.nextFloat() < 0.12F) {
+        if (this.isWithinMeleeAttackRange(this.getTarget()) && niPoQuanCooldown <= 0 && this.random.nextFloat() < 0.08F) {
             com.phagens.corpseorigin.entity.skills.LongyouTianGangQi.useNiPoQuan(this);
             niPoQuanCooldown = 200; // 10秒冷却
         }
         
-        // 破罡 - 有目标时使用，可击破防御
-        if (this.getTarget() != null && poGangCooldown <= 0 && this.random.nextFloat() < 0.08F) {
+        // 破罡 - 根据目标威胁等级使用，可击破防御
+        if (poGangCooldown <= 0 && targetThreat > 0.3 && this.random.nextFloat() < 0.05F) {
             com.phagens.corpseorigin.entity.skills.LongyouTianGangQi.usePoGang(this);
             poGangCooldown = 300; // 15秒冷却
         }
         
-        // 天罡破 - 随机使用，从空中向下进攻
-        if (tianGangPoCooldown <= 0 && this.random.nextFloat() < 0.05F) {
+        // 天罡破 - 根据目标威胁等级使用，从空中向下进攻
+        if (tianGangPoCooldown <= 0 && targetThreat > 0.7 && this.random.nextFloat() < 0.02F) {
             com.phagens.corpseorigin.entity.skills.LongyouTianGangQi.useTianGangPo(this);
             tianGangPoCooldown = 1000; // 50秒冷却
         }

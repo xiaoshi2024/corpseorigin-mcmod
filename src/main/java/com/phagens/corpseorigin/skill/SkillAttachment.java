@@ -71,7 +71,7 @@ public class SkillAttachment {
         SkillHandler handler = player.getData(SKILL_HANDLER);
 
         if (handler == null) {
-            CorpseOrigin.LOGGER.debug("为玩家 {} 创建新的技能处理器", player.getName().getString());
+//            CorpseOrigin.LOGGER.debug("为玩家 {} 创建新的技能处理器", player.getName().getString());
             handler = new SkillHandler(player);
             player.setData(SKILL_HANDLER, handler);
         } else if (handler.getPlayer() == null) {
@@ -79,15 +79,15 @@ public class SkillAttachment {
 
             // 客户端和服务端都打印日志
             if (player.level().isClientSide) {
-                CorpseOrigin.LOGGER.info("【客户端】为玩家 {} 设置技能处理器，已学习 {} 个技能，进化点: {}",
-                        player.getName().getString(),
-                        handler.getLearnedSkills().size(),
-                        handler.getEvolutionPoints());
+//                CorpseOrigin.LOGGER.info("【客户端】为玩家 {} 设置技能处理器，已学习 {} 个技能，进化点: {}",
+//                        player.getName().getString(),
+//                        handler.getLearnedSkills().size(),
+//                        handler.getEvolutionPoints());
             } else {
-                CorpseOrigin.LOGGER.info("【服务端】为玩家 {} 设置技能处理器，已学习 {} 个技能，进化点: {}",
-                        player.getName().getString(),
-                        handler.getLearnedSkills().size(),
-                        handler.getEvolutionPoints());
+//                CorpseOrigin.LOGGER.info("【服务端】为玩家 {} 设置技能处理器，已学习 {} 个技能，进化点: {}",
+//                        player.getName().getString(),
+//                        handler.getLearnedSkills().size(),
+//                        handler.getEvolutionPoints());
 
                 // 只有在服务端才重新应用被动技能
                 handler.reapplyPassiveSkills();

@@ -52,7 +52,7 @@ public record ZbSkinUpdatePacket(int entityId, ResourceLocation skinTexture, int
                     zbEntity.setSkinTextureFromServer(data.skinTexture());
                 }
                 zbEntity.setSkinStateFromServer(ZbSkinState.fromCode(data.skinStateCode()));
-                CorpseOrigin.LOGGER.debug("服务端收到皮肤更新: 实体 {} 状态 {}", data.entityId(), data.skinStateCode());
+//                CorpseOrigin.LOGGER.debug("服务端收到皮肤更新: 实体 {} 状态 {}", data.entityId(), data.skinStateCode());
             }
         });
     }

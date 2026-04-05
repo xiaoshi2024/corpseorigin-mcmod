@@ -174,7 +174,7 @@ public class LongyouEarthquakeEntity extends Entity {
         // 避免重复添加
         if (!blockInstances.containsKey(pos)) {
             blockInstances.put(pos, new EarthquakeBlockInstance(pos, state, direction));
-            CorpseOrigin.LOGGER.debug("添加翻动方块: 位置={}, 方块={}", pos, state.getBlock().getDescriptionId());
+//            CorpseOrigin.LOGGER.debug("添加翻动方块: 位置={}, 方块={}", pos, state.getBlock().getDescriptionId());
         }
     }
 
@@ -205,6 +205,11 @@ public class LongyouEarthquakeEntity extends Entity {
 
         for (LivingEntity entity : entities) {
             if (entity.is(this)) {
+                continue;
+            }
+            
+            // 排除龙右的尸兄手下，避免误伤
+            if (entity instanceof com.phagens.corpseorigin.entity.LowerLevelZbEntity) {
                 continue;
             }
 
