@@ -116,7 +116,7 @@ function activate(player, world, data) {
     var MobEffectInstance = Packages.net.minecraft.world.effect.MobEffectInstance;
     var MobEffects = Packages.net.minecraft.world.effect.MobEffects;
 
-    ProjectileManager.createProjectile(
+    ProjectileManager.createProject ile(
         player,
         startPos,
         lookDir,

@@ -49,7 +49,6 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
     /// 解析为GongFaData
     private GongFaData parseGongFaData(JsonElement jsonElement) {
         JsonObject json = jsonElement.getAsJsonObject();
-        // 读取基础字段（带默认值）
         String typeId = json.has("type_id") ? json.get("type_id").getAsString() : "UNKNOWN";
         String type = json.has("type") ? json.get("type").getAsString() : "?";
         String name = json.has("name") ? json.get("name").getAsString() : "Name";

@@ -110,16 +110,16 @@ public class GongFUDataUtlis {
      */
     public static double getCengMultiplier(String ceng) {
         return switch (ceng) {
-            case "copy_1" -> 1.0;   // 一重天：100%
-            case "copy_2" -> 1.2;   // 二重天：120%
-            case "copy_3" -> 1.4;   // 三重天：140%
-            case "copy_4" -> 1.6;   // 四重天：160%
-            case "copy_5" -> 1.8;   // 五重天：180%
-            case "copy_6" -> 2.0;   // 六重天：200%
-            case "copy_7" -> 2.2;   // 七重天：220%
-            case "copy_8" -> 2.5;   // 八重天：250%
-            case "copy_9" -> 3.0;   // 九重天：300%
-            default -> 1.0;         // 默认 100%
+            case "copy_1" -> 1.0;
+            case "copy_2" -> 1.2;
+            case "copy_3" -> 1.4;
+            case "copy_4" -> 1.6;
+            case "copy_5" -> 1.8;
+            case "copy_6" -> 2.0;
+            case "copy_7" -> 2.2;
+            case "copy_8" -> 2.5;
+            case "copy_9" -> 3.0;
+            default -> 1.0;
         };
     }
 
