@@ -11,6 +11,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import org.jline.utils.InputStreamReader;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,8 +29,26 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
         super(gson, directory);
     }
 
+    public static boolean isDataLoaded() {return instance != null && !instance.gongFaDataMap.isEmpty();}
+
+    public static int getDataCount() {return instance != null ? instance.gongFaDataMap.size() : 0;}
+
+    public static GongFaJsonLoader getInstance() { return  instance;}
+
+
+
     @Override
     protected void apply(Map<ResourceLocation, JsonElement> resourceLocationJsonElementMap, ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+        CorpseOrigin.LOGGER.info("========== 开始加载功法数据 [环境: {}] ==========",
+                net.neoforged.fml.loading.FMLEnvironment.dist);
+        CorpseOrigin.LOGGER.info("找到 {} 个功法JSON文件", resourceLocationJsonElementMap.size());
+
+        if (resourceLocationJsonElementMap.isEmpty()) {
+            CorpseOrigin.LOGGER.error("⚠ 没有找到任何功法JSON文件！");
+            CorpseOrigin.LOGGER.error("⚠ 请确保 JSON 文件位于: data/corpseorigin/gf_data/");
+            CorpseOrigin.LOGGER.error("⚠ 文件名必须以 .json 结尾");
+        }
+
         gongFaDataMap.clear();
         resourceLocationJsonElementMap.forEach((resourceLocation, jsonElement) -> {
             try {
@@ -45,6 +64,59 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
                 CorpseOrigin.LOGGER.error("解析功法数据失败：{}", resourceLocation, e);
             }
         });
+        CorpseOrigin.LOGGER.info("========== 功法数据加载完成，共加载 {} 个功法 ==========", gongFaDataMap.size());
+    }
+
+    /**
+     * ⭐手动从类路径加载JSON文件（用于客户端早期初始化）
+     */
+    public static void forceLoadFromResources() {
+        if (instance != null && !instance.gongFaDataMap.isEmpty()) {
+            CorpseOrigin.LOGGER.debug("【强制加载】功法数据已存在，跳过");
+            return;
+        }
+        CorpseOrigin.LOGGER.info("【强制加载】开始从资源文件加载功法数据...");
+        try {
+            if (instance == null) {
+                instance = new GongFaJsonLoader(GSON, FOLDER);
+            }
+            var classLoader = GongFaJsonLoader.class.getClassLoader();
+            var resourcePath = "data/corpseorigin/gf_data/";
+            // 尝试加载已知的JSON文件 - 请根据您的实际文件名修改这里
+            String[] knownFiles = {
+                    "ba_dao_shi.json",
+                    "qi_jia_shu.json",
+                    "shi_xian_jian.json"
+            };
+            int loadedCount = 0;
+            for (String fileName : knownFiles) {
+                try {
+                    var stream = classLoader.getResourceAsStream(resourcePath + fileName);
+                    if (stream != null) {
+                        try (InputStreamReader reader = new InputStreamReader(stream)) {
+                            JsonElement jsonElement = GSON.fromJson(reader, JsonElement.class);
+                            GongFaData data = instance.parseGongFaData(jsonElement);
+                            if (data != null) {
+                                String key = data.getTypeId() + "_" + data.getRarity() + "_" + data.getCeng();
+                                instance.gongFaDataMap.put(key, data);
+                                GongFaSkillManager.getInstance().registerGongFuSkill(data);
+                                CorpseOrigin.LOGGER.info("【强制加载】✓ {}", data.getName());
+                                loadedCount++;
+                            }
+                        }
+                    } else {
+                        CorpseOrigin.LOGGER.debug("【强制加载】未找到文件: {}", fileName);
+                    }
+                } catch (Exception e) {
+                    CorpseOrigin.LOGGER.error("【强制加载】✗ 加载 {} 失败", fileName, e);
+                }
+            }
+
+            CorpseOrigin.LOGGER.info("【强制加载】完成，共加载 {} 个功法", loadedCount);
+
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("【强制加载】异常", e);
+        }
     }
     /// 解析为GongFaData
     private GongFaData parseGongFaData(JsonElement jsonElement) {
