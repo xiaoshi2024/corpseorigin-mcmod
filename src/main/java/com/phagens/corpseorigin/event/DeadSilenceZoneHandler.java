@@ -45,9 +45,7 @@ public class DeadSilenceZoneHandler {
     
     private static final Set<DeferredHolder<EntityType<?>, ? extends EntityType<?>>> CORPSE_BROTHER_HOLDERS = Set.of(
             EntityRegistry.LOWER_LEVEL_ZB,
-            EntityRegistry.LONGYOU,
-            EntityRegistry.ZBR_FISH,
-            EntityRegistry.GUIGUN
+            EntityRegistry.ZBR_FISH
     );
     
     private static SimpleSoundInstance ambienceSound = null;
@@ -116,7 +114,7 @@ public class DeadSilenceZoneHandler {
         );
         
         mc.getSoundManager().play(ambienceSound);
-        CorpseOrigin.LOGGER.info("开始播放死寂群系背景音乐");
+//        CorpseOrigin.LOGGER.info("开始播放死寂群系背景音乐");
     }
     
     private static void stopAmbience() {
