@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.material.MapColor;
 
 /**
@@ -27,13 +28,16 @@ import net.minecraft.world.level.material.MapColor;
  * 功能：
  * 1. 挖掘后掉落异化碎块物品
  * 2. 生物死亡时，连接的异化方块边缘向外蔓延一格
- * 3. 连接超过67个方块时，形成死寂生物群系
+ * 3. 连接超过128个方块时，形成死寂生物群系
+ * 4. 最多向地面下方蔓延两格，达到后只水平蔓延
  */
 public class AlienatedFragmentBlock extends Block {
     
     public static final BooleanProperty DEAD_SILENCE = BooleanProperty.create("dead_silence");
-    private static final int SPREAD_THRESHOLD = 67;
-    private static final int MAX_GROUP_SIZE = 256;
+    public static final IntegerProperty DOWN_DEPTH = IntegerProperty.create("down_depth", 0, 2);
+    private static final int SPREAD_THRESHOLD = 36;
+    private static final int MAX_GROUP_SIZE = 128;
+    private static final int MAX_DOWN_SPREAD = 2;
     
     private static final ThreadLocal<Boolean> isUpdating = ThreadLocal.withInitial(() -> false);
     
@@ -44,17 +48,17 @@ public class AlienatedFragmentBlock extends Block {
                 .mapColor(MapColor.COLOR_BROWN)
                 .randomTicks()
         );
-        this.registerDefaultState(this.defaultBlockState().setValue(DEAD_SILENCE, false));
+        this.registerDefaultState(this.defaultBlockState().setValue(DEAD_SILENCE, false).setValue(DOWN_DEPTH, 0));
     }
     
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(DEAD_SILENCE);
+        builder.add(DEAD_SILENCE, DOWN_DEPTH);
     }
     
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(DEAD_SILENCE, false);
+        return this.defaultBlockState().setValue(DEAD_SILENCE, false).setValue(DOWN_DEPTH, 0);
     }
     
     @Override
@@ -189,13 +193,16 @@ public class AlienatedFragmentBlock extends Block {
     /**
      * 优化的蔓延方法 - 蔓延替换除空气外的所有方块
      * 有15%概率在新蔓延的方块上生成尸体（每个位置最多一个）
+     * 最多向地面下方蔓延两格，达到后只水平蔓延
      */
     private int spreadBlocksOptimized(ServerLevel level, LongOpenHashSet edgeBlocks, LongOpenHashSet existingGroup) {
-        BlockState spreadState = BlockRegistry.ALIENATED_FRAGMENT.get().defaultBlockState();
         int spreadCount = 0;
         
         for (long edgeKey : edgeBlocks) {
             BlockPos edgePos = BlockPos.of(edgeKey);
+            BlockState edgeState = level.getBlockState(edgePos);
+            int currentDepth = edgeState.getBlock() instanceof AlienatedFragmentBlock ? 
+                    edgeState.getValue(DOWN_DEPTH) : 0;
             
             for (Direction dir : Direction.values()) {
                 BlockPos spreadPos = edgePos.relative(dir);
@@ -208,6 +215,17 @@ public class AlienatedFragmentBlock extends Block {
                 if (targetState.isAir()) continue;
                 
                 if (!targetState.getFluidState().isEmpty()) continue;
+                
+                int newDepth = currentDepth;
+                if (dir == Direction.DOWN) {
+                    if (currentDepth >= MAX_DOWN_SPREAD) {
+                        continue;
+                    }
+                    newDepth = currentDepth + 1;
+                }
+                
+                BlockState spreadState = BlockRegistry.ALIENATED_FRAGMENT.get().defaultBlockState()
+                        .setValue(DOWN_DEPTH, newDepth);
                 
                 level.setBlock(spreadPos, spreadState, 2 | 16);
                 spreadCount++;

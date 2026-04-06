@@ -4,5 +4,15 @@
     "sounds": [
       "corpseorigin:ground_chi"
     ]
+  },
+  "silence": {
+    "subtitle": "subtitles.corpseorigin.dead_silence_ambience",
+    "sounds": [
+      {
+        "name": "corpseorigin:silence",
+        "stream": true,
+        "volume": 0.5
+      }
+    ]
   }
 }

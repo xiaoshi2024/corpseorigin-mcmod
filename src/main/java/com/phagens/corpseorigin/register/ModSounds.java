@@ -14,8 +14,11 @@ public class ModSounds {
     public static final DeferredRegister<SoundEvent> SOUND_EVENTS =
             DeferredRegister.create(Registries.SOUND_EVENT, CorpseOrigin.MODID);
 
-    // 2. 注册“吃~~”音效
+    // 2. 注册"吃~~"音效
     public static final Supplier<SoundEvent> GROUND_CHI = registerSoundEvent("ground_chi");
+    
+    // 死寂群系背景音乐
+    public static final Supplier<SoundEvent> DEAD_SILENCE_AMBIENCE = registerSoundEvent("silence");
 
     // 3. 辅助方法：注册单个音效
     private static Supplier<SoundEvent> registerSoundEvent(String name) {

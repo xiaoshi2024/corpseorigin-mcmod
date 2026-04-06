@@ -1,5 +1,6 @@
 package com.phagens.corpseorigin.register;
 
+import com.phagens.corpseorigin.entity.AlienatedSporeEntity;
 import com.phagens.corpseorigin.entity.CorpseGibEntity;
 import com.phagens.corpseorigin.entity.GuigunEntity;
 import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
@@ -59,4 +60,12 @@ public class EntityRegistry {
                     .clientTrackingRange(64)
                     .updateInterval(1)
                     .build("corpse_gib"));
+
+    // 异化孢子实体 - 尸兄死亡时喷射的孢子
+    public static final DeferredHolder<EntityType<?>, EntityType<AlienatedSporeEntity>> ALIENATED_SPORE = ENTITIES.register("alienated_spore",
+            () -> EntityType.Builder.<AlienatedSporeEntity>of(AlienatedSporeEntity::new, MobCategory.MISC)
+                    .sized(0.1F, 0.1F)
+                    .clientTrackingRange(64)
+                    .updateInterval(1)
+                    .build("alienated_spore"));
 }
