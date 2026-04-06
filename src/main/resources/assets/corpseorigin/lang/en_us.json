@@ -3,8 +3,10 @@
 
   "block.corpseorigin.qi_xing_guan": "Seven Star Corpse Coffin",
   "block.corpseorigin.zbr_flesh": "Zombie Brother Flesh",
+  "block.corpseorigin.alienated_fragment": "Alienated Fragment",
 
   "item.corpseorigin.qi_xings_guan_item": "Seven Star Coffin",
+  "item.corpseorigin.alienated_fragment_item": "Alienated Fragment",
   "item.corpseorigin.bywater_bucket": "Corpse Water Bucket",
   "item.corpseorigin.bywater_bottle": "Corpse Water Bottle",
   "item.corpseorigin.ming_juque": "Juque Sword",
