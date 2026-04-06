@@ -19,9 +19,9 @@ public class MissionEventHandler {
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
         if (event.getSource().getEntity() instanceof Player player) {
-            CorpseOrigin.LOGGER.info("MissionEventHandler: 玩家 {} 击杀了 {}", player.getName().getString(), event.getEntity().getName().getString());
-            CorpseOrigin.LOGGER.info("MissionEventHandler: 玩家是否为尸兄: {}", PlayerCorpseData.isCorpse(player));
-            
+//            CorpseOrigin.LOGGER.info("MissionEventHandler: 玩家 {} 击杀了 {}", player.getName().getString(), event.getEntity().getName().getString());
+//            CorpseOrigin.LOGGER.info("MissionEventHandler: 玩家是否为尸兄: {}", PlayerCorpseData.isCorpse(player));
+
             if (!PlayerCorpseData.isCorpse(player)) return;
 
             LivingEntity target = event.getEntity();
@@ -31,8 +31,8 @@ public class MissionEventHandler {
                 ItemStack stack = player.getInventory().getItem(i);
                 if (stack.getItem() instanceof MissionScrollItem) {
                     String missionType = MissionScrollItem.getMissionType(stack);
-                    CorpseOrigin.LOGGER.info("MissionEventHandler: 发现任务纸条，类型: {}, 当前进度: {}/{}", 
-                            missionType, MissionScrollItem.getCurrentCount(stack), MissionScrollItem.getTargetCount(stack));
+//                    CorpseOrigin.LOGGER.info("MissionEventHandler: 发现任务纸条，类型: {}, 当前进度: {}/{}",
+//                            missionType, MissionScrollItem.getCurrentCount(stack), MissionScrollItem.getTargetCount(stack));
 
                     boolean shouldIncrement = switch (missionType) {
                         case "kill_villager" -> target instanceof AbstractVillager;
@@ -42,12 +42,12 @@ public class MissionEventHandler {
                         case "collect_item" -> false; // 收集任务在 ItemEntityPickupEvent 中处理
                         default -> false;
                     };
-                    
-                    CorpseOrigin.LOGGER.info("MissionEventHandler: 是否应该增加进度: {}", shouldIncrement);
+
+//                    CorpseOrigin.LOGGER.info("MissionEventHandler: 是否应该增加进度: {}", shouldIncrement);
 
                     if (shouldIncrement && !MissionScrollItem.isCompleted(stack)) {
                         MissionScrollItem.incrementCount(stack);
-                        CorpseOrigin.LOGGER.info("MissionEventHandler: 进度已更新为: {}", MissionScrollItem.getCurrentCount(stack));
+//                        CorpseOrigin.LOGGER.info("MissionEventHandler: 进度已更新为: {}", MissionScrollItem.getCurrentCount(stack));
 
                         if (MissionScrollItem.isCompleted(stack)) {
                             player.sendSystemMessage(Component.translatable("message.corpseorigin.mission_completed"));
@@ -64,17 +64,17 @@ public class MissionEventHandler {
     private static boolean isZombieType(LivingEntity entity) {
         String entityTypeName = entity.getType().getDescriptionId();
         return entityTypeName.contains("zombie") ||
-               entityTypeName.contains("corpseorigin.lower_level_zb") ||
-               entityTypeName.contains("corpseorigin.longyou") ||
-               entityTypeName.contains("corpseorigin.guigun");
+                entityTypeName.contains("corpseorigin.lower_level_zb") ||
+                entityTypeName.contains("corpseorigin.longyou") ||
+                entityTypeName.contains("corpseorigin.guigun");
     }
 
     @SubscribeEvent
     public static void onItemPickup(ItemEntityPickupEvent.Pre event) {
         Player player = event.getPlayer();
-        CorpseOrigin.LOGGER.info("MissionEventHandler: 玩家 {} 拾取了物品", player.getName().getString());
-        CorpseOrigin.LOGGER.info("MissionEventHandler: 玩家是否为尸兄: {}", PlayerCorpseData.isCorpse(player));
-        
+//        CorpseOrigin.LOGGER.info("MissionEventHandler: 玩家 {} 拾取了物品", player.getName().getString());
+//        CorpseOrigin.LOGGER.info("MissionEventHandler: 玩家是否为尸兄: {}", PlayerCorpseData.isCorpse(player));
+
         if (!PlayerCorpseData.isCorpse(player)) return;
         if (player.level().isClientSide) return;
 
@@ -83,12 +83,12 @@ public class MissionEventHandler {
             ItemStack missionStack = player.getInventory().getItem(i);
             if (missionStack.getItem() instanceof MissionScrollItem) {
                 String missionType = MissionScrollItem.getMissionType(missionStack);
-                CorpseOrigin.LOGGER.info("MissionEventHandler: 发现收集物品任务纸条，类型: {}, 当前进度: {}/{}", 
-                        missionType, MissionScrollItem.getCurrentCount(missionStack), MissionScrollItem.getTargetCount(missionStack));
+//                CorpseOrigin.LOGGER.info("MissionEventHandler: 发现收集物品任务纸条，类型: {}, 当前进度: {}/{}",
+//                        missionType, MissionScrollItem.getCurrentCount(missionStack), MissionScrollItem.getTargetCount(missionStack));
 
                 if ("collect_item".equals(missionType) && !MissionScrollItem.isCompleted(missionStack)) {
                     MissionScrollItem.incrementCount(missionStack);
-                    CorpseOrigin.LOGGER.info("MissionEventHandler: 收集物品任务进度已更新为: {}", MissionScrollItem.getCurrentCount(missionStack));
+//                    CorpseOrigin.LOGGER.info("MissionEventHandler: 收集物品任务进度已更新为: {}", MissionScrollItem.getCurrentCount(missionStack));
 
                     if (MissionScrollItem.isCompleted(missionStack)) {
                         player.sendSystemMessage(Component.translatable("message.corpseorigin.mission_completed"));
