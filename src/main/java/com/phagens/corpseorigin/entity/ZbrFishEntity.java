@@ -103,6 +103,12 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new PanicGoal(this, 1.25D));
+        // 寻找并吞噬尸体 - 尸兄鱼被尸体吸引
+        this.goalSelector.addGoal(1, new com.phagens.corpseorigin.entity.EntityAI.JLAI.AquaticSeekCorpseGibGoal(
+            this, 
+            this::eatCorpseGib,
+            () -> this.corpseHunger
+        ));
         this.goalSelector.addGoal(2, new ModFollow(this, 1.0D, true));
         this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));

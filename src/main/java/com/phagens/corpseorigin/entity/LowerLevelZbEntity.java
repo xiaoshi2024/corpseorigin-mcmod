@@ -324,13 +324,15 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         this.goalSelector.addGoal(1, new FloatGoal(this));
         // 飞扑攻击 - 高优先级
         this.goalSelector.addGoal(2, new PounceAttackGoal(this));
+        // 寻找并吞噬尸体 - 尸兄被尸体吸引
+        this.goalSelector.addGoal(3, new com.phagens.corpseorigin.entity.EntityAI.JLAI.SeekCorpseGibGoal(this));
         // 近战攻击行为 - 当找到目标时会执行攻击
-        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.0D, true));
+        this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.0D, true));
         // 高阶尸兄可以开门
-        this.goalSelector.addGoal(4, new OpenDoorGoal(this, true));
-        this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0D));
-        this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 16.0F));
-        this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(5, new OpenDoorGoal(this, true));
+        this.goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 16.0F));
+        this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
 
         // 第一优先级：攻击非尸兄玩家（正常活人）
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackNormalPlayer));
