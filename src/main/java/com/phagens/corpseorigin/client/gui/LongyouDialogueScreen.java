@@ -52,6 +52,9 @@ public class LongyouDialogueScreen extends Screen {
             // 发送选择到服务器
             LongyouDialoguePacket packet = new LongyouDialoguePacket(dialogAnswerHover);
             net.neoforged.neoforge.network.PacketDistributor.sendToServer(packet);
+            
+            // 关闭对话框（类似MCA的效果，点击一次就关闭）
+            this.onClose();
         }
 
         return false;

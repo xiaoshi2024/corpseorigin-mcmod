@@ -118,8 +118,12 @@ public class CorpseGibEntity extends Entity {
         float j = level.random.nextInt(45) + 5F + level.random.nextFloat();
         if (level.random.nextInt(2) == 0) i *= -1;
         if (level.random.nextInt(2) == 0) j *= -1;
-        gib.pitchSpin = i * (float)(gib.getDeltaMovement().y + 0.3D);
-        gib.yawSpin = j * (float)(Math.sqrt(gib.getDeltaMovement().x * gib.getDeltaMovement().z) + 0.3D);
+        
+        // 防止 NaN：确保 deltaMovement 的值有效
+        double deltaY = gib.getDeltaMovement().y;
+        double deltaXZ = Math.sqrt(gib.getDeltaMovement().x * gib.getDeltaMovement().x + gib.getDeltaMovement().z * gib.getDeltaMovement().z);
+        gib.pitchSpin = i * (float)(deltaY + 0.3D);
+        gib.yawSpin = j * (float)(deltaXZ + 0.3D);
 
         // 爆炸效果
         if (explosionSource != null) {
@@ -213,11 +217,17 @@ public class CorpseGibEntity extends Entity {
         if (sourceType.contains("tnt")) {
             mag = 1.0D * (4.0 / dist);
         } else if (sourceType.contains("creeper")) {
-            // 闪电苦力怕威力更大
             mag = 1.0D * (3.0D / dist);
         }
 
         mag = Math.pow(mag, 2) * 0.2D;
+        
+        // 防止 mag 变成 NaN 或过大
+        if (Double.isNaN(mag) || Double.isInfinite(mag)) {
+            mag = 1.0D;
+        }
+        mag = Math.min(mag, 5.0D); // 限制最大力量
+        
         double mag2 = (gib.getY() - explosionSource.getY());
 
         Vec3 motion = gib.getDeltaMovement();
@@ -395,10 +405,21 @@ public class CorpseGibEntity extends Entity {
             this.setDeltaMovement(this.getDeltaMovement().add(0, -0.08, 0));
         }
 
+        // 防止 NaN 旋转值
+        if (Float.isNaN(this.pitchSpin)) this.pitchSpin = 0;
+        if (Float.isNaN(this.yawSpin)) this.yawSpin = 0;
+
         // 应用旋转
         if (!this.onGround()) {
-            this.setXRot(this.getXRot() + this.pitchSpin);
-            this.setYRot(this.getYRot() + this.yawSpin);
+            float newPitch = this.getXRot() + this.pitchSpin;
+            float newYaw = this.getYRot() + this.yawSpin;
+            
+            // 防止旋转值超出范围
+            newPitch = Math.max(-90f, Math.min(90f, newPitch));
+            newYaw = newYaw % 360f;
+            
+            this.setXRot(newPitch);
+            this.setYRot(newYaw);
         } else {
             // 落地后减速旋转
             this.pitchSpin *= 0.9f;

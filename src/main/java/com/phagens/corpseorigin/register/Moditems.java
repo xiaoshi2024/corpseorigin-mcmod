@@ -87,6 +87,11 @@ public class Moditems {
     // 穆博士的眼睛 - 稀有掉落物，失去意识的尸兄食用后可恢复人类智慧
     public static final DeferredItem<Item> DR_MU_EYE = ITEMS.register("dr_mu_eye",
             () -> new DrMuEyeItem());
+
+    // ========== 任务系统物品 ==========
+    // 任务纸条 - 用于追踪任务进度
+    public static final DeferredItem<Item> MISSION_SCROLL = ITEMS.register("mission_scroll",
+            () -> new MissionScrollItem());
 }
 
 

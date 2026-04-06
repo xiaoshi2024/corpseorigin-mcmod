@@ -173,6 +173,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
     
     // 尸兄玩家攻击计数（用于判断是否造反）
     private final java.util.Map<java.util.UUID, Integer> corpsePlayerAttacks = new java.util.HashMap<>();
+    private final java.util.Map<java.util.UUID, Integer> corpsePlayerLastAttackTick = new java.util.HashMap<>(); // 记录每个玩家最后攻击的tick
     private static final int CORPSE_PLAYER_ATTACK_THRESHOLD = 3; // 尸兄玩家攻击阈值（超过此值视为造反）
     private static final int ATTACK_RESET_DURATION = 600; // 攻击计数重置时间（30秒）
     
@@ -419,16 +420,17 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
                 java.util.UUID playerId = player.getUUID();
                 int attackCount = corpsePlayerAttacks.getOrDefault(playerId, 0) + 1;
                 corpsePlayerAttacks.put(playerId, attackCount);
+                corpsePlayerLastAttackTick.put(playerId, this.tickCount); // 记录最后攻击时间
                 
-                // 检查是否达到攻击阈值
-                if (attackCount >= CORPSE_PLAYER_ATTACK_THRESHOLD) {
+                // 只在刚好达到攻击阈值时发送一次警告消息（避免重复通知）
+                if (attackCount == CORPSE_PLAYER_ATTACK_THRESHOLD) {
                     // 视为造反，发送警告消息
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§4§l[尸王·龙右] §r你竟敢对我动手，视为造反！"));
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.rebellion"));
                     // 广播消息给附近玩家
                     if (this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
                         for (Player nearbyPlayer : serverLevel.getEntitiesOfClass(Player.class, this.getBoundingBox().inflate(64))) {
                             if (!nearbyPlayer.getUUID().equals(playerId)) {
-                                nearbyPlayer.sendSystemMessage(net.minecraft.network.chat.Component.literal("§4§l[尸王·龙右] §r" + player.getName().getString() + " 竟敢对我动手，视为造反！"));
+                                nearbyPlayer.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.rebellion.broadcast", player.getName().getString()));
                             }
                         }
                     }
@@ -692,11 +694,20 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
                 interest--;
             }
             
-            // 每30秒重置攻击计数（如果玩家停止攻击）
-            if (this.tickCount % ATTACK_RESET_DURATION == 0) {
-                // 清空攻击计数，给玩家改过自新的机会
-                corpsePlayerAttacks.clear();
-                CorpseOrigin.LOGGER.debug("龙右重置尸兄玩家攻击计数");
+            // 检查每个尸兄玩家的攻击计数是否超时重置
+            // 只有当玩家攻击后超过30秒没有继续攻击，才重置该玩家的计数
+            java.util.Iterator<java.util.Map.Entry<java.util.UUID, Integer>> iterator = corpsePlayerLastAttackTick.entrySet().iterator();
+            while (iterator.hasNext()) {
+                java.util.Map.Entry<java.util.UUID, Integer> entry = iterator.next();
+                java.util.UUID playerId = entry.getKey();
+                int lastAttackTick = entry.getValue();
+                
+                // 如果超过30秒没有继续攻击，重置该玩家的攻击计数
+                if (this.tickCount - lastAttackTick > ATTACK_RESET_DURATION) {
+                    corpsePlayerAttacks.remove(playerId);
+                    iterator.remove();
+                    CorpseOrigin.LOGGER.debug("龙右重置玩家 {} 的攻击计数（超时未继续攻击）", playerId);
+                }
             }
         }
 
@@ -1984,7 +1995,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
             return net.minecraft.world.InteractionResult.SUCCESS;
         } else {
             // 非尸兄玩家，显示警告信息
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§4§l只有尸兄才能与尸王对话！"));
+            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.only_corpse"));
             return net.minecraft.world.InteractionResult.PASS;
         }
     }
@@ -1995,12 +2006,14 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
     private void openDialogueGui(Player player) {
         // 发送对话选项数据包到客户端
         if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
-            String question = "[尸王·龙右] 你来了，我的部下。";
+            String question = net.minecraft.network.chat.Component.translatable("dialogue.longyou.greeting").getString();
             java.util.List<String> options = java.util.Arrays.asList(
-                "大人您有何吩咐？",
-                "任务升级系统",
-                "尸王钦点",
-                "关于尸族"
+                net.minecraft.network.chat.Component.translatable("dialogue.longyou.option.command").getString(),
+                net.minecraft.network.chat.Component.translatable("dialogue.longyou.option.task").getString(),
+                net.minecraft.network.chat.Component.translatable("dialogue.longyou.option.receive_mission").getString(),
+                net.minecraft.network.chat.Component.translatable("dialogue.longyou.option.submit_mission").getString(),
+                net.minecraft.network.chat.Component.translatable("dialogue.longyou.option.appointment").getString(),
+                net.minecraft.network.chat.Component.translatable("dialogue.longyou.option.about").getString()
             );
             
             com.phagens.corpseorigin.network.LongyouDialogueOptionsPacket packet = 
@@ -2013,22 +2026,27 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
      * 处理对话选项选择
      */
     public void handleDialogueOption(Player player, String option) {
-        switch (option) {
-            case "大人您有何吩咐？":
-                handleWhatDoYouCommand(player);
-                break;
-            case "任务升级系统":
-                handleTaskUpgradeSystem(player);
-                break;
-            case "尸王钦点":
-                handleCorpseKingAppointment(player);
-                break;
-            case "关于尸族":
-                handleAboutCorpseClan(player);
-                break;
-            default:
-                player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§4§l无效的选项！"));
-                break;
+        String commandKey = net.minecraft.network.chat.Component.translatable("dialogue.longyou.option.command").getString();
+        String taskKey = net.minecraft.network.chat.Component.translatable("dialogue.longyou.option.task").getString();
+        String receiveMissionKey = net.minecraft.network.chat.Component.translatable("dialogue.longyou.option.receive_mission").getString();
+        String submitMissionKey = net.minecraft.network.chat.Component.translatable("dialogue.longyou.option.submit_mission").getString();
+        String appointmentKey = net.minecraft.network.chat.Component.translatable("dialogue.longyou.option.appointment").getString();
+        String aboutKey = net.minecraft.network.chat.Component.translatable("dialogue.longyou.option.about").getString();
+        
+        if (option.equals(commandKey)) {
+            handleWhatDoYouCommand(player);
+        } else if (option.equals(taskKey)) {
+            handleTaskUpgradeSystem(player);
+        } else if (option.equals(receiveMissionKey)) {
+            handleReceiveMission(player);
+        } else if (option.equals(submitMissionKey)) {
+            handleSubmitMission(player);
+        } else if (option.equals(appointmentKey)) {
+            handleCorpseKingAppointment(player);
+        } else if (option.equals(aboutKey)) {
+            handleAboutCorpseClan(player);
+        } else {
+            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.invalid_option"));
         }
     }
     
@@ -2036,27 +2054,149 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
      * 处理"大人您有何吩咐？"选项
      */
     private void handleWhatDoYouCommand(Player player) {
-        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r我的部下，去为我收集更多的生命力，壮大我尸族的势力。"));
-        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r消灭那些反抗我们的人类，将他们转化为我们的同类。"));
-        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r当你变得足够强大时，我会赐予你更强大的力量。"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.command.line1"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.command.line2"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.command.line3"));
     }
     
     /**
      * 处理"任务升级系统"选项
      */
     private void handleTaskUpgradeSystem(Player player) {
-        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r我已为你开通了任务系统，完成任务可获得进化点和特殊奖励。"));
-        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r任务分为：消灭人类、感染村民、收集资源等多种类型。"));
-        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r完成的任务越多，你的等级越高，获得的奖励也越丰厚。"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.task.line1"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.task.line2"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.task.line3"));
+    }
+    
+    /**
+     * 处理"领取任务"选项
+     */
+    private void handleReceiveMission(Player player) {
+        if (!com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
+            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.only_corpse"));
+            return;
+        }
+        
+        if (hasMissionScroll(player)) {
+            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.mission.already_has"));
+            return;
+        }
+        
+        java.util.Random random = new java.util.Random();
+        int missionType = random.nextInt(5);
+        
+        net.minecraft.world.item.ItemStack missionScroll;
+        String missionName;
+        
+        switch (missionType) {
+            case 0 -> {
+                int targetCount = 3 + random.nextInt(5);
+                missionScroll = com.phagens.corpseorigin.Item.MissionScrollItem.createMissionScroll(
+                    "kill_villager", targetCount, targetCount * 2, 1
+                );
+                missionName = net.minecraft.network.chat.Component.translatable("mission.corpseorigin.kill_villager").getString();
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.mission.kill_villager", targetCount));
+            }
+            case 1 -> {
+                int targetCount = 5 + random.nextInt(10);
+                missionScroll = com.phagens.corpseorigin.Item.MissionScrollItem.createMissionScroll(
+                    "kill_zombie", targetCount, targetCount, 1
+                );
+                missionName = net.minecraft.network.chat.Component.translatable("mission.corpseorigin.kill_zombie").getString();
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.mission.kill_zombie", targetCount));
+            }
+            case 2 -> {
+                int targetCount = 5 + random.nextInt(8);
+                missionScroll = com.phagens.corpseorigin.Item.MissionScrollItem.createMissionScroll(
+                    "kill_any", targetCount, targetCount, 1
+                );
+                missionName = net.minecraft.network.chat.Component.translatable("mission.corpseorigin.kill_any").getString();
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.mission.kill_any", targetCount));
+            }
+            case 3 -> {
+                int targetCount = 1 + random.nextInt(2);
+                missionScroll = com.phagens.corpseorigin.Item.MissionScrollItem.createMissionScroll(
+                    "infect_player", targetCount, targetCount * 5, 2
+                );
+                missionName = net.minecraft.network.chat.Component.translatable("mission.corpseorigin.infect_player").getString();
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.mission.infect_player", targetCount));
+            }
+            default -> {
+                int targetCount = 3 + random.nextInt(5);
+                missionScroll = com.phagens.corpseorigin.Item.MissionScrollItem.createMissionScroll(
+                    "collect_item", targetCount, targetCount * 3, 1
+                );
+                missionName = net.minecraft.network.chat.Component.translatable("mission.corpseorigin.collect_item").getString();
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.mission.collect_item", targetCount));
+            }
+        }
+        
+        if (!player.getInventory().add(missionScroll)) {
+            player.drop(missionScroll, false);
+        }
+        
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.mission.received", missionName));
+    }
+    
+    /**
+     * 处理"提交任务"选项
+     */
+    private void handleSubmitMission(Player player) {
+        if (!com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
+            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.only_corpse"));
+            return;
+        }
+        
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            net.minecraft.world.item.ItemStack stack = player.getInventory().getItem(i);
+            if (stack.getItem() instanceof com.phagens.corpseorigin.Item.MissionScrollItem) {
+                if (com.phagens.corpseorigin.Item.MissionScrollItem.isCompleted(stack)) {
+                    int rewardPoints = com.phagens.corpseorigin.Item.MissionScrollItem.getRewardEvolutionPoints(stack);
+                    int rewardLevels = com.phagens.corpseorigin.Item.MissionScrollItem.getRewardLevels(stack);
+                    
+                    stack.shrink(1);
+                    
+                    com.phagens.corpseorigin.skill.ISkillHandler handler = com.phagens.corpseorigin.skill.SkillAttachment.getSkillHandler(player);
+                    if (handler != null) {
+                        handler.addEvolutionPoints(rewardPoints);
+                    }
+                    
+                    int currentLevel = com.phagens.corpseorigin.player.PlayerCorpseData.getEvolutionLevel(player);
+                    int newLevel = Math.min(5, currentLevel + rewardLevels);
+                    com.phagens.corpseorigin.player.PlayerCorpseData.setEvolutionLevel(player, newLevel);
+                    
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.mission.completed"));
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.mission.reward_points", rewardPoints));
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.mission.reward_level", newLevel));
+                    
+                    return;
+                }
+            }
+        }
+        
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.mission.no_completed"));
+    }
+    
+    /**
+     * 检查玩家是否已有任务纸条
+     */
+    private boolean hasMissionScroll(Player player) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            net.minecraft.world.item.ItemStack stack = player.getInventory().getItem(i);
+            if (stack.getItem() instanceof com.phagens.corpseorigin.Item.MissionScrollItem) {
+                return true;
+            }
+        }
+        return false;
     }
     
     /**
      * 处理"尸王钦点"选项
      */
     private void handleCorpseKingAppointment(Player player) {
-        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r作为我的部下，你展现出了非凡的潜力。"));
-        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r我钦点你为尸族的精英战士，赐予你特殊的能力。"));
-        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r好好利用这份力量，为尸族的崛起而战！"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.appointment.line1"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.appointment.line2"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.appointment.line3"));
         
         // 可以在这里添加实际的能力赐予逻辑
     }
@@ -2065,8 +2205,8 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
      * 处理"关于尸族"选项
      */
     private void handleAboutCorpseClan(Player player) {
-        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r我们尸族是这个世界的新主宰，将取代脆弱的人类。"));
-        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r通过不断进化，我们将变得更加强大，无可匹敌。"));
-        player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§6§l[尸王·龙右] §r尸族的未来，就掌握在你们这些部下的手中。"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.about.line1"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.about.line2"));
+        player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("dialogue.longyou.about.line3"));
     }
 } 
