@@ -2,12 +2,14 @@ package com.phagens.corpseorigin.entity;
 
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.entity.EntityAI.Vibrationsys.ModVibrationUser;
+import com.phagens.corpseorigin.entity.EntityAI.JLAI.PounceAttackGoal;
 import com.phagens.corpseorigin.client.skin.ZbSkinLoader;
 import com.phagens.corpseorigin.client.skin.ZbSkinState;
 import com.phagens.corpseorigin.entity.skills.InnateSkillManager;
 import com.phagens.corpseorigin.network.ZbSkinUpdatePacket;
 import com.phagens.corpseorigin.register.Moditems;
 import com.phagens.corpseorigin.register.ModSounds;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -15,8 +17,11 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
@@ -29,6 +34,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.gameevent.DynamicGameEventListener;
 import net.minecraft.world.level.gameevent.vibrations.VibrationSystem;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -41,6 +48,7 @@ import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -130,6 +138,19 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     // 饥饿度系统 (0-100, 100为饱腹, 0为极度饥饿)
     private int hunger = 100;
     private static final int HUNGER_THRESHOLD_FOR_CANNIBALISM = 20; // 饥饿度低于20才允许吞噬
+    
+    // 尸体饱腹值系统 (0-3, 吞噬尸体获得)
+    private int corpseHunger = 0;
+    private static final int MAX_CORPSE_HUNGER = 3;
+    
+    // 飞扑攻击系统
+    private int pounceCooldown = 0;
+    private static final int POUNCE_COOLDOWN_TICKS = 100; // 5秒冷却
+    private boolean isPouncing = false;
+    
+    // 酸液喷射系统
+    private int acidSprayCooldown = 0;
+    private static final int ACID_SPRAY_COOLDOWN_TICKS = 60; // 3秒冷却
     
     // 神志系统
     private boolean hasSentient = false; // 是否保留生前神志
@@ -301,25 +322,32 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
+        // 飞扑攻击 - 高优先级
+        this.goalSelector.addGoal(2, new PounceAttackGoal(this));
+        // 寻找并吞噬尸体 - 尸兄被尸体吸引
+        this.goalSelector.addGoal(3, new com.phagens.corpseorigin.entity.EntityAI.JLAI.SeekCorpseGibGoal(this));
         // 近战攻击行为 - 当找到目标时会执行攻击
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true));
+        this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.0D, true));
         // 高阶尸兄可以开门
-        this.goalSelector.addGoal(3, new OpenDoorGoal(this, true));
-        this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 1.0D));
-        this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 16.0F));
-        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(5, new OpenDoorGoal(this, true));
+        this.goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 16.0F));
+        this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
 
         // 第一优先级：攻击非尸兄玩家（正常活人）
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackNormalPlayer));
 
-        // 第二优先级：攻击其他生物（动物）
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.animal.Animal.class, true));
+        // 第二优先级：攻击非尸兄的其他怪物（Mob类，排除尸兄和龙右）
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackNonCorpseMob));
 
-        // 第三优先级：攻击尸兄玩家（同类）- 只有在极度饥饿时才会攻击
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackCorpsePlayer));
+        // 第三优先级：攻击动物
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.animal.Animal.class, true));
 
-        // 第四优先级：攻击其他怪物（包括其他尸兄），但排除龙右（真王）
-        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackMob));
+        // 第四优先级：攻击尸兄玩家（同类）- 只有在极度饥饿时才会攻击
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackCorpsePlayer));
+
+        // 第五优先级：攻击其他尸兄实体（同类相食）- 只有在极度饥饿时才会攻击
+        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, LowerLevelZbEntity.class, 0, true, false, this::shouldAttackOtherCorpseEntity));
     }
 
     /**
@@ -347,8 +375,33 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     }
 
     /**
+     * 判断是否应该攻击非尸兄的其他怪物（Mob类）
+     * 这是第二优先级目标
+     * 排除：龙右、尸兄实体、玩家
+     */
+    private boolean shouldAttackNonCorpseMob(net.minecraft.world.entity.LivingEntity entity) {
+        // 不攻击龙右（真王）
+        if (entity instanceof LongyouEntity) {
+            return false;
+        }
+
+        // 不攻击尸兄实体（同类）
+        if (entity instanceof LowerLevelZbEntity) {
+            return false;
+        }
+
+        // 不攻击玩家（玩家由单独的目标处理）
+        if (entity instanceof Player) {
+            return false;
+        }
+
+        // 攻击其他所有怪物
+        return true;
+    }
+
+    /**
      * 判断是否应该攻击尸兄玩家（已成为尸兄的玩家）
-     * 这是第三优先级目标，只有在极度饥饿时才会攻击
+     * 这是第四优先级目标，只有在极度饥饿时才会攻击
      */
     private boolean shouldAttackCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
         // 不攻击龙右（真王）
@@ -383,54 +436,38 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
 
         return isHungry && notUnderKing;
     }
-    
+
     /**
-     * 判断是否应该攻击某个生物（Mob类，不包括玩家）
-     * 尸兄不会攻击龙右（真王）
-     * 尸兄不会主动攻击其他尸兄实体，除非极度饥饿或被攻击
-     * 有主人的尸兄不会攻击主人，会帮助主人攻击
-     * 注意：玩家目标由 shouldAttackNormalPlayer 和 shouldAttackCorpsePlayer 处理
+     * 判断是否应该攻击其他尸兄实体（同类相食）
+     * 这是第五优先级目标，只有在极度饥饿时才会攻击
      */
-    private boolean shouldAttackMob(net.minecraft.world.entity.LivingEntity entity) {
-        // 不攻击龙右（真王）
-        if (entity instanceof LongyouEntity) {
+    private boolean shouldAttackOtherCorpseEntity(net.minecraft.world.entity.LivingEntity entity) {
+        // 只攻击尸兄实体
+        if (!(entity instanceof LowerLevelZbEntity otherZb)) {
             return false;
         }
 
-        // 不攻击玩家（玩家由单独的目标处理）
-        if (entity instanceof Player) {
-            return false;
+        // 被攻击时允许反击
+        boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
+        if (wasRecentlyHurt) {
+            return true;
         }
 
-        // 检查目标是否是同类（其他尸兄实体）
-        if (entity instanceof LowerLevelZbEntity) {
-            // 如果被攻击了，允许反击
-            boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
-            if (wasRecentlyHurt) {
-                return true; // 被攻击时反击同类
-            }
-
-            // 检查是否有非同类目标存在
-            if (hasNonZombieTargets()) {
-                return false; // 有非同类目标时不攻击同类
-            }
-
-            // 同类目标，只有在极度饥饿时才攻击
-            boolean isHungry = this.hunger <= HUNGER_THRESHOLD_FOR_CANNIBALISM;
-            boolean notUnderKing = !isUnderZombieKingLeadership();
-
-            // 只有在满足吞噬条件时才攻击同类
-            if (!isHungry || !notUnderKing) {
-                return false; // 不饥饿或有尸王领导时不攻击同类
-            }
+        // 检查是否有非同类目标存在
+        if (hasNonZombieTargets()) {
+            return false; // 有非同类目标时不攻击同类
         }
 
-        return true;
+        // 同类目标，只有在极度饥饿时才攻击
+        boolean isHungry = this.hunger <= HUNGER_THRESHOLD_FOR_CANNIBALISM;
+        boolean notUnderKing = !isUnderZombieKingLeadership();
+
+        return isHungry && notUnderKing;
     }
     
     /**
      * 检查周围是否存在非同类目标（非尸兄的目标）
-     * 非尸兄玩家和动物都是优先攻击目标
+     * 非尸兄玩家、非尸兄怪物、动物都是优先攻击目标
      */
     private boolean hasNonZombieTargets() {
         if (!(this.level() instanceof ServerLevel level)) return false;
@@ -445,7 +482,17 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
             return true;
         }
 
-        // 检查周围16格内是否有可攻击的动物
+        // 检查周围16格内是否有非尸兄的其他怪物（第二优先级目标）
+        var nonCorpseMobs = level.getEntitiesOfClass(
+                net.minecraft.world.entity.Mob.class,
+                this.getBoundingBox().inflate(16.0D),
+                entity -> shouldAttackNonCorpseMob(entity)
+        );
+        if (!nonCorpseMobs.isEmpty()) {
+            return true;
+        }
+
+        // 检查周围16格内是否有可攻击的动物（第三优先级目标）
         var animals = level.getEntitiesOfClass(
                 net.minecraft.world.entity.animal.Animal.class,
                 this.getBoundingBox().inflate(16.0D),
@@ -607,6 +654,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         compound.putInt("EvolutionLevel", this.evolutionLevel);
         compound.putInt("Kills", this.kills);
         compound.putInt("Hunger", this.hunger);
+        compound.putInt("CorpseHunger", this.corpseHunger);
+        compound.putInt("PounceCooldown", this.pounceCooldown);
+        compound.putInt("AcidSprayCooldown", this.acidSprayCooldown);
         compound.putInt("Variant", this.entityData.get(DATA_VARIANT));
         
         // 保存神志和贪婪系统数据
@@ -663,6 +713,15 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         }
         if (compound.contains("Hunger")) {
             this.hunger = compound.getInt("Hunger");
+        }
+        if (compound.contains("CorpseHunger")) {
+            this.corpseHunger = compound.getInt("CorpseHunger");
+        }
+        if (compound.contains("PounceCooldown")) {
+            this.pounceCooldown = compound.getInt("PounceCooldown");
+        }
+        if (compound.contains("AcidSprayCooldown")) {
+            this.acidSprayCooldown = compound.getInt("AcidSprayCooldown");
         }
         if (compound.contains("Variant")) {
             this.entityData.set(DATA_VARIANT, compound.getInt("Variant"));
@@ -763,6 +822,32 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
             // 飞行时消耗更多饥饿度
             if (this.entityData.get(DATA_IS_FLYING) && this.tickCount % 20 == 0 && hunger > 0) {
                 hunger--;
+            }
+            
+            // 飞扑攻击冷却
+            if (pounceCooldown > 0) {
+                pounceCooldown--;
+            }
+            
+            // 酸液喷射冷却
+            if (acidSprayCooldown > 0) {
+                acidSprayCooldown--;
+            }
+            
+            // 尝试吞噬附近的尸体
+            if (this.tickCount % 40 == 0) {
+                tryEatNearbyCorpseGib();
+            }
+            
+            // 饱腹值≥1时，尝试向目标喷射酸液
+            if (this.corpseHunger >= 1 && this.tickCount % 60 == 0) {
+                LivingEntity target = this.getTarget();
+                if (target != null && target.isAlive()) {
+                    double dist = this.distanceTo(target);
+                    if (dist > 2.0D && dist <= 8.0D) {
+                        sprayAcidAtTarget(target);
+                    }
+                }
             }
             
             // 服务端：神志系统
@@ -1439,44 +1524,43 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     private void performCannibalism(LowerLevelZbEntity otherZb) {
         if (this.level().isClientSide) return;
         
-        // 比较两个尸兄的等级和生命值来决定谁存活
         boolean thisSurvives = shouldSurvive(otherZb);
         
         if (thisSurvives) {
-            // 这个尸兄存活并吞噬另一个
             CorpseOrigin.LOGGER.info("尸兄 {} 吞噬了尸兄 {}！", this.getId(), otherZb.getId());
             
-            // 播放吞噬特效
-            this.level().broadcastEntityEvent(this, (byte) 35); // 粒子效果
+            this.level().broadcastEntityEvent(this, (byte) 35);
             this.playSound(net.minecraft.sounds.SoundEvents.GENERIC_EAT, 2.0F, 0.8F);
             
-            // 获得进化收益
             int evolutionGain = Math.max(1, otherZb.getEvolutionLevel());
-            this.kills += evolutionGain * 2; // 吞噬尸兄获得更多击杀数
-            this.heal(this.getMaxHealth() * 0.5F); // 恢复50%生命值
-            this.hunger = 100; // 恢复饥饿度到满
+            this.kills += evolutionGain * 2;
+            this.heal(this.getMaxHealth() * 0.5F);
+            this.hunger = 100;
             
-            // 立即检查进化
+            this.addCorpseHunger(otherZb.getCorpseHunger());
+            
+            CorpseOrigin.LOGGER.info("尸兄 {} 继承了 {} 点饱腹值，当前饱腹值: {}", this.getId(), otherZb.getCorpseHunger(), this.corpseHunger);
+            
             checkEvolution();
             
-            // 另一个尸兄死亡
             otherZb.discard();
         } else {
-            // 另一个尸兄存活并吞噬这个
             CorpseOrigin.LOGGER.info("尸兄 {} 被尸兄 {} 吞噬！", this.getId(), otherZb.getId());
             
-            // 播放吞噬特效
             this.level().broadcastEntityEvent(otherZb, (byte) 35);
             otherZb.playSound(net.minecraft.sounds.SoundEvents.GENERIC_EAT, 2.0F, 0.8F);
             
-            // 另一个尸兄获得进化收益
             int evolutionGain = Math.max(1, this.evolutionLevel);
             otherZb.setKills(otherZb.getKills() + evolutionGain * 2);
             otherZb.heal(otherZb.getMaxHealth() * 0.5F);
-            otherZb.hunger = 100; // 恢复饥饿度到满
+            otherZb.hunger = 100;
+            
+            otherZb.addCorpseHunger(this.corpseHunger);
+            
+            CorpseOrigin.LOGGER.info("尸兄 {} 继承了 {} 点饱腹值，当前饱腹值: {}", otherZb.getId(), this.corpseHunger, otherZb.corpseHunger);
+            
             otherZb.checkEvolution();
             
-            // 这个尸兄死亡
             this.discard();
         }
     }
@@ -1733,6 +1817,138 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     
     public void setHasTail(boolean hasTail) {
         this.entityData.set(DATA_HAS_TAIL, hasTail);
+    }
+    
+    /**
+     * 飞扑攻击相关方法
+     */
+    public boolean isPouncing() {
+        return this.isPouncing;
+    }
+    
+    public void setPouncing(boolean pouncing) {
+        this.isPouncing = pouncing;
+    }
+    
+    public int getPounceCooldown() {
+        return this.pounceCooldown;
+    }
+    
+    public void resetPounceCooldown() {
+        this.pounceCooldown = POUNCE_COOLDOWN_TICKS;
+    }
+    
+    /**
+     * 尸体饱腹值相关方法
+     */
+    public int getCorpseHunger() {
+        return this.corpseHunger;
+    }
+    
+    public void setCorpseHunger(int value) {
+        this.corpseHunger = Math.min(MAX_CORPSE_HUNGER, Math.max(0, value));
+        
+        if (this.corpseHunger >= MAX_CORPSE_HUNGER) {
+            onCorpseHungerFull();
+        }
+    }
+    
+    public void addCorpseHunger(int amount) {
+        setCorpseHunger(this.corpseHunger + amount);
+    }
+    
+    /**
+     * 当饱腹值达到3时触发等级提升
+     */
+    private void onCorpseHungerFull() {
+        if (this.evolutionLevel < 5) {
+            evolve();
+            CorpseOrigin.LOGGER.info("尸兄 {} 因吞噬尸体饱腹值满而进化到 {} 级！", this.getId(), this.evolutionLevel);
+        }
+        this.corpseHunger = 0;
+    }
+    
+    /**
+     * 吞噬尸体实体
+     */
+    public void eatCorpseGib(CorpseGibEntity gib) {
+        if (this.level().isClientSide) return;
+        
+        gib.discard();
+        addCorpseHunger(1);
+        
+        this.playSound(net.minecraft.sounds.SoundEvents.GENERIC_EAT, 1.0F, 0.8F + this.random.nextFloat() * 0.4F);
+        
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.ITEM_SLIME,
+                this.getX(), this.getY() + 0.5, this.getZ(),
+                5, 0.3, 0.3, 0.3, 0.1);
+        }
+        
+        CorpseOrigin.LOGGER.info("尸兄 {} 吞噬了尸体，饱腹值: {}", this.getId(), this.corpseHunger);
+    }
+    
+    /**
+     * 尝试吞噬附近的尸体实体
+     */
+    private void tryEatNearbyCorpseGib() {
+        if (this.level().isClientSide) return;
+        if (this.corpseHunger >= MAX_CORPSE_HUNGER) return;
+        
+        AABB searchBox = this.getBoundingBox().inflate(2.0D);
+        List<CorpseGibEntity> nearbyGibs = this.level().getEntitiesOfClass(CorpseGibEntity.class, searchBox);
+        
+        if (!nearbyGibs.isEmpty()) {
+            CorpseGibEntity nearestGib = null;
+            double nearestDist = Double.MAX_VALUE;
+            
+            for (CorpseGibEntity gib : nearbyGibs) {
+                double dist = this.distanceToSqr(gib);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearestGib = gib;
+                }
+            }
+            
+            if (nearestGib != null) {
+                eatCorpseGib(nearestGib);
+            }
+        }
+    }
+    
+    /**
+     * 喷射酸液攻击
+     * 饱腹值≥1时向敌人喷射酸液，赋予5秒中毒效果
+     */
+    public void sprayAcidAtTarget(LivingEntity target) {
+        if (this.level().isClientSide) return;
+        if (this.corpseHunger < 1) return;
+        if (this.acidSprayCooldown > 0) return;
+        
+        double distance = this.distanceTo(target);
+        if (distance > 8.0D) return;
+        
+        target.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0, false, true));
+        
+        if (this.level() instanceof ServerLevel serverLevel) {
+            Vec3 start = this.position().add(0, 1.0, 0);
+            Vec3 end = target.position().add(0, target.getBbHeight() / 2, 0);
+            Vec3 direction = end.subtract(start).normalize();
+            
+            for (int i = 0; i < 10; i++) {
+                double t = i / 10.0;
+                double x = start.x + direction.x * distance * t;
+                double y = start.y + direction.y * distance * t;
+                double z = start.z + direction.z * distance * t;
+                
+                serverLevel.sendParticles(ParticleTypes.DRIPPING_HONEY,
+                    x, y, z, 2, 0.1, 0.1, 0.1, 0.01);
+            }
+        }
+        
+        this.acidSprayCooldown = ACID_SPRAY_COOLDOWN_TICKS;
+        
+        CorpseOrigin.LOGGER.info("尸兄 {} 向 {} 喷射了酸液", this.getId(), target.getName().getString());
     }
     
     /**
@@ -2139,63 +2355,114 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     private void findAndAttackTarget() {
         if (!(this.level() instanceof ServerLevel level)) return;
 
-        // 寻找所有可能的目标
-        var allEntities = level.getEntitiesOfClass(
-                net.minecraft.world.entity.LivingEntity.class,
+        // 按优先级寻找目标
+        // 第一优先级：非尸兄玩家
+        var normalPlayers = level.getEntitiesOfClass(
+                Player.class,
                 this.getBoundingBox().inflate(16.0D),
-                entity -> {
-                    if (entity == this) return false;
-                    if (entity instanceof Player player) {
-                        // 不攻击主人
-                        if (this.masterUUID != null && player.getUUID().equals(this.masterUUID)) {
-                            return false;
-                        }
-                    }
-                    return shouldAttackMob(entity);
-                }
+                entity -> shouldAttackNormalPlayer(entity)
         );
-
-        if (!allEntities.isEmpty()) {
-            // 优先选择非同类目标（非尸兄玩家和非尸兄生物）
-            net.minecraft.world.entity.LivingEntity closestNonZombie = null;
-            double minDistanceNonZombie = Double.MAX_VALUE;
-            
-            // 其次选择同类目标（尸兄玩家和其他尸兄）
-            net.minecraft.world.entity.LivingEntity closestZombie = null;
-            double minDistanceZombie = Double.MAX_VALUE;
-
-            for (var entity : allEntities) {
-                // 检查是否是同类
-                boolean isZombie = false;
-                if (entity instanceof LowerLevelZbEntity) {
-                    isZombie = true;
-                } else if (entity instanceof Player player) {
-                    isZombie = com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player);
-                }
-
-                double distance = this.distanceToSqr(entity);
-                
-                if (isZombie) {
-                    // 同类目标
-                    if (distance < minDistanceZombie) {
-                        minDistanceZombie = distance;
-                        closestZombie = entity;
-                    }
-                } else {
-                    // 非同类目标
-                    if (distance < minDistanceNonZombie) {
-                        minDistanceNonZombie = distance;
-                        closestNonZombie = entity;
-                    }
+        if (!normalPlayers.isEmpty()) {
+            // 选择最近的非尸兄玩家
+            Player closest = null;
+            double minDist = Double.MAX_VALUE;
+            for (var player : normalPlayers) {
+                double dist = this.distanceToSqr(player);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = player;
                 }
             }
+            if (closest != null) {
+                this.setTarget(closest);
+                return;
+            }
+        }
 
-            // 优先攻击非同类目标
-            if (closestNonZombie != null) {
-                this.setTarget(closestNonZombie);
-            } else if (closestZombie != null) {
-                // 只有在没有非同类目标时才攻击同类
-                this.setTarget(closestZombie);
+        // 第二优先级：非尸兄的其他怪物
+        var nonCorpseMobs = level.getEntitiesOfClass(
+                net.minecraft.world.entity.Mob.class,
+                this.getBoundingBox().inflate(16.0D),
+                entity -> shouldAttackNonCorpseMob(entity)
+        );
+        if (!nonCorpseMobs.isEmpty()) {
+            net.minecraft.world.entity.Mob closest = null;
+            double minDist = Double.MAX_VALUE;
+            for (var mob : nonCorpseMobs) {
+                double dist = this.distanceToSqr(mob);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = mob;
+                }
+            }
+            if (closest != null) {
+                this.setTarget(closest);
+                return;
+            }
+        }
+
+        // 第三优先级：动物
+        var animals = level.getEntitiesOfClass(
+                net.minecraft.world.entity.animal.Animal.class,
+                this.getBoundingBox().inflate(16.0D),
+                entity -> entity.isAlive()
+        );
+        if (!animals.isEmpty()) {
+            net.minecraft.world.entity.animal.Animal closest = null;
+            double minDist = Double.MAX_VALUE;
+            for (var animal : animals) {
+                double dist = this.distanceToSqr(animal);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = animal;
+                }
+            }
+            if (closest != null) {
+                this.setTarget(closest);
+                return;
+            }
+        }
+
+        // 第四优先级：尸兄玩家（极度饥饿时）
+        var corpsePlayers = level.getEntitiesOfClass(
+                Player.class,
+                this.getBoundingBox().inflate(16.0D),
+                entity -> shouldAttackCorpsePlayer(entity)
+        );
+        if (!corpsePlayers.isEmpty()) {
+            Player closest = null;
+            double minDist = Double.MAX_VALUE;
+            for (var player : corpsePlayers) {
+                double dist = this.distanceToSqr(player);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = player;
+                }
+            }
+            if (closest != null) {
+                this.setTarget(closest);
+                return;
+            }
+        }
+
+        // 第五优先级：其他尸兄实体（极度饥饿时）
+        var otherCorpses = level.getEntitiesOfClass(
+                LowerLevelZbEntity.class,
+                this.getBoundingBox().inflate(16.0D),
+                entity -> shouldAttackOtherCorpseEntity(entity)
+        );
+        if (!otherCorpses.isEmpty()) {
+            LowerLevelZbEntity closest = null;
+            double minDist = Double.MAX_VALUE;
+            for (var corpse : otherCorpses) {
+                double dist = this.distanceToSqr(corpse);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = corpse;
+                }
+            }
+            if (closest != null) {
+                this.setTarget(closest);
             }
         }
     }

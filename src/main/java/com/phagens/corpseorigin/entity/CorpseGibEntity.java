@@ -46,6 +46,7 @@ public class CorpseGibEntity extends Entity {
     private static final EntityDataAccessor<Boolean> DATA_IS_SKELETON = SynchedEntityData.defineId(CorpseGibEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> DATA_GROUND_TIME = SynchedEntityData.defineId(CorpseGibEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> DATA_INFECTION_PROGRESS = SynchedEntityData.defineId(CorpseGibEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Integer> DATA_RANDOM_TEXTURE_INDEX = SynchedEntityData.defineId(CorpseGibEntity.class, EntityDataSerializers.INT);
 
     // 父实体引用 (客户端用)
     @Nullable
@@ -96,6 +97,7 @@ public class CorpseGibEntity extends Entity {
         gib.setParentType(parent.getType().toString());
         gib.setSkeleton(parent.getType().toString().toLowerCase().contains("skeleton"));
         gib.explosion = explosionSource != null;
+        gib.setRandomTextureIndex(level.random.nextInt(16));
 
         // 设置位置和旋转 - 参照 EntityGib 的初始化
         gib.setPos(parent.getX(), parent.getBoundingBox().minY, parent.getZ());
@@ -245,6 +247,7 @@ public class CorpseGibEntity extends Entity {
         builder.define(DATA_IS_SKELETON, false);
         builder.define(DATA_GROUND_TIME, 0);
         builder.define(DATA_INFECTION_PROGRESS, 0.0f);
+        builder.define(DATA_RANDOM_TEXTURE_INDEX, -1);
     }
 
     @Override
@@ -254,6 +257,7 @@ public class CorpseGibEntity extends Entity {
         setSkeleton(tag.getBoolean("IsSkeleton"));
         setGroundTime(tag.getInt("GroundTime"));
         setInfectionProgress(tag.getFloat("InfectionProgress"));
+        setRandomTextureIndex(tag.getInt("RandomTextureIndex"));
 
         if (tag.hasUUID("ParentUUID")) {
             this.parentUUID = tag.getUUID("ParentUUID");
@@ -272,6 +276,7 @@ public class CorpseGibEntity extends Entity {
         tag.putBoolean("IsSkeleton", isSkeleton());
         tag.putInt("GroundTime", getGroundTime());
         tag.putFloat("InfectionProgress", getInfectionProgress());
+        tag.putInt("RandomTextureIndex", getRandomTextureIndex());
 
         if (this.parentUUID != null) {
             tag.putUUID("ParentUUID", this.parentUUID);
@@ -560,6 +565,14 @@ public class CorpseGibEntity extends Entity {
 
     public void setInfectionProgress(float progress) {
         this.entityData.set(DATA_INFECTION_PROGRESS, progress);
+    }
+
+    public int getRandomTextureIndex() {
+        return this.entityData.get(DATA_RANDOM_TEXTURE_INDEX);
+    }
+
+    public void setRandomTextureIndex(int index) {
+        this.entityData.set(DATA_RANDOM_TEXTURE_INDEX, index);
     }
 
     @Nullable

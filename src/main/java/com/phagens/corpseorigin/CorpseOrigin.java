@@ -65,6 +65,7 @@ public class CorpseOrigin {
             .displayItems((parameters, output) -> {
                 output.accept(QI_XING_GUAN_ITEM.get());
                 output.accept(Moditems.ZBR_FLESH_ITEM.get());
+                output.accept(Moditems.ALIENATED_FRAGMENT_ITEM.get());
                 output.accept(Moditems.BYWATER_BUCKET.get());
                 output.accept(Moditems.BYWATER_BOTTLE.get());
                 output.accept(Moditems.S_AGENT.get());

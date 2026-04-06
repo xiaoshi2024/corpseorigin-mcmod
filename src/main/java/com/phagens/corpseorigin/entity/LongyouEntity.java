@@ -275,12 +275,125 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
         this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 16.0F));
         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
 
-        // 龙右作为尸王，不会攻击尸兄（同类），但会攻击其他生物
+        // 龙右作为尸王，攻击优先级：玩家 → 怪物 → 动物 → 尸兄（造反的）
         // 使用自定义条件判断是否攻击：只有饥饿或被攻击时才会主动出击
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackTarget));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Animal.class, 0, true, false, this::shouldAttackTarget));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Villager.class, 0, true, false, this::shouldAttackTarget));
-        // 不会主动攻击 LowerLevelZbEntity（尸兄同类）
+        
+        // 第一优先级：攻击非尸兄玩家（正常活人）
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackNormalPlayer));
+        
+        // 第二优先级：攻击非尸兄的其他怪物
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackNonCorpseMob));
+        
+        // 第三优先级：攻击动物
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Animal.class, 0, true, false, this::shouldAttackAnimal));
+        
+        // 第四优先级：攻击村民
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Villager.class, 0, true, false, this::shouldAttackVillager));
+        
+        // 第五优先级：攻击造反的尸兄玩家
+        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackRebelCorpsePlayer));
+    }
+
+    /**
+     * 判断是否应该攻击非尸兄玩家（正常活人）
+     * 这是第一优先级目标
+     */
+    private boolean shouldAttackNormalPlayer(net.minecraft.world.entity.LivingEntity entity) {
+        // 只攻击玩家
+        if (!(entity instanceof Player player)) {
+            return false;
+        }
+        
+        // 不攻击尸兄玩家（同类）
+        if (com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
+            return false;
+        }
+        
+        // 只有龙右应该主动出击时才会选择目标
+        return shouldInitiateAttack();
+    }
+    
+    /**
+     * 判断是否应该攻击非尸兄的其他怪物
+     * 这是第二优先级目标
+     */
+    private boolean shouldAttackNonCorpseMob(net.minecraft.world.entity.LivingEntity entity) {
+        // 不攻击尸兄实体（同类）
+        if (entity instanceof LowerLevelZbEntity) {
+            return false;
+        }
+        
+        // 不攻击尸兄鱼（同类）
+        if (entity instanceof ZbrFishEntity) {
+            return false;
+        }
+        
+        // 不攻击玩家（玩家由单独的目标处理）
+        if (entity instanceof Player) {
+            return false;
+        }
+        
+        // 不攻击村民（村民由单独的目标处理）
+        if (entity instanceof Villager) {
+            return false;
+        }
+        
+        // 不攻击动物（动物由单独的目标处理）
+        if (entity instanceof Animal) {
+            return false;
+        }
+        
+        // 只有龙右应该主动出击时才会选择目标
+        return shouldInitiateAttack();
+    }
+    
+    /**
+     * 判断是否应该攻击动物
+     * 这是第三优先级目标
+     */
+    private boolean shouldAttackAnimal(net.minecraft.world.entity.LivingEntity entity) {
+        // 只攻击动物
+        if (!(entity instanceof Animal)) {
+            return false;
+        }
+        
+        // 只有龙右应该主动出击时才会选择目标
+        return shouldInitiateAttack();
+    }
+    
+    /**
+     * 判断是否应该攻击村民
+     * 这是第四优先级目标
+     */
+    private boolean shouldAttackVillager(net.minecraft.world.entity.LivingEntity entity) {
+        // 只攻击村民
+        if (!(entity instanceof Villager)) {
+            return false;
+        }
+        
+        // 只有龙右应该主动出击时才会选择目标
+        return shouldInitiateAttack();
+    }
+    
+    /**
+     * 判断是否应该攻击造反的尸兄玩家
+     * 这是第五优先级目标
+     */
+    private boolean shouldAttackRebelCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
+        // 只攻击玩家
+        if (!(entity instanceof Player player)) {
+            return false;
+        }
+        
+        // 只攻击已成为尸兄的玩家
+        if (!com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
+            return false;
+        }
+        
+        // 检查该尸兄玩家是否造反（攻击次数超过阈值）
+        java.util.UUID playerId = player.getUUID();
+        int attackCount = corpsePlayerAttacks.getOrDefault(playerId, 0);
+        return attackCount >= CORPSE_PLAYER_ATTACK_THRESHOLD;
     }
 
     @Override
@@ -290,29 +403,6 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
         return navigation;
     }
     
-    /**
-     * 判断是否应该攻击某个目标
-     * 用于AI目标选择
-     * 龙右不会主动攻击已成为尸兄的玩家（同类），但会攻击造反的尸兄玩家
-     */
-    private boolean shouldAttackTarget(net.minecraft.world.entity.LivingEntity entity) {
-        // 检查是否为造反的尸兄玩家
-        if (entity instanceof Player player) {
-            if (com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
-                // 检查该尸兄玩家是否造反（攻击次数超过阈值）
-                java.util.UUID playerId = player.getUUID();
-                int attackCount = corpsePlayerAttacks.getOrDefault(playerId, 0);
-                if (attackCount >= CORPSE_PLAYER_ATTACK_THRESHOLD) {
-                    return true; // 造反的尸兄玩家，应该攻击
-                }
-                return false; // 普通尸兄玩家，不攻击
-            }
-        }
-        
-        // 只有龙右应该主动出击时才会选择目标
-        return shouldInitiateAttack();
-    }
-
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 500.0D)

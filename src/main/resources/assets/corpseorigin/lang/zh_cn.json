@@ -3,8 +3,10 @@
 
   "block.corpseorigin.qi_xing_guan": "七星棺",
   "block.corpseorigin.zbr_flesh": "尸兄肉块",
+  "block.corpseorigin.alienated_fragment": "异化碎块",
 
   "item.corpseorigin.qi_xings_guan_item": "七星棺",
+  "item.corpseorigin.alienated_fragment_item": "异化碎块",
   "item.corpseorigin.bywater_bucket": "尸水桶",
   "item.corpseorigin.bywater_bottle": "尸水瓶",
   "item.corpseorigin.ming_juque": "巨阙剑",
