@@ -2,10 +2,15 @@ package com.phagens.corpseorigin.entity;
 
 import com.phagens.corpseorigin.entity.EntityAI.JLAI.ModFollow;
 import com.phagens.corpseorigin.entity.EntityAI.Vibrationsys.ModVibrationUser;
+import com.phagens.corpseorigin.CorpseOrigin;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -20,6 +25,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gameevent.DynamicGameEventListener;
 import net.minecraft.world.level.gameevent.vibrations.VibrationSystem;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
@@ -28,22 +35,27 @@ import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import java.util.List;
+
 public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationSystem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     protected static final RawAnimation SWIM_ANIM = RawAnimation.begin().thenLoop("swim");
     protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
     
-    // 振动系统必需的字段
     private final DynamicGameEventListener<Listener> dynamicGameEventListener;
     private final VibrationSystem.User vibrationUser;
     private VibrationSystem.Data vibrationData;
     
-    // 尸族特性字段
-    private int evolutionLevel = 1; // 进化等级
-    private int hunger = 100; // 饥饿度 (0-100)
-    private static final int HUNGER_THRESHOLD = 20; // 饥饿阈值
-    private int lastHurtTick = -1000; // 上次被攻击的游戏刻
-    private static final int HURT_MEMORY_DURATION = 200; // 被攻击记忆持续时间（10秒）
+    private int evolutionLevel = 1;
+    private int hunger = 100;
+    private static final int HUNGER_THRESHOLD = 20;
+    private int lastHurtTick = -1000;
+    private static final int HURT_MEMORY_DURATION = 200;
+    
+    private int corpseHunger = 0;
+    private static final int MAX_CORPSE_HUNGER = 3;
+    private int acidSprayCooldown = 0;
+    private static final int ACID_SPRAY_COOLDOWN_TICKS = 60;
 
     public ZbrFishEntity(EntityType<? extends AbstractFish> entityType, Level level) {
         super(entityType, level);
@@ -91,6 +103,12 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new PanicGoal(this, 1.25D));
+        // 寻找并吞噬尸体 - 尸兄鱼被尸体吸引
+        this.goalSelector.addGoal(1, new com.phagens.corpseorigin.entity.EntityAI.JLAI.AquaticSeekCorpseGibGoal(
+            this, 
+            this::eatCorpseGib,
+            () -> this.corpseHunger
+        ));
         this.goalSelector.addGoal(2, new ModFollow(this, 1.0D, true));
         this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
@@ -98,41 +116,98 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
     }
     
     protected void addBehaviourGoals() {
-        // 攻击目标 - 使用自定义条件判断是否攻击
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackTarget));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, 0, true, false, this::shouldAttackTarget));
+        // 攻击目标优先级：玩家 → 怪物 → 动物 → 尸兄
+        
+        // 第一优先级：攻击非尸兄玩家（正常活人）
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackNormalPlayer));
+        
+        // 第二优先级：攻击非尸兄的其他怪物
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackNonCorpseMob));
+        
+        // 第三优先级：攻击动物
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.animal.Animal.class, true));
+        
+        // 第四优先级：攻击尸兄玩家（同类）- 只有在极度饥饿时才会攻击
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackCorpsePlayer));
     }
     
     /**
-     * 判断是否应该攻击目标
-     * 尸兄鱼不会主动攻击尸兄玩家（同类），除非极度饥饿或被攻击
+     * 判断是否应该攻击非尸兄玩家（正常活人）
+     * 这是第一优先级目标
      */
-    private boolean shouldAttackTarget(net.minecraft.world.entity.LivingEntity entity) {
+    private boolean shouldAttackNormalPlayer(net.minecraft.world.entity.LivingEntity entity) {
         // 不攻击龙右（尸王）
         if (entity instanceof LongyouEntity) {
             return false;
         }
         
-        // 检查目标是否已成为尸兄的玩家（同类）
-        if (entity instanceof Player player) {
-            if (com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
-                // 如果被攻击了，允许反击
-                boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
-                if (wasRecentlyHurt) {
-                    return true; // 被攻击时反击同类玩家
-                }
-                
-                // 同类尸兄玩家，只有在极度饥饿时才攻击
-                boolean isHungry = this.hunger <= HUNGER_THRESHOLD;
-                
-                // 只有在极度饥饿时才攻击同类玩家
-                if (!isHungry) {
-                    return false; // 不饥饿时不攻击同类
-                }
-            }
+        // 只攻击玩家
+        if (!(entity instanceof Player player)) {
+            return false;
         }
         
+        // 只攻击非尸兄玩家（正常活人）
+        return !com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player);
+    }
+    
+    /**
+     * 判断是否应该攻击非尸兄的其他怪物
+     * 这是第二优先级目标
+     */
+    private boolean shouldAttackNonCorpseMob(net.minecraft.world.entity.LivingEntity entity) {
+        // 不攻击龙右（尸王）
+        if (entity instanceof LongyouEntity) {
+            return false;
+        }
+        
+        // 不攻击尸兄实体（同类）
+        if (entity instanceof LowerLevelZbEntity) {
+            return false;
+        }
+        
+        // 不攻击尸兄鱼（同类）
+        if (entity instanceof ZbrFishEntity) {
+            return false;
+        }
+        
+        // 不攻击玩家（玩家由单独的目标处理）
+        if (entity instanceof Player) {
+            return false;
+        }
+        
+        // 攻击其他所有怪物
         return true;
+    }
+    
+    /**
+     * 判断是否应该攻击尸兄玩家（已成为尸兄的玩家）
+     * 这是第四优先级目标，只有在极度饥饿时才会攻击
+     */
+    private boolean shouldAttackCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
+        // 不攻击龙右（尸王）
+        if (entity instanceof LongyouEntity) {
+            return false;
+        }
+        
+        // 只攻击玩家
+        if (!(entity instanceof Player player)) {
+            return false;
+        }
+        
+        // 只攻击已成为尸兄的玩家
+        if (!com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
+            return false;
+        }
+        
+        // 被攻击时允许反击
+        boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
+        if (wasRecentlyHurt) {
+            return true;
+        }
+        
+        // 极度饥饿时才攻击同类
+        boolean isHungry = this.hunger <= HUNGER_THRESHOLD;
+        return isHungry;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -165,16 +240,32 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
         if (!this.level().isClientSide) {
             VibrationSystem.Ticker.tick((net.minecraft.server.level.ServerLevel) this.level(), this.vibrationData, this.vibrationUser);
             
-            // 尸族特性：每5秒减少1点饥饿度
             if (this.tickCount % 100 == 0 && hunger > 0) {
                 hunger--;
             }
             
-            // 尸族特性：每10秒被动恢复生命
             if (this.tickCount % 200 == 0) {
                 if (this.getHealth() < this.getMaxHealth()) {
-                    float healAmount = 0.5f + (evolutionLevel * 0.3f); // 基础恢复 + 等级加成
+                    float healAmount = 0.5f + (evolutionLevel * 0.3f);
                     this.heal(healAmount);
+                }
+            }
+            
+            if (acidSprayCooldown > 0) {
+                acidSprayCooldown--;
+            }
+            
+            if (this.tickCount % 40 == 0) {
+                tryEatNearbyCorpseGib();
+            }
+            
+            if (this.corpseHunger >= 1 && this.tickCount % 60 == 0) {
+                LivingEntity target = this.getTarget();
+                if (target != null && target.isAlive()) {
+                    double dist = this.distanceTo(target);
+                    if (dist > 2.0D && dist <= 8.0D) {
+                        sprayAcidAtTarget(target);
+                    }
                 }
             }
         }
@@ -261,6 +352,8 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
         compound.putInt("EvolutionLevel", this.evolutionLevel);
         compound.putInt("Hunger", this.hunger);
         compound.putInt("LastHurtTick", this.lastHurtTick);
+        compound.putInt("CorpseHunger", this.corpseHunger);
+        compound.putInt("AcidSprayCooldown", this.acidSprayCooldown);
     }
     
     @Override
@@ -274,6 +367,12 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
         }
         if (compound.contains("LastHurtTick")) {
             this.lastHurtTick = compound.getInt("LastHurtTick");
+        }
+        if (compound.contains("CorpseHunger")) {
+            this.corpseHunger = compound.getInt("CorpseHunger");
+        }
+        if (compound.contains("AcidSprayCooldown")) {
+            this.acidSprayCooldown = compound.getInt("AcidSprayCooldown");
         }
     }
     
@@ -328,7 +427,137 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
     private void infectVillager(net.minecraft.world.entity.npc.Villager villager) {
         if (!(this.level() instanceof net.minecraft.server.level.ServerLevel serverLevel)) return;
         
-        // 使用 BYeffect 来感染村民（3-15秒随机延迟后变异）
         com.phagens.corpseorigin.effect.BYeffect.applyInfection(villager, serverLevel);
+    }
+    
+    /**
+     * 尸体饱腹值相关方法
+     */
+    public int getCorpseHunger() {
+        return this.corpseHunger;
+    }
+    
+    public void setCorpseHunger(int value) {
+        this.corpseHunger = Math.min(MAX_CORPSE_HUNGER, Math.max(0, value));
+        
+        if (this.corpseHunger >= MAX_CORPSE_HUNGER) {
+            onCorpseHungerFull();
+        }
+    }
+    
+    public void addCorpseHunger(int amount) {
+        setCorpseHunger(this.corpseHunger + amount);
+    }
+    
+    /**
+     * 当饱腹值达到3时触发等级提升
+     */
+    private void onCorpseHungerFull() {
+        if (this.evolutionLevel < 5) {
+            evolve();
+            CorpseOrigin.LOGGER.info("尸兄鱼 {} 因吞噬尸体饱腹值满而进化到 {} 级！", this.getId(), this.evolutionLevel);
+        }
+        this.corpseHunger = 0;
+    }
+    
+    /**
+     * 进化
+     */
+    private void evolve() {
+        this.evolutionLevel++;
+        
+        double healthBonus = this.evolutionLevel * 2.0;
+        double damageBonus = this.evolutionLevel * 0.5;
+        
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(10.0 + healthBonus);
+        this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(2.0 + damageBonus);
+        
+        this.setHealth(this.getMaxHealth());
+        
+        this.playSound(net.minecraft.sounds.SoundEvents.ILLUSIONER_PREPARE_BLINDNESS, 1.5F, 0.8F);
+        
+        CorpseOrigin.LOGGER.info("尸兄鱼进化到 {} 级！", this.evolutionLevel);
+    }
+    
+    /**
+     * 吞噬尸体实体
+     */
+    public void eatCorpseGib(CorpseGibEntity gib) {
+        if (this.level().isClientSide) return;
+        
+        gib.discard();
+        addCorpseHunger(1);
+        
+        this.playSound(net.minecraft.sounds.SoundEvents.GENERIC_EAT, 1.0F, 0.8F + this.random.nextFloat() * 0.4F);
+        
+        if (this.level() instanceof ServerLevel serverLevel) {
+            serverLevel.sendParticles(ParticleTypes.ITEM_SLIME,
+                this.getX(), this.getY() + 0.5, this.getZ(),
+                5, 0.3, 0.3, 0.3, 0.1);
+        }
+        
+        CorpseOrigin.LOGGER.info("尸兄鱼 {} 吞噬了尸体，饱腹值: {}", this.getId(), this.corpseHunger);
+    }
+    
+    /**
+     * 尝试吞噬附近的尸体实体
+     */
+    private void tryEatNearbyCorpseGib() {
+        if (this.level().isClientSide) return;
+        if (this.corpseHunger >= MAX_CORPSE_HUNGER) return;
+        
+        AABB searchBox = this.getBoundingBox().inflate(2.0D);
+        List<CorpseGibEntity> nearbyGibs = this.level().getEntitiesOfClass(CorpseGibEntity.class, searchBox);
+        
+        if (!nearbyGibs.isEmpty()) {
+            CorpseGibEntity nearestGib = null;
+            double nearestDist = Double.MAX_VALUE;
+            
+            for (CorpseGibEntity gib : nearbyGibs) {
+                double dist = this.distanceToSqr(gib);
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearestGib = gib;
+                }
+            }
+            
+            if (nearestGib != null) {
+                eatCorpseGib(nearestGib);
+            }
+        }
+    }
+    
+    /**
+     * 喷射酸液攻击
+     */
+    public void sprayAcidAtTarget(LivingEntity target) {
+        if (this.level().isClientSide) return;
+        if (this.corpseHunger < 1) return;
+        if (this.acidSprayCooldown > 0) return;
+        
+        double distance = this.distanceTo(target);
+        if (distance > 8.0D) return;
+        
+        target.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0, false, true));
+        
+        if (this.level() instanceof ServerLevel serverLevel) {
+            Vec3 start = this.position().add(0, 0.5, 0);
+            Vec3 end = target.position().add(0, target.getBbHeight() / 2, 0);
+            Vec3 direction = end.subtract(start).normalize();
+            
+            for (int i = 0; i < 10; i++) {
+                double t = i / 10.0;
+                double x = start.x + direction.x * distance * t;
+                double y = start.y + direction.y * distance * t;
+                double z = start.z + direction.z * distance * t;
+                
+                serverLevel.sendParticles(ParticleTypes.DRIPPING_HONEY,
+                    x, y, z, 2, 0.1, 0.1, 0.1, 0.01);
+            }
+        }
+        
+        this.acidSprayCooldown = ACID_SPRAY_COOLDOWN_TICKS;
+        
+        CorpseOrigin.LOGGER.info("尸兄鱼 {} 向 {} 喷射了酸液", this.getId(), target.getName().getString());
     }
 }

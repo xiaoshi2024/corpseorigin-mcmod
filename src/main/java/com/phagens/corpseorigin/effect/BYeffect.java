@@ -372,6 +372,15 @@ public class BYeffect extends MobEffect {
         // 播放转化特效
         player.level().broadcastEntityEvent(player, (byte) 35);
 
+        // 检查感染源是否有感染玩家的任务，更新任务进度
+        UUID sourceUUID = infectionSource.get(player.getUUID());
+        if (sourceUUID != null) {
+            ServerPlayer infector = player.server.getPlayerList().getPlayer(sourceUUID);
+            if (infector != null) {
+                updateInfectPlayerMission(infector);
+            }
+        }
+
         // 根据意识状态发送不同的提示消息
         if (hasConsciousness) {
             // 保留意识的幸运儿
@@ -391,6 +400,30 @@ public class BYeffect extends MobEffect {
                     "§7§o寻找穆博士的眼睛 或 进化到3级 可恢复意识"
             ));
             CorpseOrigin.LOGGER.info("玩家 {} 已转化为尸族！失去了人类意识...", player.getName().getString());
+        }
+    }
+
+    /**
+     * 更新感染玩家任务进度
+     */
+    private void updateInfectPlayerMission(ServerPlayer infector) {
+        for (int i = 0; i < infector.getInventory().getContainerSize(); i++) {
+            net.minecraft.world.item.ItemStack stack = infector.getInventory().getItem(i);
+            if (stack.getItem() instanceof com.phagens.corpseorigin.Item.MissionScrollItem) {
+                String missionType = com.phagens.corpseorigin.Item.MissionScrollItem.getMissionType(stack);
+                
+                if ("infect_player".equals(missionType) && !com.phagens.corpseorigin.Item.MissionScrollItem.isCompleted(stack)) {
+                    com.phagens.corpseorigin.Item.MissionScrollItem.incrementCount(stack);
+                    
+                    if (com.phagens.corpseorigin.Item.MissionScrollItem.isCompleted(stack)) {
+                        infector.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.corpseorigin.mission_completed"));
+                    } else {
+                        int remaining = com.phagens.corpseorigin.Item.MissionScrollItem.getTargetCount(stack) - 
+                                       com.phagens.corpseorigin.Item.MissionScrollItem.getCurrentCount(stack);
+                        infector.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.corpseorigin.mission_progress", remaining));
+                    }
+                }
+            }
         }
     }
 

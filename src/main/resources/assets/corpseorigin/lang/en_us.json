@@ -3,8 +3,10 @@
 
   "block.corpseorigin.qi_xing_guan": "Seven Star Corpse Coffin",
   "block.corpseorigin.zbr_flesh": "Zombie Brother Flesh",
+  "block.corpseorigin.alienated_fragment": "Alienated Fragment",
 
   "item.corpseorigin.qi_xings_guan_item": "Seven Star Coffin",
+  "item.corpseorigin.alienated_fragment_item": "Alienated Fragment",
   "item.corpseorigin.bywater_bucket": "Corpse Water Bucket",
   "item.corpseorigin.bywater_bottle": "Corpse Water Bottle",
   "item.corpseorigin.ming_juque": "Juque Sword",
@@ -264,5 +266,70 @@
   "skill.corpseorigin.multi_eye.ended": "§7Multi-Eye Perception effect has ended",
   "skill.corpseorigin.multi_eye.cooldown": "§cSkill on cooldown, %d seconds remaining",
   "skill.corpseorigin.multi_eye.detected": "§eDetected %d hostile targets",
-  "skill.corpseorigin.multi_eye.auto_learned": "§c§lYour multiple eyes have awakened! Gained Multi-Eye Perception ability!"
+  "skill.corpseorigin.multi_eye.auto_learned": "§c§lYour multiple eyes have awakened! Gained Multi-Eye Perception ability!",
+
+  "dialogue.longyou.greeting": "[Corpse King Long You] You have arrived, my subordinate.",
+  "dialogue.longyou.option.command": "What are your orders, my lord?",
+  "dialogue.longyou.option.task": "Mission & Upgrade System",
+  "dialogue.longyou.option.appointment": "Corpse King's Appointment",
+  "dialogue.longyou.option.about": "About the Corpse Clan",
+
+  "dialogue.longyou.command.line1": "§6§l[Corpse King Long You] §rMy subordinate, go forth and gather more life force for me to strengthen our Corpse Clan.",
+  "dialogue.longyou.command.line2": "§6§l[Corpse King Long You] §rEliminate those humans who resist us, and convert them into our kind.",
+  "dialogue.longyou.command.line3": "§6§l[Corpse King Long You] §rWhen you become powerful enough, I will grant you even greater power.",
+
+  "dialogue.longyou.task.line1": "§6§l[Corpse King Long You] §rI have activated the mission system for you. Complete missions to earn evolution points and special rewards.",
+  "dialogue.longyou.task.line2": "§6§l[Corpse King Long You] §rMissions include: eliminating humans, infecting villagers, collecting resources, and more.",
+  "dialogue.longyou.task.line3": "§6§l[Corpse King Long You] §rThe more missions you complete, the higher your level, and the greater your rewards.",
+
+  "dialogue.longyou.appointment.line1": "§6§l[Corpse King Long You] §rAs my subordinate, you have shown extraordinary potential.",
+  "dialogue.longyou.appointment.line2": "§6§l[Corpse King Long You] §rI appoint you as an elite warrior of the Corpse Clan, granting you special abilities.",
+  "dialogue.longyou.appointment.line3": "§6§l[Corpse King Long You] §rUse this power well, and fight for the rise of the Corpse Clan!",
+
+  "dialogue.longyou.about.line1": "§6§l[Corpse King Long You] §rWe, the Corpse Clan, are the new masters of this world, destined to replace the fragile humans.",
+  "dialogue.longyou.about.line2": "§6§l[Corpse King Long You] §rThrough continuous evolution, we will become invincible.",
+  "dialogue.longyou.about.line3": "§6§l[Corpse King Long You] §rThe future of the Corpse Clan lies in the hands of subordinates like you.",
+
+  "dialogue.longyou.invalid_option": "§4§lInvalid option!",
+  "dialogue.longyou.only_corpse": "§4§lOnly Zombie Brothers can converse with the Corpse King!",
+  "dialogue.longyou.rebellion": "§4§l[Corpse King Long You] §rYou dare to raise your hand against me? This is rebellion!",
+  "dialogue.longyou.rebellion.broadcast": "§4§l[Corpse King Long You] §r%s dared to raise their hand against me! This is rebellion!",
+
+  "dialogue.longyou.option.receive_mission": "Receive Mission",
+  "dialogue.longyou.option.submit_mission": "Submit Mission",
+  
+  "dialogue.longyou.mission.already_has": "§c§l[Corpse King Long You] §rYou already have an incomplete mission. Go finish it first!",
+  "dialogue.longyou.mission.received": "§a§l[Corpse King Long You] §rHere is your mission scroll. Bring it to me when completed. Mission: %s",
+  "dialogue.longyou.mission.kill_villager": "§6§l[Corpse King Long You] §rGo slaughter %d villagers! Let them know the power of the Corpse Clan!",
+  "dialogue.longyou.mission.kill_zombie": "§6§l[Corpse King Long You] §rGo eliminate %d zombies or corpse brothers! Clean up those inferior kin!",
+  "dialogue.longyou.mission.kill_any": "§6§l[Corpse King Long You] §rGo kill %d creatures! Show me your power!",
+  "dialogue.longyou.mission.infect_player": "§6§l[Corpse King Long You] §rGo infect %d players! Make them part of our Corpse Clan! This is the most valuable mission!",
+  "dialogue.longyou.mission.collect_item": "§6§l[Corpse King Long You] §rGo collect %d items! I'm interested in new things in this world!",
+  "dialogue.longyou.mission.completed": "§a§l[Corpse King Long You] §rWell done! You have completed the mission. Here is your reward!",
+  "dialogue.longyou.mission.reward_points": "§aYou gained %d evolution points!",
+  "dialogue.longyou.mission.reward_level": "§aYour evolution level increased to level %d!",
+  "dialogue.longyou.mission.no_completed": "§c§l[Corpse King Long You] §rYou have no completed missions! Go finish a mission first!",
+  
+  "mission.corpseorigin.kill_villager": "Slaughter Villagers",
+  "mission.corpseorigin.kill_zombie": "Eliminate Zombies/Corpse Brothers",
+  "mission.corpseorigin.kill_any": "Kill Creatures",
+  "mission.corpseorigin.infect_player": "Infect Players",
+  "mission.corpseorigin.collect_item": "Collect Items",
+  "mission.corpseorigin.collect_block": "Collect Blocks",
+  
+  "message.corpseorigin.mission_completed": "§a§lMission completed! Return to the Corpse King to submit!",
+  "message.corpseorigin.mission_progress": "§eMission progress: %d targets remaining",
+  "message.corpseorigin.mission_progress_kill": "§eMission progress: %d creatures remaining",
+  "message.corpseorigin.mission_progress_collect": "§eMission progress: %d items remaining",
+  "message.corpseorigin.mission_progress_infect": "§eMission progress: %d players remaining",
+
+  "item.corpseorigin.mission_scroll": "Mission Scroll",
+  "item.corpseorigin.mission_scroll.type": "Mission Type: %s",
+  "item.corpseorigin.mission_scroll.progress": "Progress: %d / %d",
+  "item.corpseorigin.mission_scroll.completed": "§a§lCompleted! Return to the Corpse King to submit",
+  "item.corpseorigin.mission_scroll.incomplete": "§eMission incomplete",
+  "item.corpseorigin.mission_scroll.reward_points": "Reward: %d Evolution Points",
+  "item.corpseorigin.mission_scroll.reward_levels": "Reward: +1 Evolution Level",
+  "item.corpseorigin.mission_scroll.can_submit": "§aMission completed! Right-click the Corpse King with this scroll to submit!",
+  "item.corpseorigin.mission_scroll.remaining": "§e%d targets remaining"
 }

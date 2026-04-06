@@ -31,6 +31,10 @@ public class Moditems {
     public static final DeferredItem<BlockItem> ZBR_FLESH_ITEM = ITEMS.register("zbr_flesh_item",
             () -> new BlockItem(BlockRegistry.ZBR_FLESH.get(), new Item.Properties()));
 
+    // 异化碎块物品
+    public static final DeferredItem<BlockItem> ALIENATED_FRAGMENT_ITEM = ITEMS.register("alienated_fragment_item",
+            () -> new BlockItem(BlockRegistry.ALIENATED_FRAGMENT.get(), new Item.Properties()));
+
     public static final DeferredItem<Item> BYWATER_BUCKET = ITEMS.register("bywater_bucket",
             () -> new ByWaterBucketItem(new Item.Properties().stacksTo(1)));
 
@@ -87,6 +91,11 @@ public class Moditems {
     // 穆博士的眼睛 - 稀有掉落物，失去意识的尸兄食用后可恢复人类智慧
     public static final DeferredItem<Item> DR_MU_EYE = ITEMS.register("dr_mu_eye",
             () -> new DrMuEyeItem());
+
+    // ========== 任务系统物品 ==========
+    // 任务纸条 - 用于追踪任务进度
+    public static final DeferredItem<Item> MISSION_SCROLL = ITEMS.register("mission_scroll",
+            () -> new MissionScrollItem());
 }
 
 

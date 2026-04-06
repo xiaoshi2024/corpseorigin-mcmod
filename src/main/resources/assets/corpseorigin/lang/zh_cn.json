@@ -3,8 +3,10 @@
 
   "block.corpseorigin.qi_xing_guan": "七星棺",
   "block.corpseorigin.zbr_flesh": "尸兄肉块",
+  "block.corpseorigin.alienated_fragment": "异化碎块",
 
   "item.corpseorigin.qi_xings_guan_item": "七星棺",
+  "item.corpseorigin.alienated_fragment_item": "异化碎块",
   "item.corpseorigin.bywater_bucket": "尸水桶",
   "item.corpseorigin.bywater_bottle": "尸水瓶",
   "item.corpseorigin.ming_juque": "巨阙剑",
@@ -264,5 +266,70 @@
   "skill.corpseorigin.multi_eye.cooldown": "§c技能冷却中，还需 %d 秒",
   "skill.corpseorigin.multi_eye.detected": "§e感知到 %d 个敌意目标",
   "skill.corpseorigin.multi_eye.auto_learned": "§c§l你的多眼觉醒了！获得了多眼感知能力！",
-  "entity.corpseorigin.guigun": "鬼棍"
+  "entity.corpseorigin.guigun": "鬼棍",
+
+  "dialogue.longyou.greeting": "[尸王·龙右] 你来了，我的部下。",
+  "dialogue.longyou.option.command": "大人您有何吩咐？",
+  "dialogue.longyou.option.task": "任务升级系统",
+  "dialogue.longyou.option.appointment": "尸王钦点",
+  "dialogue.longyou.option.about": "关于尸族",
+
+  "dialogue.longyou.command.line1": "§6§l[尸王·龙右] §r我的部下，去为我收集更多的生命力，壮大我尸族的势力。",
+  "dialogue.longyou.command.line2": "§6§l[尸王·龙右] §r消灭那些反抗我们的人类，将他们转化为我们的同类。",
+  "dialogue.longyou.command.line3": "§6§l[尸王·龙右] §r当你变得足够强大时，我会赐予你更强大的力量。",
+
+  "dialogue.longyou.task.line1": "§6§l[尸王·龙右] §r我已为你开通了任务系统，完成任务可获得进化点和特殊奖励。",
+  "dialogue.longyou.task.line2": "§6§l[尸王·龙右] §r任务分为：消灭人类、感染村民、收集资源等多种类型。",
+  "dialogue.longyou.task.line3": "§6§l[尸王·龙右] §r完成的任务越多，你的等级越高，获得的奖励也越丰厚。",
+
+  "dialogue.longyou.appointment.line1": "§6§l[尸王·龙右] §r作为我的部下，你展现出了非凡的潜力。",
+  "dialogue.longyou.appointment.line2": "§6§l[尸王·龙右] §r我钦点你为尸族的精英战士，赐予你特殊的能力。",
+  "dialogue.longyou.appointment.line3": "§6§l[尸王·龙右] §r好好利用这份力量，为尸族的崛起而战！",
+
+  "dialogue.longyou.about.line1": "§6§l[尸王·龙右] §r我们尸族是这个世界的新主宰，将取代脆弱的人类。",
+  "dialogue.longyou.about.line2": "§6§l[尸王·龙右] §r通过不断进化，我们将变得更加强大，无可匹敌。",
+  "dialogue.longyou.about.line3": "§6§l[尸王·龙右] §r尸族的未来，就掌握在你们这些部下的手中。",
+
+  "dialogue.longyou.invalid_option": "§4§l无效的选项！",
+  "dialogue.longyou.only_corpse": "§4§l只有尸兄才能与尸王对话！",
+  "dialogue.longyou.rebellion": "§4§l[尸王·龙右] §r你竟敢对我动手，视为造反！",
+  "dialogue.longyou.rebellion.broadcast": "§4§l[尸王·龙右] §r%s 竟敢对我动手，视为造反！",
+
+  "dialogue.longyou.option.receive_mission": "领取任务",
+  "dialogue.longyou.option.submit_mission": "提交任务",
+  
+  "dialogue.longyou.mission.already_has": "§c§l[尸王·龙右] §r你已有未完成的任务，先去完成它！",
+  "dialogue.longyou.mission.received": "§a§l[尸王·龙右] §r这是你的任务纸条，完成后拿来给我。任务：%s",
+  "dialogue.longyou.mission.kill_villager": "§6§l[尸王·龙右] §r去屠杀 %d 个村民，让他们知道尸族的力量！",
+  "dialogue.longyou.mission.kill_zombie": "§6§l[尸王·龙右] §r去消灭 %d 个僵尸或尸兄，清理那些低等的同类！",
+  "dialogue.longyou.mission.kill_any": "§6§l[尸王·龙右] §r去击杀 %d 个生物，展示你的力量！",
+  "dialogue.longyou.mission.infect_player": "§6§l[尸王·龙右] §r去感染 %d 个玩家！让他们成为我们尸族的一员！这是最有价值的任务！",
+  "dialogue.longyou.mission.collect_item": "§6§l[尸王·龙右] §r去收集 %d 个物品！我对这个世界的新奇事物很感兴趣！",
+  "dialogue.longyou.mission.completed": "§a§l[尸王·龙右] §r做得好！你完成了任务，这是你的奖励！",
+  "dialogue.longyou.mission.reward_points": "§a你获得了 %d 点进化点！",
+  "dialogue.longyou.mission.reward_level": "§a你的进化等级提升至 %d 级！",
+  "dialogue.longyou.mission.no_completed": "§c§l[尸王·龙右] §r你没有完成的任务！先去完成任务再来找我！",
+  
+  "mission.corpseorigin.kill_villager": "屠杀村民",
+  "mission.corpseorigin.kill_zombie": "消灭僵尸/尸兄",
+  "mission.corpseorigin.kill_any": "击杀生物",
+  "mission.corpseorigin.infect_player": "感染玩家",
+  "mission.corpseorigin.collect_item": "收集物品",
+  "mission.corpseorigin.collect_block": "收集方块",
+  
+  "message.corpseorigin.mission_completed": "§a§l任务完成！请回到尸王处提交任务！",
+  "message.corpseorigin.mission_progress": "§e任务进度：还需完成 %d 个目标",
+  "message.corpseorigin.mission_progress_kill": "§e任务进度：还需击杀 %d 个目标",
+  "message.corpseorigin.mission_progress_collect": "§e任务进度：还需收集 %d 个目标",
+  "message.corpseorigin.mission_progress_infect": "§e任务进度：还需感染 %d 个玩家",
+  
+  "item.corpseorigin.mission_scroll": "任务纸条",
+  "item.corpseorigin.mission_scroll.type": "任务类型：%s",
+  "item.corpseorigin.mission_scroll.progress": "进度：%d / %d",
+  "item.corpseorigin.mission_scroll.completed": "§a§l已完成！请回到尸王处提交任务",
+  "item.corpseorigin.mission_scroll.incomplete": "§e任务未完成",
+  "item.corpseorigin.mission_scroll.reward_points": "奖励：%d 进化点",
+  "item.corpseorigin.mission_scroll.reward_levels": "奖励：+1 进化等级",
+  "item.corpseorigin.mission_scroll.can_submit": "§a任务已完成，请拿着纸条右键尸王提交任务！",
+  "item.corpseorigin.mission_scroll.remaining": "§e还需击杀 %d 个目标"
 }

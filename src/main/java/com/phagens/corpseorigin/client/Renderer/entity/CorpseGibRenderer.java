@@ -20,6 +20,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -46,9 +47,25 @@ public class CorpseGibRenderer extends EntityRenderer<CorpseGibEntity> {
     // 纹理缓存
     private static final Map<String, ResourceLocation> TEXTURE_CACHE = new HashMap<>();
 
-    // 默认纹理
-    private static final ResourceLocation DEFAULT_TEXTURE =
-            ResourceLocation.withDefaultNamespace("textures/entity/zombie/zombie.png");
+    // 随机纹理列表 - 当无法获取父实体纹理时随机选择
+    public static final List<ResourceLocation> RANDOM_TEXTURES = List.of(
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie102.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie118.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie118_e.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie272.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie277.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie295_e.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie342_e.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie549.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie568.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie578.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie580.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie583.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie679.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie696.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie697.png"),
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/entity/corpse_gib/zombie704.png")
+    );
 
     public CorpseGibRenderer(EntityRendererProvider.Context context) {
         super(context);
@@ -172,8 +189,12 @@ public class CorpseGibRenderer extends EntityRenderer<CorpseGibEntity> {
             CorpseOrigin.LOGGER.error("获取残肢纹理失败: {}", parentType);
         }
 
-        // 默认纹理
-        return DEFAULT_TEXTURE;
+        // 返回实体确定的随机纹理
+        int textureIndex = gib.getRandomTextureIndex();
+        if (textureIndex >= 0 && textureIndex < RANDOM_TEXTURES.size()) {
+            return RANDOM_TEXTURES.get(textureIndex);
+        }
+        return RANDOM_TEXTURES.get(0);
     }
 
     /**
