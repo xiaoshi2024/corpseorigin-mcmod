@@ -86,7 +86,12 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
             String[] knownFiles = {
                     "ba_dao_shi.json",
                     "qi_jia_shu.json",
-                    "shi_xian_jian.json"
+                    "shi_xian_jian.json",
+                    "sha_lu_xue_mai.json",
+                    "shi_chao_zhao_huan.json",
+                    "shui_qiu_ren_yi_neng.json",
+                    "xuan_kong_quan.json",
+                    "you_sha_dao_fa.json"
             };
             int loadedCount = 0;
             for (String fileName : knownFiles) {
