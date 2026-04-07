@@ -104,7 +104,8 @@ public class JSSkillEngine {
                 }
                 scriptCache.put(scriptPath, script);
             }
-            ScriptContext context = engine.getContext();
+            ScriptContext context = new SimpleScriptContext();
+            context.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE);
             var lookAngle = entity.getLookAngle();
 
             context.setAttribute("entity", entity, ScriptContext.ENGINE_SCOPE);
@@ -121,35 +122,21 @@ public class JSSkillEngine {
             context.setAttribute("playerY", entity.getY(), ScriptContext.ENGINE_SCOPE);
             context.setAttribute("playerZ", entity.getZ(), ScriptContext.ENGINE_SCOPE);
             context.setAttribute("eyeY", entity.getEyeY(), ScriptContext.ENGINE_SCOPE);
+            script.eval(context);
+            Object activateFunc = context.getAttribute("activate", ScriptContext.ENGINE_SCOPE);
 
-            Object scriptObj = script.eval(context);
-
-            if (scriptObj instanceof org.openjdk.nashorn.api.scripting.ScriptObjectMirror) {
-                org.openjdk.nashorn.api.scripting.ScriptObjectMirror scriptMirror =
-                        (org.openjdk.nashorn.api.scripting.ScriptObjectMirror) scriptObj;
-
-                if (scriptMirror.hasMember("activate")) {
-                    var activateFunc = scriptMirror.getMember("activate");
-                    if (activateFunc instanceof org.openjdk.nashorn.api.scripting.ScriptObjectMirror) {
-                        try {
-                            Object result = ((org.openjdk.nashorn.api.scripting.ScriptObjectMirror) activateFunc)
-                                    .call(scriptMirror, entity, entity.level(), gongFaData);
-                            CorpseOrigin.LOGGER.info("【JS 技能】{} 执行结果：{}", skillName, result);
-                            return result instanceof Boolean ? (Boolean) result : true;
-                        } catch (org.openjdk.nashorn.internal.runtime.ECMAException e) {
-                            CorpseOrigin.LOGGER.error("JS 脚本执行异常：{}", skillName, e);
-                            return false;
-                        }
-                    } else {
-                        CorpseOrigin.LOGGER.error("activate 成员不是函数：{}", skillName);
-                        return false;
-                    }
-                } else {
-                    CorpseOrigin.LOGGER.error("JS 脚本中没有 activate 函数：{}", skillName);
+            if (activateFunc instanceof org.openjdk.nashorn.api.scripting.ScriptObjectMirror) {
+                try {
+                    Object result = ((org.openjdk.nashorn.api.scripting.ScriptObjectMirror) activateFunc)
+                            .call(null, entity, entity.level(), gongFaData);
+                    CorpseOrigin.LOGGER.info("【JS 技能】{} 执行结果：{}", skillName, result);
+                    return result instanceof Boolean ? (Boolean) result : true;
+                } catch (org.openjdk.nashorn.internal.runtime.ECMAException e) {
+                    CorpseOrigin.LOGGER.error("JS 脚本执行异常：{}", skillName, e);
                     return false;
                 }
             } else {
-                CorpseOrigin.LOGGER.error("脚本执行后未返回对象：{}", skillName);
+                CorpseOrigin.LOGGER.error("JS 脚本中没有 activate 函数：{}", skillName);
                 return false;
             }
         } catch (Exception e) {

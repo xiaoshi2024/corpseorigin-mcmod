@@ -11,6 +11,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import static net.minecraft.commands.arguments.ParticleArgument.getParticle;
 
@@ -490,6 +492,42 @@ public class SkillEffects {
                     maxRadius, shells, particle, particlesPerShell);
         } catch (Exception e) {
             CorpseOrigin.LOGGER.error("生成领域展开失败", e);
+        }
+    }
+
+
+    /**
+     * 造成区域爆炸伤害
+     *
+     * @param source 伤害来源实体
+     * @param centerPos 爆炸中心位置
+     * @param radius 爆炸半径
+     * @param damage 基础伤害
+     * @param damageMultiplier 伤害倍率（对非直接目标）
+     */
+    public static void createExplosionDamage(LivingEntity source, Vec3 centerPos, double radius, double damage, double damageMultiplier) {
+        try {
+            var level = source.level();
+            var searchBox = new AABB(
+                    centerPos.x - radius, centerPos.y - radius, centerPos.z - radius,
+                    centerPos.x + radius, centerPos.y + radius, centerPos.z + radius
+            );
+
+            var nearbyEntities = level.getEntitiesOfClass(LivingEntity.class, searchBox);
+
+            for (LivingEntity nearby : nearbyEntities) {
+                if (nearby != source) {
+                    double actualDamage = nearby.distanceToSqr(centerPos) <= 1.0 ? damage : damage * damageMultiplier;
+
+                    if (source instanceof net.minecraft.server.level.ServerPlayer player) {
+                        nearby.hurt(level.damageSources().playerAttack(player), (float) actualDamage);
+                    } else {
+                        nearby.hurt(level.damageSources().mobAttack(source), (float) actualDamage);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("区域伤害失败", e);
         }
     }
 }
