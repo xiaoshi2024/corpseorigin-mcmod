@@ -25,25 +25,44 @@ import java.util.function.Consumer;
 public class JuQue extends SwordItem implements GeoItem {
     private static final RawAnimation IDLE = RawAnimation.begin().thenPlay("idle");
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+    private final String variant;
 
     public JuQue(Tier tier, int attackDamage, float attackSpeed, Properties properties) {
+        this(tier, attackDamage, attackSpeed, properties, "base");
+    }
+
+    public JuQue(Tier tier, int attackDamage, float attackSpeed, Properties properties, String variant) {
         super(tier, properties.component(DataComponents.ATTRIBUTE_MODIFIERS, createAttributes(tier, attackDamage, attackSpeed)));
+        this.variant = variant;
+    }
+
+    public String getVariant() {
+        return variant;
     }
 
     @Override
     public boolean hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+        // 根据变种调整效果
+        float threshold = "tw".equals(variant) ? 0.4F : 0.3F; // 2阶变种阈值更高
+        float slowChance = (float) ("tw".equals(variant) ? 0.3 : 0.2); // 2阶变种减速几率更高
+        float damageChance = (float) ("tw".equals(variant) ? 0.3 : 0.2); // 2阶变种双倍伤害几率更高
+        int slowDuration = "tw".equals(variant) ? 150 : 100; // 2阶变种减速持续时间更长
+        int slowAmplifier = "tw".equals(variant) ? 3 : 2; // 2阶变种减速效果更强
+        
         // 存活                  //最高生命              //最低生命
-        if (target.isAlive() && target.getHealth() / target.getMaxHealth() <= 0.3F) {
+        if (target.isAlive() && target.getHealth() / target.getMaxHealth() <= threshold) {
             target.setHealth(0.0F);
         }
 
-        if (Math.random() <= 0.2) {
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 2));
+        if (Math.random() <= slowChance) {
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, slowDuration, slowAmplifier));
         }
 
-        if (Math.random() <= 0.2) {
+        if (Math.random() <= damageChance) {
             float currentDamage = (float) Objects.requireNonNull(attacker.getAttribute(Attributes.ATTACK_DAMAGE)).getValue();
-            target.hurt(attacker.damageSources().generic(), currentDamage * 2);
+            // 2阶变种造成3倍伤害
+            float multiplier = "tw".equals(variant) ? 3.0F : 2.0F;
+            target.hurt(attacker.damageSources().generic(), currentDamage * multiplier);
         }
 
         return super.hurtEnemy(stack, target, attacker);

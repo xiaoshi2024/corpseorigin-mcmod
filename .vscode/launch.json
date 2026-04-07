@@ -12,11 +12,11 @@
       "projectName": "corpseorigin-neoforge-1.21.1",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@E:\\代码\\MC模组\\corpseorigin-neoforge-1.21.1\\build\\moddev\\clientRunProgramArgs.txt"
+        "@D:\\corpseorigin-neoforge-1.21.1\\build\\moddev\\clientRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@E:\\代码\\MC模组\\corpseorigin-neoforge-1.21.1\\build\\moddev\\clientRunVmArgs.txt",
-        "-Dfml.modFolders\u003dcorpseorigin%%E:\\代码\\MC模组\\corpseorigin-neoforge-1.21.1\\bin\\main"
+        "@D:\\corpseorigin-neoforge-1.21.1\\build\\moddev\\clientRunVmArgs.txt",
+        "-Dfml.modFolders\u003dcorpseorigin%%D:\\corpseorigin-neoforge-1.21.1\\bin\\main"
       ],
       "cwd": "${workspaceFolder}\\run",
       "env": {},
@@ -34,11 +34,11 @@
       "projectName": "corpseorigin-neoforge-1.21.1",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@E:\\代码\\MC模组\\corpseorigin-neoforge-1.21.1\\build\\moddev\\dataRunProgramArgs.txt"
+        "@D:\\corpseorigin-neoforge-1.21.1\\build\\moddev\\dataRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@E:\\代码\\MC模组\\corpseorigin-neoforge-1.21.1\\build\\moddev\\dataRunVmArgs.txt",
-        "-Dfml.modFolders\u003dcorpseorigin%%E:\\代码\\MC模组\\corpseorigin-neoforge-1.21.1\\bin\\main"
+        "@D:\\corpseorigin-neoforge-1.21.1\\build\\moddev\\dataRunVmArgs.txt",
+        "-Dfml.modFolders\u003dcorpseorigin%%D:\\corpseorigin-neoforge-1.21.1\\bin\\main"
       ],
       "cwd": "${workspaceFolder}\\run",
       "env": {},
@@ -56,11 +56,11 @@
       "projectName": "corpseorigin-neoforge-1.21.1",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@E:\\代码\\MC模组\\corpseorigin-neoforge-1.21.1\\build\\moddev\\gameTestServerRunProgramArgs.txt"
+        "@D:\\corpseorigin-neoforge-1.21.1\\build\\moddev\\gameTestServerRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@E:\\代码\\MC模组\\corpseorigin-neoforge-1.21.1\\build\\moddev\\gameTestServerRunVmArgs.txt",
-        "-Dfml.modFolders\u003dcorpseorigin%%E:\\代码\\MC模组\\corpseorigin-neoforge-1.21.1\\bin\\main"
+        "@D:\\corpseorigin-neoforge-1.21.1\\build\\moddev\\gameTestServerRunVmArgs.txt",
+        "-Dfml.modFolders\u003dcorpseorigin%%D:\\corpseorigin-neoforge-1.21.1\\bin\\main"
       ],
       "cwd": "${workspaceFolder}\\run",
       "env": {},
@@ -78,11 +78,11 @@
       "projectName": "corpseorigin-neoforge-1.21.1",
       "mainClass": "net.neoforged.devlaunch.Main",
       "args": [
-        "@E:\\代码\\MC模组\\corpseorigin-neoforge-1.21.1\\build\\moddev\\serverRunProgramArgs.txt"
+        "@D:\\corpseorigin-neoforge-1.21.1\\build\\moddev\\serverRunProgramArgs.txt"
       ],
       "vmArgs": [
-        "@E:\\代码\\MC模组\\corpseorigin-neoforge-1.21.1\\build\\moddev\\serverRunVmArgs.txt",
-        "-Dfml.modFolders\u003dcorpseorigin%%E:\\代码\\MC模组\\corpseorigin-neoforge-1.21.1\\bin\\main"
+        "@D:\\corpseorigin-neoforge-1.21.1\\build\\moddev\\serverRunVmArgs.txt",
+        "-Dfml.modFolders\u003dcorpseorigin%%D:\\corpseorigin-neoforge-1.21.1\\bin\\main"
       ],
       "cwd": "${workspaceFolder}\\run",
       "env": {},

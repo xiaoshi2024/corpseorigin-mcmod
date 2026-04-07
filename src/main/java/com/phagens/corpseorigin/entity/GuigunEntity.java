@@ -68,17 +68,17 @@ public class GuigunEntity extends PathfinderMob implements GeoEntity {
     
     @Override
     protected SoundEvent getAmbientSound() {
-        return SoundEvents.VILLAGER_AMBIENT;
+        return null; // 无环境音效（移除村民音效）
     }
     
     @Override
     protected SoundEvent getHurtSound(DamageSource damageSource) {
-        return SoundEvents.PLAYER_HURT;
+        return SoundEvents.PLAYER_HURT; // 保留受伤音效
     }
     
     @Override
     protected SoundEvent getDeathSound() {
-        return SoundEvents.PLAYER_DEATH;
+        return SoundEvents.PLAYER_DEATH; // 保留死亡音效
     }
     
     @Override
@@ -146,7 +146,7 @@ public class GuigunEntity extends PathfinderMob implements GeoEntity {
         // 消耗生命值
         this.hurt(this.damageSources().generic(), 5.0F);
 
-        // 播放音效
+        // 播放技能音效
         if (this.level() instanceof net.minecraft.server.level.ServerLevel level) {
             level.playSound(null, this.blockPosition(),
                     SoundEvents.PLAYER_ATTACK_STRONG,
