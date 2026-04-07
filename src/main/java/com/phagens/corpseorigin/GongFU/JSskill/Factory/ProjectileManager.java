@@ -355,7 +355,7 @@ public class ProjectileManager {
         }
 
         private void findNewTarget() {
-            double searchRadius = 20.0;
+            double searchRadius = 25.0;
             List<LivingEntity> nearby = level.getEntitiesOfClass(
                     LivingEntity.class,
                     new AABB(position.x - searchRadius, position.y - searchRadius, position.z - searchRadius,

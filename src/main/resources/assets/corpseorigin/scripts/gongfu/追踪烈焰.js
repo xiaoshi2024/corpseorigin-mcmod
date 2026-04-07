@@ -20,10 +20,10 @@ function activate(entity, world, data) {
                startPos,
                direction,
                finalDamage,
-               20.0,
+               200.0,
                1.0,
                "flame",
-               0.8,
+               1,
                "minecraft:entity.generic.explode",
                 function(target) {
                            var level = target.level();
