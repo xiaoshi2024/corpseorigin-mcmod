@@ -74,6 +74,7 @@ public class CorpseOrigin {
                 output.accept(Moditems.BLUE_AGENT.get());
                 output.accept(Moditems.NULL_S_AGENT.get());
                 output.accept(Moditems.MING_JUQUE.get());
+                output.accept(Moditems.MING_JUQUE_TW.get());
 
                 // 添加刷怪蛋
                 output.accept(Moditems.LOWER_LEVEL_ZB_SPAWN_EGG.get());

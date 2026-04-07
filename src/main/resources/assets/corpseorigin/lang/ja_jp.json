@@ -10,6 +10,7 @@
   "item.corpseorigin.s_agent": "黄色薬剤",
   "item.corpseorigin.null_s_agent": "空薬剤",
   "item.corpseorigin.lei_xi_gong_fa": "雷系功法",
+  "item.corpseorigin.ming_juque_tw": "巨闕剣 贰阶",
 
   "entity.corpseorigin.zbr_fish": "屍兄魚",
   "entity.corpseorigin.lower_level_zb": "屍兄",
@@ -57,6 +58,7 @@
   "tooltip.corpseorigin.gongfa.ceng": "功法層級: %s",
   "tooltip.corpseorigin.gongfa.attribute": "武学加持:",
   "tooltip.corpseorigin.gongfa.skills": "スキル:",
+  "tooltip.corpseorigin.null_s_agent": "空薬剤, 同後の黑色火线で使用",
 
   "corpseorigin.configuration.title": "屍兄設定",
   "corpseorigin.configuration.section.corpseorigin.common.toml": "一般設定",
@@ -68,6 +70,7 @@
 
   "key.corpseorigin.category": "屍兄",
   "key.corpseorigin.open_gongfu": "修行画面を開く",
+  "key.corpseorigin.skill_release": "スキルリリース",
 
   "death.attack.corpse_water": "%1$s は屍水で溺死した",
   "death.attack.zombie_brother": "%1$s は屍兄に殺された",

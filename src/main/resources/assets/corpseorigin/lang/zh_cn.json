@@ -13,6 +13,7 @@
   "item.corpseorigin.s_agent": "黄色强化剂",
   "item.corpseorigin.blue_s_agent": "蓝色中和剂",
   "item.corpseorigin.null_s_agent": "空药剂",
+  "item.corpseorigin.ming_juque_tw": "巨阙剑 贰阶",
 
   "effect.corpseorigin.side_effect": "药剂副作用",
   "item.corpseorigin.lei_xi_gong_fa": "雷系功法",
@@ -71,6 +72,7 @@
   "tooltip.corpseorigin.gongfa.ceng": "功法层级: %s",
   "tooltip.corpseorigin.gongfa.attribute": "武学加持:",
   "tooltip.corpseorigin.gongfa.skills": "技艺:",
+  "tooltip.corpseorigin.null_s_agent": "空药剂,用于后续黑色火线的仪器里再添加",
 
   "corpseorigin.configuration.title": "尸兄模组配置",
   "corpseorigin.configuration.section.corpseorigin.common.toml": "尸兄模组通用配置",
@@ -82,6 +84,7 @@
 
   "key.corpseorigin.category": "尸兄模组",
   "key.corpseorigin.open_gongfu": "打开修行界面",
+  "key.corpseorigin.skill_release": "技能释放",
 
   "death.attack.corpse_water": "%1$s 在尸水中溺亡",
   "death.attack.zombie_brother": "%1$s 被尸兄杀死了",

@@ -4,6 +4,7 @@ import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.client.Renderer.item.SagentRenderer;
 import com.phagens.corpseorigin.effect.SideEffect;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
@@ -19,6 +20,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import software.bernie.geckolib.animatable.GeoItem;
 import software.bernie.geckolib.animatable.SingletonGeoAnimatable;
@@ -55,6 +57,28 @@ public class Sagent extends Item implements GeoItem {
         return variant;
     }
 
+    // 从物品栈中获取变种
+    public static String getVariantFromItem(ItemStack stack) {
+        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+        CompoundTag tag = customData != null ? customData.copyTag() : new CompoundTag();
+        if (tag.contains("Variant")) {
+            return tag.getString("Variant");
+        }
+        // 如果没有 NBT 数据，返回物品的默认变种
+        if (stack.getItem() instanceof Sagent sagent) {
+            return sagent.getVariant();
+        }
+        return "null";
+    }
+
+    // 将变种设置到物品栈中
+    public static void setVariantToItem(ItemStack stack, String variant) {
+        CustomData customData = stack.get(DataComponents.CUSTOM_DATA);
+        CompoundTag tag = customData != null ? customData.copyTag() : new CompoundTag();
+        tag.putString("Variant", variant);
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+    }
+
     public static class AttributeData {
         public final Holder<Attribute> attribute;
         public final AttributeModifier.Operation operation;
@@ -82,8 +106,14 @@ public class Sagent extends Item implements GeoItem {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
         ItemStack itemStack = player.getItemInHand(usedHand);
         
-        // 如果是 null 变种，不能使用
-        if (this.variant.equals("null")) {
+        // 检查物品是否为 NULL_S_AGENT 实例
+        if (itemStack.getItem() == com.phagens.corpseorigin.register.Moditems.NULL_S_AGENT.get()) {
+            return InteractionResultHolder.fail(itemStack);
+        }
+        
+        // 检查物品的变种，如果是 null 变种则不能使用
+        String currentVariant = getVariantFromItem(itemStack);
+        if (currentVariant.equals("null")) {
             return InteractionResultHolder.fail(itemStack);
         }
         
@@ -102,20 +132,39 @@ public class Sagent extends Item implements GeoItem {
             saveModifiersToPlayerData(player);
 
             // 黄色强化剂添加副作用
-            if (this.variant.equals("yellow")) {
+            if (currentVariant.equals("yellow")) {
                 SideEffect.applySideEffect(player, 1);
                 CorpseOrigin.LOGGER.info("玩家 {} 使用了黄色强化剂，获得副作用", player.getName().getString());
             }
 
             // 蓝色中和剂清除副作用
-            if (this.variant.equals("blue")) {
+            if (currentVariant.equals("blue")) {
                 SideEffect.clearSideEffect(player);
                 CorpseOrigin.LOGGER.info("玩家 {} 使用了蓝色中和剂", player.getName().getString());
             }
 
-            // 消耗物品
+            // 延迟2秒后将物品替换为 NULL_S_AGENT 实例
             if (!player.isCreative()) {
-                itemStack.shrink(1);
+                Level finalLevel = level;
+                // 使用服务器的调度器来处理延迟任务
+                net.minecraft.server.MinecraftServer server = player.getServer();
+                if (server != null) {
+                    server.execute(() -> {
+                        try {
+                            Thread.sleep(2000); // 2秒延迟
+                            if (player.isAlive() && finalLevel.isLoaded(player.blockPosition())) {
+                                ItemStack heldStack = player.getItemInHand(usedHand);
+                                if (heldStack.getItem() instanceof Sagent) {
+                                    // 替换为 NULL_S_AGENT 实例
+                                    ItemStack nullAgentStack = new ItemStack(com.phagens.corpseorigin.register.Moditems.NULL_S_AGENT.get());
+                                    player.setItemInHand(usedHand, nullAgentStack);
+                                }
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
+                    });
+                }
             }
         }
 
@@ -160,15 +209,23 @@ public class Sagent extends Item implements GeoItem {
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
 
+        // 根据物品栈中的变种显示不同的提示
+        String currentVariant = getVariantFromItem(stack);
+        
         // 黄色强化剂显示警告
-        if (this.variant.equals("yellow")) {
+        if (currentVariant.equals("yellow")) {
             tooltipComponents.add(Component.translatable("tooltip.corpseorigin.s_agent"));
             tooltipComponents.add(Component.translatable("tooltip.corpseorigin.s_agent.warning"));
         }
 
         // 蓝色中和剂显示说明
-        if (this.variant.equals("blue")) {
+        if (currentVariant.equals("blue")) {
             tooltipComponents.add(Component.translatable("tooltip.corpseorigin.blue_s_agent"));
+        }
+
+        // 空瓶显示说明
+        if (currentVariant.equals("null")) {
+            tooltipComponents.add(Component.translatable("tooltip.corpseorigin.null_s_agent"));
         }
     }
 
