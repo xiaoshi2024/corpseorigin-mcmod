@@ -1,24 +1,17 @@
 package com.phagens.corpseorigin.event;
 
 import com.phagens.corpseorigin.CorpseOrigin;
-import com.phagens.corpseorigin.block.custom.AlienatedFragmentBlock;
 import com.phagens.corpseorigin.register.EntityRegistry;
 import com.phagens.corpseorigin.register.ModSounds;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.client.sounds.SoundManager;
-import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.Set;
@@ -65,8 +58,9 @@ public class DeadSilenceZoneHandler {
         if (checkCooldown < CHECK_INTERVAL) return;
         checkCooldown = 0;
         
-        BlockPos playerPos = mc.player.blockPosition();
-        isInDeadSilenceZone = checkDeadSilenceNearby(mc.level, playerPos);
+        // 简化检测：不再检查方块，默认不在死寂区域
+        // 可以根据需要添加其他检测方式，例如生物群系检测或维度检测
+        isInDeadSilenceZone = false;
         
         updateAmbience(mc);
         
@@ -114,7 +108,6 @@ public class DeadSilenceZoneHandler {
         );
         
         mc.getSoundManager().play(ambienceSound);
-//        CorpseOrigin.LOGGER.info("开始播放死寂群系背景音乐");
     }
     
     private static void stopAmbience() {
@@ -125,28 +118,8 @@ public class DeadSilenceZoneHandler {
         }
     }
     
-    private static boolean checkDeadSilenceNearby(Level level, BlockPos center) {
-        int radius = 29;
-        int step = 4;
-        
-        for (int x = -radius; x <= radius; x += step) {
-            for (int y = -16; y <= 16; y += step) {
-                for (int z = -radius; z <= radius; z += step) {
-                    BlockPos checkPos = center.offset(x, y, z);
-                    BlockState state = level.getBlockState(checkPos);
-                    if (state.getBlock() instanceof AlienatedFragmentBlock && 
-                        state.getValue(AlienatedFragmentBlock.DEAD_SILENCE)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        
-        return false;
-    }
-    
     @SubscribeEvent
-    public static void onRenderFog(ViewportEvent.RenderFog event) {
+    public static void onRenderFog(net.neoforged.neoforge.client.event.ViewportEvent.RenderFog event) {
         if (!isInDeadSilenceZone) return;
         
         event.setNearPlaneDistance(FOG_START);
@@ -155,7 +128,7 @@ public class DeadSilenceZoneHandler {
     }
     
     @SubscribeEvent
-    public static void onFogColors(ViewportEvent.ComputeFogColor event) {
+    public static void onFogColors(net.neoforged.neoforge.client.event.ViewportEvent.ComputeFogColor event) {
         if (!isInDeadSilenceZone) return;
         
         float gray = 0.35F;

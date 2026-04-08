@@ -57,22 +57,39 @@ public class DeadSilenceSpawnHandler {
         }
     }
     
+    private static BlockPos lastCheckPos = null;
+    private static boolean lastResult = false;
+    private static final int CHECK_STEP = 16;
+    
     private static boolean isInDeadSilenceZone(ServerLevel level, BlockPos pos) {
-        int step = 8;
+        // 缓存检查结果，当位置变化不大时使用缓存
+        if (lastCheckPos != null && pos.distSqr(lastCheckPos) < 256) {
+            return lastResult;
+        }
         
+        int step = CHECK_STEP;
+        
+        // 优化：减少检查范围和步长
         for (int x = -CHECK_RADIUS; x <= CHECK_RADIUS; x += step) {
-            for (int y = -16; y <= 16; y += step) {
+            for (int y = -8; y <= 8; y += step) {
                 for (int z = -CHECK_RADIUS; z <= CHECK_RADIUS; z += step) {
                     BlockPos checkPos = pos.offset(x, y, z);
-                    BlockState state = level.getBlockState(checkPos);
-                    if (state.getBlock() instanceof AlienatedFragmentBlock && 
-                        state.getValue(AlienatedFragmentBlock.DEAD_SILENCE)) {
-                        return true;
+                    // 只检查有效的方块位置
+                    if (level.isInWorldBounds(checkPos)) {
+                        BlockState state = level.getBlockState(checkPos);
+                        if (state.getBlock() instanceof AlienatedFragmentBlock && 
+                            state.getValue(AlienatedFragmentBlock.DEAD_SILENCE)) {
+                            lastCheckPos = pos.immutable();
+                            lastResult = true;
+                            return true;
+                        }
                     }
                 }
             }
         }
         
+        lastCheckPos = pos.immutable();
+        lastResult = false;
         return false;
     }
     
