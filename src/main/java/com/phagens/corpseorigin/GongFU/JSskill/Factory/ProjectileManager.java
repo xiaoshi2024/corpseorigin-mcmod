@@ -1,5 +1,6 @@
 package com.phagens.corpseorigin.GongFU.JSskill.Factory;
 
+import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -436,6 +437,9 @@ public class ProjectileManager {
             for (LivingEntity target : targets) {
                 // 排除射击者自己和盟友
                 if (target != shooter && !target.isAlliedTo(shooter)) {
+                    if (target instanceof FaxiangEntity) {
+                        continue;
+                    }
                     //根据射击者类型选择伤害来源
                     if (shooter instanceof net.minecraft.server.level.ServerPlayer player) {
                         // 玩家发射 → 玩家攻击伤害

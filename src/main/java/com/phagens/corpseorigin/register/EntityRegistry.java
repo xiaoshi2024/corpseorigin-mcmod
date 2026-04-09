@@ -1,5 +1,6 @@
 package com.phagens.corpseorigin.register;
 
+import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
 import com.phagens.corpseorigin.entity.AlienatedSporeEntity;
 import com.phagens.corpseorigin.entity.CorpseGibEntity;
 import com.phagens.corpseorigin.entity.GuigunEntity;
@@ -39,6 +40,13 @@ public class EntityRegistry {
             () -> EntityType.Builder.<GuigunEntity>of(GuigunEntity::new, MobCategory.CREATURE)
                     .sized(0.6F, 1.8F)
                     .build("guigun"));
+    //法相测试
+    public static final DeferredHolder<EntityType<?>, EntityType<FaxiangEntity>> FAXIANG = ENTITIES.register("faxiang",
+            () -> EntityType.Builder.<FaxiangEntity>of(FaxiangEntity::new, MobCategory.CREATURE)
+                    .sized(0.6F, 1.0F)
+                    .clientTrackingRange(64)
+                    .updateInterval(1)
+                    .build("faxiang"));
 
     // 开胃奶NPC
     public static final DeferredHolder<EntityType<?>, EntityType<KaiWeiNaiEntity>> KAIWEINAI = ENTITIES.register("kaiweinai",

@@ -24,6 +24,7 @@
 package com.phagens.corpseorigin.event;
 
 import com.phagens.corpseorigin.CorpseOrigin;
+import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
 import com.phagens.corpseorigin.entity.GuigunEntity;
 import com.phagens.corpseorigin.entity.LongyouEntity;
 import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
@@ -55,5 +56,7 @@ public class ModEventBusSubscriber {
         event.put(EntityRegistry.GUIGUN.get(), GuigunEntity.createAttributes().build());
         // 注册开胃奶的属性
         event.put(EntityRegistry.KAIWEINAI.get(), KaiWeiNaiEntity.createAttributes().build());
+        //注册法相
+        event.put(EntityRegistry.FAXIANG.get(), FaxiangEntity.createAttributes().build());
     }
 }

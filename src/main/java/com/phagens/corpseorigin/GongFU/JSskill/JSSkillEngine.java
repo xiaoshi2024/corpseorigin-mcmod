@@ -115,6 +115,7 @@ public class JSSkillEngine {
             context.setAttribute("skillName", skillName, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("SkillEffects", com.phagens.corpseorigin.GongFU.JSskill.SkillEffects.class, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("ProjectileManager", com.phagens.corpseorigin.GongFU.JSskill.Factory.ProjectileManager.getInstance(), ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("FaxiangFactory", com.phagens.corpseorigin.GongFU.JSskill.Factory.FaxiangFactory.class, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("lookX", lookAngle.x, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("lookY", lookAngle.y, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("lookZ", lookAngle.z, ScriptContext.ENGINE_SCOPE);
