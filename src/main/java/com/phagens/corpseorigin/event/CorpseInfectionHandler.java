@@ -19,6 +19,8 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 import java.util.List;
+import java.util.Collections;
+import java.util.ArrayList;
 
 /**
  * 尸体系统处理器
@@ -202,13 +204,17 @@ public class CorpseInfectionHandler {
      * 每tick检查身体残肢的感染
      * 只有 type 3 (body) 可以被感染
      */
+    private static final int CHECK_INTERVAL = 40; // 每2秒检查一次
+    private static List<CorpseGibEntity> lastBodies = new ArrayList<>();
+    private static long lastCheckTime = 0;
+    
     @SubscribeEvent
     public static void onLevelTick(LevelTickEvent.Pre event) {
         Level level = event.getLevel();
         if (level.isClientSide) return;
 
-        // 每20tick检查一次（每秒）
-        if (level.getGameTime() % 20 != 0) return;
+        // 每40tick检查一次（每2秒）
+        if (level.getGameTime() % CHECK_INTERVAL != 0) return;
 
         // 获取所有身体残肢实体 (type 3)
         List<CorpseGibEntity> bodies = level.getEntitiesOfClass(
@@ -220,13 +226,21 @@ public class CorpseInfectionHandler {
                 entity -> entity.getGibType() == CorpseGibEntity.GIB_TYPE_BODY
         );
 
+        // 限制检查的残肢数量，避免过多实体导致性能问题
+        int maxBodiesToCheck = 50;
+        if (bodies.size() > maxBodiesToCheck) {
+            // 随机选择一部分残肢进行检查
+            Collections.shuffle(bodies);
+            bodies = bodies.subList(0, maxBodiesToCheck);
+        }
+
         for (CorpseGibEntity body : bodies) {
             // 检查是否接触尸水
             if (isInCorpseWater(level, body)) {
-                // 增加感染进度（每秒增加 5%）
+                // 增加感染进度（每2秒增加 10%）
                 float oldProgress = body.getInfectionProgress();
                 if (oldProgress < 1.0f) {
-                    body.addInfectionProgress(0.05f);
+                    body.addInfectionProgress(0.10f);
                     float newProgress = body.getInfectionProgress();
 
                     if (oldProgress < 1.0f && newProgress >= 1.0f) {
@@ -238,10 +252,10 @@ public class CorpseInfectionHandler {
 
             // 检查是否靠近龙右（尸王可以主动感染尸体）
             if (isNearLongyou(level, body)) {
-                // 龙右感染更快（每秒增加 20%）
+                // 龙右感染更快（每2秒增加 40%）
                 float oldProgress = body.getInfectionProgress();
                 if (oldProgress < 1.0f) {
-                    body.addInfectionProgress(0.20f);
+                    body.addInfectionProgress(0.40f);
                     float newProgress = body.getInfectionProgress();
 
                     if (oldProgress < 1.0f && newProgress >= 1.0f) {
@@ -251,6 +265,9 @@ public class CorpseInfectionHandler {
                 }
             }
         }
+        
+        lastBodies = bodies;
+        lastCheckTime = level.getGameTime();
     }
 
     /**
