@@ -1,5 +1,6 @@
 package com.phagens.corpseorigin.GongFU.JSskill.Factory;
 
+import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
@@ -52,16 +53,83 @@ public class ProjectileManager {
      * @param hitboxSize   碰撞箱大小，以投射物为中心的立方体边长的一半
      * @param hitSound     命中音效（可选），如 "minecraft:entity.generic.explode"，传 null 则不播放
      * @param onHit        命中回调（可选），命中目标后执行的自定义逻辑，传 null 则只造成伤害
+     * @param particleCount   每tick粒子数量
+     * @param particleOffsetX X轴扩散范围
+     * @param particleOffsetY Y轴扩散范围
+     * @param particleOffsetZ Z轴扩散范围
+     * @param particleSpeed   粒子扩散速度
      */
     public void createProjectile(LivingEntity shooter, Vec3 startPos, Vec3 direction,
                                  double damage, double maxRange, double speed,
                                  String particleType, double hitboxSize,
-                                 @Nullable String hitSound, @Nullable Consumer<LivingEntity> onHit) {
+                                 @Nullable String hitSound, @Nullable Consumer<LivingEntity> onHit,
+                                 int particleCount,
+                                 double particleOffsetX, double particleOffsetY, double particleOffsetZ,
+                                 double particleSpeed) {
         GenericProjectile projectile = new GenericProjectile(
                 shooter, startPos, direction, damage, maxRange, speed,
                 particleType, hitboxSize, hitSound, onHit
         );
+
+        projectile.particleCount = particleCount;
+        projectile.particleOffsetX = particleOffsetX;
+        projectile.particleOffsetY = particleOffsetY;
+        projectile.particleOffsetZ = particleOffsetZ;
+        projectile.particleSpeed = particleSpeed;
         projectiles.add(projectile);
+
+    }
+
+
+    /**
+     * 创建追踪飞行投射物（完整粒子参数）
+     * @param shooter         射击者
+     * @param startPos        起始位置
+     * @param direction       初始飞行方向
+     * @param damage          伤害值
+     * @param maxRange        最大射程
+     * @param speed           飞行速度
+     * @param particleType    粒子类型
+     * @param hitboxSize      碰撞箱大小
+     * @param hitSound        命中音效
+     * @param onHit           命中回调
+     * @param turnRate        转向灵敏度（0.0-1.0）
+     * @param particleCount   每tick粒子数量
+     * @param particleOffsetX X轴扩散范围
+     * @param particleOffsetY Y轴扩散范围
+     * @param particleOffsetZ Z轴扩散范围
+     * @param particleSpeed   粒子扩散速度
+     */
+    public void createHomingProjectile(LivingEntity shooter, Vec3 startPos, Vec3 direction,
+                                       double damage, double maxRange, double speed,
+                                       String particleType, double hitboxSize,
+                                       @Nullable String hitSound, @Nullable Consumer<LivingEntity> onHit,
+                                       double turnRate, int particleCount,
+                                       double particleOffsetX, double particleOffsetY, double particleOffsetZ,
+                                       double particleSpeed) {
+        GenericProjectile projectile = new GenericProjectile(
+                shooter, startPos, direction, damage, maxRange, speed,
+                particleType, hitboxSize, hitSound, onHit
+        );
+        projectile.turnRate = turnRate;
+        projectile.particleCount = particleCount;
+        projectile.particleOffsetX = particleOffsetX;
+        projectile.particleOffsetY = particleOffsetY;
+        projectile.particleOffsetZ = particleOffsetZ;
+        projectile.particleSpeed = particleSpeed;
+        projectiles.add(projectile);
+    }
+
+    /**
+     * 创建追踪飞行投射物（简化版，默认粒子参数）
+     */
+    public void createHomingProjectile(LivingEntity shooter, Vec3 startPos, Vec3 direction,
+                                       double damage, double maxRange, double speed,
+                                       String particleType, double hitboxSize,
+                                       @Nullable String hitSound, @Nullable Consumer<LivingEntity> onHit,
+                                       double turnRate) {
+        createHomingProjectile(shooter, startPos, direction, damage, maxRange, speed,
+                particleType, hitboxSize, hitSound, onHit, turnRate, 1, 0.1, 0.1, 0.1, 0);
     }
 
     /**
@@ -188,7 +256,7 @@ public class ProjectileManager {
         private final LivingEntity shooter;        // 射击者（支持任意实体）
         private final ServerLevel level;           // 所在世界
         private Vec3 position;                     // 当前位置
-        private final Vec3 direction;              // 飞行方向（已归一化）
+        private Vec3 direction;              // 飞行方向
         private final double damage;               // 伤害值
         private final double maxRange;             // 最大射程
         private final double speed;                // 飞行速度
@@ -198,6 +266,14 @@ public class ProjectileManager {
         private final Consumer<LivingEntity> onHitCallback; // 命中回调
         private double traveledDistance;           // 已飞行距离
         private boolean hasHit;                    // 是否已命中
+        private LivingEntity trackingTarget; // 追踪目标实体
+        private double turnRate;             // 转向灵敏度（0-1）
+        private int targetSearchCooldown;    // 目标搜索冷却计时器
+        private int particleCount;
+        private double particleOffsetX;
+        private double particleOffsetY;
+        private double particleOffsetZ;
+        private double particleSpeed;
 
         /**
          * 构造函数
@@ -229,6 +305,14 @@ public class ProjectileManager {
             this.onHitCallback = onHit;
             this.traveledDistance = 0;
             this.hasHit = false;
+            this.trackingTarget = null;      // 新增：初始无追踪目标
+            this.turnRate = 0.0;             // 新增：默认不追踪
+            this.targetSearchCooldown = 0;   // 新增：初始无冷却
+            this.particleCount = 1;
+            this.particleOffsetX = 0.1;
+            this.particleOffsetY = 0.1;
+            this.particleOffsetZ = 0.1;
+            this.particleSpeed = 0;
         }
 
         /**
@@ -243,6 +327,21 @@ public class ProjectileManager {
             if (hasHit || traveledDistance >= maxRange) {
                 return;
             }
+            if (trackingTarget != null) {
+                if (!trackingTarget.isAlive()) {
+                    trackingTarget = null;
+                } else {
+                    updateTrackingDirection();
+                }
+            }
+            if (trackingTarget == null && targetSearchCooldown <= 0) {
+                findNewTarget();
+                targetSearchCooldown = 10;
+            }
+
+            if (targetSearchCooldown > 0) {
+                targetSearchCooldown--;
+            }
             position = position.add(direction.scale(speed));
             traveledDistance += speed;
             spawnParticles();
@@ -254,11 +353,48 @@ public class ProjectileManager {
         private void spawnParticles() {
             try {
                 ParticleOptions particle = getParticle(particleType);
-                level.sendParticles(particle, position.x, position.y, position.z, 1, 0, 0, 0, 0);
+                level.sendParticles(particle, position.x, position.y, position.z,
+                        particleCount, particleOffsetX, particleOffsetY, particleOffsetZ, particleSpeed);
             } catch (Exception e) {
                 //失败
             }
         }
+
+        private void updateTrackingDirection() {
+            Vec3 toTarget = trackingTarget.getPosition(1.0F).subtract(position);
+            Vec3 desiredDirection = toTarget.normalize();     // 期望方向：指向目标
+            Vec3 currentDirection = direction.normalize();    // 当前方向
+
+            // 线性插值实现平滑转向
+            Vec3 newDirection = currentDirection.lerp(desiredDirection, turnRate).normalize();
+            this.direction = newDirection;
+        }
+
+        private void findNewTarget() {
+            double searchRadius = 25.0;
+            List<LivingEntity> nearby = level.getEntitiesOfClass(
+                    LivingEntity.class,
+                    new AABB(position.x - searchRadius, position.y - searchRadius, position.z - searchRadius,
+                            position.x + searchRadius, position.y + searchRadius, position.z + searchRadius),
+                    entity -> entity != shooter && entity.isAlive() && !entity.isAlliedTo(shooter)
+            );
+            if (!nearby.isEmpty()) {
+                double closestDist = Double.MAX_VALUE;
+                LivingEntity closest = null;
+                for (LivingEntity entity : nearby) {
+                    double dist = position.distanceTo(entity.position());
+                    if (dist < closestDist) {
+                        closestDist = dist;
+                        closest = entity;
+                    }
+                }
+                if (closest != null) {
+                    this.trackingTarget = closest;
+                }
+            }
+        }
+
+
 
         /**
          * 根据字符串获取粒子类型
@@ -301,6 +437,9 @@ public class ProjectileManager {
             for (LivingEntity target : targets) {
                 // 排除射击者自己和盟友
                 if (target != shooter && !target.isAlliedTo(shooter)) {
+                    if (target instanceof FaxiangEntity) {
+                        continue;
+                    }
                     //根据射击者类型选择伤害来源
                     if (shooter instanceof net.minecraft.server.level.ServerPlayer player) {
                         // 玩家发射 → 玩家攻击伤害

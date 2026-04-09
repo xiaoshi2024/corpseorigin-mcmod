@@ -139,6 +139,12 @@ public class PlayerCorpseEventHandler {
 
         // 只对生存模式玩家应用飞行能力，创造模式玩家不受影响
         if (player.gameMode.getGameModeForPlayer().isSurvival()) {
+            // 确保玩家可以建造和破坏方块
+            if (!player.getAbilities().mayBuild) {
+                player.getAbilities().mayBuild = true;
+                player.onUpdateAbilities();
+            }
+            
             // 如果有翅膀且未伪装，给予飞行权限
             if (PlayerCorpseData.hasWing(player) && !PlayerCorpseData.isDisguised(player)) {
                 if (!player.getAbilities().mayfly) {
@@ -203,6 +209,12 @@ public class PlayerCorpseEventHandler {
     private static void updateCorpseMovement(ServerPlayer player) {
         // 只对生存模式玩家应用飞行能力，创造模式玩家不受影响
         if (player.gameMode.getGameModeForPlayer().isSurvival()) {
+            // 确保玩家可以建造和破坏方块
+            if (!player.getAbilities().mayBuild) {
+                player.getAbilities().mayBuild = true;
+                player.onUpdateAbilities();
+            }
+            
             // 翅膀飞行能力 - 简化版，像创造模式一样直接飞行
             if (PlayerCorpseData.hasWing(player) && !PlayerCorpseData.isDisguised(player)) {
                 handleWingFlight(player);

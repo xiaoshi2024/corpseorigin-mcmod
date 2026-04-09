@@ -23,6 +23,9 @@ public class Moditems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(CorpseOrigin.MODID);
 
     public static final DeferredItem<Item> MING_JUQUE = ITEMS.register("ming_juque", () -> new JuQue(Modtiers.MingJian,3,-2.4f, new Item.Properties()));
+    
+    // 巨阙2阶
+    public static final DeferredItem<Item> MING_JUQUE_TW = ITEMS.register("ming_juque_tw", () -> new JuQue(Modtiers.MingJian,5,-2.2f, new Item.Properties(), "tw"));
 
     public static final DeferredItem<BlockItem> QI_XING_GUAN_ITEM = ITEMS.register("qi_xings_guan_item",
             () -> new BlockItem(BlockRegistry.QI_XING_GUAN.get(), new Item.Properties()));

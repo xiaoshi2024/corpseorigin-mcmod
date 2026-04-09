@@ -19,6 +19,8 @@ import com.phagens.corpseorigin.skill.SkillAttachment;
 import com.phagens.corpseorigin.skill.SkillEventHandler;
 import com.phagens.corpseorigin.voice.VoiceCommandRegistration;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.Event;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -72,6 +74,7 @@ public class CorpseOrigin {
                 output.accept(Moditems.BLUE_AGENT.get());
                 output.accept(Moditems.NULL_S_AGENT.get());
                 output.accept(Moditems.MING_JUQUE.get());
+                output.accept(Moditems.MING_JUQUE_TW.get());
 
                 // 添加刷怪蛋
                 output.accept(Moditems.LOWER_LEVEL_ZB_SPAWN_EGG.get());
@@ -109,29 +112,54 @@ public class CorpseOrigin {
 
     // 单独提取方法，便于管理
     private static void addGongFaItemsToCreativeTab(CreativeModeTab.Output output) {
-        // 使用 BASE_GONG_FA
-        BaseGongFaItem baseItem = (BaseGongFaItem) Moditems.BASE_GONG_FA.get();
-
+        if (GongFaJsonLoader.getInstance() == null) {
+            CorpseOrigin.LOGGER.warn("⚠ GongFaJsonLoader 未初始化，跳过功法物品添加");
+            CorpseOrigin.LOGGER.warn("⚠ 这可能是因为资源重载尚未完成");
+            return;
+        }
         Map<String, GongFaData> allData = GongFaJsonLoader.getAllGongFaData();
-
+        if (allData.isEmpty()) {
+            CorpseOrigin.LOGGER.warn("⚠ 功法数据为空，跳过添加");
+            CorpseOrigin.LOGGER.warn("⚠ 请确保 JSON 文件位于 data/corpseorigin/gf_data/ 目录下");
+            CorpseOrigin.LOGGER.warn("⚠ 或在游戏中使用 /reload 命令重新加载资源");
+            return;
+        }
+        CorpseOrigin.LOGGER.info("开始添加 {} 个功法物品到创造模式标签页", allData.size());
+        BaseGongFaItem baseItem = (BaseGongFaItem) Moditems.BASE_GONG_FA.get();
         List<GongFaData> sortedData = new ArrayList<>(allData.values());
         sortedData.sort(Comparator.comparingInt(GongFaData::getRarity)
                 .thenComparing(GongFaData::getCeng));
 
+        int addedCount = 0;
         for (GongFaData data : sortedData) {
             try {
                 ItemStack stack = new ItemStack(baseItem);
                 baseItem.setDataToItem(stack, data);
                 output.accept(stack);
+                addedCount++;
+                CorpseOrigin.LOGGER.debug("✓ 添加功法: {} (稀有度:{}, 层数:{})",
+                        data.getName(), data.getRarity(), data.getCeng());
             } catch (Exception e) {
-                CorpseOrigin.LOGGER.error("创建功法物品失败：{}", data.getTypeId(), e);
+                CorpseOrigin.LOGGER.error("✗ 创建功法物品失败：{}", data.getTypeId(), e);
             }
         }
+
+        CorpseOrigin.LOGGER.info("功法物品添加完成，成功添加 {} 个物品", addedCount);
     }
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
     public CorpseOrigin(IEventBus modEventBus, ModContainer modContainer) {
+
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            try {
+                CorpseOrigin.LOGGER.info("【客户端构造】开始强制加载功法JSON数据...");
+                com.phagens.corpseorigin.GongFU.JsonLoader.GongFaJsonLoader.forceLoadFromResources();
+                CorpseOrigin.LOGGER.info("【客户端构造】功法数据强制加载完成");
+            } catch (Exception e) {
+                CorpseOrigin.LOGGER.error("【客户端构造】功法数据强制加载失败", e);
+            }
+        }
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
 
@@ -188,8 +216,35 @@ public class CorpseOrigin {
         // Register ourselves for server and other game events we are interested in.
         NeoForge.EVENT_BUS.register(this);
 
+        modEventBus.addListener(this::onClientSetup);
+
+        CorpseOrigin.LOGGER.info("CorpseOrigin 模组初始化完成 [环境: {}]", FMLEnvironment.dist);
+
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+    }
+
+
+
+    /**
+     * 客户端设置事件 - 确保功法数据在连接服务器前已加载
+     */
+    private void onClientSetup(FMLClientSetupEvent event) {
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            CorpseOrigin.LOGGER.info("【客户端初始化】触发功法数据预加载");
+
+            // 延迟执行，确保资源管理器已就绪
+            event.enqueueWork(() -> {
+                try {
+                    // 强制触发一次资源重载
+                    if (net.minecraft.client.Minecraft.getInstance().getResourceManager() != null) {
+                        CorpseOrigin.LOGGER.info("【客户端初始化】资源管理器已就绪，等待首次资源重载...");
+                    }
+                } catch (Exception e) {
+                    CorpseOrigin.LOGGER.error("【客户端初始化】检查资源管理器失败", e);
+                }
+            });
+        }
     }
 
     private static void addReloadListeners(AddReloadListenerEvent event) {

@@ -13,6 +13,7 @@
   "item.corpseorigin.s_agent": "Yellow Strengthening Agent",
   "item.corpseorigin.blue_s_agent": "Blue Neutralizing Agent",
   "item.corpseorigin.null_s_agent": "Null Agent",
+  "item.corpseorigin.ming_juque_tw": "Juque Sword II",
 
   "effect.corpseorigin.side_effect": "Agent Side Effect",
   "item.corpseorigin.lei_xi_gong_fa": "Lightning Skill Book",
@@ -72,6 +73,7 @@
   "tooltip.corpseorigin.gongfa.ceng": "Cultivation Layer: %s",
   "tooltip.corpseorigin.gongfa.attribute": "Blessings:",
   "tooltip.corpseorigin.gongfa.skills": "Skills:",
+  "tooltip.corpseorigin.null_s_agent": "Null Agent, used for subsequent black fire instruments",
 
   "corpseorigin.configuration.title": "CorpseOrigin Configs",
   "corpseorigin.configuration.section.corpseorigin.common.toml": "CorpseOrigin Common Config",
@@ -96,6 +98,7 @@
   "key.categories.corpseorigin": "Corpse Origin",
   "key.corpseorigin.skill_wheel": "Skill Wheel",
   "key.corpseorigin.skill_tree": "Skill Tree",
+  "key.corpseorigin.skill_release": "Skill Release",
 
   "skill.corpseorigin.hardened_skin": "Hardened Skin",
   "skill.corpseorigin.hardened_skin.desc": "Hardens your skin, increasing armor",

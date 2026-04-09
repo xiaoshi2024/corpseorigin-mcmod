@@ -9,16 +9,28 @@ public class JuQueModel extends GeoModel<JuQue> {
 
     @Override
     public ResourceLocation getModelResource(JuQue object) {
-        return ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "geo/item/ming_juque.geo.json");
+        String modelName = "ming_juque";
+        if ("tw".equals(object.getVariant())) {
+            modelName = "ming_juque_tw";
+        }
+        return ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "geo/item/" + modelName + ".geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(JuQue object) {
-        return ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/item/ming_juque.png");
+        String textureName = "ming_juque";
+        if ("tw".equals(object.getVariant())) {
+            textureName = "ming_juque_tw";
+        }
+        return ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/item/" + textureName + ".png");
     }
 
     @Override
     public ResourceLocation getAnimationResource(JuQue animatable) {
-        return ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "animations/item/ming_juque.animation.json");
+        String animationName = "ming_juque";
+        if ("tw".equals(animatable.getVariant())) {
+            animationName = "ming_juque_tw";
+        }
+        return ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "animations/item/" + animationName + ".animation.json");
     }
 }

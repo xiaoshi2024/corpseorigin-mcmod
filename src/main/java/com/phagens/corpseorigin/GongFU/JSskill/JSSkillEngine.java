@@ -104,7 +104,8 @@ public class JSSkillEngine {
                 }
                 scriptCache.put(scriptPath, script);
             }
-            ScriptContext context = engine.getContext();
+            ScriptContext context = new SimpleScriptContext();
+            context.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE);
             var lookAngle = entity.getLookAngle();
 
             context.setAttribute("entity", entity, ScriptContext.ENGINE_SCOPE);
@@ -114,6 +115,7 @@ public class JSSkillEngine {
             context.setAttribute("skillName", skillName, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("SkillEffects", com.phagens.corpseorigin.GongFU.JSskill.SkillEffects.class, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("ProjectileManager", com.phagens.corpseorigin.GongFU.JSskill.Factory.ProjectileManager.getInstance(), ScriptContext.ENGINE_SCOPE);
+            context.setAttribute("FaxiangFactory", com.phagens.corpseorigin.GongFU.JSskill.Factory.FaxiangFactory.class, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("lookX", lookAngle.x, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("lookY", lookAngle.y, ScriptContext.ENGINE_SCOPE);
             context.setAttribute("lookZ", lookAngle.z, ScriptContext.ENGINE_SCOPE);
@@ -121,35 +123,21 @@ public class JSSkillEngine {
             context.setAttribute("playerY", entity.getY(), ScriptContext.ENGINE_SCOPE);
             context.setAttribute("playerZ", entity.getZ(), ScriptContext.ENGINE_SCOPE);
             context.setAttribute("eyeY", entity.getEyeY(), ScriptContext.ENGINE_SCOPE);
+            script.eval(context);
+            Object activateFunc = context.getAttribute("activate", ScriptContext.ENGINE_SCOPE);
 
-            Object scriptObj = script.eval(context);
-
-            if (scriptObj instanceof org.openjdk.nashorn.api.scripting.ScriptObjectMirror) {
-                org.openjdk.nashorn.api.scripting.ScriptObjectMirror scriptMirror =
-                        (org.openjdk.nashorn.api.scripting.ScriptObjectMirror) scriptObj;
-
-                if (scriptMirror.hasMember("activate")) {
-                    var activateFunc = scriptMirror.getMember("activate");
-                    if (activateFunc instanceof org.openjdk.nashorn.api.scripting.ScriptObjectMirror) {
-                        try {
-                            Object result = ((org.openjdk.nashorn.api.scripting.ScriptObjectMirror) activateFunc)
-                                    .call(scriptMirror, entity, entity.level(), gongFaData);
-                            CorpseOrigin.LOGGER.info("【JS 技能】{} 执行结果：{}", skillName, result);
-                            return result instanceof Boolean ? (Boolean) result : true;
-                        } catch (org.openjdk.nashorn.internal.runtime.ECMAException e) {
-                            CorpseOrigin.LOGGER.error("JS 脚本执行异常：{}", skillName, e);
-                            return false;
-                        }
-                    } else {
-                        CorpseOrigin.LOGGER.error("activate 成员不是函数：{}", skillName);
-                        return false;
-                    }
-                } else {
-                    CorpseOrigin.LOGGER.error("JS 脚本中没有 activate 函数：{}", skillName);
+            if (activateFunc instanceof org.openjdk.nashorn.api.scripting.ScriptObjectMirror) {
+                try {
+                    Object result = ((org.openjdk.nashorn.api.scripting.ScriptObjectMirror) activateFunc)
+                            .call(null, entity, entity.level(), gongFaData);
+                    CorpseOrigin.LOGGER.info("【JS 技能】{} 执行结果：{}", skillName, result);
+                    return result instanceof Boolean ? (Boolean) result : true;
+                } catch (org.openjdk.nashorn.internal.runtime.ECMAException e) {
+                    CorpseOrigin.LOGGER.error("JS 脚本执行异常：{}", skillName, e);
                     return false;
                 }
             } else {
-                CorpseOrigin.LOGGER.error("脚本执行后未返回对象：{}", skillName);
+                CorpseOrigin.LOGGER.error("JS 脚本中没有 activate 函数：{}", skillName);
                 return false;
             }
         } catch (Exception e) {
@@ -177,6 +165,22 @@ public class JSSkillEngine {
         } catch (Exception e) {
             CorpseOrigin.LOGGER.error("加载脚本失败：{}", path, e);
             return null;
+        }
+    }
+
+    /**
+     * 预加载脚本（在游戏启动时调用）
+     */
+    public void preloadScript(String skillName) {
+        String scriptPath = "/assets/corpseorigin/scripts/gongfu/" +
+                skillName.toLowerCase().replace(" ", "_") + ".js";
+
+        if (!scriptCache.containsKey(scriptPath)) {
+            CompiledScript script = loadAndCompileScript(scriptPath);
+            if (script != null) {
+                scriptCache.put(scriptPath, script);
+                CorpseOrigin.LOGGER.info("预加载JS脚本：{}", scriptPath);
+            }
         }
     }
 

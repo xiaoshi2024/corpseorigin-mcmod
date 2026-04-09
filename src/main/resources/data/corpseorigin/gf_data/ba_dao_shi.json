@@ -5,6 +5,7 @@
   "rarity": 4,
   "ceng": "copy_1",
   "cooldown": 100,
+  "icon": "corpseorigin:textures/other_skills/ba_dao_shi.png",
   "attributes": {
     "attack_damage": 22.0,
     "max_health": 25.0

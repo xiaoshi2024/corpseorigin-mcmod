@@ -126,5 +126,11 @@ public class ZBRFleshBlockEntity extends BlockEntity implements GeoBlockEntity {
         return this.cache;
     }
 
-
+    /**
+     * 设置击杀数
+     */
+    public void setKills(int kills) {
+        this.kills = kills;
+        setChanged();
+    }
 }

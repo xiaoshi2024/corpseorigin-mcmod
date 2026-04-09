@@ -57,6 +57,7 @@
   "tooltip.corpseorigin.gongfa.ceng": "Capa de Cultivación: %s",
   "tooltip.corpseorigin.gongfa.attribute": "Bendiciones:",
   "tooltip.corpseorigin.gongfa.skills": "Habilidades:",
+  "tooltip.corpseorigin.null_s_agent": "Agente Vacío, utilizado para instrumentos de rayo negro posteriores",
 
   "corpseorigin.configuration.title": "Configuración Hermano Zombie",
   "corpseorigin.configuration.section.corpseorigin.common.toml": "Configuración Común",
