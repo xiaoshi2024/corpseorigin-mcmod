@@ -57,7 +57,7 @@ import java.util.UUID;
  * 实现了Vampirism模组的IBiteableEntity接口（通过IEntity扩展）
  * 允许吸血鬼玩家吸食尸兄的血液
  */
-public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, VibrationSystem {
+public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, VibrationSystem, ICorpseHunger {
     // 变种类型枚举
     public enum Variant {
         NORMAL(0),
@@ -1841,6 +1841,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     /**
      * 尸体饱腹值相关方法
      */
+    @Override
     public int getCorpseHunger() {
         return this.corpseHunger;
     }

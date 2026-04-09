@@ -1,6 +1,7 @@
 package com.phagens.corpseorigin.block.custom;
 
 import com.phagens.corpseorigin.CorpseOrigin;
+import com.phagens.corpseorigin.event.DeadSilenceCache;
 import com.phagens.corpseorigin.register.BlockRegistry;
 import com.phagens.corpseorigin.register.Moditems;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
@@ -21,16 +22,6 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.material.MapColor;
 
-/**
- * 异化碎块方块
- * 硬度极低的装饰性方块
- * 
- * 功能：
- * 1. 挖掘后掉落异化碎块物品
- * 2. 生物死亡时，连接的异化方块边缘向外蔓延一格
- * 3. 连接超过128个方块时，形成死寂生物群系
- * 4. 最多向地面下方蔓延两格，达到后只水平蔓延
- */
 public class AlienatedFragmentBlock extends Block {
     
     public static final BooleanProperty DEAD_SILENCE = BooleanProperty.create("dead_silence");
@@ -66,9 +57,7 @@ public class AlienatedFragmentBlock extends Block {
         super.onPlace(state, level, pos, oldState, isMoving);
         
         if (level.isClientSide) return;
-        
         if (oldState.getBlock() == this) return;
-        
         if (isUpdating.get()) return;
         
         try {
@@ -87,8 +76,13 @@ public class AlienatedFragmentBlock extends Block {
         if (state.is(newState.getBlock())) return;
         if (isUpdating.get()) return;
         
+        boolean wasDeadSilence = state.getValue(DEAD_SILENCE);
+        
         try {
             isUpdating.set(true);
+            if (wasDeadSilence) {
+                DeadSilenceCache.removeDeadSilenceBlock((ServerLevel) level, pos);
+            }
             LongOpenHashSet connectedGroup = findConnectedGroupOptimized(level, pos);
             updateDeadSilenceForGroup((ServerLevel) level, connectedGroup);
         } finally {
@@ -96,9 +90,6 @@ public class AlienatedFragmentBlock extends Block {
         }
     }
     
-    /**
-     * 生物死亡时触发蔓延
-     */
     public void onEntityDeath(Level level, BlockPos deathPos) {
         if (level.isClientSide) return;
         if (isUpdating.get()) return;
@@ -124,9 +115,6 @@ public class AlienatedFragmentBlock extends Block {
         }
     }
     
-    /**
-     * 优化的查找连接方块 - 使用LongOpenHashSet和缓存
-     */
     private LongOpenHashSet findConnectedGroupOptimized(Level level, BlockPos startPos) {
         LongOpenHashSet visited = new LongOpenHashSet();
         long[] queue = new long[MAX_GROUP_SIZE];
@@ -170,9 +158,6 @@ public class AlienatedFragmentBlock extends Block {
         return visited;
     }
     
-    /**
-     * 优化的边缘方块查找
-     */
     private LongOpenHashSet findEdgeBlocksOptimized(LongOpenHashSet group) {
         LongOpenHashSet edgeBlocks = new LongOpenHashSet();
         
@@ -190,11 +175,6 @@ public class AlienatedFragmentBlock extends Block {
         return edgeBlocks;
     }
     
-    /**
-     * 优化的蔓延方法 - 蔓延替换除空气外的所有方块
-     * 有15%概率在新蔓延的方块上生成尸体（每个位置最多一个）
-     * 最多向地面下方蔓延两格，达到后只水平蔓延
-     */
     private int spreadBlocksOptimized(ServerLevel level, LongOpenHashSet edgeBlocks, LongOpenHashSet existingGroup) {
         int spreadCount = 0;
         
@@ -239,9 +219,6 @@ public class AlienatedFragmentBlock extends Block {
         return spreadCount;
     }
     
-    /**
-     * 检查指定位置是否已有尸体
-     */
     private boolean hasCorpseAt(ServerLevel level, BlockPos pos) {
         net.minecraft.world.phys.AABB checkBox = new net.minecraft.world.phys.AABB(
             pos.getX(), pos.getY(), pos.getZ(),
@@ -250,9 +227,6 @@ public class AlienatedFragmentBlock extends Block {
         return !level.getEntitiesOfClass(com.phagens.corpseorigin.entity.CorpseGibEntity.class, checkBox).isEmpty();
     }
     
-    /**
-     * 在指定位置生成尸体（随机类型）
-     */
     private void spawnCorpseGib(ServerLevel level, BlockPos pos) {
         com.phagens.corpseorigin.entity.CorpseGibEntity corpse = com.phagens.corpseorigin.register.EntityRegistry.CORPSE_GIB.get().create(level);
         if (corpse != null) {
@@ -275,23 +249,31 @@ public class AlienatedFragmentBlock extends Block {
         }
     }
     
-    /**
-     * 检查并更新死寂状态
-     */
     private void checkAndUpdateDeadSilence(ServerLevel level, BlockPos pos) {
         LongOpenHashSet group = findConnectedGroupOptimized(level, pos);
         updateDeadSilenceForGroup(level, group);
     }
     
-    /**
-     * 更新整个组的死寂状态
-     */
     private void updateDeadSilenceForGroup(ServerLevel level, LongOpenHashSet group) {
         boolean shouldBeDeadSilence = group.size() >= SPREAD_THRESHOLD;
         
         if (shouldBeDeadSilence) {
             CorpseOrigin.LOGGER.info("异化方块连接数量达到 {}，形成死寂生物群系！", group.size());
+            DeadSilenceCache.addGroupAsDeadSilence(level, group);
             applyDeadSilenceEffect(level, group);
+        } else {
+            boolean wasDeadSilence = false;
+            for (long key : group) {
+                BlockPos pos = BlockPos.of(key);
+                BlockState state = level.getBlockState(pos);
+                if (state.getBlock() instanceof AlienatedFragmentBlock && state.getValue(DEAD_SILENCE)) {
+                    wasDeadSilence = true;
+                    break;
+                }
+            }
+            if (wasDeadSilence) {
+                DeadSilenceCache.removeGroupDeadSilence(level, group);
+            }
         }
         
         for (long key : group) {
@@ -305,9 +287,6 @@ public class AlienatedFragmentBlock extends Block {
         }
     }
     
-    /**
-     * 应用死寂效果
-     */
     private void applyDeadSilenceEffect(ServerLevel level, LongOpenHashSet group) {
         int count = 0;
         int cx = 0, cy = 0, cz = 0;
@@ -334,7 +313,7 @@ public class AlienatedFragmentBlock extends Block {
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         if (state.getValue(DEAD_SILENCE)) {
-            if (random.nextDouble() < 0.05) {
+            if (random.nextDouble() < 0.02) {
                 level.sendParticles(
                     net.minecraft.core.particles.ParticleTypes.SOUL,
                     pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5,

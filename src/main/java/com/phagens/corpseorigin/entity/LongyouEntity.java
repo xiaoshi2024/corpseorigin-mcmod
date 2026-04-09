@@ -38,7 +38,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.*;
 
-public class LongyouEntity extends PathfinderMob implements GeoEntity {
+public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseHunger {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     protected static final RawAnimation WALK_ANIM = RawAnimation.begin().thenLoop("walk");
     protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
@@ -1500,8 +1500,12 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity {
      * 作为尸王，他不需要像普通尸兄那样吞噬同类
      */
     public boolean needsToEat() {
-        // 龙右作为尸王，饥饿度低于阈值时才会考虑进食
         return hunger < HUNGER_THRESHOLD;
+    }
+
+    @Override
+    public int getCorpseHunger() {
+        return this.hunger > 0 ? 1 : 0;
     }
 
     /**

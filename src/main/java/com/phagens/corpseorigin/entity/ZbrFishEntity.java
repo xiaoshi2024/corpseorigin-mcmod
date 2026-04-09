@@ -37,7 +37,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
 
-public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationSystem {
+public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationSystem, ICorpseHunger {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     protected static final RawAnimation SWIM_ANIM = RawAnimation.begin().thenLoop("swim");
     protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
@@ -433,6 +433,7 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
     /**
      * 尸体饱腹值相关方法
      */
+    @Override
     public int getCorpseHunger() {
         return this.corpseHunger;
     }

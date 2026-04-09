@@ -5,9 +5,7 @@ import com.phagens.corpseorigin.block.custom.AlienatedFragmentBlock;
 import com.phagens.corpseorigin.register.EntityRegistry;
 import com.phagens.corpseorigin.register.ModSounds;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -23,25 +21,16 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 
 import java.util.Set;
 
-/**
- * 死寂群系效果处理器
- * 
- * 功能：
- * 1. 天空变灰（通过迷雾颜色实现）
- * 2. 玩家能见度被迷雾限制到只有3个区块
- * 3. 死寂群系只生成尸兄类怪物
- * 4. 循环播放背景音乐增强沉浸感
- */
 @EventBusSubscriber(modid = CorpseOrigin.MODID, value = Dist.CLIENT)
 public class DeadSilenceZoneHandler {
 
     private static final int FOG_CHUNK_DISTANCE = 3;
-    private static final float FOG_START = 16.0F;
-    private static final float FOG_END = FOG_CHUNK_DISTANCE * 16.0F;
+    private static final float FOG_START = 32.0F;
+    private static final float FOG_END = FOG_CHUNK_DISTANCE * 16.0F * 2.0F;
     
     private static boolean isInDeadSilenceZone = false;
     private static int checkCooldown = 0;
-    private static final int CHECK_INTERVAL = 20;
+    private static final int CHECK_INTERVAL = 40;
     
     private static final Set<DeferredHolder<EntityType<?>, ? extends EntityType<?>>> CORPSE_BROTHER_HOLDERS = Set.of(
             EntityRegistry.LOWER_LEVEL_ZB,
@@ -116,7 +105,6 @@ public class DeadSilenceZoneHandler {
         );
         
         mc.getSoundManager().play(ambienceSound);
-        CorpseOrigin.LOGGER.info("开始播放死寂群系背景音乐");
     }
     
     private static void stopAmbience() {
@@ -129,17 +117,15 @@ public class DeadSilenceZoneHandler {
     
     private static boolean checkDeadSilenceNearby(Level level, BlockPos center) {
         int radius = 29;
-        int step = 4;
+        int step = 8;
         
         for (int x = -radius; x <= radius; x += step) {
-            for (int y = -16; y <= 16; y += step) {
-                for (int z = -radius; z <= radius; z += step) {
-                    BlockPos checkPos = center.offset(x, y, z);
-                    BlockState state = level.getBlockState(checkPos);
-                    if (state.getBlock() instanceof AlienatedFragmentBlock && 
-                        state.getValue(AlienatedFragmentBlock.DEAD_SILENCE)) {
-                        return true;
-                    }
+            for (int z = -radius; z <= radius; z += step) {
+                BlockPos checkPos = center.offset(x, 0, z);
+                BlockState state = level.getBlockState(checkPos);
+                if (state.getBlock() instanceof AlienatedFragmentBlock && 
+                    state.getValue(AlienatedFragmentBlock.DEAD_SILENCE)) {
+                    return true;
                 }
             }
         }
