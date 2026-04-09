@@ -13,6 +13,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import org.jline.utils.InputStreamReader;
 
+import javax.script.CompiledScript;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +49,6 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
             CorpseOrigin.LOGGER.error("⚠ 请确保 JSON 文件位于: data/corpseorigin/gf_data/");
             CorpseOrigin.LOGGER.error("⚠ 文件名必须以 .json 结尾");
         }
-
         gongFaDataMap.clear();
         resourceLocationJsonElementMap.forEach((resourceLocation, jsonElement) -> {
             try {
@@ -56,6 +56,10 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
                 if (data != null) {
                     gongFaDataMap.put(data.getTypeId() + "_" + data.getRarity() + "_" + data.getCeng(), data);
                     GongFaSkillManager.getInstance().registerGongFuSkill(data);
+                    for (String skillName : data.getSkills()) {
+                        com.phagens.corpseorigin.GongFU.JSskill.JSSkillEngine.getInstance()
+                                .preloadScript(skillName);
+                    }
                     CorpseOrigin.LOGGER.info("加载功法数据：{} (稀有度：{}, 层数：{})",
                             data.getTypeId(), data.getRarity(), data.getCeng());
                 }
@@ -105,6 +109,10 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
                                 String key = data.getTypeId() + "_" + data.getRarity() + "_" + data.getCeng();
                                 instance.gongFaDataMap.put(key, data);
                                 GongFaSkillManager.getInstance().registerGongFuSkill(data);
+                                for (String skillName : data.getSkills()) {
+                                    com.phagens.corpseorigin.GongFU.JSskill.JSSkillEngine.getInstance()
+                                            .preloadScript(skillName);
+                                }
                                 CorpseOrigin.LOGGER.info("【强制加载】✓ {}", data.getName());
                                 loadedCount++;
                             }
@@ -123,6 +131,8 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
             CorpseOrigin.LOGGER.error("【强制加载】异常", e);
         }
     }
+
+
     /// 解析为GongFaData
     private GongFaData parseGongFaData(JsonElement jsonElement) {
         JsonObject json = jsonElement.getAsJsonObject();
@@ -175,5 +185,7 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
         instance = new GongFaJsonLoader(GSON, FOLDER);
         event.addListener(instance);
     }
+
+
 
 }

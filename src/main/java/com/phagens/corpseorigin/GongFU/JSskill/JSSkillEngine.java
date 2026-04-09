@@ -168,6 +168,22 @@ public class JSSkillEngine {
     }
 
     /**
+     * 预加载脚本（在游戏启动时调用）
+     */
+    public void preloadScript(String skillName) {
+        String scriptPath = "/assets/corpseorigin/scripts/gongfu/" +
+                skillName.toLowerCase().replace(" ", "_") + ".js";
+
+        if (!scriptCache.containsKey(scriptPath)) {
+            CompiledScript script = loadAndCompileScript(scriptPath);
+            if (script != null) {
+                scriptCache.put(scriptPath, script);
+                CorpseOrigin.LOGGER.info("预加载JS脚本：{}", scriptPath);
+            }
+        }
+    }
+
+    /**
      * 清除脚本缓存（用于热重载）
      */
     public void clearCache() {

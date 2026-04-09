@@ -52,16 +52,31 @@ public class ProjectileManager {
      * @param hitboxSize   碰撞箱大小，以投射物为中心的立方体边长的一半
      * @param hitSound     命中音效（可选），如 "minecraft:entity.generic.explode"，传 null 则不播放
      * @param onHit        命中回调（可选），命中目标后执行的自定义逻辑，传 null 则只造成伤害
+     * @param particleCount   每tick粒子数量
+     * @param particleOffsetX X轴扩散范围
+     * @param particleOffsetY Y轴扩散范围
+     * @param particleOffsetZ Z轴扩散范围
+     * @param particleSpeed   粒子扩散速度
      */
     public void createProjectile(LivingEntity shooter, Vec3 startPos, Vec3 direction,
                                  double damage, double maxRange, double speed,
                                  String particleType, double hitboxSize,
-                                 @Nullable String hitSound, @Nullable Consumer<LivingEntity> onHit) {
+                                 @Nullable String hitSound, @Nullable Consumer<LivingEntity> onHit,
+                                 int particleCount,
+                                 double particleOffsetX, double particleOffsetY, double particleOffsetZ,
+                                 double particleSpeed) {
         GenericProjectile projectile = new GenericProjectile(
                 shooter, startPos, direction, damage, maxRange, speed,
                 particleType, hitboxSize, hitSound, onHit
         );
+
+        projectile.particleCount = particleCount;
+        projectile.particleOffsetX = particleOffsetX;
+        projectile.particleOffsetY = particleOffsetY;
+        projectile.particleOffsetZ = particleOffsetZ;
+        projectile.particleSpeed = particleSpeed;
         projectiles.add(projectile);
+
     }
 
 
