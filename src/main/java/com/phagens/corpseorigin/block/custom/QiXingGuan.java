@@ -40,20 +40,25 @@ import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.EntityBlock;
-import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 import javax.annotation.Nullable;
@@ -64,12 +69,15 @@ import java.util.function.Supplier;
  * 七星棺方块主类
  * 继承Block实现基础方块功能，实现EntityBlock接口以支持方块实体
  */
-public class QiXingGuan extends Block implements EntityBlock {
+public class QiXingGuan extends Block implements EntityBlock , LiquidBlockContainer, SimpleWaterloggedBlock {
     /** 要召唤的实体类型(尸王龙右) */
     private final Supplier<EntityType<?>> ENTITY;
 
     /** 方块状态属性：是否已召唤 */
     public static final BooleanProperty SUMMONED = BooleanProperty.create("summoned");
+
+    /** 方块状态属性：是否含水 */
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
     /**
      * 构造函数
@@ -77,25 +85,26 @@ public class QiXingGuan extends Block implements EntityBlock {
      */
     public QiXingGuan(Supplier<EntityType<?>> entity) {
         super(BlockBehaviour.Properties.of()
-                .strength(1.5f,6.0f)    // 硬度1.5，爆炸抗性6.0
-                .sound(SoundType.WOOD)  // 木质音效
-                .mapColor(MapColor.WOOD)// 地图显示为木质颜色
-                .noOcclusion()          // 不遮挡光线(半透明效果)
-                .randomTicks()          // 启用随机tick
+                .strength(1.5f,6.0f)
+                .sound(SoundType.WOOD)
+                .mapColor(MapColor.WOOD)
+                .noOcclusion()
+                .randomTicks()
         );
 
         ENTITY = entity;
         this.registerDefaultState(this.stateDefinition.any()
-                .setValue(SUMMONED,false ));
+                .setValue(SUMMONED, false)
+                .setValue(WATERLOGGED, false));
     }
 
-    /**
-     * 获取碰撞箱形状
-     */
+
     @Override
-    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return super.getCollisionShape(state, level, pos, context);
+    protected FluidState getFluidState(BlockState state) {
+        // 根据 WATERLOGGED 属性动态返回
+        return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : Fluids.EMPTY.defaultFluidState();
     }
+
 
     /**
      * 注册方块状态属性
@@ -103,7 +112,7 @@ public class QiXingGuan extends Block implements EntityBlock {
      */
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(SUMMONED);
+        builder.add(SUMMONED, WATERLOGGED);
     }
 
     /**
@@ -111,15 +120,34 @@ public class QiXingGuan extends Block implements EntityBlock {
      * - 服务器端：开始感染周围水源
      * - 安排20tick后的首次检测
      */
+    /**
+     * 方块被放置时的处理
+     */
     @Override
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
+
         if (!level.isClientSide) {
+            // 自动检测是否被放置在水中
+            FluidState fluidState = level.getFluidState(pos);
+            if (fluidState.getType() == Fluids.WATER && !state.getValue(WATERLOGGED)) {
+                level.setBlock(pos, state.setValue(WATERLOGGED, true), 3);
+            }
             spreadWaterInfection(level, pos);
         }
         level.scheduleTick(pos, this, 20);
     }
 
+    /**
+     * 方块被放置时设置朝向（玩家放置时）
+     */
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        FluidState fluidState = context.getLevel().getFluidState(context.getClickedPos());
+
+        return this.defaultBlockState()
+                .setValue(WATERLOGGED, fluidState.getType() == Fluids.WATER);
+    }
     /**
      * 方块被移除时的处理
      * 清除该棺材造成的所有水源感染
@@ -325,5 +353,62 @@ public class QiXingGuan extends Block implements EntityBlock {
      */
     private void triggerAction(ServerLevel level, BlockPos pos) {
         ENTITY.get().spawn(level, null, null, pos.above(), MobSpawnType.EVENT, false, false);
+    }
+
+    /**
+     * 创建完整的七星棺碰撞箱形状 - 简化长方体
+     * 尺寸：宽2格（X轴），高1格（Y轴），长1格（Z轴）
+     */
+    private VoxelShape makeShape() {
+        // 长方体：从 x=0 到 x=2 (宽2)
+        //        从 y=0 到 y=1 (高1)
+        //        从 z=0 到 z=1 (长1)
+        return Shapes.box(0, 0, 0, 2, 1, 1);
+    }
+
+    /**
+     * 获取碰撞箱形状 - 固定形状
+     */
+    @Override
+    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return makeShape();
+    }
+
+    @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return makeShape();
+    }
+
+    @Override
+    protected VoxelShape getVisualShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return makeShape();
+    }
+
+    @Override
+    protected VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        return makeShape();
+    }
+
+    /**
+     * 处理液体放置（玩家用水桶右键）
+     */
+    @Override
+    public boolean placeLiquid(LevelAccessor level, BlockPos pos, BlockState state, FluidState fluidState) {
+        if (!state.getValue(WATERLOGGED) && fluidState.getType() == Fluids.WATER) {
+            // 设置含水状态
+            level.setBlock(pos, state.setValue(WATERLOGGED, true), 3);
+            // 安排水的 tick（让水流动）
+            level.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 是否可以放置液体
+     */
+    @Override
+    public boolean canPlaceLiquid(@Nullable Player player, BlockGetter level, BlockPos pos, BlockState state, Fluid fluid) {
+        return !state.getValue(WATERLOGGED) && fluid == Fluids.WATER;
     }
 }
