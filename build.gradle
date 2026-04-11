@@ -47,6 +47,14 @@ repositories {
         url "https://cursemaven.com"
     }
 
+    maven {
+        url "https://maven2.bai.lol"
+        content {
+            includeGroup "lol.bai"
+            includeGroup "mcp.mobius.waila"
+        }
+    }
+
     // TarsosDSP repository
     maven {
         url "https://mvn.0110.be/releases"
@@ -157,6 +165,11 @@ configurations {
 dependencies {
 
     implementation "maven.modrinth:geckolib:lWsXauBN"
+
+    // WTHIT integration
+    compileOnly "mcp.mobius.waila:wthit-api:neo-${wthit_version}"
+    runtimeOnly "mcp.mobius.waila:wthit:neo-${wthit_version}"
+    runtimeOnly "lol.bai:badpackets:neo-${badpackets_version}"
 
 //    implementation "curse.maven:customskinloader-286924:7372987"
 
