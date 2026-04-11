@@ -211,8 +211,8 @@ public class PlayerCorpseData {
     public static void restoreConsciousness(Player player) {
         CompoundTag data = getCorpseData(player);
         data.putBoolean(KEY_CONSCIOUSNESS_RESTORED, true);
-        player.setData(CorpsePlayerAttachment.CORPSE_DATA.get(), data);
-        syncToClient(player);
+         player.setData(CorpsePlayerAttachment.CORPSE_DATA.get(), data);
+        syncToAllPlayers(player);
     }
 
     /**
@@ -240,6 +240,18 @@ public class PlayerCorpseData {
                     getCorpseData(serverPlayer).copy()
             );
             PacketDistributor.sendToPlayer(serverPlayer, packet);
+        }
+    }
+
+    private static void syncToAllPlayers(Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            PlayerCorpseSyncPacket packet = new PlayerCorpseSyncPacket(
+                    serverPlayer.getId(),
+                    isCorpse(serverPlayer),
+                    getCorpseType(serverPlayer),
+                    getCorpseData(serverPlayer).copy()
+            );
+            PacketDistributor.sendToAllPlayers(packet);
         }
     }
 }
