@@ -57,7 +57,7 @@ import java.util.UUID;
  * 实现了Vampirism模组的IBiteableEntity接口（通过IEntity扩展）
  * 允许吸血鬼玩家吸食尸兄的血液
  */
-public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, VibrationSystem, ICorpseHunger {
+public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, VibrationSystem, ICorpseBrother {
     // 变种类型枚举
     public enum Variant {
         NORMAL(0),
@@ -167,6 +167,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     // 被攻击记忆系统（用于反击）
     private int lastHurtTick = -1000; // 上次被攻击的游戏刻
     private static final int HURT_MEMORY_DURATION = 200; // 被攻击记忆持续时间（10秒）
+
+    // 集群意识系统
+    private LivingEntity hiveMindTarget = null;
 
     // 主人系统（被尸王收服后）
     private UUID masterUUID = null; // 主人的UUID
@@ -322,147 +325,52 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
-        // 飞扑攻击 - 高优先级
         this.goalSelector.addGoal(2, new PounceAttackGoal(this));
-        // 寻找并吞噬尸体 - 尸兄被尸体吸引
         this.goalSelector.addGoal(3, new com.phagens.corpseorigin.entity.EntityAI.JLAI.SeekCorpseGibGoal(this));
-        // 近战攻击行为 - 当找到目标时会执行攻击
-        this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.0D, true));
-        // 高阶尸兄可以开门
+        this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.2D, true));
         this.goalSelector.addGoal(5, new OpenDoorGoal(this, true));
-        this.goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 1.0D));
-        this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 16.0F));
-        this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(6, new com.phagens.corpseorigin.entity.EntityAI.JLAI.CorpseBrotherGatherGoal(this, 1.0D));
+        this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 16.0F));
+        this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
 
-        // 第一优先级：攻击非尸兄玩家（正常活人）
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackNormalPlayer));
-
-        // 第二优先级：攻击非尸兄的其他怪物（Mob类，排除尸兄和龙右）
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackNonCorpseMob));
-
-        // 第三优先级：攻击动物
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.animal.Animal.class, true));
-
-        // 第四优先级：攻击尸兄玩家（同类）- 只有在极度饥饿时才会攻击
-        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackCorpsePlayer));
-
-        // 第五优先级：攻击其他尸兄实体（同类相食）- 只有在极度饥饿时才会攻击
-        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, LowerLevelZbEntity.class, 0, true, false, this::shouldAttackOtherCorpseEntity));
+        this.targetSelector.addGoal(1, new com.phagens.corpseorigin.entity.EntityAI.JLAI.CorpseBrotherHiveMindGoal(this));
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackNonCorpsePlayer));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackNonCorpseMob));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.animal.Animal.class, true));
+        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackCorpsePlayer));
+        this.targetSelector.addGoal(6, new NearestAttackableTargetGoal<>(this, LowerLevelZbEntity.class, 0, true, false, this::shouldAttackOtherCorpseEntity));
     }
 
-    /**
-     * 判断是否应该攻击非尸兄玩家（正常活人）
-     * 这是第一优先级目标
-     */
-    private boolean shouldAttackNormalPlayer(net.minecraft.world.entity.LivingEntity entity) {
-        // 不攻击龙右（真王）
-        if (entity instanceof LongyouEntity) {
-            return false;
-        }
-
-        // 只攻击玩家
-        if (!(entity instanceof Player player)) {
-            return false;
-        }
-
-        // 如果有主人，不攻击主人
-        if (this.masterUUID != null && player.getUUID().equals(this.masterUUID)) {
-            return false;
-        }
-
-        // 只攻击非尸兄玩家（正常活人）
+    private boolean shouldAttackNonCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
+        if (entity instanceof ICorpseBrother) return false;
+        if (!(entity instanceof Player player)) return false;
+        if (this.masterUUID != null && player.getUUID().equals(this.masterUUID)) return false;
         return !com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player);
     }
 
-    /**
-     * 判断是否应该攻击非尸兄的其他怪物（Mob类）
-     * 这是第二优先级目标
-     * 排除：龙右、尸兄实体、玩家
-     */
     private boolean shouldAttackNonCorpseMob(net.minecraft.world.entity.LivingEntity entity) {
-        // 不攻击龙右（真王）
-        if (entity instanceof LongyouEntity) {
-            return false;
-        }
-
-        // 不攻击尸兄实体（同类）
-        if (entity instanceof LowerLevelZbEntity) {
-            return false;
-        }
-
-        // 不攻击玩家（玩家由单独的目标处理）
-        if (entity instanceof Player) {
-            return false;
-        }
-
-        // 攻击其他所有怪物
+        if (entity instanceof ICorpseBrother) return false;
+        if (entity instanceof Player) return false;
         return true;
     }
 
-    /**
-     * 判断是否应该攻击尸兄玩家（已成为尸兄的玩家）
-     * 这是第四优先级目标，只有在极度饥饿时才会攻击
-     */
     private boolean shouldAttackCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
-        // 不攻击龙右（真王）
-        if (entity instanceof LongyouEntity) {
-            return false;
-        }
-
-        // 只攻击玩家
-        if (!(entity instanceof Player player)) {
-            return false;
-        }
-
-        // 如果有主人，不攻击主人
-        if (this.masterUUID != null && player.getUUID().equals(this.masterUUID)) {
-            return false;
-        }
-
-        // 只攻击已成为尸兄的玩家
-        if (!com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
-            return false;
-        }
-
-        // 被攻击时允许反击
+        if (!(entity instanceof Player player)) return false;
+        if (entity instanceof ICorpseBrother) return false;
+        if (this.masterUUID != null && player.getUUID().equals(this.masterUUID)) return false;
+        if (!com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) return false;
         boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
-        if (wasRecentlyHurt) {
-            return true;
-        }
-
-        // 极度饥饿且没有尸王领导时才攻击同类
-        boolean isHungry = this.hunger <= HUNGER_THRESHOLD_FOR_CANNIBALISM;
-        boolean notUnderKing = !isUnderZombieKingLeadership();
-
-        return isHungry && notUnderKing;
+        if (wasRecentlyHurt) return true;
+        return this.hunger <= HUNGER_THRESHOLD_FOR_CANNIBALISM && !isUnderZombieKingLeadership();
     }
 
-    /**
-     * 判断是否应该攻击其他尸兄实体（同类相食）
-     * 这是第五优先级目标，只有在极度饥饿时才会攻击
-     */
     private boolean shouldAttackOtherCorpseEntity(net.minecraft.world.entity.LivingEntity entity) {
-        // 只攻击尸兄实体
-        if (!(entity instanceof LowerLevelZbEntity otherZb)) {
-            return false;
-        }
-
-        // 被攻击时允许反击
+        if (!(entity instanceof LowerLevelZbEntity otherZb)) return false;
         boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
-        if (wasRecentlyHurt) {
-            return true;
-        }
-
-        // 检查是否有非同类目标存在
-        if (hasNonZombieTargets()) {
-            return false; // 有非同类目标时不攻击同类
-        }
-
-        // 同类目标，只有在极度饥饿时才攻击
-        boolean isHungry = this.hunger <= HUNGER_THRESHOLD_FOR_CANNIBALISM;
-        boolean notUnderKing = !isUnderZombieKingLeadership();
-
-        return isHungry && notUnderKing;
+        if (wasRecentlyHurt) return true;
+        if (hasNonZombieTargets()) return false;
+        return this.hunger <= HUNGER_THRESHOLD_FOR_CANNIBALISM && !isUnderZombieKingLeadership();
     }
     
     /**
@@ -472,17 +380,15 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     private boolean hasNonZombieTargets() {
         if (!(this.level() instanceof ServerLevel level)) return false;
 
-        // 检查周围16格内是否有非尸兄玩家（第一优先级目标）
         var normalPlayers = level.getEntitiesOfClass(
                 Player.class,
                 this.getBoundingBox().inflate(16.0D),
-                entity -> shouldAttackNormalPlayer(entity)
+                entity -> shouldAttackNonCorpsePlayer(entity)
         );
         if (!normalPlayers.isEmpty()) {
             return true;
         }
 
-        // 检查周围16格内是否有非尸兄的其他怪物（第二优先级目标）
         var nonCorpseMobs = level.getEntitiesOfClass(
                 net.minecraft.world.entity.Mob.class,
                 this.getBoundingBox().inflate(16.0D),
@@ -492,7 +398,6 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
             return true;
         }
 
-        // 检查周围16格内是否有可攻击的动物（第三优先级目标）
         var animals = level.getEntitiesOfClass(
                 net.minecraft.world.entity.animal.Animal.class,
                 this.getBoundingBox().inflate(16.0D),
@@ -510,7 +415,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
                 .add(Attributes.MAX_HEALTH, 20.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
                 .add(Attributes.ATTACK_DAMAGE, 3.0D)
-                .add(Attributes.FOLLOW_RANGE, 16.0D);
+                .add(Attributes.FOLLOW_RANGE, 48.0D);
     }
 
     // 添加服务端设置皮肤的方法（由网络包调用）
@@ -1779,6 +1684,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         }
     }
     
+    @Override
     public int getEvolutionLevel() {
         return this.evolutionLevel;
     }
@@ -1844,6 +1750,26 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     @Override
     public int getCorpseHunger() {
         return this.corpseHunger;
+    }
+
+    @Override
+    public boolean isCorpseBrotherOf(net.minecraft.world.entity.Mob entity) {
+        return entity instanceof ICorpseBrother;
+    }
+
+    @Override
+    public void setHiveMindTarget(LivingEntity target) {
+        this.hiveMindTarget = target;
+    }
+
+    @Override
+    public LivingEntity getHiveMindTarget() {
+        return this.hiveMindTarget;
+    }
+
+    @Override
+    public boolean hasAttackTarget() {
+        return this.getTarget() != null && this.getTarget().isAlive();
     }
     
     public void setCorpseHunger(int value) {
@@ -2361,7 +2287,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         var normalPlayers = level.getEntitiesOfClass(
                 Player.class,
                 this.getBoundingBox().inflate(16.0D),
-                entity -> shouldAttackNormalPlayer(entity)
+                entity -> shouldAttackNonCorpsePlayer(entity)
         );
         if (!normalPlayers.isEmpty()) {
             // 选择最近的非尸兄玩家

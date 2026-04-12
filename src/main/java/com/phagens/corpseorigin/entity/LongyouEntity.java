@@ -38,7 +38,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.*;
 
-public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseHunger {
+public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBrother {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     protected static final RawAnimation WALK_ANIM = RawAnimation.begin().thenLoop("walk");
     protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
@@ -170,6 +170,8 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseHu
     // 被攻击状态
     private int lastHurtTick = -1000; // 上次被攻击的游戏刻
     private static final int HURT_MEMORY_DURATION = 200; // 被攻击记忆持续时间（10秒）
+
+    private LivingEntity hiveMindTarget = null;
     
     // 尸兄玩家攻击计数（用于判断是否造反）
     private final java.util.Map<java.util.UUID, Integer> corpsePlayerAttacks = new java.util.HashMap<>();
@@ -269,128 +271,49 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseHu
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, true));
-        // 龙右作为尸王可以开门
         this.goalSelector.addGoal(3, new OpenDoorGoal(this, true));
-        this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 1.0D));
-        this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 16.0F));
-        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(4, new com.phagens.corpseorigin.entity.EntityAI.JLAI.CorpseBrotherGatherGoal(this, 1.0D));
+        this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 16.0F));
+        this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
 
-        // 龙右作为尸王，攻击优先级：玩家 → 怪物 → 动物 → 尸兄（造反的）
-        // 使用自定义条件判断是否攻击：只有饥饿或被攻击时才会主动出击
-        
-        // 第一优先级：攻击非尸兄玩家（正常活人）
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackNormalPlayer));
-        
-        // 第二优先级：攻击非尸兄的其他怪物
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackNonCorpseMob));
-        
-        // 第三优先级：攻击动物
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Animal.class, 0, true, false, this::shouldAttackAnimal));
-        
-        // 第四优先级：攻击村民
-        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Villager.class, 0, true, false, this::shouldAttackVillager));
-        
-        // 第五优先级：攻击造反的尸兄玩家
-        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackRebelCorpsePlayer));
+        this.targetSelector.addGoal(1, new com.phagens.corpseorigin.entity.EntityAI.JLAI.CorpseBrotherHiveMindGoal(this));
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackNonCorpsePlayer));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackNonCorpseMob));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Animal.class, 0, true, false, this::shouldAttackAnimal));
+        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Villager.class, 0, true, false, this::shouldAttackVillager));
+        this.targetSelector.addGoal(6, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackRebelCorpsePlayer));
     }
 
-    /**
-     * 判断是否应该攻击非尸兄玩家（正常活人）
-     * 这是第一优先级目标
-     */
-    private boolean shouldAttackNormalPlayer(net.minecraft.world.entity.LivingEntity entity) {
-        // 只攻击玩家
-        if (!(entity instanceof Player player)) {
-            return false;
-        }
-        
-        // 不攻击尸兄玩家（同类）
-        if (com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
-            return false;
-        }
-        
-        // 只有龙右应该主动出击时才会选择目标
+    private boolean shouldAttackNonCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
+        if (entity instanceof ICorpseBrother) return false;
+        if (!(entity instanceof Player player)) return false;
+        if (com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) return false;
         return shouldInitiateAttack();
     }
     
-    /**
-     * 判断是否应该攻击非尸兄的其他怪物
-     * 这是第二优先级目标
-     */
     private boolean shouldAttackNonCorpseMob(net.minecraft.world.entity.LivingEntity entity) {
-        // 不攻击尸兄实体（同类）
-        if (entity instanceof LowerLevelZbEntity) {
-            return false;
-        }
-        
-        // 不攻击尸兄鱼（同类）
-        if (entity instanceof ZbrFishEntity) {
-            return false;
-        }
-        
-        // 不攻击玩家（玩家由单独的目标处理）
-        if (entity instanceof Player) {
-            return false;
-        }
-        
-        // 不攻击村民（村民由单独的目标处理）
-        if (entity instanceof Villager) {
-            return false;
-        }
-        
-        // 不攻击动物（动物由单独的目标处理）
-        if (entity instanceof Animal) {
-            return false;
-        }
-        
-        // 只有龙右应该主动出击时才会选择目标
+        if (entity instanceof ICorpseBrother) return false;
+        if (entity instanceof Player) return false;
+        if (entity instanceof Villager) return false;
+        if (entity instanceof Animal) return false;
         return shouldInitiateAttack();
     }
     
-    /**
-     * 判断是否应该攻击动物
-     * 这是第三优先级目标
-     */
     private boolean shouldAttackAnimal(net.minecraft.world.entity.LivingEntity entity) {
-        // 只攻击动物
-        if (!(entity instanceof Animal)) {
-            return false;
-        }
-        
-        // 只有龙右应该主动出击时才会选择目标
+        if (!(entity instanceof Animal)) return false;
         return shouldInitiateAttack();
     }
     
-    /**
-     * 判断是否应该攻击村民
-     * 这是第四优先级目标
-     */
     private boolean shouldAttackVillager(net.minecraft.world.entity.LivingEntity entity) {
-        // 只攻击村民
-        if (!(entity instanceof Villager)) {
-            return false;
-        }
-        
-        // 只有龙右应该主动出击时才会选择目标
+        if (!(entity instanceof Villager)) return false;
         return shouldInitiateAttack();
     }
     
-    /**
-     * 判断是否应该攻击造反的尸兄玩家
-     * 这是第五优先级目标
-     */
     private boolean shouldAttackRebelCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
-        // 只攻击玩家
-        if (!(entity instanceof Player player)) {
-            return false;
-        }
-        
-        // 只攻击已成为尸兄的玩家
-        if (!com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
-            return false;
-        }
-        
-        // 检查该尸兄玩家是否造反（攻击次数超过阈值）
+        if (!(entity instanceof Player player)) return false;
+        if (entity instanceof ICorpseBrother) return false;
+        if (!com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) return false;
         java.util.UUID playerId = player.getUUID();
         int attackCount = corpsePlayerAttacks.getOrDefault(playerId, 0);
         return attackCount >= CORPSE_PLAYER_ATTACK_THRESHOLD;
@@ -408,7 +331,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseHu
                 .add(Attributes.MAX_HEALTH, 500.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.4D)
                 .add(Attributes.ATTACK_DAMAGE, 15.0D)
-                .add(Attributes.FOLLOW_RANGE, 32.0D)
+                .add(Attributes.FOLLOW_RANGE, 48.0D)
                 .add(Attributes.ARMOR, 10.0D);
     }
 
@@ -1385,9 +1308,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseHu
      */
     @Override
     public boolean doHurtTarget(net.minecraft.world.entity.Entity entity) {
-        // 龙右不会攻击尸兄（同类），但会攻击造反的尸兄玩家
-        if (entity instanceof LowerLevelZbEntity) {
-            CorpseOrigin.LOGGER.debug("龙右拒绝攻击尸兄（同类）");
+        if (entity instanceof ICorpseBrother && !(entity instanceof Player)) {
             return false;
         }
         
@@ -1506,6 +1427,31 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseHu
     @Override
     public int getCorpseHunger() {
         return this.hunger > 0 ? 1 : 0;
+    }
+
+    @Override
+    public boolean isCorpseBrotherOf(net.minecraft.world.entity.Mob entity) {
+        return entity instanceof ICorpseBrother;
+    }
+
+    @Override
+    public void setHiveMindTarget(LivingEntity target) {
+        this.hiveMindTarget = target;
+    }
+
+    @Override
+    public LivingEntity getHiveMindTarget() {
+        return this.hiveMindTarget;
+    }
+
+    @Override
+    public boolean hasAttackTarget() {
+        return this.getTarget() != null && this.getTarget().isAlive();
+    }
+
+    @Override
+    public int getEvolutionLevel() {
+        return 5;
     }
 
     /**

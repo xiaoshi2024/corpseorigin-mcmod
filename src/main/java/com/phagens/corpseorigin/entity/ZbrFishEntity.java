@@ -37,7 +37,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
 
-public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationSystem, ICorpseHunger {
+public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationSystem, ICorpseBrother {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     protected static final RawAnimation SWIM_ANIM = RawAnimation.begin().thenLoop("swim");
     protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
@@ -56,6 +56,8 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
     private static final int MAX_CORPSE_HUNGER = 3;
     private int acidSprayCooldown = 0;
     private static final int ACID_SPRAY_COOLDOWN_TICKS = 60;
+
+    private LivingEntity hiveMindTarget = null;
 
     public ZbrFishEntity(EntityType<? extends AbstractFish> entityType, Level level) {
         super(entityType, level);
@@ -103,111 +105,45 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new PanicGoal(this, 1.25D));
-        // 寻找并吞噬尸体 - 尸兄鱼被尸体吸引
         this.goalSelector.addGoal(1, new com.phagens.corpseorigin.entity.EntityAI.JLAI.AquaticSeekCorpseGibGoal(
             this, 
             this::eatCorpseGib,
             () -> this.corpseHunger
         ));
         this.goalSelector.addGoal(2, new ModFollow(this, 1.0D, true));
+        this.goalSelector.addGoal(3, new com.phagens.corpseorigin.entity.EntityAI.JLAI.CorpseBrotherGatherGoal(this, 1.0D));
         this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 6.0F));
         this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
         this.addBehaviourGoals();
     }
     
     protected void addBehaviourGoals() {
-        // 攻击目标优先级：玩家 → 怪物 → 动物 → 尸兄
-        
-        // 第一优先级：攻击非尸兄玩家（正常活人）
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackNormalPlayer));
-        
-        // 第二优先级：攻击非尸兄的其他怪物
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackNonCorpseMob));
-        
-        // 第三优先级：攻击动物
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.animal.Animal.class, true));
-        
-        // 第四优先级：攻击尸兄玩家（同类）- 只有在极度饥饿时才会攻击
-        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackCorpsePlayer));
+        this.targetSelector.addGoal(1, new com.phagens.corpseorigin.entity.EntityAI.JLAI.CorpseBrotherHiveMindGoal(this));
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackNonCorpsePlayer));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackNonCorpseMob));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.animal.Animal.class, true));
+        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackCorpsePlayer));
     }
     
-    /**
-     * 判断是否应该攻击非尸兄玩家（正常活人）
-     * 这是第一优先级目标
-     */
-    private boolean shouldAttackNormalPlayer(net.minecraft.world.entity.LivingEntity entity) {
-        // 不攻击龙右（尸王）
-        if (entity instanceof LongyouEntity) {
-            return false;
-        }
-        
-        // 只攻击玩家
-        if (!(entity instanceof Player player)) {
-            return false;
-        }
-        
-        // 只攻击非尸兄玩家（正常活人）
+    private boolean shouldAttackNonCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
+        if (entity instanceof ICorpseBrother) return false;
+        if (!(entity instanceof Player player)) return false;
         return !com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player);
     }
     
-    /**
-     * 判断是否应该攻击非尸兄的其他怪物
-     * 这是第二优先级目标
-     */
     private boolean shouldAttackNonCorpseMob(net.minecraft.world.entity.LivingEntity entity) {
-        // 不攻击龙右（尸王）
-        if (entity instanceof LongyouEntity) {
-            return false;
-        }
-        
-        // 不攻击尸兄实体（同类）
-        if (entity instanceof LowerLevelZbEntity) {
-            return false;
-        }
-        
-        // 不攻击尸兄鱼（同类）
-        if (entity instanceof ZbrFishEntity) {
-            return false;
-        }
-        
-        // 不攻击玩家（玩家由单独的目标处理）
-        if (entity instanceof Player) {
-            return false;
-        }
-        
-        // 攻击其他所有怪物
+        if (entity instanceof ICorpseBrother) return false;
+        if (entity instanceof Player) return false;
         return true;
     }
     
-    /**
-     * 判断是否应该攻击尸兄玩家（已成为尸兄的玩家）
-     * 这是第四优先级目标，只有在极度饥饿时才会攻击
-     */
     private boolean shouldAttackCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
-        // 不攻击龙右（尸王）
-        if (entity instanceof LongyouEntity) {
-            return false;
-        }
-        
-        // 只攻击玩家
-        if (!(entity instanceof Player player)) {
-            return false;
-        }
-        
-        // 只攻击已成为尸兄的玩家
-        if (!com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
-            return false;
-        }
-        
-        // 被攻击时允许反击
+        if (!(entity instanceof Player player)) return false;
+        if (entity instanceof ICorpseBrother) return false;
+        if (!com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) return false;
         boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
-        if (wasRecentlyHurt) {
-            return true;
-        }
-        
-        // 极度饥饿时才攻击同类
-        boolean isHungry = this.hunger <= HUNGER_THRESHOLD;
-        return isHungry;
+        if (wasRecentlyHurt) return true;
+        return this.hunger <= HUNGER_THRESHOLD;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -436,6 +372,31 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
     @Override
     public int getCorpseHunger() {
         return this.corpseHunger;
+    }
+
+    @Override
+    public boolean isCorpseBrotherOf(Mob entity) {
+        return entity instanceof ICorpseBrother;
+    }
+
+    @Override
+    public void setHiveMindTarget(LivingEntity target) {
+        this.hiveMindTarget = target;
+    }
+
+    @Override
+    public LivingEntity getHiveMindTarget() {
+        return this.hiveMindTarget;
+    }
+
+    @Override
+    public boolean hasAttackTarget() {
+        return this.getTarget() != null && this.getTarget().isAlive();
+    }
+
+    @Override
+    public int getEvolutionLevel() {
+        return this.evolutionLevel;
     }
     
     public void setCorpseHunger(int value) {
