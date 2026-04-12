@@ -38,11 +38,23 @@ public record PlayerCorpseSyncPacket(int playerId, boolean isCorpse, int corpseT
         context.enqueueWork(() -> {
             Minecraft mc = Minecraft.getInstance();
             if (mc.level != null) {
+                // 尝试直接获取玩家实体
                 Player player = mc.level.getEntity(packet.playerId) instanceof Player p ? p : null;
                 if (player != null) {
+                    // 直接更新状态
                     player.setData(CorpsePlayerAttachment.IS_CORPSE, packet.isCorpse);
                     player.setData(CorpsePlayerAttachment.CORPSE_TYPE, packet.corpseType);
                     player.setData(CorpsePlayerAttachment.CORPSE_DATA, packet.corpseData);
+                } else {
+                    // 如果玩家实体还未加载，延迟处理
+                    mc.execute(() -> {
+                        Player delayedPlayer = mc.level.getEntity(packet.playerId) instanceof Player p ? p : null;
+                        if (delayedPlayer != null) {
+                            delayedPlayer.setData(CorpsePlayerAttachment.IS_CORPSE, packet.isCorpse);
+                            delayedPlayer.setData(CorpsePlayerAttachment.CORPSE_TYPE, packet.corpseType);
+                            delayedPlayer.setData(CorpsePlayerAttachment.CORPSE_DATA, packet.corpseData);
+                        }
+                    });
                 }
             }
         });
