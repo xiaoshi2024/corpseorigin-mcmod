@@ -16,6 +16,7 @@ import com.phagens.corpseorigin.skill.CorpseEvolutionTree;
 import com.phagens.corpseorigin.skill.CorpseSkillTree;
 import com.phagens.corpseorigin.skill.CorpseSkills;
 import com.phagens.corpseorigin.skill.SkillAttachment;
+import com.phagens.corpseorigin.worldgen.CorpseOriginDatapackProvider;
 import com.phagens.corpseorigin.skill.SkillEventHandler;
 import com.phagens.corpseorigin.voice.VoiceCommandRegistration;
 import net.neoforged.api.distmarker.Dist;
@@ -183,6 +184,9 @@ public class CorpseOrigin {
         MenuTypeRegister.MENUS.register(modEventBus);
         CorpsePlayerAttachment.ATTACHMENT_TYPES.register(modEventBus);
 
+        BiomeRegistry.BIOMES.register(modEventBus);
+        FeatureRegistry.FEATURES.register(modEventBus);
+
         // 注册音效
         ModSounds.register(modEventBus);
 
@@ -217,6 +221,7 @@ public class CorpseOrigin {
         NeoForge.EVENT_BUS.register(this);
 
         modEventBus.addListener(this::onClientSetup);
+        modEventBus.addListener(CorpseOriginDatapackProvider::onGatherData);
 
         CorpseOrigin.LOGGER.info("CorpseOrigin 模组初始化完成 [环境: {}]", FMLEnvironment.dist);
 
@@ -252,15 +257,12 @@ public class CorpseOrigin {
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
-        // Some common setup code
         LOGGER.info("HELLO FROM COMMON SETUP");
 
-        // Config fields removed - add them back in Config.java if needed
-        // if (Config.LOG_DIRT_BLOCK.getAsBoolean()) {
-        //     LOGGER.info("DIRT BLOCK >> {}", BuiltInRegistries.BLOCK.getKey(Blocks.DIRT));
-        // }
-        // LOGGER.info("{}{}", Config.MAGIC_NUMBER_INTRODUCTION.get(), Config.MAGIC_NUMBER.getAsInt());
-        // Config.ITEM_STRINGS.get().forEach((item) -> LOGGER.info("ITEM >> {}", item));
+        event.enqueueWork(() -> {
+            terrablender.api.Regions.register(new com.phagens.corpseorigin.worldgen.DeadSilenceRegion());
+            LOGGER.info("死寂群系已通过TerraBlender注册到主世界");
+        });
     }
 
 

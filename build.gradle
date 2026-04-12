@@ -57,6 +57,11 @@ repositories {
         url "https://repo1.maven.org/maven2"
     }
 
+    // TerraBlender repository
+    maven {
+        url "https://maven.minecraftforge.net/"
+    }
+
     // Local libs directory
     flatDir {
         dirs 'libs'
@@ -157,6 +162,8 @@ configurations {
 dependencies {
 
     implementation "maven.modrinth:geckolib:lWsXauBN"
+
+    implementation 'com.github.glitchfiend:TerraBlender-neoforge:1.21.1-4.1.0.3'
 
 //    implementation "curse.maven:customskinloader-286924:7372987"
 
