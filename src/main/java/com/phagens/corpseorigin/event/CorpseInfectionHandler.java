@@ -1,6 +1,9 @@
 package com.phagens.corpseorigin.event;
 
 import com.phagens.corpseorigin.CorpseOrigin;
+import com.phagens.corpseorigin.api.infection.EntityInfectionRegistry;
+import com.phagens.corpseorigin.api.infection.InfectionAPI;
+import com.phagens.corpseorigin.api.infection.InfectionEvent;
 import com.phagens.corpseorigin.data.InfectionData;
 import com.phagens.corpseorigin.entity.CorpseGibEntity;
 import com.phagens.corpseorigin.register.EntityRegistry;
@@ -86,7 +89,7 @@ public class CorpseInfectionHandler {
 
     /**
      * 检查是否应该为该生物生成残肢
-     * 重新设定：只有僵尸和村民死亡时才会生成尸体
+     * 使用新的API系统，支持外部模组注册
      */
     private static boolean shouldCreateGibs(LivingEntity entity) {
         // 不生成残肢的生物类型
@@ -96,7 +99,17 @@ public class CorpseInfectionHandler {
             return false;
         }
 
-        // 只给僵尸和村民生成残肢
+        // 检查是否通过API注册了感染
+        if (InfectionAPI.shouldCreateCorpse(entity)) {
+            return true;
+        }
+
+        // 检查是否通过实体注册系统注册了感染
+        if (EntityInfectionRegistry.shouldCreateCorpse(entity.getType())) {
+            return true;
+        }
+
+        // 默认：只有僵尸和村民死亡时才会生成尸体
         return isZombieOrVillager(entity);
     }
 

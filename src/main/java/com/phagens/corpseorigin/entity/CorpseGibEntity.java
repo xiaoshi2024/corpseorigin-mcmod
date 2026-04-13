@@ -1,7 +1,11 @@
 package com.phagens.corpseorigin.entity;
 
 import com.phagens.corpseorigin.CorpseOrigin;
+import com.phagens.corpseorigin.api.infection.EntityInfectionRegistry;
+import com.phagens.corpseorigin.api.infection.InfectionAPI;
+import com.phagens.corpseorigin.api.infection.InfectionEvent;
 import com.phagens.corpseorigin.register.EntityRegistry;
+import net.neoforged.neoforge.common.NeoForge;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -12,7 +16,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -379,23 +382,49 @@ public class CorpseGibEntity extends Entity {
 
     /**
      * 生成尸兄（模组自定义实体）
+     * 支持外部模组通过API注册的感染实体
      */
     private void spawnZombie() {
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
 
-        // 生成模组里的低阶尸兄
-        var lowerLevelZb = EntityRegistry.LOWER_LEVEL_ZB.get().create(serverLevel);
-        if (lowerLevelZb != null) {
-            lowerLevelZb.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), 0);
-            serverLevel.addFreshEntity(lowerLevelZb);
+        LivingEntity infectedEntity = null;
+
+        // 1. 尝试通过InfectionAPI创建感染实体
+        if (this.parent != null) {
+            infectedEntity = InfectionAPI.createInfectedEntity(serverLevel, this.parent);
+        }
+
+        // 2. 如果API没有返回，尝试通过实体注册系统创建
+        if (infectedEntity == null && this.parent != null) {
+            infectedEntity = EntityInfectionRegistry.createInfectedEntity(serverLevel, this.parent);
+        }
+
+        // 3. 如果都没有，使用默认的低阶尸兄
+        if (infectedEntity == null) {
+            var lowerLevelZb = EntityRegistry.LOWER_LEVEL_ZB.get().create(serverLevel);
+            if (lowerLevelZb != null) {
+                lowerLevelZb.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), 0);
+                infectedEntity = lowerLevelZb;
+            }
+        }
+
+        if (infectedEntity != null) {
+            serverLevel.addFreshEntity(infectedEntity);
 
             // 播放效果
             serverLevel.sendParticles(ParticleTypes.SMOKE,
                     this.getX(), this.getY() + 0.5, this.getZ(),
                     10, 0.3, 0.3, 0.3, 0.01);
 
-            CorpseOrigin.LOGGER.info("尸体感染完成，生成尸兄 at [{}, {}, {}]",
-                    this.getX(), this.getY(), this.getZ());
+            CorpseOrigin.LOGGER.info("尸体感染完成，生成 {} at [{}, {}, {}]",
+                    infectedEntity.getType(), this.getX(), this.getY(), this.getZ());
+
+            // 触发感染完成事件
+            if (this.parent != null) {
+                InfectionAPI.onInfectionComplete(this.parent, infectedEntity);
+                NeoForge.EVENT_BUS.post(new InfectionEvent.InfectionCompleteEvent(
+                        serverLevel, this.parent, infectedEntity));
+            }
 
             this.discard();
         }
