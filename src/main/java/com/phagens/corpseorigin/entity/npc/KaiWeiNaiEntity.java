@@ -1,8 +1,8 @@
 package com.phagens.corpseorigin.entity.npc;
 
 import com.phagens.corpseorigin.CorpseOrigin;
-import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import com.phagens.corpseorigin.entity.LongyouEntity;
+import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;

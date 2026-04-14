@@ -29,8 +29,8 @@
  */
 package com.phagens.corpseorigin.block.custom;
 
-import com.phagens.corpseorigin.block.entity.ZBRFleshBlockEntity;
 import com.phagens.corpseorigin.CorpseOrigin;
+import com.phagens.corpseorigin.block.entity.ZBRFleshBlockEntity;
 import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import com.phagens.corpseorigin.register.EntityRegistry;
 import net.minecraft.core.BlockPos;

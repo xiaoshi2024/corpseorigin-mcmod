@@ -1,9 +1,9 @@
 package com.phagens.corpseorigin.client.model;
 
+import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.client.model.geom.ModelLayerLocation;
 
 /**
  * 多眼系统模型定义

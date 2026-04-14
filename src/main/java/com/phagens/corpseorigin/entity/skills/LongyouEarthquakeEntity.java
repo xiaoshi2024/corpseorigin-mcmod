@@ -1,9 +1,8 @@
 package com.phagens.corpseorigin.entity.skills;
 
-import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.network.LongyouEarthquakeBlockPacket;
+import com.phagens.corpseorigin.register.EntityRegistry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -17,7 +16,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import com.phagens.corpseorigin.register.EntityRegistry;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Vector3f;
 

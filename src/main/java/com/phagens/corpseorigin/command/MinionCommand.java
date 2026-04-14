@@ -1,8 +1,8 @@
 package com.phagens.corpseorigin.command;
 
-import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
+import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;

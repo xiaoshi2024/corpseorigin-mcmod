@@ -1,7 +1,7 @@
 package com.phagens.corpseorigin.client.Renderer.entity;
 
-import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
 import com.phagens.corpseorigin.client.Models.entity.KaiWeiNaiModel;
+import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;

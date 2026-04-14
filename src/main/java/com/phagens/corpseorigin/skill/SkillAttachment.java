@@ -1,6 +1,5 @@
 package com.phagens.corpseorigin.skill;
 
-import com.mojang.serialization.Codec;
 import com.phagens.corpseorigin.CorpseOrigin;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.attachment.AttachmentType;

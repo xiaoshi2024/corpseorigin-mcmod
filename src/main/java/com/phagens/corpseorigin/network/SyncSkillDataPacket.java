@@ -1,7 +1,6 @@
 package com.phagens.corpseorigin.network;
 
 import com.phagens.corpseorigin.CorpseOrigin;
-import com.phagens.corpseorigin.skill.ISkillHandler;
 import com.phagens.corpseorigin.skill.SkillAttachment;
 import com.phagens.corpseorigin.skill.SkillHandler;
 import io.netty.buffer.ByteBuf;

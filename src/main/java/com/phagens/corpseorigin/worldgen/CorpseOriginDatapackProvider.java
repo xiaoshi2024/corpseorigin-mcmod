@@ -2,12 +2,10 @@ package com.phagens.corpseorigin.worldgen;
 
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.register.BiomeRegistry;
-import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.PackOutput;
-import net.minecraft.world.level.biome.Biome;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;

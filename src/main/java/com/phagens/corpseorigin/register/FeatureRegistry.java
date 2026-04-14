@@ -4,7 +4,6 @@ import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.worldgen.AlienatedFragmentFeature;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.levelgen.feature.Feature;
-import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 

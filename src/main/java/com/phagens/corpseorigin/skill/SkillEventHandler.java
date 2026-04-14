@@ -3,8 +3,6 @@ package com.phagens.corpseorigin.skill;
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.player.PlayerCorpseData;
 import com.phagens.corpseorigin.skill.special.CorpseKingPowerSkill;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -14,11 +12,8 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
-import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
-
-import java.util.UUID;
 
 /**
  * 技能事件处理器 - 处理被动技能效果

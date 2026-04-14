@@ -1,7 +1,7 @@
 package com.phagens.corpseorigin.client.Renderer.entity;
 
-import com.phagens.corpseorigin.entity.ZbrFishEntity;
 import com.phagens.corpseorigin.client.Models.entity.ZbrFishModel;
+import com.phagens.corpseorigin.entity.ZbrFishEntity;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
 

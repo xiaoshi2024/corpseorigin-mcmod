@@ -1,7 +1,10 @@
 package com.phagens.corpseorigin.wthit;
 
 import com.phagens.corpseorigin.player.PlayerCorpseData;
-import mcp.mobius.waila.api.*;
+import mcp.mobius.waila.api.IDataProvider;
+import mcp.mobius.waila.api.IDataWriter;
+import mcp.mobius.waila.api.IPluginConfig;
+import mcp.mobius.waila.api.IServerAccessor;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 

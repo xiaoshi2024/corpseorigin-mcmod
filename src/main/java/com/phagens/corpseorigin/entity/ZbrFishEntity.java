@@ -1,8 +1,8 @@
 package com.phagens.corpseorigin.entity;
 
+import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.entity.EntityAI.JLAI.ModFollow;
 import com.phagens.corpseorigin.entity.EntityAI.Vibrationsys.ModVibrationUser;
-import com.phagens.corpseorigin.CorpseOrigin;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -20,7 +20,6 @@ import net.minecraft.world.entity.ai.goal.PanicGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.animal.AbstractFish;
-import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.gameevent.DynamicGameEventListener;

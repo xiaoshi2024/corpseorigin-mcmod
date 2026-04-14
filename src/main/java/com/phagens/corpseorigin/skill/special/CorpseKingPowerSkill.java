@@ -1,8 +1,8 @@
 package com.phagens.corpseorigin.skill.special;
 
 import com.phagens.corpseorigin.CorpseOrigin;
-import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import com.phagens.corpseorigin.data.CorpseKingData;
+import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import com.phagens.corpseorigin.player.PlayerCorpseData;
 import com.phagens.corpseorigin.skill.BaseSkill;
 import com.phagens.corpseorigin.skill.ISkillHandler;

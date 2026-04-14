@@ -1,12 +1,7 @@
 package com.phagens.corpseorigin.register;
 
 import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
-import com.phagens.corpseorigin.entity.AlienatedSporeEntity;
-import com.phagens.corpseorigin.entity.CorpseGibEntity;
-import com.phagens.corpseorigin.entity.GuigunEntity;
-import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
-import com.phagens.corpseorigin.entity.LongyouEntity;
-import com.phagens.corpseorigin.entity.ZbrFishEntity;
+import com.phagens.corpseorigin.entity.*;
 import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
 import com.phagens.corpseorigin.entity.skills.LongyouEarthquakeEntity;
 import net.minecraft.core.registries.Registries;

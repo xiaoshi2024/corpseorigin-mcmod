@@ -1,8 +1,8 @@
 package com.phagens.corpseorigin.network;
 
 import com.phagens.corpseorigin.CorpseOrigin;
-import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import com.phagens.corpseorigin.client.skin.ZbSkinState;
+import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;

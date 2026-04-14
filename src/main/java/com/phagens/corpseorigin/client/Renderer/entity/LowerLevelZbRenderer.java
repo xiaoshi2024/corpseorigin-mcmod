@@ -2,9 +2,9 @@ package com.phagens.corpseorigin.client.Renderer.entity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import com.phagens.corpseorigin.client.Models.entity.LowerLevelZbModel;
 import com.phagens.corpseorigin.client.skin.ZbSkinState;
+import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;

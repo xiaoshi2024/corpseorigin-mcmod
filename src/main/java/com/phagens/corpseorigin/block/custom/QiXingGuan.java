@@ -29,10 +29,10 @@
 package com.phagens.corpseorigin.block.custom;
 
 
-import com.phagens.corpseorigin.block.entity.QiXingGuanBlockEntity;
 import com.phagens.corpseorigin.CorpseOrigin;
-import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
+import com.phagens.corpseorigin.block.entity.QiXingGuanBlockEntity;
 import com.phagens.corpseorigin.data.InfectionData;
+import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -50,8 +50,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;

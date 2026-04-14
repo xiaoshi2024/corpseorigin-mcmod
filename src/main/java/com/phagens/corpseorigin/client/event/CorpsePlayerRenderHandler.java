@@ -2,14 +2,10 @@ package com.phagens.corpseorigin.client.event;
 
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.client.Renderer.layer.ExoskeletonRenderLayer;
-import com.phagens.corpseorigin.client.Renderer.layer.WingRenderLayer;
-import com.phagens.corpseorigin.client.Renderer.layer.TailRenderLayer;
 import com.phagens.corpseorigin.client.Renderer.layer.MultiEyeRenderLayer;
-import com.phagens.corpseorigin.client.model.CorpsemoldelRegister;
-import com.phagens.corpseorigin.client.model.ExoskeletonModel;
-import com.phagens.corpseorigin.client.model.WingModel;
-import com.phagens.corpseorigin.client.model.TailModel;
-import com.phagens.corpseorigin.client.model.MultiEyeModel;
+import com.phagens.corpseorigin.client.Renderer.layer.TailRenderLayer;
+import com.phagens.corpseorigin.client.Renderer.layer.WingRenderLayer;
+import com.phagens.corpseorigin.client.model.*;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.resources.PlayerSkin;

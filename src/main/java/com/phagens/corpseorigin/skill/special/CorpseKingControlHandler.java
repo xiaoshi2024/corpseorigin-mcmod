@@ -2,7 +2,6 @@ package com.phagens.corpseorigin.skill.special;
 
 import com.phagens.corpseorigin.CorpseOrigin;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;

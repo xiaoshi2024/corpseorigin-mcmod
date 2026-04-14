@@ -1,6 +1,5 @@
 package com.phagens.corpseorigin.Item.Organic;
 
-import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.player.PlayerCorpseData;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;

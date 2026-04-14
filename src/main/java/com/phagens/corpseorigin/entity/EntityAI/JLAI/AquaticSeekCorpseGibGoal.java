@@ -1,7 +1,6 @@
 package com.phagens.corpseorigin.entity.EntityAI.JLAI;
 
 import com.phagens.corpseorigin.entity.CorpseGibEntity;
-import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.Goal;

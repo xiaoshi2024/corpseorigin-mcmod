@@ -1,9 +1,6 @@
 package com.phagens.corpseorigin.register;
 
 import com.phagens.corpseorigin.CorpseOrigin;
-import com.phagens.corpseorigin.Item.ByWaterBottleItem;
-import com.phagens.corpseorigin.Item.ByWaterBucketItem;
-import com.phagens.corpseorigin.Item.JuQue;
 import com.phagens.corpseorigin.Item.*;
 import com.phagens.corpseorigin.Item.Organic.DrMuEyeItem;
 import com.phagens.corpseorigin.Item.Organic.OrdinaryZbEyeItem;
@@ -99,6 +96,11 @@ public class Moditems {
     // 任务纸条 - 用于追踪任务进度
     public static final DeferredItem<Item> MISSION_SCROLL = ITEMS.register("mission_scroll",
             () -> new MissionScrollItem());
+
+    // ========== 尸兄主题物品 ==========
+    // 吹风机 - 尸兄模组第一个主题物品，丢进水里会放电，右键使用给幸运buff
+    public static final DeferredItem<Item> HAIR_DRYER = ITEMS.register("hair_dryer",
+            () -> new HairDryerItem(new Item.Properties().durability(90)));
 }
 
 

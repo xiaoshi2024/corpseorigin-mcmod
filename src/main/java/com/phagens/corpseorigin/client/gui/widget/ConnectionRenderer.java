@@ -1,8 +1,6 @@
 package com.phagens.corpseorigin.client.gui.widget;
 
-import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;

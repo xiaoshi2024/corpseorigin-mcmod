@@ -10,9 +10,6 @@ import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.FeaturePlaceContext;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class AlienatedFragmentFeature extends Feature<NoneFeatureConfiguration> {
 
     public AlienatedFragmentFeature() {

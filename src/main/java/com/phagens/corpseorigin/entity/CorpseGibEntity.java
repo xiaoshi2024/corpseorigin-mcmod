@@ -5,7 +5,6 @@ import com.phagens.corpseorigin.api.infection.EntityInfectionRegistry;
 import com.phagens.corpseorigin.api.infection.InfectionAPI;
 import com.phagens.corpseorigin.api.infection.InfectionEvent;
 import com.phagens.corpseorigin.register.EntityRegistry;
-import net.neoforged.neoforge.common.NeoForge;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -18,6 +17,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
 
 import javax.annotation.Nullable;
 import java.util.UUID;

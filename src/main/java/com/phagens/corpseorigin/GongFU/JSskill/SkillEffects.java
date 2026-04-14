@@ -14,8 +14,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import static net.minecraft.commands.arguments.ParticleArgument.getParticle;
-
 public class SkillEffects {
     /**
      * 在玩家周围生成粒子效果

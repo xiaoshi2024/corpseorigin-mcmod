@@ -3,7 +3,6 @@ package com.phagens.corpseorigin.voice;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.skill.ISkill;
 import com.phagens.corpseorigin.skill.SkillManager;
 import net.minecraft.commands.CommandSourceStack;

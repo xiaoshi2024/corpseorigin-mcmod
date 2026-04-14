@@ -3,7 +3,6 @@ package com.phagens.corpseorigin.event;
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.api.infection.EntityInfectionRegistry;
 import com.phagens.corpseorigin.api.infection.InfectionAPI;
-import com.phagens.corpseorigin.api.infection.InfectionEvent;
 import com.phagens.corpseorigin.data.InfectionData;
 import com.phagens.corpseorigin.entity.CorpseGibEntity;
 import com.phagens.corpseorigin.register.EntityRegistry;
@@ -21,9 +20,9 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
-import java.util.List;
-import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * 尸体系统处理器

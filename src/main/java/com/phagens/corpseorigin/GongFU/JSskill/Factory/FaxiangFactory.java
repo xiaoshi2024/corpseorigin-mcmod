@@ -1,7 +1,6 @@
 package com.phagens.corpseorigin.GongFU.JSskill.Factory;
 
 import com.phagens.corpseorigin.CorpseOrigin;
-
 import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
 import com.phagens.corpseorigin.register.EntityRegistry;
 import net.minecraft.resources.ResourceLocation;

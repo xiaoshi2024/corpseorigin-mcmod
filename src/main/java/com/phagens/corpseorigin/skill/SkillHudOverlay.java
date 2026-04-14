@@ -1,10 +1,6 @@
 package com.phagens.corpseorigin.skill;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.phagens.corpseorigin.CorpseOrigin;
-import com.phagens.corpseorigin.client.gui.SkillRadialScreen;
-import com.phagens.corpseorigin.skill.ISkill;
-import com.phagens.corpseorigin.skill.SkillAttachment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
@@ -13,7 +9,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 
-import java.util.List;
 import java.util.Set;
 
 import static com.phagens.corpseorigin.client.gui.SkillRadialScreen.selectedSkill;

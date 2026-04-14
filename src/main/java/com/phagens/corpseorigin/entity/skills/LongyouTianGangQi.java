@@ -10,8 +10,6 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.Random;
-
 public class LongyouTianGangQi {
     
     // 天罡气二重·疾

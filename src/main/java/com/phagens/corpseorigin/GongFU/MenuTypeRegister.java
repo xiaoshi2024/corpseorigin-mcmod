@@ -3,8 +3,6 @@ package com.phagens.corpseorigin.GongFU;
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.GongFU.Sceen.GongFuMenu;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.Container;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.neoforge.registries.DeferredHolder;

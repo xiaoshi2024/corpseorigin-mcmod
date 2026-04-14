@@ -11,10 +11,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.ModList;
 import org.slf4j.Logger;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 public class ZbSkinIntegration {
     private static final Logger LOGGER = LogUtils.getLogger();

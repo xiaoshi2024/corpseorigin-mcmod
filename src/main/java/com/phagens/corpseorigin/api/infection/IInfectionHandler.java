@@ -1,10 +1,7 @@
 package com.phagens.corpseorigin.api.infection;
 
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
-
-import java.util.function.Function;
 
 public interface IInfectionHandler {
 

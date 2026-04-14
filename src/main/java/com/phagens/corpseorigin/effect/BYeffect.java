@@ -30,8 +30,8 @@
 package com.phagens.corpseorigin.effect;
 
 import com.phagens.corpseorigin.CorpseOrigin;
-import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import com.phagens.corpseorigin.data.CorpseKingData;
+import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import com.phagens.corpseorigin.network.PlayerCorpseSyncPacket;
 import com.phagens.corpseorigin.player.PlayerCorpseData;
 import com.phagens.corpseorigin.register.EffectRegister;

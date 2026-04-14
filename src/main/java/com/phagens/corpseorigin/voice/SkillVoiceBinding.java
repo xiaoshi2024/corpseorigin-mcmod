@@ -1,6 +1,5 @@
 package com.phagens.corpseorigin.voice;
 
-import com.phagens.corpseorigin.skill.ISkill;
 import net.minecraft.resources.ResourceLocation;
 
 /**

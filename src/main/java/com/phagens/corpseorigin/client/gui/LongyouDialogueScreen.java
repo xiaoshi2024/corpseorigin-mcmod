@@ -1,6 +1,5 @@
 package com.phagens.corpseorigin.client.gui;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.network.LongyouDialoguePacket;
 import net.minecraft.client.Minecraft;

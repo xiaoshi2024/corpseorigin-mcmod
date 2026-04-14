@@ -3,7 +3,6 @@ package com.phagens.corpseorigin;
 import com.mojang.logging.LogUtils;
 import com.phagens.corpseorigin.GongFU.GongFaZL.BaseGongFaItem;
 import com.phagens.corpseorigin.GongFU.GongFaZL.GongFaData;
-import com.phagens.corpseorigin.GongFU.GongFaZL.GongFaDataFactory;
 import com.phagens.corpseorigin.GongFU.JsonLoader.GongFaJsonLoader;
 import com.phagens.corpseorigin.GongFU.MenuTypeRegister;
 import com.phagens.corpseorigin.GongFU.PackGongFu.NetworkPaketGL;
@@ -12,28 +11,23 @@ import com.phagens.corpseorigin.advancement.CriterionTriggerRegister;
 import com.phagens.corpseorigin.event.player.playerDie;
 import com.phagens.corpseorigin.player.CorpsePlayerAttachment;
 import com.phagens.corpseorigin.register.*;
-import com.phagens.corpseorigin.skill.CorpseEvolutionTree;
-import com.phagens.corpseorigin.skill.CorpseSkillTree;
-import com.phagens.corpseorigin.skill.CorpseSkills;
-import com.phagens.corpseorigin.skill.SkillAttachment;
-import com.phagens.corpseorigin.worldgen.CorpseOriginDatapackProvider;
-import com.phagens.corpseorigin.skill.SkillEventHandler;
+import com.phagens.corpseorigin.skill.*;
 import com.phagens.corpseorigin.voice.VoiceCommandRegistration;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.Event;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.fml.loading.FMLEnvironment;
+import com.phagens.corpseorigin.worldgen.CorpseOriginDatapackProvider;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
@@ -87,6 +81,9 @@ public class CorpseOrigin {
                 // 添加尸兄器官掉落物
                 output.accept(Moditems.DR_MU_EYE.get());
                 output.accept(Moditems.ORDINARY_ZB_EYE.get());
+
+                // 添加尸兄主题物品
+                output.accept(Moditems.HAIR_DRYER.get());
 
             }).build());
 

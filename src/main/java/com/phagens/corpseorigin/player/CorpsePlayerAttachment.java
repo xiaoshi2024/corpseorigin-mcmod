@@ -1,7 +1,7 @@
 package com.phagens.corpseorigin.player;
 
-import com.phagens.corpseorigin.CorpseOrigin;
 import com.mojang.serialization.Codec;
+import com.phagens.corpseorigin.CorpseOrigin;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.neoforged.neoforge.attachment.AttachmentType;
