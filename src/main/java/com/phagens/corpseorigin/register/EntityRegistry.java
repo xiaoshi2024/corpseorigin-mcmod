@@ -2,6 +2,7 @@ package com.phagens.corpseorigin.register;
 
 import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
 import com.phagens.corpseorigin.entity.*;
+import com.phagens.corpseorigin.entity.Animals.CocoPenguinEntity;
 import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
 import com.phagens.corpseorigin.entity.skills.LongyouEarthquakeEntity;
 import net.minecraft.core.registries.Registries;
@@ -71,4 +72,10 @@ public class EntityRegistry {
                     .clientTrackingRange(64)
                     .updateInterval(1)
                     .build("alienated_spore"));
+
+    // CoCo企鹅实体 - 王企鹅，未尸兄化
+    public static final DeferredHolder<EntityType<?>, EntityType<CocoPenguinEntity>> COCO_PENGUIN = ENTITIES.register("coco_penguin",
+            () -> EntityType.Builder.<CocoPenguinEntity>of(CocoPenguinEntity::new, MobCategory.CREATURE)
+                    .sized(0.6F, 1.2F)
+                    .build("coco_penguin"));
 }

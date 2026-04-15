@@ -23,6 +23,9 @@
   "item.corpseorigin.zbr_fish_spawn_egg": "Zombie Brother Fish Spawn Egg",
   "item.corpseorigin.kaiweinai_spawn_egg": "Kai Wei Nai Spawn Egg",
 
+  "entity.corpseorigin.coco_penguin": "CoCo",
+  "item.corpseorigin.coco_penguin_spawn_egg": "CoCo Penguin Spawn Egg",
+
   "entity.corpseorigin.zbr_fish": "Zombie Brother Fish",
   "entity.corpseorigin.kaiweinai": "Kai Wei Nai",
   "entity.corpseorigin.lower_level_zb": "Zombie Brothers",

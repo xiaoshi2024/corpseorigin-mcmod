@@ -1,6 +1,7 @@
 package com.phagens.corpseorigin.wthit;
 
 import com.phagens.corpseorigin.CorpseOrigin;
+import com.phagens.corpseorigin.entity.Animals.CocoPenguinEntity;
 import mcp.mobius.waila.api.IClientRegistrar;
 import mcp.mobius.waila.api.IWailaClientPlugin;
 import net.minecraft.world.entity.player.Player;
@@ -17,11 +18,17 @@ public class CorpseWailaClientPlugin implements IWailaClientPlugin {
 
         // 注册尸兄玩家的头部组件
         registrar.head(CorpsePlayerProvider.INSTANCE, Player.class);
-
         // 注册尸兄玩家的身体组件（主要信息）
         registrar.body(CorpsePlayerProvider.INSTANCE, Player.class);
-
         // 注册尸兄玩家的图标提供者
         registrar.icon(CorpsePlayerProvider.INSTANCE, Player.class);
+
+        // ========== 注册企鹅信息显示 ==========
+        // 注册企鹅的头部组件
+        registrar.head(CocoPenguinProvider.INSTANCE, CocoPenguinEntity.class);
+        // 注册企鹅的身体组件（主要信息）
+        registrar.body(CocoPenguinProvider.INSTANCE, CocoPenguinEntity.class);
+        // 注册企鹅的图标提供者
+        registrar.icon(CocoPenguinProvider.INSTANCE, CocoPenguinEntity.class);
     }
 }

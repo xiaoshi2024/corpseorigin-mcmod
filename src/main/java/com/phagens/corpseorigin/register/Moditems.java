@@ -79,6 +79,10 @@ public class Moditems {
     public static final DeferredItem<Item> KAIWEINAI_SPAWN_EGG = ITEMS.register("kaiweinai_spawn_egg",
             () -> new SpawnEggItem(EntityRegistry.KAIWEINAI.get(), 0xFF0000, 0x8B0000, new Item.Properties()));
 
+    // CoCo 企鹅刷怪蛋
+    public static final DeferredItem<Item> COCO_PENGUIN_SPAWN_EGG = ITEMS.register("coco_penguin_spawn_egg",
+            () -> new SpawnEggItem(EntityRegistry.COCO_PENGUIN.get(), 0xE8882A, 0x2C2C2C, new Item.Properties()));
+
     // 鬼棍刷怪蛋
     public static final DeferredItem<Item> GUIGUN_SPAWN_EGG = ITEMS.register("guigun_spawn_egg",
             () -> new SpawnEggItem(EntityRegistry.GUIGUN.get(), 0x800080, 0x00FF00, new Item.Properties()));
