@@ -84,6 +84,10 @@ public class Moditems {
     public static final DeferredItem<Item> COCO_PENGUIN_SPAWN_EGG = ITEMS.register("coco_penguin_spawn_egg",
             () -> new SpawnEggItem(EntityRegistry.COCO_PENGUIN.get(), 0xE8882A, 0x2C2C2C, new Item.Properties()));
 
+    // CoCo 尸兄化刷怪蛋
+    public static final DeferredItem<Item> COCO_ZOMBIE_SPAWN_EGG = ITEMS.register("coco_zombie_spawn_egg",
+            () -> new SpawnEggItem(EntityRegistry.COCO_ZOMBIE.get(), 0x4A4A4A, 0x8B0000, new Item.Properties()));
+
     // 尸兄虫子刷怪蛋
     public static final DeferredItem<Item> ZB_WORM_SPAWN_EGG = ITEMS.register("zb_worm_spawn_egg",
             () -> new SpawnEggItem(EntityRegistry.ZB_WORM.get(), 0x32CD32, 0x006400, new Item.Properties()));

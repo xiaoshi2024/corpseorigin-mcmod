@@ -3,6 +3,7 @@ package com.phagens.corpseorigin.register;
 import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
 import com.phagens.corpseorigin.entity.*;
 import com.phagens.corpseorigin.entity.Animals.CocoPenguinEntity;
+import com.phagens.corpseorigin.entity.Animals.CocoZombieEntity;
 import com.phagens.corpseorigin.entity.Animals.ZbWormEntity;
 import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
 import com.phagens.corpseorigin.entity.skills.LongyouEarthquakeEntity;
@@ -79,6 +80,12 @@ public class EntityRegistry {
             () -> EntityType.Builder.<CocoPenguinEntity>of(CocoPenguinEntity::new, MobCategory.CREATURE)
                     .sized(0.6F, 1.2F)
                     .build("coco_penguin"));
+
+    // CoCo尸兄化实体 - 尸兄企鹅
+    public static final DeferredHolder<EntityType<?>, EntityType<CocoZombieEntity>> COCO_ZOMBIE = ENTITIES.register("coco_zombie",
+            () -> EntityType.Builder.<CocoZombieEntity>of(CocoZombieEntity::new, MobCategory.MONSTER)
+                    .sized(0.7F, 1.3F)
+                    .build("coco_zombie"));
 
     // 尸兄虫子实体
     public static final DeferredHolder<EntityType<?>, EntityType<ZbWormEntity>> ZB_WORM = ENTITIES.register("zb_worm",

@@ -1,8 +1,11 @@
 package com.phagens.corpseorigin.entity.Animals;
 
+import com.phagens.corpseorigin.register.Moditems;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -40,7 +43,7 @@ public class CocoPenguinEntity extends Animal implements GeoEntity {
     private static final int HUNGER_DRAIN_INTERVAL = 1200;
     private int hungerDrainTimer = 0;
 
-    private int eatCooldown = 0;
+    public int eatCooldown = 0;
     private static final int EAT_COOLDOWN_TICKS = 80;
 
     // 攻击相关
@@ -77,6 +80,7 @@ public class CocoPenguinEntity extends Animal implements GeoEntity {
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, AbstractFish.class, 10, true, false, livingEntity ->
                 livingEntity instanceof AbstractFish && !livingEntity.isBaby()
         ));
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, ZbWormEntity.class, true));
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -219,22 +223,129 @@ public class CocoPenguinEntity extends Animal implements GeoEntity {
         this.playSound(SoundEvents.PLAYER_ATTACK_SWEEP, 0.8F, 1.0F);
         attackCooldown = ATTACK_COOLDOWN_TICKS;
 
-        if (!target.isAlive()) {
+        // 判断目标是否死亡
+        boolean isDead = !target.isAlive();
+
+        if (isDead) {
             int hungerRestore = 20;
+
+            // 根据目标类型决定恢复量
             if (target instanceof Salmon) hungerRestore = 30;
             else if (target instanceof Cod) hungerRestore = 25;
             else if (target instanceof TropicalFish) hungerRestore = 15;
             else if (target instanceof Pufferfish) hungerRestore = 10;
+            else if (target instanceof ZbWormEntity) hungerRestore = 30;
 
             addHunger(hungerRestore);
 
-            // 【关键】只在陆地上触发进食动画！水里绝不触发
+            // 只在陆地上触发进食动画
             if (!this.isInWater()) {
                 triggerEatAnimation();
             }
 
+            // 如果是吃了虫子，尝试感染
+            if (target instanceof ZbWormEntity && !this.level().isClientSide) {
+                if (this.random.nextFloat() < 0.3f) {  // 30% 概率感染
+                    convertToZombie();
+                }
+            }
+
             this.setTarget(null);
         }
+    }
+
+    /**
+     * 将普通企鹅转化为尸兄企鹅
+     */
+    private void convertToZombie() {
+        if (this.level().isClientSide) return;
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+
+        // 检查是否已经死亡或即将被移除
+        if (!this.isAlive()) return;
+
+        // 获取实体类型（需要确保已注册）
+        EntityType<?> zombieType = com.phagens.corpseorigin.register.EntityRegistry.COCO_ZOMBIE.get();
+        if (zombieType == null) {
+            com.phagens.corpseorigin.CorpseOrigin.LOGGER.error("COCO_ZOMBIE 实体未注册，无法转化！");
+            return;
+        }
+
+        // 创建尸兄企鹅实体
+        CocoZombieEntity zombieEntity = new CocoZombieEntity(
+                (EntityType<? extends CocoPenguinEntity>) zombieType,
+                serverLevel
+        );
+
+        // 复制位置和旋转
+        zombieEntity.setPos(this.getX(), this.getY(), this.getZ());
+        zombieEntity.setYRot(this.getYRot());
+        zombieEntity.setXRot(this.getXRot());
+        zombieEntity.setYHeadRot(this.getYHeadRot());
+
+        // 复制重要的NBT数据
+        CompoundTag nbt = new CompoundTag();
+        this.saveWithoutId(nbt);  // 保存当前实体数据
+
+        // 清理不需要复制的数据
+        nbt.remove("UUID");
+        nbt.remove("Pos");
+        nbt.remove("Motion");
+        nbt.remove("Rotation");
+        nbt.remove("FallDistance");
+        nbt.remove("HurtTime");
+        nbt.remove("HurtByTimestamp");
+        nbt.remove("DeathTime");
+        nbt.remove("Health");  // 尸兄企鹅有独立的生命值
+
+        // 应用NBT到新实体
+        zombieEntity.readAdditionalSaveData(nbt);
+
+        // 设置尸兄企鹅的特有属性
+        zombieEntity.addHunger(this.getHunger());  // 继承饥饿值
+        zombieEntity.setHealth(zombieEntity.getMaxHealth());  // 满血转化
+
+        // 播放转化音效
+        this.playSound(SoundEvents.ZOMBIE_VILLAGER_CONVERTED, 1.0F, 1.0F);
+        zombieEntity.playSound(SoundEvents.ZOMBIE_VILLAGER_CONVERTED, 1.0F, 1.0F);
+
+        // 添加转化粒子效果
+        if (serverLevel.isClientSide) {
+            for (int i = 0; i < 30; i++) {
+                serverLevel.addParticle(
+                        net.minecraft.core.particles.ParticleTypes.SMOKE,
+                        this.getX(), this.getY() + 1, this.getZ(),
+                        (this.random.nextDouble() - 0.5D) * 0.5D,
+                        this.random.nextDouble() * 0.5D,
+                        (this.random.nextDouble() - 0.5D) * 0.5D
+                );
+            }
+        }
+
+        // 将新实体添加到世界
+        serverLevel.addFreshEntity(zombieEntity);
+
+        // 移除旧实体
+        this.discard();
+
+        com.phagens.corpseorigin.CorpseOrigin.LOGGER.info(
+                "企鹅 {} 在位置 ({}, {}, {}) 转化为尸兄企鹅",
+                this.getName().getString(),
+                this.getX(), this.getY(), this.getZ()
+        );
+    }
+
+    @Override
+    public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        ItemStack itemStack = player.getItemInHand(hand);
+
+        if (isFood(itemStack)) {
+            if (feedItem(itemStack)) {
+                return InteractionResult.SUCCESS;
+            }
+        }
+
+        return super.mobInteract(player, hand);
     }
 
     public boolean feedFish(ItemStack stack) {
@@ -270,9 +381,41 @@ public class CocoPenguinEntity extends Animal implements GeoEntity {
     }
 
     @Override
-    public boolean isFood(ItemStack itemStack) {
-        Item item = itemStack.getItem();
-        return item == Items.COD || item == Items.SALMON || item == Items.TROPICAL_FISH;
+    public boolean isFood(ItemStack stack) {
+        Item item = stack.getItem();
+        return item == Items.COD || item == Items.SALMON ||
+                item == Items.TROPICAL_FISH || item == Moditems.ZB_WORM_ITEM.get();
+    }
+
+    public boolean feedItem(ItemStack stack) {
+        if (!canEat()) return false;
+
+        Item item = stack.getItem();
+        int restoreAmount = 0;
+
+        if (item == Moditems.ZB_WORM_ITEM.get()) {
+            restoreAmount = 30;
+            // 可选：感染判定
+            if (!this.level().isClientSide && this.random.nextFloat() < 0.3f) {
+                convertToZombie();
+            }
+        } else if (item == Items.SALMON) {
+            restoreAmount = 40;
+        } else if (item == Items.COD) {
+            restoreAmount = 35;
+        } else if (item == Items.TROPICAL_FISH) {
+            restoreAmount = 25;
+        } else if (item == Items.PUFFERFISH) {
+            restoreAmount = 15;
+        }
+
+        if (restoreAmount > 0) {
+            addHunger(restoreAmount);
+            triggerEatAnimation();
+            if (!this.level().isClientSide) stack.shrink(1);
+            return true;
+        }
+        return false;
     }
 
     public void addHunger(int amount) {

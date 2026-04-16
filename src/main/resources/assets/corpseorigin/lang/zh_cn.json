@@ -25,6 +25,8 @@
 
   "entity.corpseorigin.coco_penguin": "CoCo",
   "item.corpseorigin.coco_penguin_spawn_egg": "CoCo企鹅刷怪蛋",
+  "entity.corpseorigin.coco_zombie": "CoCo尸兄",
+  "item.corpseorigin.coco_zombie_spawn_egg": "CoCo尸兄刷怪蛋",
   "entity.corpseorigin.zb_worm": "尸兄虫",
   "item.corpseorigin.zb_worm_spawn_egg": "尸兄虫刷怪蛋",
 
