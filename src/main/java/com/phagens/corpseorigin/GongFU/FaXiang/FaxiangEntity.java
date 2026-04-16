@@ -1,5 +1,7 @@
 package com.phagens.corpseorigin.GongFU.FaXiang;
 
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
@@ -15,6 +17,7 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
@@ -23,7 +26,9 @@ import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * 法相实体 - 用于JS技能召唤的临时战斗实体
@@ -33,16 +38,16 @@ import java.util.UUID;
  * 3. 自动攻击玩家附近的敌人
  * 4. 支持GeckoLib动画系统
  * 5. 生命周期结束后自动消失
+ * 6. 光环效果造成攻击力相等伤害
  */
 public class FaxiangEntity extends PathfinderMob implements GeoEntity {
     
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     // 动画定义
-    protected static final RawAnimation WALK_ANIM = RawAnimation.begin().thenLoop("walk");
-    protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
-    protected static final RawAnimation ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");
-    protected static final RawAnimation RUN_ANIM = RawAnimation.begin().thenLoop("run");
+    protected static final RawAnimation WALK_ANIM = RawAnimation.begin().thenLoop("walk"); //移动
+    protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle"); //待机
+    protected static final RawAnimation ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");//攻击
 
     // 生命周期管理
     public int lifespan = 600;
@@ -52,6 +57,13 @@ public class FaxiangEntity extends PathfinderMob implements GeoEntity {
     // 召唤者信息
     private UUID ownerUUID = null;
     private LivingEntity cachedOwner = null;
+
+    // 光环配置
+    private double auraRadius = 8.0D;
+    private int auraDamageInterval = 20;
+    private int auraTimer = 0;
+    private ParticleOptions auraParticleType = ParticleTypes.ENCHANT;
+    private Consumer<LivingEntity> auraHitCallback = null;
     
     // 资源路径
     private ResourceLocation modelResource = ResourceLocation.fromNamespaceAndPath("corpseorigin", "geo/entity/guigun.geo.json");
@@ -183,6 +195,62 @@ public class FaxiangEntity extends PathfinderMob implements GeoEntity {
                     this.teleportTo(owner.getX(), owner.getY(), owner.getZ());
                 }
             }
+
+            updateAuraEffect();
+        } else {
+            renderAuraParticles();
+        }
+    }
+
+    /**
+     * 渲染光环粒子特效（客户端）
+     */
+    private void renderAuraParticles() {
+        if (auraParticleType == null) {
+            return;
+        }
+
+        double radius = auraRadius;
+        int particleCount = 20;
+
+        for (int i = 0; i < particleCount; i++) {
+            double angle = 2 * Math.PI * i / particleCount + (age % 100) * 0.05;
+            double xOffset = Math.cos(angle) * radius;
+            double zOffset = Math.sin(angle) * radius;
+
+            double particleX = this.getX() + xOffset;
+            double particleY = this.getY() + this.random.nextDouble() * 2.0;
+            double particleZ = this.getZ() + zOffset;
+
+            this.level().addParticle(auraParticleType, particleX, particleY, particleZ, 0.0D, 0.0D, 0.0D);
+        }
+    }
+    /**
+     * 更新光环效果
+     * 对光环范围内的敌人造成等于法相攻击力的伤害
+     */
+    private void updateAuraEffect() {
+        auraTimer++;
+        if (auraTimer < auraDamageInterval) {
+            return;
+        }
+        auraTimer = 0;
+
+        float attackDamage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        if (attackDamage <= 0) {
+            return;
+        }
+
+        AABB auraBox = this.getBoundingBox().inflate(auraRadius);
+        List<LivingEntity> entitiesInRange = this.level().getEntitiesOfClass(
+                LivingEntity.class,
+                auraBox,
+                entity -> isValidTarget(entity) && this.distanceToSqr(entity) <= auraRadius * auraRadius
+        );
+
+        for (LivingEntity entity : entitiesInRange) {
+            DamageSource damageSource = this.damageSources().mobAttack(this);
+            entity.hurt(damageSource, attackDamage);
         }
     }
     
@@ -236,6 +304,38 @@ public class FaxiangEntity extends PathfinderMob implements GeoEntity {
     public void setScale(double scale) {
         this.scale = scale;
         this.refreshDimensions();
+    }
+
+    /**
+     * 设置光环半径
+     * @param radius 光环半径（格）
+     */
+    public void setAuraRadius(double radius) {
+        this.auraRadius = radius;
+    }
+
+    /**
+     * 设置光环伤害间隔
+     * @param interval 伤害间隔（tick数，20=1秒）
+     */
+    public void setAuraDamageInterval(int interval) {
+        this.auraDamageInterval = interval;
+    }
+
+    /**
+     * 设置光环粒子特效类型
+     * @param particleType 粒子类型（如 ParticleTypes.ENCHANT, ParticleTypes.FLAME 等）
+     */
+    public void setAuraParticleType(ParticleOptions particleType) {
+        this.auraParticleType = particleType;
+    }
+
+    /**
+     * 设置光环命中回调函数
+     * @param callback 回调函数，参数为被命中的实体
+     */
+    public void setAuraHitCallback(Consumer<LivingEntity> callback) {
+        this.auraHitCallback = callback;
     }
 
     /**
