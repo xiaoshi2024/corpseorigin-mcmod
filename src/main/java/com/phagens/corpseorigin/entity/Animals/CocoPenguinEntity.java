@@ -6,10 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.AgeableMob;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
@@ -26,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.*;
+import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class CocoPenguinEntity extends Animal implements GeoEntity {
@@ -273,7 +271,7 @@ public class CocoPenguinEntity extends Animal implements GeoEntity {
 
         // 创建尸兄企鹅实体
         CocoZombieEntity zombieEntity = new CocoZombieEntity(
-                (EntityType<? extends CocoPenguinEntity>) zombieType,
+                (EntityType<? extends PathfinderMob>) zombieType,
                 serverLevel
         );
 
@@ -302,7 +300,7 @@ public class CocoPenguinEntity extends Animal implements GeoEntity {
         zombieEntity.readAdditionalSaveData(nbt);
 
         // 设置尸兄企鹅的特有属性
-        zombieEntity.addHunger(this.getHunger());  // 继承饥饿值
+        zombieEntity.addRegularHunger(this.getHunger());  // 继承饥饿值
         zombieEntity.setHealth(zombieEntity.getMaxHealth());  // 满血转化
 
         // 播放转化音效
