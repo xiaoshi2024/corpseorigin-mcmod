@@ -15,6 +15,7 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
@@ -23,6 +24,7 @@ import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -39,10 +41,9 @@ public class FaxiangEntity extends PathfinderMob implements GeoEntity {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     // 动画定义
-    protected static final RawAnimation WALK_ANIM = RawAnimation.begin().thenLoop("walk");
-    protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
-    protected static final RawAnimation ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");
-    protected static final RawAnimation RUN_ANIM = RawAnimation.begin().thenLoop("run");
+    protected static final RawAnimation WALK_ANIM = RawAnimation.begin().thenLoop("walk"); //移动
+    protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle"); //待机
+    protected static final RawAnimation ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");//攻击
 
     // 生命周期管理
     public int lifespan = 600;
@@ -52,6 +53,11 @@ public class FaxiangEntity extends PathfinderMob implements GeoEntity {
     // 召唤者信息
     private UUID ownerUUID = null;
     private LivingEntity cachedOwner = null;
+
+    // 光环配置
+    private double auraRadius = 8.0D;
+    private int auraDamageInterval = 20;
+    private int auraTimer = 0;
     
     // 资源路径
     private ResourceLocation modelResource = ResourceLocation.fromNamespaceAndPath("corpseorigin", "geo/entity/guigun.geo.json");
@@ -185,6 +191,34 @@ public class FaxiangEntity extends PathfinderMob implements GeoEntity {
             }
         }
     }
+    /**
+     * 更新光环效果
+     * 对光环范围内的敌人造成等于法相攻击力的伤害
+     */
+    private void updateAuraEffect() {
+        auraTimer++;
+        if (auraTimer < auraDamageInterval) {
+            return;
+        }
+        auraTimer = 0;
+
+        float attackDamage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        if (attackDamage <= 0) {
+            return;
+        }
+
+        AABB auraBox = this.getBoundingBox().inflate(auraRadius);
+        List<LivingEntity> entitiesInRange = this.level().getEntitiesOfClass(
+                LivingEntity.class,
+                auraBox,
+                entity -> isValidTarget(entity) && this.distanceToSqr(entity) <= auraRadius * auraRadius
+        );
+
+        for (LivingEntity entity : entitiesInRange) {
+            DamageSource damageSource = this.damageSources().mobAttack(this);
+            entity.hurt(damageSource, attackDamage);
+        }
+    }
     
     /**
      * 更新召唤者引用
@@ -236,6 +270,22 @@ public class FaxiangEntity extends PathfinderMob implements GeoEntity {
     public void setScale(double scale) {
         this.scale = scale;
         this.refreshDimensions();
+    }
+
+    /**
+     * 设置光环半径
+     * @param radius 光环半径（格）
+     */
+    public void setAuraRadius(double radius) {
+        this.auraRadius = radius;
+    }
+
+    /**
+     * 设置光环伤害间隔
+     * @param interval 伤害间隔（tick数，20=1秒）
+     */
+    public void setAuraDamageInterval(int interval) {
+        this.auraDamageInterval = interval;
     }
 
     /**
