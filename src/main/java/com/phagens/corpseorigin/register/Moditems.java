@@ -5,6 +5,7 @@ import com.phagens.corpseorigin.Item.*;
 import com.phagens.corpseorigin.Item.Organic.DrMuEyeItem;
 import com.phagens.corpseorigin.Item.Organic.OrdinaryZbEyeItem;
 import com.phagens.corpseorigin.Item.YaoJi.Sagent;
+import com.phagens.corpseorigin.Item.zbritem.ZbWormitem;
 import com.phagens.corpseorigin.Item.tier.Modtiers;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -99,6 +100,10 @@ public class Moditems {
     // 穆博士的眼睛 - 稀有掉落物，失去意识的尸兄食用后可恢复人类智慧
     public static final DeferredItem<Item> DR_MU_EYE = ITEMS.register("dr_mu_eye",
             () -> new DrMuEyeItem());
+    
+    // 尸兄虫子 - 可食用的虫子，食用后获得特殊效果
+    public static final DeferredItem<Item> ZB_WORM_ITEM = ITEMS.register("zb_worm_item",
+            () -> new ZbWormitem());
 
     // ========== 任务系统物品 ==========
     // 任务纸条 - 用于追踪任务进度

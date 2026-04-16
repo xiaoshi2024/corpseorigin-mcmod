@@ -340,5 +340,14 @@
   "item.corpseorigin.mission_scroll.reward_points": "奖励：%d 进化点",
   "item.corpseorigin.mission_scroll.reward_levels": "奖励：+1 进化等级",
   "item.corpseorigin.mission_scroll.can_submit": "§a任务已完成，请拿着纸条右键尸王提交任务！",
-  "item.corpseorigin.mission_scroll.remaining": "§e还需击杀 %d 个目标"
+  "item.corpseorigin.mission_scroll.remaining": "§e还需击杀 %d 个目标",
+
+  "item.corpseorigin.zb_worm_item": "尸兄虫",
+  "item.corpseorigin.zb_worm.description": "一只蠕动的尸兄虫，散发着诡异的气息",
+  "item.corpseorigin.zb_worm.effect1": "  §a• %d%%概率获得速度增益",
+  "item.corpseorigin.zb_worm.effect2": "  §a• %d%%概率获得挖掘效率增益",
+  "item.corpseorigin.zb_worm.corpse_bonus": "§a尸兄食用可获得额外效果",
+  "item.corpseorigin.zb_worm.not_corpse_warning": "§c你不是尸兄，食用会让你感到不适",
+  "item.corpseorigin.zb_worm.consumed": "§7你食用了尸兄虫",
+  "item.corpseorigin.zb_worm.effect_gained": "§a你获得了特殊效果！"
 }

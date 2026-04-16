@@ -340,5 +340,16 @@
   "item.corpseorigin.mission_scroll.reward_points": "Reward: %d Evolution Points",
   "item.corpseorigin.mission_scroll.reward_levels": "Reward: +1 Evolution Level",
   "item.corpseorigin.mission_scroll.can_submit": "§aMission completed! Right-click the Corpse King with this scroll to submit!",
-  "item.corpseorigin.mission_scroll.remaining": "§e%d targets remaining"
+  "item.corpseorigin.mission_scroll.remaining": "§e%d targets remaining",
+
+  "item.corpseorigin.zb_worm_item": "Zb Worm Item",
+  "item.corpseorigin.zb_worm.description": "A special item that grants you special abilities when consumed.",
+  "item.corpseorigin.zb_worm.effect1": "  §a• %d%% chance to speed up",
+  "item.corpseorigin.zb_worm.effect2": "  §a• %d%% chance to dig faster",
+  "item.corpseorigin.zb_worm.corpse_bonus": "§aCorpse Bonus",
+  "item.corpseorigin.zb_worm.not_corpse_warning": "§cWarning: Not a Corpse! Consuming this item may cause you harm!",
+  "item.corpseorigin.zb_worm.consumed": "§7You consumed the Zb Worm",
+  "item.corpseorigin.zb_worm.effect_gained": "§aYou gained special effects！"
+
+
 }

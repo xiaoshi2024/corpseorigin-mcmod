@@ -82,6 +82,7 @@ public class CorpseOrigin {
 
                 // 添加尸兄器官掉落物
                 output.accept(Moditems.DR_MU_EYE.get());
+                output.accept(Moditems.ZB_WORM_ITEM.get());
                 output.accept(Moditems.ORDINARY_ZB_EYE.get());
 
                 // 添加尸兄主题物品
