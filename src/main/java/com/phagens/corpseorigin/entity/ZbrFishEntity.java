@@ -36,7 +36,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
 
-public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationSystem, ICorpseBrother {
+public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationSystem, ICorpseBrother, ICorpseHunger {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     protected static final RawAnimation SWIM_ANIM = RawAnimation.begin().thenLoop("swim");
     protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
@@ -45,18 +45,10 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
     private final VibrationSystem.User vibrationUser;
     private VibrationSystem.Data vibrationData;
     
-    private int evolutionLevel = 1;
-    private int hunger = 100;
-    private static final int HUNGER_THRESHOLD = 20;
-    private int lastHurtTick = -1000;
-    private static final int HURT_MEMORY_DURATION = 200;
+    private final CorpseHungerSystem hungerSystem = new CorpseHungerSystem(this);
     
-    private int corpseHunger = 0;
-    private static final int MAX_CORPSE_HUNGER = 3;
     private int acidSprayCooldown = 0;
     private static final int ACID_SPRAY_COOLDOWN_TICKS = 60;
-
-    private LivingEntity hiveMindTarget = null;
 
     public ZbrFishEntity(EntityType<? extends AbstractFish> entityType, Level level) {
         super(entityType, level);
@@ -107,7 +99,7 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
         this.goalSelector.addGoal(1, new com.phagens.corpseorigin.entity.EntityAI.JLAI.AquaticSeekCorpseGibGoal(
             this, 
             this::eatCorpseGib,
-            () -> this.corpseHunger
+            () -> this.getCorpseHunger()
         ));
         this.goalSelector.addGoal(2, new ModFollow(this, 1.0D, true));
         this.goalSelector.addGoal(3, new com.phagens.corpseorigin.entity.EntityAI.JLAI.CorpseBrotherGatherGoal(this, 1.0D));
@@ -119,30 +111,27 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
     protected void addBehaviourGoals() {
         this.targetSelector.addGoal(1, new com.phagens.corpseorigin.entity.EntityAI.JLAI.CorpseBrotherHiveMindGoal(this));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackNonCorpsePlayer));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackNonCorpseMob));
-        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.animal.Animal.class, true));
-        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackCorpsePlayer));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.npc.Villager.class, true));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackNonCorpseMob));
+        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.animal.Animal.class, true));
+        this.targetSelector.addGoal(6, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackCorpsePlayer));
+        this.targetSelector.addGoal(7, new NearestAttackableTargetGoal<>(this, ZbrFishEntity.class, 0, true, false, this::shouldAttackOtherCorpseEntity));
     }
     
     private boolean shouldAttackNonCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
-        if (entity instanceof ICorpseBrother) return false;
-        if (!(entity instanceof Player player)) return false;
-        return !com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player);
+        return hungerSystem.shouldAttackNonCorpsePlayer(entity);
     }
     
     private boolean shouldAttackNonCorpseMob(net.minecraft.world.entity.LivingEntity entity) {
-        if (entity instanceof ICorpseBrother) return false;
-        if (entity instanceof Player) return false;
-        return true;
+        return hungerSystem.shouldAttackNonCorpseMob(entity);
     }
     
     private boolean shouldAttackCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
-        if (!(entity instanceof Player player)) return false;
-        if (entity instanceof ICorpseBrother) return false;
-        if (!com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) return false;
-        boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
-        if (wasRecentlyHurt) return true;
-        return this.hunger <= HUNGER_THRESHOLD;
+        return hungerSystem.shouldAttackCorpsePlayer(entity);
+    }
+    
+    private boolean shouldAttackOtherCorpseEntity(net.minecraft.world.entity.LivingEntity entity) {
+        return hungerSystem.shouldAttackOtherCorpseEntity(entity);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -175,13 +164,11 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
         if (!this.level().isClientSide) {
             VibrationSystem.Ticker.tick((net.minecraft.server.level.ServerLevel) this.level(), this.vibrationData, this.vibrationUser);
             
-            if (this.tickCount % 100 == 0 && hunger > 0) {
-                hunger--;
-            }
+            hungerSystem.tick();
             
             if (this.tickCount % 200 == 0) {
                 if (this.getHealth() < this.getMaxHealth()) {
-                    float healAmount = 0.5f + (evolutionLevel * 0.3f);
+                    float healAmount = 0.5f + (hungerSystem.getEvolutionLevel() * 0.3f);
                     this.heal(healAmount);
                 }
             }
@@ -194,7 +181,7 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
                 tryEatNearbyCorpseGib();
             }
             
-            if (this.corpseHunger >= 1 && this.tickCount % 60 == 0) {
+            if (this.getCorpseHunger() >= 1 && this.tickCount % 60 == 0) {
                 LivingEntity target = this.getTarget();
                 if (target != null && target.isAlive()) {
                     double dist = this.distanceTo(target);
@@ -210,7 +197,7 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
     public boolean hurt(DamageSource source, float amount) {
         // 记录被攻击的时间（用于反击逻辑）
         if (source.getEntity() instanceof net.minecraft.world.entity.LivingEntity) {
-            lastHurtTick = this.tickCount;
+            hungerSystem.recordHurt();
         }
         return super.hurt(source, amount);
     }
@@ -284,28 +271,14 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
     @Override
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
-        compound.putInt("EvolutionLevel", this.evolutionLevel);
-        compound.putInt("Hunger", this.hunger);
-        compound.putInt("LastHurtTick", this.lastHurtTick);
-        compound.putInt("CorpseHunger", this.corpseHunger);
+        hungerSystem.saveData(compound);
         compound.putInt("AcidSprayCooldown", this.acidSprayCooldown);
     }
     
     @Override
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
-        if (compound.contains("EvolutionLevel")) {
-            this.evolutionLevel = compound.getInt("EvolutionLevel");
-        }
-        if (compound.contains("Hunger")) {
-            this.hunger = compound.getInt("Hunger");
-        }
-        if (compound.contains("LastHurtTick")) {
-            this.lastHurtTick = compound.getInt("LastHurtTick");
-        }
-        if (compound.contains("CorpseHunger")) {
-            this.corpseHunger = compound.getInt("CorpseHunger");
-        }
+        hungerSystem.loadData(compound);
         if (compound.contains("AcidSprayCooldown")) {
             this.acidSprayCooldown = compound.getInt("AcidSprayCooldown");
         }
@@ -320,14 +293,10 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
         // 检查是否应该攻击尸兄玩家
         if (entity instanceof Player player) {
             if (com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
-                // 如果被攻击了，允许反击
-                boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
-                if (!wasRecentlyHurt) {
-                    // 同类尸兄玩家，只有在极度饥饿时才攻击
-                    boolean isHungry = this.hunger <= HUNGER_THRESHOLD;
-                    if (!isHungry) {
-                        return false; // 不饥饿时不攻击同类
-                    }
+                // 同类尸兄玩家，只有在极度饥饿时才攻击
+                boolean isHungry = hungerSystem.isHungry();
+                if (!isHungry) {
+                    return false; // 不饥饿时不攻击同类
                 }
             }
         }
@@ -338,10 +307,10 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
             // 尸族特性：攻击活物时恢复生命值和饥饿度
             if (entity instanceof net.minecraft.world.entity.LivingEntity target) {
                 // 恢复饥饿度
-                hunger = Math.min(100, hunger + 5);
+                hungerSystem.setHunger(hungerSystem.getHunger() + 5);
                 
                 // 恢复生命值
-                float healAmount = 1.0f + (evolutionLevel * 0.5f);
+                float healAmount = 1.0f + (hungerSystem.getEvolutionLevel() * 0.5f);
                 this.heal(healAmount);
             }
             
@@ -370,7 +339,7 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
      */
     @Override
     public int getCorpseHunger() {
-        return this.corpseHunger;
+        return hungerSystem.getCorpseHunger();
     }
 
     @Override
@@ -380,12 +349,12 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
 
     @Override
     public void setHiveMindTarget(LivingEntity target) {
-        this.hiveMindTarget = target;
+        hungerSystem.setHiveMindTarget(target);
     }
 
     @Override
     public LivingEntity getHiveMindTarget() {
-        return this.hiveMindTarget;
+        return hungerSystem.getHiveMindTarget();
     }
 
     @Override
@@ -395,49 +364,15 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
 
     @Override
     public int getEvolutionLevel() {
-        return this.evolutionLevel;
+        return hungerSystem.getEvolutionLevel();
     }
     
     public void setCorpseHunger(int value) {
-        this.corpseHunger = Math.min(MAX_CORPSE_HUNGER, Math.max(0, value));
-        
-        if (this.corpseHunger >= MAX_CORPSE_HUNGER) {
-            onCorpseHungerFull();
-        }
+        hungerSystem.setCorpseHunger(value);
     }
     
     public void addCorpseHunger(int amount) {
-        setCorpseHunger(this.corpseHunger + amount);
-    }
-    
-    /**
-     * 当饱腹值达到3时触发等级提升
-     */
-    private void onCorpseHungerFull() {
-        if (this.evolutionLevel < 5) {
-            evolve();
-            CorpseOrigin.LOGGER.info("尸兄鱼 {} 因吞噬尸体饱腹值满而进化到 {} 级！", this.getId(), this.evolutionLevel);
-        }
-        this.corpseHunger = 0;
-    }
-    
-    /**
-     * 进化
-     */
-    private void evolve() {
-        this.evolutionLevel++;
-        
-        double healthBonus = this.evolutionLevel * 2.0;
-        double damageBonus = this.evolutionLevel * 0.5;
-        
-        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(10.0 + healthBonus);
-        this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(2.0 + damageBonus);
-        
-        this.setHealth(this.getMaxHealth());
-        
-        this.playSound(net.minecraft.sounds.SoundEvents.ILLUSIONER_PREPARE_BLINDNESS, 1.5F, 0.8F);
-        
-        CorpseOrigin.LOGGER.info("尸兄鱼进化到 {} 级！", this.evolutionLevel);
+        hungerSystem.setCorpseHunger(hungerSystem.getCorpseHunger() + amount);
     }
     
     /**
@@ -457,7 +392,7 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
                 5, 0.3, 0.3, 0.3, 0.1);
         }
         
-        CorpseOrigin.LOGGER.info("尸兄鱼 {} 吞噬了尸体，饱腹值: {}", this.getId(), this.corpseHunger);
+        CorpseOrigin.LOGGER.info("尸兄鱼 {} 吞噬了尸体，饱腹值: {}", this.getId(), this.getCorpseHunger());
     }
     
     /**
@@ -465,7 +400,7 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
      */
     private void tryEatNearbyCorpseGib() {
         if (this.level().isClientSide) return;
-        if (this.corpseHunger >= MAX_CORPSE_HUNGER) return;
+        if (this.getCorpseHunger() >= 3) return;
         
         AABB searchBox = this.getBoundingBox().inflate(2.0D);
         List<CorpseGibEntity> nearbyGibs = this.level().getEntitiesOfClass(CorpseGibEntity.class, searchBox);
@@ -493,7 +428,7 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
      */
     public void sprayAcidAtTarget(LivingEntity target) {
         if (this.level().isClientSide) return;
-        if (this.corpseHunger < 1) return;
+        if (this.getCorpseHunger() < 1) return;
         if (this.acidSprayCooldown > 0) return;
         
         double distance = this.distanceTo(target);
@@ -521,4 +456,31 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, VibrationS
         
         CorpseOrigin.LOGGER.info("尸兄鱼 {} 向 {} 喷射了酸液", this.getId(), target.getName().getString());
     }
+    
+    // ICorpseHunger 接口实现
+    @Override
+    public int getTicksExisted() {
+        return this.tickCount;
+    }
+    
+    @Override
+    public Level getLevel() {
+        return this.level();
+    }
+    
+    @Override
+    public net.minecraft.core.BlockPos blockPosition() {
+        return super.blockPosition();
+    }
+    
+    @Override
+    public boolean isAlive() {
+        return super.isAlive();
+    }
+    
+    @Override
+    public void setEvolutionLevel(int level) {
+        hungerSystem.setEvolutionLevel(level);
+    }
+    
 }

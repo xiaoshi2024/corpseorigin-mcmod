@@ -38,7 +38,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.*;
 
-public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBrother {
+public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBrother, ICorpseHunger {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     protected static final RawAnimation WALK_ANIM = RawAnimation.begin().thenLoop("walk");
     protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
@@ -155,23 +155,18 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
     private static final double VILLAGER_INTERACTION_RANGE = 4.0D;
     
     // 龙右的状态系统
-    private int hunger = 100; // 饥饿度 (0-100, 100为饱腹)
     private int mood = 50; // 心情值 (0-100, 50为中性)
     private int interest = 0; // 兴趣值 (0-100, 0为无兴趣)
     
     // 状态阈值
-    private static final int HUNGER_THRESHOLD = 20; // 饥饿度低于此值才会攻击（龙右作为尸兄始祖，饥饿阈值更低）
     private static final int MOOD_THRESHOLD = 70; // 心情值高于此值不会攻击
     private static final int INTEREST_THRESHOLD = 60; // 兴趣值高于此值不会攻击
-    
-    // 饥饿度减少速度（龙右作为尸兄始祖，饿得更慢）
-    private static final int HUNGER_DECREASE_INTERVAL = 600; // 每30秒减少1点饥饿度
     
     // 被攻击状态
     private int lastHurtTick = -1000; // 上次被攻击的游戏刻
     private static final int HURT_MEMORY_DURATION = 200; // 被攻击记忆持续时间（10秒）
 
-    private LivingEntity hiveMindTarget = null;
+    private final CorpseHungerSystem hungerSystem = new CorpseHungerSystem(this);
     
     // 尸兄玩家攻击计数（用于判断是否造反）
     private final java.util.Map<java.util.UUID, Integer> corpsePlayerAttacks = new java.util.HashMap<>();
@@ -510,6 +505,10 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
         // 原有逻辑（保留）
         if (this.tickCount >= 0) {
             lastHurtTick = this.tickCount;
+            // 记录被攻击的时间（用于反击逻辑）
+            if (source.getEntity() instanceof net.minecraft.world.entity.LivingEntity) {
+                hungerSystem.recordHurt();
+            }
         }
         return super.hurt(source, amount);
     }
@@ -692,10 +691,8 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
 
         // 服务端：状态系统更新
         if (!this.level().isClientSide) {
-            // 每600 tick（30秒）减少1点饥饿度（龙右作为尸兄始祖，饿得更慢）
-            if (this.tickCount % HUNGER_DECREASE_INTERVAL == 0 && hunger > 0) {
-                hunger--;
-            }
+            // 调用饥饿系统的tick方法
+            hungerSystem.tick();
             
             // 心情值自然恢复（每200 tick恢复1点）
             if (this.tickCount % 200 == 0 && mood < 100) {
@@ -1122,9 +1119,9 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
      * 只有在特殊时刻才会：1. 被攻击时反击 2. 极度饥饿时 3. 心情极差时
      */
     private boolean shouldAttackVillager() {
-        boolean isHungry = hunger < HUNGER_THRESHOLD;
+        boolean isHungry = hungerSystem.isHungry();
         boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
-        boolean isExtremelyHungry = hunger < HUNGER_THRESHOLD / 2; // 极度饥饿
+        boolean isExtremelyHungry = hungerSystem.getCorpseHunger() < 10; // 极度饥饿
         boolean isBadMood = mood < 20; // 心情极差
         
         // 被攻击时可以反击
@@ -1142,7 +1139,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
      * 考虑玩家威胁程度和自身状态
      */
     private boolean shouldAttackPlayer(float playerThreat) {
-        boolean isHungry = hunger < HUNGER_THRESHOLD;
+        boolean isHungry = hungerSystem.isHungry();
         boolean isHappy = mood > MOOD_THRESHOLD;
         boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
         
@@ -1337,7 +1334,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
      * 如果龙右吃饱了且没有被攻击，不会主动出击
      */
     private boolean shouldAttack() {
-        boolean isHungry = hunger < HUNGER_THRESHOLD;
+        boolean isHungry = hungerSystem.isHungry();
         boolean isHappy = mood > MOOD_THRESHOLD;
         boolean isInterested = interest > INTEREST_THRESHOLD;
         boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
@@ -1421,12 +1418,12 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
      * 作为尸王，他不需要像普通尸兄那样吞噬同类
      */
     public boolean needsToEat() {
-        return hunger < HUNGER_THRESHOLD;
+        return hungerSystem.isHungry();
     }
 
     @Override
     public int getCorpseHunger() {
-        return this.hunger > 0 ? 1 : 0;
+        return hungerSystem.getCorpseHunger() > 0 ? 1 : 0;
     }
 
     @Override
@@ -1436,12 +1433,12 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
 
     @Override
     public void setHiveMindTarget(LivingEntity target) {
-        this.hiveMindTarget = target;
+        hungerSystem.setHiveMindTarget(target);
     }
 
     @Override
     public LivingEntity getHiveMindTarget() {
-        return this.hiveMindTarget;
+        return hungerSystem.getHiveMindTarget();
     }
 
     @Override
@@ -1452,6 +1449,37 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
     @Override
     public int getEvolutionLevel() {
         return 5;
+    }
+    
+    // ICorpseHunger 接口实现
+    @Override
+    public int getTicksExisted() {
+        return this.tickCount;
+    }
+    
+    @Override
+    public Level getLevel() {
+        return this.level();
+    }
+    
+    @Override
+    public BlockPos blockPosition() {
+        return super.blockPosition();
+    }
+    
+    @Override
+    public boolean isAlive() {
+        return super.isAlive();
+    }
+    
+    @Override
+    public void setCorpseHunger(int hunger) {
+        hungerSystem.setCorpseHunger(hunger);
+    }
+    
+    @Override
+    public void setEvolutionLevel(int level) {
+        hungerSystem.setEvolutionLevel(level);
     }
 
     /**
@@ -1485,7 +1513,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
             this.heal(this.getMaxHealth() * 0.3F);
             
             // 恢复饥饿度
-            hunger = 100;
+            hungerSystem.setCorpseHunger(100);
 
             // 播放效果
             serverLevel.broadcastEntityEvent(this, (byte) 35);
@@ -1545,7 +1573,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
         compound.putInt("TianGangPoCooldown", this.tianGangPoCooldown);
         
         // 保存状态系统数据
-        compound.putInt("Hunger", this.hunger);
+        hungerSystem.saveData(compound);
         compound.putInt("Mood", this.mood);
         compound.putInt("Interest", this.interest);
         compound.putInt("LastHurtTick", this.lastHurtTick);
@@ -1630,9 +1658,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
         }
         
         // 读取状态系统数据
-        if (compound.contains("Hunger")) {
-            this.hunger = compound.getInt("Hunger");
-        }
+        hungerSystem.loadData(compound);
         if (compound.contains("Mood")) {
             this.mood = compound.getInt("Mood");
         }

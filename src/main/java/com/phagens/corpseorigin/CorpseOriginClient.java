@@ -58,6 +58,7 @@ public class CorpseOriginClient {
         event.registerEntityRenderer(EntityRegistry.COCO_PENGUIN.get(), CocoPenguinRenderer::new);
 
         event.registerEntityRenderer((EntityType<com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity>) EntityRegistry.FAXIANG.get(), FaxiangRenderer::new);
+        event.registerEntityRenderer(EntityRegistry.ZB_WORM.get(), ZbWormRenderer::new);
 
     }
 }

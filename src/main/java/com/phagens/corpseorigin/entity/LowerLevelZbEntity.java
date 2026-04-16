@@ -57,7 +57,7 @@ import java.util.UUID;
  * 实现了Vampirism模组的IBiteableEntity接口（通过IEntity扩展）
  * 允许吸血鬼玩家吸食尸兄的血液
  */
-public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, VibrationSystem, ICorpseBrother {
+public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, VibrationSystem, ICorpseBrother, ICorpseHunger {
     // 变种类型枚举
     public enum Variant {
         NORMAL(0),
@@ -131,17 +131,11 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     private int shieyeCooldown = 0;
     private int shieyeAnimationTicks = 0;
     
+    // 饥饿和吞噬系统
+    private final CorpseHungerSystem hungerSystem = new CorpseHungerSystem(this);
+    
     // 进化相关
-    private int evolutionLevel = 1;
     private int kills = 0;
-    
-    // 饥饿度系统 (0-100, 100为饱腹, 0为极度饥饿)
-    private int hunger = 100;
-    private static final int HUNGER_THRESHOLD_FOR_CANNIBALISM = 20; // 饥饿度低于20才允许吞噬
-    
-    // 尸体饱腹值系统 (0-3, 吞噬尸体获得)
-    private int corpseHunger = 0;
-    private static final int MAX_CORPSE_HUNGER = 3;
     
     // 飞扑攻击系统
     private int pounceCooldown = 0;
@@ -164,15 +158,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     private boolean hasWing = false; // 是否有翅膀
     private boolean hasTail = false; // 是否有鱼尾
     
-    // 被攻击记忆系统（用于反击）
-    private int lastHurtTick = -1000; // 上次被攻击的游戏刻
-    private static final int HURT_MEMORY_DURATION = 200; // 被攻击记忆持续时间（10秒）
-
-    // 集群意识系统
-    private LivingEntity hiveMindTarget = null;
-
     // 主人系统（被尸王收服后）
-    private UUID masterUUID = null; // 主人的UUID
     private static final double FOLLOW_RANGE = 16.0D; // 跟随范围
     private static final double TELEPORT_RANGE = 32.0D; // 传送范围
     private int followCooldown = 0; // 跟随冷却
@@ -336,41 +322,27 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
 
         this.targetSelector.addGoal(1, new com.phagens.corpseorigin.entity.EntityAI.JLAI.CorpseBrotherHiveMindGoal(this));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackNonCorpsePlayer));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackNonCorpseMob));
-        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.animal.Animal.class, true));
-        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackCorpsePlayer));
-        this.targetSelector.addGoal(6, new NearestAttackableTargetGoal<>(this, LowerLevelZbEntity.class, 0, true, false, this::shouldAttackOtherCorpseEntity));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.npc.Villager.class, true));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.Mob.class, 0, true, false, this::shouldAttackNonCorpseMob));
+        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.animal.Animal.class, true));
+        this.targetSelector.addGoal(6, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, this::shouldAttackCorpsePlayer));
+        this.targetSelector.addGoal(7, new NearestAttackableTargetGoal<>(this, LowerLevelZbEntity.class, 0, true, false, this::shouldAttackOtherCorpseEntity));
     }
 
     private boolean shouldAttackNonCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
-        if (entity instanceof ICorpseBrother) return false;
-        if (!(entity instanceof Player player)) return false;
-        if (this.masterUUID != null && player.getUUID().equals(this.masterUUID)) return false;
-        return !com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player);
+        return hungerSystem.shouldAttackNonCorpsePlayer(entity);
     }
 
     private boolean shouldAttackNonCorpseMob(net.minecraft.world.entity.LivingEntity entity) {
-        if (entity instanceof ICorpseBrother) return false;
-        if (entity instanceof Player) return false;
-        return true;
+        return hungerSystem.shouldAttackNonCorpseMob(entity);
     }
 
     private boolean shouldAttackCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
-        if (!(entity instanceof Player player)) return false;
-        if (entity instanceof ICorpseBrother) return false;
-        if (this.masterUUID != null && player.getUUID().equals(this.masterUUID)) return false;
-        if (!com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) return false;
-        boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
-        if (wasRecentlyHurt) return true;
-        return this.hunger <= HUNGER_THRESHOLD_FOR_CANNIBALISM && !isUnderZombieKingLeadership();
+        return hungerSystem.shouldAttackCorpsePlayer(entity);
     }
 
     private boolean shouldAttackOtherCorpseEntity(net.minecraft.world.entity.LivingEntity entity) {
-        if (!(entity instanceof LowerLevelZbEntity otherZb)) return false;
-        boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
-        if (wasRecentlyHurt) return true;
-        if (hasNonZombieTargets()) return false;
-        return this.hunger <= HUNGER_THRESHOLD_FOR_CANNIBALISM && !isUnderZombieKingLeadership();
+        return hungerSystem.shouldAttackOtherCorpseEntity(entity);
     }
     
     /**
@@ -378,36 +350,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      * 非尸兄玩家、非尸兄怪物、动物都是优先攻击目标
      */
     private boolean hasNonZombieTargets() {
-        if (!(this.level() instanceof ServerLevel level)) return false;
-
-        var normalPlayers = level.getEntitiesOfClass(
-                Player.class,
-                this.getBoundingBox().inflate(16.0D),
-                entity -> shouldAttackNonCorpsePlayer(entity)
-        );
-        if (!normalPlayers.isEmpty()) {
-            return true;
-        }
-
-        var nonCorpseMobs = level.getEntitiesOfClass(
-                net.minecraft.world.entity.Mob.class,
-                this.getBoundingBox().inflate(16.0D),
-                entity -> shouldAttackNonCorpseMob(entity)
-        );
-        if (!nonCorpseMobs.isEmpty()) {
-            return true;
-        }
-
-        var animals = level.getEntitiesOfClass(
-                net.minecraft.world.entity.animal.Animal.class,
-                this.getBoundingBox().inflate(16.0D),
-                entity -> entity.isAlive()
-        );
-        if (!animals.isEmpty()) {
-            return true;
-        }
-
-        return false;
+        return hungerSystem.hasNonZombieTargets();
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -475,6 +418,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     @Override
     public void aiStep() {
         super.aiStep();
+        hungerSystem.tick();
     }
     
     @Override
@@ -494,7 +438,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
 
         // 检查攻击者是否是主人，如果是则不记录（不反击）
         if (source.getEntity() instanceof Player player) {
-            if (this.masterUUID != null && player.getUUID().equals(this.masterUUID)) {
+            if (hungerSystem.getMasterUUID() != null && player.getUUID().equals(hungerSystem.getMasterUUID())) {
                 // 被主人攻击，不记录，不反击
                 return super.hurt(source, amount);
             }
@@ -522,7 +466,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         if (getCommand() != CommandState.DEFEND) {
             // 记录被攻击的时间（用于反击逻辑）
             if (source.getEntity() instanceof net.minecraft.world.entity.LivingEntity) {
-                lastHurtTick = this.tickCount;
+                hungerSystem.recordHurt();
             }
         }
         return super.hurt(source, amount);
@@ -556,13 +500,13 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         compound.putBoolean("SkinLoadStarted", this.skinLoadStarted);
         compound.putBoolean("PlayingShieye", this.entityData.get(DATA_PLAYING_SHIEYE));
         compound.putInt("ShieyeCooldown", this.shieyeCooldown);
-        compound.putInt("EvolutionLevel", this.evolutionLevel);
         compound.putInt("Kills", this.kills);
-        compound.putInt("Hunger", this.hunger);
-        compound.putInt("CorpseHunger", this.corpseHunger);
         compound.putInt("PounceCooldown", this.pounceCooldown);
         compound.putInt("AcidSprayCooldown", this.acidSprayCooldown);
         compound.putInt("Variant", this.entityData.get(DATA_VARIANT));
+        
+        // 保存饥饿系统数据
+        hungerSystem.saveData(compound);
         
         // 保存神志和贪婪系统数据
         compound.putBoolean("HasSentient", this.hasSentient);
@@ -575,12 +519,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         compound.putBoolean("HasTail", this.entityData.get(DATA_HAS_TAIL));
         compound.putBoolean("IsFlying", this.entityData.get(DATA_IS_FLYING));
 
-        // 保存被攻击记忆
-        compound.putInt("LastHurtTick", this.lastHurtTick);
-
         // 保存主人信息
-        if (this.masterUUID != null) {
-            compound.putUUID("MasterUUID", this.masterUUID);
+        if (hungerSystem.getMasterUUID() != null) {
+            compound.putUUID("MasterUUID", hungerSystem.getMasterUUID());
         }
     }
 
@@ -610,17 +551,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         if (compound.contains("ShieyeCooldown")) {
             this.shieyeCooldown = compound.getInt("ShieyeCooldown");
         }
-        if (compound.contains("EvolutionLevel")) {
-            this.evolutionLevel = compound.getInt("EvolutionLevel");
-        }
         if (compound.contains("Kills")) {
             this.kills = compound.getInt("Kills");
-        }
-        if (compound.contains("Hunger")) {
-            this.hunger = compound.getInt("Hunger");
-        }
-        if (compound.contains("CorpseHunger")) {
-            this.corpseHunger = compound.getInt("CorpseHunger");
         }
         if (compound.contains("PounceCooldown")) {
             this.pounceCooldown = compound.getInt("PounceCooldown");
@@ -631,6 +563,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         if (compound.contains("Variant")) {
             this.entityData.set(DATA_VARIANT, compound.getInt("Variant"));
         }
+        
+        // 加载饥饿系统数据
+        hungerSystem.loadData(compound);
         
         // 读取神志和贪婪系统数据
         if (compound.contains("HasSentient")) {
@@ -655,16 +590,6 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         }
         if (compound.contains("IsFlying")) {
             this.entityData.set(DATA_IS_FLYING, compound.getBoolean("IsFlying"));
-        }
-        
-        // 读取被攻击记忆
-        if (compound.contains("LastHurtTick")) {
-            this.lastHurtTick = compound.getInt("LastHurtTick");
-        }
-
-        // 读取主人信息
-        if (compound.contains("MasterUUID")) {
-            this.masterUUID = compound.getUUID("MasterUUID");
         }
 
         // 读取完成后更新自定义名称
@@ -719,14 +644,12 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
 
         // 服务端：饥饿度系统
         if (!this.level().isClientSide) {
-            // 每100 tick（5秒）减少1点饥饿度
-            if (this.tickCount % 100 == 0 && hunger > 0) {
-                hunger--;
-            }
+            // 调用饥饿系统的tick方法
+            hungerSystem.tick();
             
             // 飞行时消耗更多饥饿度
-            if (this.entityData.get(DATA_IS_FLYING) && this.tickCount % 20 == 0 && hunger > 0) {
-                hunger--;
+            if (this.entityData.get(DATA_IS_FLYING) && this.tickCount % 20 == 0 && hungerSystem.getHunger() > 0) {
+                hungerSystem.setHunger(hungerSystem.getHunger() - 1);
             }
             
             // 飞扑攻击冷却
@@ -745,7 +668,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
             }
             
             // 饱腹值≥1时，尝试向目标喷射酸液
-            if (this.corpseHunger >= 1 && this.tickCount % 60 == 0) {
+            if (hungerSystem.getCorpseHunger() >= 1 && this.tickCount % 60 == 0) {
                 LivingEntity target = this.getTarget();
                 if (target != null && target.isAlive()) {
                     double dist = this.distanceTo(target);
@@ -826,12 +749,12 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         boolean onGround = this.onGround();
 
         // 如果在地面上且饥饿度足够（>10），有概率起飞（随机起飞）
-        if (onGround && hunger > 10 && this.random.nextFloat() < 0.05F) {
+        if (onGround && hungerSystem.getHunger() > 10 && this.random.nextFloat() < 0.05F) {
             startFlying();
         }
 
         // 如果在飞行中但饥饿度不足（<=5），强制降落
-        if (this.entityData.get(DATA_IS_FLYING) && hunger <= 5) {
+        if (this.entityData.get(DATA_IS_FLYING) && hungerSystem.getHunger() <= 5) {
             stopFlying();
             CorpseOrigin.LOGGER.info("尸兄 {} 饥饿度不足，被迫降落", this.getId());
             return;
@@ -974,11 +897,11 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      * 当主人在空中且距离较远时，有翅膀的尸兄应该起飞跟随
      */
     private boolean shouldFollowMasterFlying() {
-        if (this.masterUUID == null) return false;
+        if (hungerSystem.getMasterUUID() == null) return false;
         if (!this.entityData.get(DATA_HAS_WING)) return false;
 
         if (!(this.level() instanceof ServerLevel serverLevel)) return false;
-        Player master = serverLevel.getServer().getPlayerList().getPlayer(this.masterUUID);
+        Player master = serverLevel.getServer().getPlayerList().getPlayer(hungerSystem.getMasterUUID());
         if (master == null || !master.isAlive()) return false;
 
         // 如果主人在空中（飞行或鞘翅滑翔）
@@ -1001,7 +924,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      * 只有进化等级≥3的高阶尸兄才能打开铁门
      */
     public boolean canOpenDoors() {
-        return this.evolutionLevel >= 3;
+        return hungerSystem.getEvolutionLevel() >= 3;
     }
 
     /**
@@ -1009,7 +932,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      * 只有进化等级≥4的尸兄才能破坏门
      */
     public boolean canBreakDoors() {
-        return this.evolutionLevel >= 4;
+        return hungerSystem.getEvolutionLevel() >= 4;
     }
 
     /**
@@ -1087,7 +1010,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      * 跟随主人的tick逻辑
      */
     private void tickFollowMaster() {
-        if (this.masterUUID == null) return;
+        if (hungerSystem.getMasterUUID() == null) return;
 
         // 减少跟随冷却
         if (followCooldown > 0) {
@@ -1100,7 +1023,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
 
         // 获取主人
         if (!(this.level() instanceof ServerLevel serverLevel)) return;
-        Player master = serverLevel.getServer().getPlayerList().getPlayer(this.masterUUID);
+        Player master = serverLevel.getServer().getPlayerList().getPlayer(hungerSystem.getMasterUUID());
         if (master == null || !master.isAlive()) return;
 
         double distanceToMaster = this.distanceToSqr(master);
@@ -1147,11 +1070,11 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         }
 
         // 检查饥饿度 - 如果饥饿度不足，不能起飞或必须降落
-        if (hunger <= 5) {
+        if (hungerSystem.getHunger() <= 5) {
             // 饥饿度不足，如果在飞行中则降落
             if (this.entityData.get(DATA_IS_FLYING)) {
                 stopFlying();
-                CorpseOrigin.LOGGER.info("尸兄 {} 饥饿度不足({})，停止跟随降落", this.getId(), hunger);
+                CorpseOrigin.LOGGER.info("尸兄 {} 饥饿度不足({})，停止跟随降落", this.getId(), hungerSystem.getHunger());
             }
             return;
         }
@@ -1162,8 +1085,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
 
         // 饥饿度中等（6-15）时，只在必要距离才起飞
         // 饥饿度高（>15）时，更容易起飞
-        int hungerThreshold = hunger > 15 ? 3 : 5;
-        if (hunger <= 15 && !shouldFly) {
+        int hungerThreshold = hungerSystem.getHunger() > 15 ? 3 : 5;
+        if (hungerSystem.getHunger() <= 15 && !shouldFly) {
             // 饥饿度中等且距离不够，不起飞
             if (this.entityData.get(DATA_IS_FLYING)) {
                 stopFlying();
@@ -1171,11 +1094,11 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
             return;
         }
 
-        if (shouldFly && hunger > 5) {
+        if (shouldFly && hungerSystem.getHunger() > 5) {
             // 起飞
             if (!this.entityData.get(DATA_IS_FLYING)) {
                 startFlying();
-                CorpseOrigin.LOGGER.info("尸兄 {} 起飞跟随主人（饥饿度：{}）", this.getId(), hunger);
+                CorpseOrigin.LOGGER.info("尸兄 {} 起飞跟随主人（饥饿度：{}）", this.getId(), hungerSystem.getHunger());
             }
 
             // 如果在飞行中，向主人移动（保持相同高度）
@@ -1258,21 +1181,21 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      * 设置主人
      */
     public void setMaster(UUID masterUUID) {
-        this.masterUUID = masterUUID;
+        hungerSystem.setMasterUUID(masterUUID);
     }
 
     /**
      * 获取主人UUID
      */
     public UUID getMasterUUID() {
-        return this.masterUUID;
+        return hungerSystem.getMasterUUID();
     }
 
     /**
      * 检查是否有主人
      */
     public boolean hasMaster() {
-        return this.masterUUID != null;
+        return hungerSystem.getMasterUUID() != null;
     }
     
     @Override
@@ -1288,24 +1211,13 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         // 如果目标是已成为尸兄的玩家，检查是否应该攻击
         if (entity instanceof Player player) {
             if (com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) {
-                // 如果被攻击了，允许反击
-                boolean wasRecentlyHurt = (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION;
-                if (wasRecentlyHurt) {
-                    CorpseOrigin.LOGGER.info("尸兄 {} 反击同类玩家 {}", this.getId(), player.getName().getString());
-                    // 继续执行攻击逻辑
-                } else {
-                    // 同类尸兄玩家，只有在极度饥饿时才攻击
-                    boolean isHungry = this.hunger <= HUNGER_THRESHOLD_FOR_CANNIBALISM;
-                    boolean notUnderKing = !isUnderZombieKingLeadership();
-                    
-                    // 只有在满足吞噬条件时才攻击同类玩家
-                    if (!isHungry || !notUnderKing) {
-                        return false; // 不饥饿或有尸王领导时不攻击同类
-                    }
-                    
-                    // 满足条件，可以攻击同类玩家
-                    CorpseOrigin.LOGGER.info("尸兄 {} 因极度饥饿攻击同类玩家 {}", this.getId(), player.getName().getString());
+                // 同类尸兄玩家，使用 CorpseHungerSystem 的逻辑判断是否应该攻击
+                if (!shouldAttackCorpsePlayer(player)) {
+                    return false; // 不满足攻击条件时不攻击同类
                 }
+                
+                // 满足条件，可以攻击同类玩家
+                CorpseOrigin.LOGGER.info("尸兄 {} 攻击同类玩家 {}", this.getId(), player.getName().getString());
             }
         }
         
@@ -1346,7 +1258,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      */
     private boolean shouldAttackOtherZb(LowerLevelZbEntity otherZb) {
         // 检查吞噬条件
-        boolean isHungry = this.hunger <= HUNGER_THRESHOLD_FOR_CANNIBALISM;
+        boolean isHungry = hungerSystem.getHunger() <= 20; // 使用CorpseHungerSystem中的阈值
         boolean notUnderKing = !isUnderZombieKingLeadership();
         
         // 只有在满足吞噬条件时才攻击
@@ -1359,7 +1271,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
             // 吞噬条件已经在 shouldAttackOtherZb 中检查过了
             // 30%概率触发吞噬
             if (this.random.nextFloat() < 0.3F) {
-                CorpseOrigin.LOGGER.info("尸兄 {} 吞噬了尸兄 {}！饥饿度: {}", this.getId(), otherZb.getId(), this.hunger);
+                CorpseOrigin.LOGGER.info("尸兄 {} 吞噬了尸兄 {}！饥饿度: {}", this.getId(), otherZb.getId(), hungerSystem.getHunger());
                 performCannibalism(otherZb);
             }
             return; // 不增加击杀计数，吞噬单独处理
@@ -1413,13 +1325,13 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         if (this.level().isClientSide) return false;
         
         // 如果自己就是尸王（等级5），不需要检查
-        if (this.evolutionLevel >= 5) return false;
+        if (this.getEvolutionLevel() >= 5) return false;
         
         // 检查32格范围内是否有进化等级5的尸王
         return this.level().getEntitiesOfClass(LowerLevelZbEntity.class, 
             this.getBoundingBox().inflate(32.0D))
             .stream()
-            .anyMatch(zb -> zb.evolutionLevel >= 5 && zb != this);
+            .anyMatch(zb -> zb.getEvolutionLevel() >= 5 && zb != this);
     }
     
     /**
@@ -1440,11 +1352,11 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
             int evolutionGain = Math.max(1, otherZb.getEvolutionLevel());
             this.kills += evolutionGain * 2;
             this.heal(this.getMaxHealth() * 0.5F);
-            this.hunger = 100;
+            hungerSystem.setHunger(100);
             
             this.addCorpseHunger(otherZb.getCorpseHunger());
             
-            CorpseOrigin.LOGGER.info("尸兄 {} 继承了 {} 点饱腹值，当前饱腹值: {}", this.getId(), otherZb.getCorpseHunger(), this.corpseHunger);
+            CorpseOrigin.LOGGER.info("尸兄 {} 继承了 {} 点饱腹值，当前饱腹值: {}", this.getId(), otherZb.getCorpseHunger(), hungerSystem.getCorpseHunger());
             
             checkEvolution();
             
@@ -1455,14 +1367,14 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
             this.level().broadcastEntityEvent(otherZb, (byte) 35);
             otherZb.playSound(net.minecraft.sounds.SoundEvents.GENERIC_EAT, 2.0F, 0.8F);
             
-            int evolutionGain = Math.max(1, this.evolutionLevel);
+            int evolutionGain = Math.max(1, this.getEvolutionLevel());
             otherZb.setKills(otherZb.getKills() + evolutionGain * 2);
             otherZb.heal(otherZb.getMaxHealth() * 0.5F);
-            otherZb.hunger = 100;
+            otherZb.hungerSystem.setHunger(100);
             
-            otherZb.addCorpseHunger(this.corpseHunger);
+            otherZb.addCorpseHunger(this.getCorpseHunger());
             
-            CorpseOrigin.LOGGER.info("尸兄 {} 继承了 {} 点饱腹值，当前饱腹值: {}", otherZb.getId(), this.corpseHunger, otherZb.corpseHunger);
+            CorpseOrigin.LOGGER.info("尸兄 {} 继承了 {} 点饱腹值，当前饱腹值: {}", otherZb.getId(), this.getCorpseHunger(), otherZb.hungerSystem.getCorpseHunger());
             
             otherZb.checkEvolution();
             
@@ -1475,8 +1387,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      */
     private boolean shouldSurvive(LowerLevelZbEntity other) {
         // 优先比较进化等级
-        if (this.evolutionLevel != other.getEvolutionLevel()) {
-            return this.evolutionLevel > other.getEvolutionLevel();
+        if (this.getEvolutionLevel() != other.getEvolutionLevel()) {
+            return this.getEvolutionLevel() > other.getEvolutionLevel();
         }
         
         // 等级相同，比较当前生命值
@@ -1489,21 +1401,21 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     }
     
     private void checkEvolution() {
-        int requiredKills = this.evolutionLevel * 6; // 每个等级需要6次击杀，需要多吃些生物才会进阶
+        int requiredKills = this.getEvolutionLevel() * 6; // 每个等级需要6次击杀，需要多吃些生物才会进阶
         
-        if (this.kills >= requiredKills && this.evolutionLevel < 5) {
+        if (this.kills >= requiredKills && this.getEvolutionLevel() < 5) {
             evolve();
         }
     }
     
     private void evolve() {
-        this.evolutionLevel++;
+        this.setEvolutionLevel(this.getEvolutionLevel() + 1);
         this.kills = 0;
         
         // 增加属性
-        double healthBonus = this.evolutionLevel * 5.0;
-        double damageBonus = this.evolutionLevel * 1.0;
-        double speedBonus = this.evolutionLevel * 0.05;
+        double healthBonus = this.getEvolutionLevel() * 5.0;
+        double damageBonus = this.getEvolutionLevel() * 1.0;
+        double speedBonus = this.getEvolutionLevel() * 0.05;
         
         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20.0 + healthBonus);
         this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(3.0 + damageBonus);
@@ -1515,7 +1427,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         this.level().broadcastEntityEvent(this, (byte) 20);
         this.playSound(net.minecraft.sounds.SoundEvents.ILLUSIONER_PREPARE_BLINDNESS, 1.5F, 0.8F);
         
-        CorpseOrigin.LOGGER.info("尸兄进化到 {} 级！", this.evolutionLevel);
+        CorpseOrigin.LOGGER.info("尸兄进化到 {} 级！", this.getEvolutionLevel());
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -1686,15 +1598,16 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     
     @Override
     public int getEvolutionLevel() {
-        return this.evolutionLevel;
+        return hungerSystem.getEvolutionLevel();
+    }
+    
+    @Override
+    public void setEvolutionLevel(int level) {
+        hungerSystem.setEvolutionLevel(level);
     }
     
     public int getKills() {
         return this.kills;
-    }
-    
-    public void setEvolutionLevel(int level) {
-        this.evolutionLevel = Math.max(1, Math.min(5, level));
     }
     
     public void setKills(int kills) {
@@ -1749,7 +1662,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      */
     @Override
     public int getCorpseHunger() {
-        return this.corpseHunger;
+        return hungerSystem.getCorpseHunger();
     }
 
     @Override
@@ -1759,12 +1672,12 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
 
     @Override
     public void setHiveMindTarget(LivingEntity target) {
-        this.hiveMindTarget = target;
+        hungerSystem.setHiveMindTarget(target);
     }
-
+    
     @Override
     public LivingEntity getHiveMindTarget() {
-        return this.hiveMindTarget;
+        return hungerSystem.getHiveMindTarget();
     }
 
     @Override
@@ -1773,26 +1686,26 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     }
     
     public void setCorpseHunger(int value) {
-        this.corpseHunger = Math.min(MAX_CORPSE_HUNGER, Math.max(0, value));
+        hungerSystem.setCorpseHunger(value);
         
-        if (this.corpseHunger >= MAX_CORPSE_HUNGER) {
+        if (hungerSystem.getCorpseHunger() >= 100) {
             onCorpseHungerFull();
         }
     }
     
     public void addCorpseHunger(int amount) {
-        setCorpseHunger(this.corpseHunger + amount);
+        setCorpseHunger(hungerSystem.getCorpseHunger() + amount);
     }
     
     /**
-     * 当饱腹值达到3时触发等级提升
+     * 当饱腹值达到100时触发等级提升
      */
     private void onCorpseHungerFull() {
-        if (this.evolutionLevel < 5) {
+        if (getEvolutionLevel() < 5) {
             evolve();
-            CorpseOrigin.LOGGER.info("尸兄 {} 因吞噬尸体饱腹值满而进化到 {} 级！", this.getId(), this.evolutionLevel);
+            CorpseOrigin.LOGGER.info("尸兄 {} 因吞噬尸体饱腹值满而进化到 {} 级！", this.getId(), getEvolutionLevel());
         }
-        this.corpseHunger = 0;
+        hungerSystem.setCorpseHunger(0);
     }
     
     /**
@@ -1812,7 +1725,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
                 5, 0.3, 0.3, 0.3, 0.1);
         }
         
-        CorpseOrigin.LOGGER.info("尸兄 {} 吞噬了尸体，饱腹值: {}", this.getId(), this.corpseHunger);
+        CorpseOrigin.LOGGER.info("尸兄 {} 吞噬了尸体，饱腹值: {}", this.getId(), hungerSystem.getCorpseHunger());
     }
     
     /**
@@ -1820,7 +1733,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      */
     private void tryEatNearbyCorpseGib() {
         if (this.level().isClientSide) return;
-        if (this.corpseHunger >= MAX_CORPSE_HUNGER) return;
+        if (hungerSystem.getCorpseHunger() >= 100) return;
         
         AABB searchBox = this.getBoundingBox().inflate(2.0D);
         List<CorpseGibEntity> nearbyGibs = this.level().getEntitiesOfClass(CorpseGibEntity.class, searchBox);
@@ -1849,7 +1762,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      */
     public void sprayAcidAtTarget(LivingEntity target) {
         if (this.level().isClientSide) return;
-        if (this.corpseHunger < 1) return;
+        if (hungerSystem.getCorpseHunger() < 1) return;
         if (this.acidSprayCooldown > 0) return;
         
         double distance = this.distanceTo(target);
@@ -1949,7 +1862,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         for (var entity : nearbyEntities) {
             if (entity instanceof Player player) {
                 // 如果是玩家主人，不施加效果
-                if (this.masterUUID != null && player.getUUID().equals(this.masterUUID)) {
+                if (hungerSystem.getMasterUUID() != null && player.getUUID().equals(hungerSystem.getMasterUUID())) {
                     continue;
                 }
             }
@@ -2061,7 +1974,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      */
     private void updateVisionRange() {
         double baseVision = 16.0D; // 人类基础视力
-        double levelBonus = this.evolutionLevel * 2.0D; // 每级增加2格视力
+        double levelBonus = this.getEvolutionLevel() * 2.0D; // 每级增加2格视力
         double totalVision = baseVision + levelBonus;
         
         // 更新视力属性
@@ -2193,7 +2106,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      */
     public boolean executeCommand(Player master, CommandState command) {
         // 检查是否是主人
-        if (this.masterUUID == null || !this.masterUUID.equals(master.getUUID())) {
+        if (hungerSystem.getMasterUUID() == null || !hungerSystem.getMasterUUID().equals(master.getUUID())) {
             return false;
         }
 
@@ -2223,8 +2136,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
      * 检查尸兄是否接受命令（有主人且主人在附近）
      */
     public boolean canAcceptCommand(Player player) {
-        if (this.masterUUID == null) return false;
-        if (!this.masterUUID.equals(player.getUUID())) return false;
+        if (hungerSystem.getMasterUUID() == null) return false;
+        if (!hungerSystem.getMasterUUID().equals(player.getUUID())) return false;
 
         // 检查主人是否在32格范围内
         return this.distanceToSqr(player) <= 32.0D * 32.0D;
@@ -2406,7 +2319,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         }
 
         // 检查是否是主人
-        if (this.masterUUID == null || !this.masterUUID.equals(player.getUUID())) {
+        if (hungerSystem.getMasterUUID() == null || !hungerSystem.getMasterUUID().equals(player.getUUID())) {
             return super.mobInteract(player, hand);
         }
 
@@ -2472,7 +2385,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
                 this.level().levelEvent(null, open ? 1005 : 1011, pos, 0);
                 
                 CorpseOrigin.LOGGER.debug("高阶尸兄（等级{}）{}了门 at {}", 
-                    this.evolutionLevel, open ? "打开" : "关闭", pos);
+                    this.getEvolutionLevel(), open ? "打开" : "关闭", pos);
             }
         }
     }
@@ -2545,7 +2458,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         float baseDropChance = 0.30f;
         
         // 根据进化等级增加掉落概率
-        float levelBonus = this.evolutionLevel * 0.05f;
+        float levelBonus = this.getEvolutionLevel() * 0.05f;
         
         // 最终掉落概率
         float finalDropChance = baseDropChance + levelBonus;
@@ -2595,8 +2508,30 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
         }
         
         // 高等级尸兄有概率掉落多个器官
-        if (this.evolutionLevel >= 3 && this.random.nextFloat() < 0.2f) {
+        if (this.getEvolutionLevel() >= 3 && this.random.nextFloat() < 0.2f) {
             spawnAtLocation(new net.minecraft.world.item.ItemStack(Moditems.ORDINARY_ZB_EYE.get()), 0.0f);
         }
     }
+    
+    // ICorpseHunger 接口实现
+    @Override
+    public int getTicksExisted() {
+        return this.tickCount;
+    }
+    
+    @Override
+    public Level getLevel() {
+        return this.level();
+    }
+    
+    @Override
+    public BlockPos blockPosition() {
+        return super.blockPosition();
+    }
+    
+    @Override
+    public boolean isAlive() {
+        return super.isAlive();
+    }
+    
 }

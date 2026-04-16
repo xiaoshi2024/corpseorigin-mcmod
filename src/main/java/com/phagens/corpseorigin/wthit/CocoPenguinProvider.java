@@ -1,6 +1,5 @@
 package com.phagens.corpseorigin.wthit;
 
-import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.entity.Animals.CocoPenguinEntity;
 import mcp.mobius.waila.api.*;
 import mcp.mobius.waila.api.component.ItemComponent;

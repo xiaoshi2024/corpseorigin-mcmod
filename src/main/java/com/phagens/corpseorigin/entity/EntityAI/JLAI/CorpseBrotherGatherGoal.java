@@ -29,6 +29,14 @@ public class CorpseBrotherGatherGoal extends Goal {
         if (this.brother.hasAttackTarget()) return false;
         if (this.mob.getTarget() != null) return false;
         if (!(this.mob.level() instanceof net.minecraft.server.level.ServerLevel serverLevel)) return false;
+        
+        // 检查是否有龙右存在
+        boolean hasLongyou = this.mob.level().getEntitiesOfClass(
+                com.phagens.corpseorigin.entity.LongyouEntity.class,
+                this.mob.getBoundingBox().inflate(100.0D)
+        ).size() > 0;
+        
+        if (!hasLongyou) return false;
 
         this.gatherTarget = CorpseBrotherHiveMind.findGatherTarget(serverLevel, this.mob);
         return this.gatherTarget != null;

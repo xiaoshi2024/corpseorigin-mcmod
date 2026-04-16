@@ -24,6 +24,15 @@ public class CorpseBrotherHiveMindGoal extends Goal {
     @Override
     public boolean canUse() {
         if (!(this.mob.level() instanceof ServerLevel)) return false;
+        
+        // 检查是否有龙右存在
+        boolean hasLongyou = this.mob.level().getEntitiesOfClass(
+                com.phagens.corpseorigin.entity.LongyouEntity.class,
+                this.mob.getBoundingBox().inflate(100.0D)
+        ).size() > 0;
+        
+        if (!hasLongyou) return false;
+        
         LivingEntity currentTarget = this.mob.getTarget();
         if (currentTarget != null && currentTarget.isAlive()) {
             return true;
