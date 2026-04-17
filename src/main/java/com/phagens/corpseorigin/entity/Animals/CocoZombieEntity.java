@@ -6,6 +6,8 @@ import com.phagens.corpseorigin.entity.CorpseHungerSystem;
 import com.phagens.corpseorigin.entity.ICorpseBrother;
 import com.phagens.corpseorigin.entity.ICorpseHunger;
 import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
+import com.phagens.corpseorigin.entity.npc.UncleEntity;
+import com.phagens.corpseorigin.entity.zbrs.CocoZombieXEntity;
 import com.phagens.corpseorigin.player.PlayerCorpseData;
 import com.phagens.corpseorigin.register.ModSounds;
 import com.phagens.corpseorigin.register.Moditems;
@@ -54,6 +56,10 @@ import java.util.UUID;
  * 攻击时触发eat动画
  */
 public class CocoZombieEntity extends PathfinderMob implements GeoEntity, ICorpseBrother, ICorpseHunger {
+
+    // 在字段区域添加
+    private boolean isFusing = false;
+    private boolean hasFused = false;
 
     // ==================== 动画定义 ====================
     private static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
@@ -150,6 +156,11 @@ public class CocoZombieEntity extends PathfinderMob implements GeoEntity, ICorps
     // ==================== AI目标 ====================
     @Override
     protected void registerGoals() {
+        // 最高优先级：攻击大叔（为了合体！）
+        // 移除 hasDroppedWorm() 的限制！无论大叔是否掉落虫都要攻击
+        this.targetSelector.addGoal(0, new NearestAttackableTargetGoal<>(this, UncleEntity.class,
+                10, true, false,
+                entity -> entity instanceof UncleEntity && ((UncleEntity) entity).isAlive()));
         // 行为目标
         this.goalSelector.addGoal(1, new PanicGoal(this, 1.5D));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, true));
@@ -274,6 +285,68 @@ public class CocoZombieEntity extends PathfinderMob implements GeoEntity, ICorps
 
         // 检查进化
         checkEvolution();
+
+        // 在 handleKill(Entity target) 方法末尾添加
+// 击杀大叔时触发合体进化！
+        if (target instanceof UncleEntity uncle && !hasFused) {
+            tryFuseWithUncle(uncle);
+        }
+    }
+
+    /**
+     * 与大叔尸体合体，进化为 CocoZombieXEntity
+     * 原著剧情：CoCo 用长舌贯穿大叔头部后，与大叔尸体合体
+     */
+    private void tryFuseWithUncle(UncleEntity uncle) {
+        if (this.level().isClientSide) return;
+        if (isFusing || hasFused) return;
+        this.isFusing = true;
+
+        CorpseOrigin.LOGGER.info("企鹅尸兄击杀了大叔！开始合体进化...");
+
+        // 播放击杀特效（长舌贯穿）
+        if (this.level() instanceof ServerLevel serverLevel) {
+            Vec3 tongueVec = uncle.position().add(0, uncle.getBbHeight() / 2, 0);
+            for (int i = 0; i < 30; i++) {
+                serverLevel.sendParticles(ParticleTypes.SWEEP_ATTACK,
+                        tongueVec.x, tongueVec.y, tongueVec.z,
+                        1, 0.1, 0.1, 0.1, 0);
+            }
+            serverLevel.sendParticles(ParticleTypes.CRIMSON_SPORE,
+                    uncle.getX(), uncle.getY() + uncle.getBbHeight() / 2, uncle.getZ(),
+                    20, 0.3, 0.3, 0.3, 0.1);
+        }
+
+        // 播放合体音效
+        this.playSound(SoundEvents.ZOMBIE_VILLAGER_CONVERTED, 1.5F, 0.6F);
+        this.playSound(ModSounds.GROUND_CHI.get(), 1.5F, 0.5F);
+
+        // 创建合体实体
+        CocoZombieXEntity fusedEntity = new CocoZombieXEntity(this.level(), this, uncle);
+
+        // 移除原实体
+        this.discard();
+        uncle.discard();
+
+        // 生成合体实体
+        fusedEntity.setPos(this.getX(), this.getY(), this.getZ());
+        this.level().addFreshEntity(fusedEntity);
+
+        // 全屏警告
+        if (this.level() instanceof ServerLevel serverLevel) {
+            for (Player player : serverLevel.players()) {
+                if (player.distanceTo(fusedEntity) < 50) {
+                    player.sendSystemMessage(
+                            net.minecraft.network.chat.Component.literal(
+                                    "§c§l⚠ 企鹅尸兄击杀了大叔！正在合体进化！ ⚠"
+                            )
+                    );
+                }
+            }
+        }
+
+        this.hasFused = true;
+        CorpseOrigin.LOGGER.info("企鹅尸兄与大叔合体完成！生成 CocoZombieXEntity");
     }
 
     // ==================== 进化系统 ====================

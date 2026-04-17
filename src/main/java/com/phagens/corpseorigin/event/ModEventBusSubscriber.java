@@ -34,6 +34,7 @@ import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
 import com.phagens.corpseorigin.entity.ZbrFishEntity;
 import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
 import com.phagens.corpseorigin.entity.npc.UncleEntity;
+import com.phagens.corpseorigin.entity.zbrs.CocoZombieXEntity;
 import com.phagens.corpseorigin.register.EntityRegistry;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -68,6 +69,9 @@ public class ModEventBusSubscriber {
         event.put(EntityRegistry.COCO_ZOMBIE.get(), CocoZombieEntity.createAttributes().build());
         // 注册尸兄虫子的属性
         event.put(EntityRegistry.ZB_WORM.get(), ZbWormEntity.createAttributes().build());
+        //大叔
         event.put(EntityRegistry.UNCLE.get(), UncleEntity.createAttributes().build());
+        //企鹅尸兄2阶
+        event.put(EntityRegistry.COCO_ZOMBIE_X.get(), CocoZombieXEntity.createAttributes().build());
     }
 }

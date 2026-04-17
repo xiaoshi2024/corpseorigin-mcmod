@@ -25,6 +25,9 @@
   "item.corpseorigin.uncle_spawn_egg": "大叔（少女漫画家）刷怪蛋",
   "entity.corpseorigin.uncle": "大叔（少女漫画家）",
 
+  "entity.corpseorigin.coco_zombie_x": "CoCo尸兄-%s",
+  "item.corpseorigin.coco_zombie_x_spawn_egg": "CoCo尸兄-%s刷怪蛋",
+
   "entity.corpseorigin.coco_penguin": "CoCo",
   "item.corpseorigin.coco_penguin_spawn_egg": "CoCo企鹅刷怪蛋",
   "entity.corpseorigin.coco_zombie": "CoCo尸兄",
@@ -75,7 +78,7 @@
   "tooltip.corpseorigin.bywater_bottle": "喝下它会中毒...",
   "tooltip.corpseorigin.bywater_bucket": "放置后会污染水源",
   "tooltip.corpseorigin.ming_juque": "巨阙神兵，可斩杀残血之敌",
-  "tooltip.corpseorigin.s_agent": "§e初期不稳定的实验药剂，直接使用会对身体造成负担",
+  "tooltip.corpseorigin.s_agent": "§e初期不稳定的实验药剂-【主角曾扬言：他可是一拳能打死一头牛！你可以试试看！]，直接使用会对身体造成负担",
   "tooltip.corpseorigin.s_agent.warning": "§c§l警告：需要配合蓝色中和剂使用，否则可能暴毙！",
   "tooltip.corpseorigin.blue_s_agent": "§b用于中和黄色强化剂的副作用，稳定身体状态",
   "tooltip.corpseorigin.gongfa.rarity": "品级: %s",

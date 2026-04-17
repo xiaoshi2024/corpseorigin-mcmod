@@ -96,6 +96,10 @@ public class Moditems {
     public static final DeferredItem<Item> UNCLE_SPAWN_EGG = ITEMS.register("uncle_spawn_egg",
             () -> new SpawnEggItem(EntityRegistry.UNCLE.get(), 0xFFB6C1, 0x8B4513, new Item.Properties()));
 
+    // 合体尸兄（CoCo+大叔）刷怪蛋
+    public static final DeferredItem<Item> COCO_ZOMBIE_X_SPAWN_EGG = ITEMS.register("coco_zombie_x_spawn_egg",
+            () -> new SpawnEggItem(EntityRegistry.COCO_ZOMBIE_X.get(), 0x4A4A4A, 0x8B4513, new Item.Properties()));
+
     // 鬼棍刷怪蛋
     public static final DeferredItem<Item> GUIGUN_SPAWN_EGG = ITEMS.register("guigun_spawn_egg",
             () -> new SpawnEggItem(EntityRegistry.GUIGUN.get(), 0x800080, 0x00FF00, new Item.Properties()));

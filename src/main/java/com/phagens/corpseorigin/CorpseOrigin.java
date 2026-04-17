@@ -77,6 +77,7 @@ public class CorpseOrigin {
                 output.accept(Moditems.COCO_ZOMBIE_SPAWN_EGG.get());
                 output.accept(Moditems.ZB_WORM_SPAWN_EGG.get());
                 output.accept(Moditems.UNCLE_SPAWN_EGG.get());
+                output.accept(Moditems.COCO_ZOMBIE_X_SPAWN_EGG.get());
                 output.accept(Moditems.LONGYOU_SPAWN_EGG.get());
                 output.accept(Moditems.ZBR_FISH_SPAWN_EGG.get());
                 output.accept(Moditems.KAIWEINAI_SPAWN_EGG.get());

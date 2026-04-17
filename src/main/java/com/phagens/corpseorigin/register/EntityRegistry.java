@@ -1,6 +1,7 @@
 package com.phagens.corpseorigin.register;
 
 import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
+import com.phagens.corpseorigin.client.skin.ZbSkinCache;
 import com.phagens.corpseorigin.entity.*;
 import com.phagens.corpseorigin.entity.Animals.CocoPenguinEntity;
 import com.phagens.corpseorigin.entity.Animals.CocoZombieEntity;
@@ -8,6 +9,7 @@ import com.phagens.corpseorigin.entity.Animals.ZbWormEntity;
 import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
 import com.phagens.corpseorigin.entity.npc.UncleEntity;
 import com.phagens.corpseorigin.entity.skills.LongyouEarthquakeEntity;
+import com.phagens.corpseorigin.entity.zbrs.CocoZombieXEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -99,4 +101,12 @@ public class EntityRegistry {
             () -> EntityType.Builder.<UncleEntity>of(UncleEntity::new, MobCategory.CREATURE)
                     .sized(0.6F, 1.8F)
                     .build("uncle"));
+
+    // 合体尸兄 - CoCo企鹅 + 大叔合体（二阶段）
+    public static final DeferredHolder<EntityType<?>, EntityType<CocoZombieXEntity>> COCO_ZOMBIE_X = ENTITIES.register("coco_zombie_x",
+            () -> EntityType.Builder.<CocoZombieXEntity>of(CocoZombieXEntity::new, MobCategory.MONSTER)
+                    .sized(1.2F, 1.4F)          // 合体后体型比一阶段更大
+                    .clientTrackingRange(64)
+                    .updateInterval(2)
+                    .build("coco_zombie_x"));
 }
