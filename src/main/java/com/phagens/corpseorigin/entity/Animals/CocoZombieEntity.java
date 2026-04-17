@@ -627,6 +627,9 @@ public class CocoZombieEntity extends PathfinderMob implements GeoEntity, ICorps
             handleAirSupply();
             handleSurfaceForAir();
 
+            // 更新导航（根据是否在水中切换）
+            updateNavigation();
+
             // 吞噬尸体
             if (this.tickCount % 40 == 0) {
                 tryEatNearbyCorpseGib();

@@ -6,6 +6,7 @@ import com.phagens.corpseorigin.entity.Animals.CocoPenguinEntity;
 import com.phagens.corpseorigin.entity.Animals.CocoZombieEntity;
 import com.phagens.corpseorigin.entity.Animals.ZbWormEntity;
 import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
+import com.phagens.corpseorigin.entity.npc.UncleEntity;
 import com.phagens.corpseorigin.entity.skills.LongyouEarthquakeEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
@@ -81,10 +82,10 @@ public class EntityRegistry {
                     .sized(0.6F, 1.2F)
                     .build("coco_penguin"));
 
-    // CoCo尸兄化实体 - 尸兄企鹅
+    // CoCo尸兄化实体 - 尸兄企鹅（躺下姿态）
     public static final DeferredHolder<EntityType<?>, EntityType<CocoZombieEntity>> COCO_ZOMBIE = ENTITIES.register("coco_zombie",
             () -> EntityType.Builder.<CocoZombieEntity>of(CocoZombieEntity::new, MobCategory.MONSTER)
-                    .sized(0.7F, 1.3F)
+                    .sized(1.0F, 0.6F)
                     .build("coco_zombie"));
 
     // 尸兄虫子实体
@@ -92,4 +93,10 @@ public class EntityRegistry {
             () -> EntityType.Builder.<ZbWormEntity>of(ZbWormEntity::new, MobCategory.MONSTER)
                     .sized(0.2F, 0.2F)
                     .build("zb_worm"));
+
+    // 大叔NPC（少女漫画家）
+    public static final DeferredHolder<EntityType<?>, EntityType<UncleEntity>> UNCLE = ENTITIES.register("uncle",
+            () -> EntityType.Builder.<UncleEntity>of(UncleEntity::new, MobCategory.CREATURE)
+                    .sized(0.6F, 1.8F)
+                    .build("uncle"));
 }

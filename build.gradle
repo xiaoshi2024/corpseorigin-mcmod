@@ -169,7 +169,7 @@ configurations {
 
 dependencies {
 
-    implementation "maven.modrinth:geckolib:lWsXauBN"
+    implementation "maven.modrinth:geckolib:gFmrC8Ru"
 
     implementation 'com.github.glitchfiend:TerraBlender-neoforge:1.21.1-4.1.0.3'
 

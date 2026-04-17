@@ -241,11 +241,9 @@ public class CocoPenguinEntity extends Animal implements GeoEntity {
                 triggerEatAnimation();
             }
 
-            // 如果是吃了虫子，尝试感染
+            // 如果是吃了虫子，直接感染
             if (target instanceof ZbWormEntity && !this.level().isClientSide) {
-                if (this.random.nextFloat() < 0.3f) {  // 30% 概率感染
-                    convertToZombie();
-                }
+                convertToZombie();
             }
 
             this.setTarget(null);
@@ -393,8 +391,8 @@ public class CocoPenguinEntity extends Animal implements GeoEntity {
 
         if (item == Moditems.ZB_WORM_ITEM.get()) {
             restoreAmount = 30;
-            // 可选：感染判定
-            if (!this.level().isClientSide && this.random.nextFloat() < 0.3f) {
+            // 吃了虫子，直接感染
+            if (!this.level().isClientSide) {
                 convertToZombie();
             }
         } else if (item == Items.SALMON) {
