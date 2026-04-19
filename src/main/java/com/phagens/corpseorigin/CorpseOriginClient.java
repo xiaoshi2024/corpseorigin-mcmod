@@ -4,6 +4,7 @@ import com.phagens.corpseorigin.GongFU.FaXiang.Geo.Renderer.FaxiangRenderer;
 import com.phagens.corpseorigin.client.Renderer.block.QiXingGuanRenderer;
 import com.phagens.corpseorigin.client.Renderer.block.ZBRFleshRenderer;
 import com.phagens.corpseorigin.client.Renderer.entity.*;
+import com.phagens.corpseorigin.entity.AlienatedSporeEntity;
 import com.phagens.corpseorigin.entity.CorpseGibEntity;
 import com.phagens.corpseorigin.entity.skills.LongyouEarthquakeRenderer;
 import com.phagens.corpseorigin.register.BlockEntityRegistry;
@@ -55,6 +56,7 @@ public class CorpseOriginClient {
         event.registerEntityRenderer((EntityType<com.phagens.corpseorigin.entity.skills.LongyouEarthquakeEntity>) EntityRegistry.LONGYOU_EARTHQUAKE.get(), LongyouEarthquakeRenderer::new);
         // 尸体残肢渲染器 - 完全参照 Mob-Dismemberment 的 RenderGib
         event.registerEntityRenderer((EntityType<CorpseGibEntity>) EntityRegistry.CORPSE_GIB.get(), CorpseGibRenderer::new);
+        event.registerEntityRenderer((EntityType<AlienatedSporeEntity>) EntityRegistry.ALIENATED_SPORE.get(), AlienatedSporeRenderer::new);
         event.registerEntityRenderer(EntityRegistry.COCO_PENGUIN.get(), CocoPenguinRenderer::new);
         event.registerEntityRenderer(EntityRegistry.COCO_ZOMBIE.get(), CocoZombieRenderer::new);
 

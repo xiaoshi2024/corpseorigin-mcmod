@@ -32,9 +32,8 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity> 
 
     @Override
     public ResourceLocation getTextureLocation(LowerLevelZbEntity animatable) {
-        // 这个方法不会被调用，因为我们使用渲染层
-        // 但需要返回一个默认值
-        return DefaultPlayerSkin.getDefaultTexture();
+        // 这个方法可能会被调用，所以返回一个有效的默认值
+        return SKELETON_OVERLAY;
     }
 
     private class PlayerSkinLayer extends GeoRenderLayer<LowerLevelZbEntity> {
@@ -51,13 +50,15 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity> 
             ResourceLocation skinTexture = determineSkinTexture(animatable);
 
             // 渲染玩家皮肤作为基础 - 完全不透明
-            RenderType skinRenderType = RenderType.entityTranslucent(skinTexture);
-            VertexConsumer skinConsumer = bufferSource.getBuffer(skinRenderType);
+            if (skinTexture != null) {
+                RenderType skinRenderType = RenderType.entityTranslucent(skinTexture);
+                VertexConsumer skinConsumer = bufferSource.getBuffer(skinRenderType);
 
-            // 使用 reRender 方法（带颜色参数）
-            this.getRenderer().reRender(bakedModel, poseStack, bufferSource, animatable,
-                    skinRenderType, skinConsumer, partialTick, packedLight, packedOverlay,
-                    0xFFFFFFFF); // 白色，完全不透明
+                // 使用 reRender 方法（带颜色参数）
+                this.getRenderer().reRender(bakedModel, poseStack, bufferSource, animatable,
+                        skinRenderType, skinConsumer, partialTick, packedLight, packedOverlay,
+                        0xFFFFFFFF); // 白色，完全不透明
+            }
 
             // 叠加尸化骨骼纹理 - 80% 透明度
             ResourceLocation overlayTexture = animatable.getVariant() == com.phagens.corpseorigin.entity.LowerLevelZbEntity.Variant.CRACKED ?
