@@ -6,6 +6,8 @@ import com.phagens.corpseorigin.client.Renderer.block.ZBRFleshRenderer;
 import com.phagens.corpseorigin.client.Renderer.entity.*;
 import com.phagens.corpseorigin.entity.AlienatedSporeEntity;
 import com.phagens.corpseorigin.entity.CorpseGibEntity;
+import com.phagens.corpseorigin.entity.runEntityBeam.Entity.LaserBeamEntity;
+import com.phagens.corpseorigin.entity.runEntityBeam.Renderer.LaserBeamRenderer;
 import com.phagens.corpseorigin.entity.skills.LongyouEarthquakeRenderer;
 import com.phagens.corpseorigin.register.BlockEntityRegistry;
 import com.phagens.corpseorigin.register.EntityRegistry;
@@ -64,6 +66,7 @@ public class CorpseOriginClient {
         event.registerEntityRenderer(EntityRegistry.ZB_WORM.get(), ZbWormRenderer::new);
         event.registerEntityRenderer(EntityRegistry.UNCLE.get(), UncleRenderer::new);
         event.registerEntityRenderer(EntityRegistry.COCO_ZOMBIE_X.get(), CocoZombieXRenderer::new);
+        event.registerEntityRenderer(EntityRegistry.LASER_BEAM.get(), LaserBeamRenderer::new);
 
     }
 }
