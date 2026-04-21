@@ -8,7 +8,7 @@ import com.phagens.corpseorigin.entity.Animals.CocoZombieEntity;
 import com.phagens.corpseorigin.entity.Animals.ZbWormEntity;
 import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
 import com.phagens.corpseorigin.entity.npc.UncleEntity;
-import com.phagens.corpseorigin.entity.runEntityBeam.Entity.LaserBeamEntity;
+
 import com.phagens.corpseorigin.entity.skills.LongyouEarthquakeEntity;
 import com.phagens.corpseorigin.entity.zbrs.CocoZombieXEntity;
 import net.minecraft.core.registries.Registries;
@@ -111,12 +111,5 @@ public class EntityRegistry {
                     .updateInterval(2)
                     .build("coco_zombie_x"));
 
-    // 激光束实体
-    public static final DeferredHolder<EntityType<?>, EntityType<LaserBeamEntity>> LASER_BEAM = ENTITIES.register("laser_beam",
-            () -> EntityType.Builder.<LaserBeamEntity>of(LaserBeamEntity::new, MobCategory.MISC)
-                    .sized(0.0F, 0.0F)
-                    .clientTrackingRange(64)
-                    .updateInterval(1)
-                    .fireImmune()
-                    .build("laser_beam"));
+
 }
