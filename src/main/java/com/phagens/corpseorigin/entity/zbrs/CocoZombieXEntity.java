@@ -12,6 +12,7 @@ import com.phagens.corpseorigin.register.EntityRegistry;
 import com.phagens.corpseorigin.register.ModSounds;
 import com.phagens.corpseorigin.register.Moditems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Position;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -31,34 +32,34 @@ import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.navigation.WaterBoundPathNavigation;
-import net.minecraft.world.entity.animal.*;
-import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 
 /**
  * 企鹅尸兄二阶段 - CoCo与大叔的合体尸兄
- *
+ * <p>
  * 原著设定：CoCo吞食变异虫后异变，与主人"叔"的尸体合体
- *
+ * <p>
  * 模型说明：
  * - 使用 coco_penguin_zbrx.geo.json 模型（已包含企鹅+大叔合体结构）
  * - 触手作为独立实体（TentacleEntity）附加到此实体上
- *
+ * <p>
  * 特点：
  * - 双实体合体外观（企鹅+大叔）
  * - 触手攻击（长舌/藤蔓）- 通过附加的触手实体实现
@@ -66,50 +67,38 @@ import java.util.UUID;
  */
 public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorpseBrother, ICorpseHunger {
 
-    // ==================== 动画定义（完整修复） ====================
+    // ==================== 动画定义 - 使用动画文件中所有动画 ====================
+    // 循环动画
     private static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
     private static final RawAnimation WALK_ANIM = RawAnimation.begin().thenLoop("walk");
-    private static final RawAnimation SWIM_ANIM = RawAnimation.begin().thenLoop("walk"); // 复用walk作为游泳
-    private static final RawAnimation EAT_ANIM = RawAnimation.begin().thenPlay("eat");
-    private static final RawAnimation FUSION_IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
-    private static final RawAnimation TONGUE_ATTACK_ANIM = RawAnimation.begin().thenPlayAndHold("eat");
+    private static final RawAnimation SWIM_ANIM = RawAnimation.begin().thenLoop("walk");
 
-    // 新增：缺失的动画定义
-    private static final RawAnimation ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");
-    private static final RawAnimation ATTACKX_ANIM = RawAnimation.begin().thenPlay("attackx");
-    private static final RawAnimation HYPOCRISY_ANIM = RawAnimation.begin().thenPlay("hypocrisy");
-    private static final RawAnimation DROP_ANIM = RawAnimation.begin().thenPlayAndHold("drop");
+    // 单次播放动画（每次攻击触发）
+    private static final RawAnimation MELEE_ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");     // 近战攻击
+    private static final RawAnimation TONGUE_ATTACK_ANIM = RawAnimation.begin().thenPlay("eat");       // 舌头攻击（有舌头动画）
+    private static final RawAnimation BREAK_ATTACK_ANIM = RawAnimation.begin().thenPlay("attackx");    // 破窗/破门
+    private static final RawAnimation HYPOCRISY_ANIM = RawAnimation.begin().thenPlay("hypocrisy");     // 合体/进化动画
+    private static final RawAnimation DROP_ANIM = RawAnimation.begin().thenPlayAndHold("drop");        // 死亡掉落
 
-    // 合体特殊动画
-    private static final RawAnimation FUSION_COMPLETE_ANIM = RawAnimation.begin().thenPlay("hypocrisy"); // 使用hypocrisy作为合体完成动画
-    private static final RawAnimation TENTACLE_SPAWN_ANIM = RawAnimation.begin().thenPlay("attackx"); // 触手生成动画
+    // triggerAnim 动画名称常量
+    private static final String ANIM_MELEE_ATTACK = "melee_attack";
+    private static final String ANIM_TONGUE_ATTACK = "tongue_attack";
+    private static final String ANIM_BREAK_ATTACK = "break_attack";
+    private static final String ANIM_HYPOCRISY = "hypocrisy";
+    private static final String ANIM_FUSION_COMPLETE = "fusion_complete";
 
     // ==================== 同步数据 ====================
-    private static final EntityDataAccessor<Boolean> DATA_PLAYING_EAT =
-            SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Integer> DATA_EAT_TICKS =
-            SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> DATA_EAT_COOLDOWN =
-            SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_HUNGER =
             SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_AIR_SUPPLY =
             SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.INT);
-
-    // 合体特有数据
-    private static final EntityDataAccessor<Boolean> DATA_TONGUE_ATTACKING =
-            SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> DATA_TENTACLE_COUNT =
             SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> DATA_FUSION_TIER =
             SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.INT);
 
-    // 新增：动画状态同步
-    private static final EntityDataAccessor<Boolean> DATA_PLAYING_ATTACK =
-            SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.BOOLEAN);
+    // 添加合体动画标志位
     private static final EntityDataAccessor<Boolean> DATA_PLAYING_HYPOCRISY =
-            SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Boolean> DATA_FUSION_COMPLETE =
             SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.BOOLEAN);
 
     // ==================== 字段 ====================
@@ -117,17 +106,14 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
     private final CorpseHungerSystem hungerSystem = new CorpseHungerSystem(this);
 
     private int kills = 0;
-    private int eatAnimationTicks = 0;
     private int attackCooldown = 0;
     private int tongueAttackCooldown = 0;
-    private int attackAnimationTicks = 0;
-    private int hypocrisyAnimationTicks = 0;
+    private int breakAttackCooldown = 0;
 
     private static final int ATTACK_COOLDOWN_TICKS = 15;
     private static final int TONGUE_COOLDOWN_TICKS = 40;
+    private static final int BREAK_COOLDOWN_TICKS = 30;
     private static final int TONGUE_RANGE = 12;
-    private static final int ATTACK_ANIMATION_DURATION = 10; // attack动画时长约0.5秒 = 10ticks
-    private static final int HYPOCRISY_ANIMATION_DURATION = 60; // hypocrisy动画时长约2.94秒 = 60ticks
 
     // 氧气系统
     private static final int MAX_AIR = 400;
@@ -140,15 +126,17 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
     private int followCooldown = 0;
 
     // 饥饿系统
-    private int regularHunger = 720;
     private static final int MAX_REGULAR_HUNGER = 720;
     private static final int HUNGER_DRAIN_INTERVAL = 1000;
     private int hungerDrainTimer = 0;
 
     // 合体特有字段
-    private UUID uncleUUID;           // 合体的大叔UUID
-    private List<Entity> attachedTentacles; // 附加的触手实体
+    private UUID uncleUUID;
     private LivingEntity tongueTarget = null;
+
+    // 合体动画计时
+    private int hypocrisyAnimationTicks = 0;
+    private static final int HYPOCRISY_ANIMATION_DURATION = 60;  // hypocrisy 动画约2.94秒
 
     // 合体状态标记
     private boolean isFusing = false;
@@ -218,13 +206,9 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
      * 播放合体完成动画
      */
     private void playFusionCompleteAnimation() {
-        this.entityData.set(DATA_FUSION_COMPLETE, true);
-        this.entityData.set(DATA_PLAYING_HYPOCRISY, true);
-        this.hypocrisyAnimationTicks = HYPOCRISY_ANIMATION_DURATION;
         this.isFusing = true;
-        this.fusionAnimationTimer = 60; // 3秒合体动画
-
-        // 播放合体音效
+        this.fusionAnimationTimer = 60;
+        triggerFusionCompleteAnimation();
         this.playSound(SoundEvents.WITHER_SPAWN, 1.5F, 0.8F);
     }
 
@@ -243,31 +227,27 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
-        builder.define(DATA_PLAYING_EAT, false);
-        builder.define(DATA_EAT_TICKS, 0);
-        builder.define(DATA_EAT_COOLDOWN, 0);
         builder.define(DATA_HUNGER, 720);
         builder.define(DATA_AIR_SUPPLY, MAX_AIR);
-        builder.define(DATA_TONGUE_ATTACKING, false);
         builder.define(DATA_TENTACLE_COUNT, 4);
         builder.define(DATA_FUSION_TIER, 1);
-        // 新增动画状态
-        builder.define(DATA_PLAYING_ATTACK, false);
-        builder.define(DATA_PLAYING_HYPOCRISY, false);
-        builder.define(DATA_FUSION_COMPLETE, false);
+
+        builder.define(DATA_PLAYING_HYPOCRISY, false);  // 添加这行
+
     }
 
-    // ==================== AI目标（更激进） ====================
     @Override
     protected void registerGoals() {
         // 行为目标
+        this.goalSelector.addGoal(0, new BreakObstacleGoal(this));  // 最高优先级，破坏障碍物
         this.goalSelector.addGoal(1, new PanicGoal(this, 1.6D));
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.3D, true));
-        this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.1D));
-        this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 15.0F));
-        this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
 
-        // 攻击目标
+        this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.3D, true));
+        this.goalSelector.addGoal(4, new RandomStrollGoal(this, 1.1D));
+        this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 15.0F));
+        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+
+        // 攻击目标（保持不变）
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::shouldAttackNonCorpsePlayer));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Villager.class, true));
         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Animal.class, 10, true, false,
@@ -276,6 +256,144 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         // 反击目标
         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::shouldAttackCorpsePlayer));
         this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, CocoZombieXEntity.class, 10, true, false, this::shouldAttackOtherCorpseEntity));
+    }
+
+    // ==================== 破窗/破门 AI 目标 ====================
+    /**
+     * 破坏障碍物目标 - 当检测到房屋内有生物时，破坏阻挡的窗户和门
+     */
+    public static class BreakObstacleGoal extends Goal {
+        private final CocoZombieXEntity entity;
+        private BlockPos targetBlockPos;
+        private int breakTimer = 0;
+        private static final int BREAK_INTERVAL = 20;  // 每20 tick尝试破坏一次
+        private static final int SEARCH_RADIUS = 15;   // 搜索半径
+        private static final int MAX_BREAK_DISTANCE = 4; // 最大破坏距离
+
+        public BreakObstacleGoal(CocoZombieXEntity entity) {
+            this.entity = entity;
+            this.setFlags(EnumSet.of(Flag.MOVE));
+        }
+
+        @Override
+        public boolean canUse() {
+            if (entity.getTarget() == null) return false;
+            LivingEntity target = entity.getTarget();
+            if (!target.isAlive()) return false;
+
+            double straightDistance = entity.distanceTo(target);
+            if (straightDistance > SEARCH_RADIUS) return false;
+
+            BlockPos entityPos = entity.blockPosition();
+            BlockPos targetPos = target.blockPosition();
+            targetBlockPos = findBlockedObstacle(entityPos, targetPos);
+
+            return targetBlockPos != null;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            LivingEntity target = entity.getTarget();
+            if (target == null || !target.isAlive()) return false;
+
+            if (targetBlockPos != null && !isBreakableBlock(entity.level().getBlockState(targetBlockPos), entity.level(), targetBlockPos)) {
+                targetBlockPos = findBlockedObstacle(entity.blockPosition(), target.blockPosition());
+            }
+
+            return targetBlockPos != null;
+        }
+
+        @Override
+        public void start() {
+            super.start();
+            breakTimer = 0;
+            entity.getNavigation().stop();
+        }
+
+        @Override
+        public void stop() {
+            super.stop();
+            targetBlockPos = null;
+            breakTimer = 0;
+        }
+
+        @Override
+        public void tick() {
+            if (targetBlockPos == null) return;
+
+            LivingEntity target = entity.getTarget();
+            if (target == null || !target.isAlive()) return;
+
+            double distanceToBlock = entity.blockPosition().distSqr(targetBlockPos);
+
+            if (distanceToBlock > MAX_BREAK_DISTANCE * MAX_BREAK_DISTANCE) {
+                entity.getNavigation().moveTo(targetBlockPos.getX() + 0.5, targetBlockPos.getY(), targetBlockPos.getZ() + 0.5, 1.3D);
+            } else {
+                entity.getNavigation().stop();
+                entity.getLookControl().setLookAt(targetBlockPos.getX() + 0.5, targetBlockPos.getY() + 0.5, targetBlockPos.getZ() + 0.5);
+
+                breakTimer++;
+                if (breakTimer >= BREAK_INTERVAL) {
+                    entity.performBreakAttack(targetBlockPos);
+                    breakTimer = 0;
+                    targetBlockPos = findBlockedObstacle(entity.blockPosition(), target.blockPosition());
+                }
+            }
+        }
+
+        /**
+         * 查找阻挡视线的可破坏方块
+         */
+        private BlockPos findBlockedObstacle(BlockPos from, BlockPos to) {
+            Level level = entity.level();
+
+            Vec3 start = new Vec3(from.getX() + 0.5, from.getY() + entity.getBbHeight() * 0.8, from.getZ() + 0.5);
+            Vec3 end = new Vec3(to.getX() + 0.5, to.getY() + 1.0, to.getZ() + 0.5);
+            Vec3 direction = end.subtract(start).normalize();
+            double distance = start.distanceTo(end);
+            double step = 0.5;
+
+            for (double t = step; t <= distance; t += step) {
+                Vec3 point = start.add(direction.scale(t));
+                BlockPos checkPos = BlockPos.containing(point);
+
+                if (checkPos.equals(from)) continue;
+                if (checkPos.equals(to)) break;
+
+                BlockState state = level.getBlockState(checkPos);
+
+                if (isBreakableBlock(state, level, checkPos) && !isPassableBlock(state, level, checkPos)) {
+                    return checkPos;
+                }
+            }
+            return null;
+        }
+
+        private boolean isBreakableBlock(BlockState state, Level level, BlockPos pos) {
+            return state.is(net.minecraft.world.level.block.Blocks.GLASS) ||
+                    state.is(net.minecraft.world.level.block.Blocks.GLASS_PANE) ||
+                    state.is(net.minecraft.world.level.block.Blocks.OAK_DOOR) ||
+                    state.is(net.minecraft.world.level.block.Blocks.IRON_DOOR) ||
+                    state.is(net.minecraft.world.level.block.Blocks.SPRUCE_DOOR) ||
+                    state.is(net.minecraft.world.level.block.Blocks.BIRCH_DOOR) ||
+                    state.is(net.minecraft.world.level.block.Blocks.JUNGLE_DOOR) ||
+                    state.is(net.minecraft.world.level.block.Blocks.ACACIA_DOOR) ||
+                    state.is(net.minecraft.world.level.block.Blocks.DARK_OAK_DOOR) ||
+                    state.is(net.minecraft.world.level.block.Blocks.MANGROVE_DOOR) ||
+                    state.is(net.minecraft.world.level.block.Blocks.CHERRY_DOOR) ||
+                    state.is(net.minecraft.world.level.block.Blocks.BAMBOO_DOOR) ||
+                    state.is(net.minecraft.world.level.block.Blocks.OAK_FENCE) ||
+                    state.is(net.minecraft.world.level.block.Blocks.OAK_FENCE_GATE) ||
+                    state.getDestroySpeed(level, pos) < 5.0F;
+        }
+
+        private boolean isPassableBlock(BlockState state, Level level, BlockPos pos) {
+            return state.isAir() ||
+                    state.is(net.minecraft.world.level.block.Blocks.CAVE_AIR) ||
+                    state.is(net.minecraft.world.level.block.Blocks.VOID_AIR) ||
+                    state.liquid() ||
+                    state.getCollisionShape(level, pos).isEmpty();
+        }
     }
 
     // ==================== 攻击判定 ====================
@@ -293,7 +411,50 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         return hungerSystem.shouldAttackOtherCorpseEntity(entity);
     }
 
-    // ==================== 舌头攻击（远程穿透） ====================
+    // ==================== 攻击方法（触发动画） ====================
+
+    /**
+     * 近战攻击 - 触发 attack 动画
+     */
+    public void performMeleeAttack() {
+        if (attackCooldown > 0 || this.level().isClientSide) return;
+
+        LivingEntity target = this.getTarget();
+        if (target == null || !target.isAlive()) return;
+
+        double distance = this.distanceTo(target);
+        if (distance > 2.0) return;
+
+        // 触发近战动画
+        triggerMeleeAttackAnimation();
+
+        attackCooldown = ATTACK_COOLDOWN_TICKS;
+
+        // 造成伤害
+        float damage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        boolean hurt = target.hurt(this.damageSources().mobAttack(this), damage);
+
+        if (hurt && !this.level().isClientSide) {
+            // 音效和粒子
+            this.playSound(ModSounds.GROUND_CHI.get(), 1.2F, 0.7F + this.random.nextFloat() * 0.4F);
+            if (this.level() instanceof ServerLevel serverLevel) {
+                serverLevel.sendParticles(ParticleTypes.SWEEP_ATTACK,
+                        target.getX(), target.getY() + target.getBbHeight() / 2, target.getZ(),
+                        2, 0.2, 0.2, 0.2, 0);
+            }
+
+            // 缠绕效果
+            if (this.random.nextFloat() < 0.3f) {
+                applyVineSnare(target);
+            }
+
+            handleKill(target);
+        }
+    }
+
+    /**
+     * 舌头攻击（中距离）- 触发 eat 动画（有舌头特效）
+     */
     public void performTongueAttack() {
         if (tongueAttackCooldown > 0 || this.level().isClientSide) return;
 
@@ -301,11 +462,17 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         if (target == null || !target.isAlive()) return;
 
         double distance = this.distanceTo(target);
-        if (distance > TONGUE_RANGE) return;
+        if (distance > TONGUE_RANGE || distance <= 2.0) return;
 
-        // 触发舌头动画（复用eat动画）
-        triggerEatAnimation();
-        this.entityData.set(DATA_TONGUE_ATTACKING, true);
+        // ========== 修复：添加视线检查，防止穿墙 ==========
+        if (!hasLineOfSight(target)) {
+            return;  // 被方块阻挡，不能攻击
+        }
+        // ================================================
+
+        // 触发舌头攻击动画
+        triggerTongueAttackAnimation();
+
         tongueAttackCooldown = TONGUE_COOLDOWN_TICKS;
         tongueTarget = target;
 
@@ -313,7 +480,7 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         float damage = (float) (this.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.5);
         boolean hurt = target.hurt(this.damageSources().mobAttack(this), damage);
 
-        if (hurt) {
+        if (hurt && !this.level().isClientSide) {
             // 击退效果
             Vec3 knockback = target.position().subtract(this.position()).normalize().scale(1.2);
             target.setDeltaMovement(target.getDeltaMovement().add(knockback.x, 0.2, knockback.z));
@@ -331,6 +498,104 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
     }
 
     /**
+     * 破门/破窗攻击 - 使用 attackx 动画
+     */
+    public void performBreakAttack(BlockPos targetPos) {
+        if (breakAttackCooldown > 0 || this.level().isClientSide) return;
+
+        // 触发破窗动画
+        triggerBreakAttackAnimation();
+        breakAttackCooldown = BREAK_COOLDOWN_TICKS;
+
+        // 破坏方块逻辑
+        if (this.level() instanceof ServerLevel serverLevel) {
+            BlockState state = serverLevel.getBlockState(targetPos);
+            if (isBreakableBlock(state, targetPos)) {
+                serverLevel.destroyBlock(targetPos, true);
+                this.playSound(SoundEvents.GLASS_BREAK, 1.0F, 0.8F);
+
+                serverLevel.sendParticles(ParticleTypes.EXPLOSION,
+                        targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5,
+                        3, 0.2, 0.2, 0.2, 0);
+            }
+        }
+    }
+
+    /**
+     * 合体/进化动画 - 触发 hypocrisy 动画
+     */
+    public void performFusionAnimation() {
+        if (this.level().isClientSide) return;
+
+        triggerHypocrisyAnimation();
+
+        this.playSound(SoundEvents.WITHER_SPAWN, 1.5F, 0.8F);
+        if (this.level() instanceof ServerLevel serverLevel) {
+            for (int i = 0; i < 20; i++) {
+                serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
+                        this.getX(), this.getY() + this.getBbHeight() / 2, this.getZ(),
+                        1, 0.5, 0.5, 0.5, 0.05);
+            }
+        }
+    }
+
+    // ==================== 动画触发方法（修复 triggerAnim 调用） ====================
+
+    private void triggerMeleeAttackAnimation() {
+        if (this.level().isClientSide) return;
+        try {
+            // 正确用法：两个参数 (controllerName, animName)
+            triggerAnim("meleeController", ANIM_MELEE_ATTACK);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.warn("触发近战动画失败: {}", e.getMessage());
+        }
+    }
+
+    private void triggerTongueAttackAnimation() {
+        if (this.level().isClientSide) return;
+        try {
+            triggerAnim("tongueController", ANIM_TONGUE_ATTACK);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.warn("触发舌头动画失败: {}", e.getMessage());
+        }
+    }
+
+    private void triggerBreakAttackAnimation() {
+        if (this.level().isClientSide) return;
+        try {
+            triggerAnim("breakController", ANIM_BREAK_ATTACK);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.warn("触发破窗动画失败: {}", e.getMessage());
+        }
+    }
+
+    private void triggerHypocrisyAnimation() {
+        if (this.level().isClientSide) return;
+
+        // 使用标志位方式，而不是 triggerAnim
+        this.entityData.set(DATA_PLAYING_HYPOCRISY, true);
+        this.hypocrisyAnimationTicks = HYPOCRISY_ANIMATION_DURATION;
+
+        CorpseOrigin.LOGGER.debug("触发合体动画，标志位设置为 true");
+    }
+
+    private void triggerFusionCompleteAnimation() {
+        triggerHypocrisyAnimation();
+    }
+
+    private void tickHypocrisyAnimation() {
+        if (this.level().isClientSide) return;
+
+        if (this.entityData.get(DATA_PLAYING_HYPOCRISY)) {
+            this.hypocrisyAnimationTicks--;
+            if (this.hypocrisyAnimationTicks <= 0) {
+                this.entityData.set(DATA_PLAYING_HYPOCRISY, false);
+                CorpseOrigin.LOGGER.debug("合体动画结束，清除标志位");
+            }
+        }
+    }
+
+    /**
      * 藤蔓缠绕（控制技能）
      */
     private void applyVineSnare(LivingEntity target) {
@@ -338,73 +603,11 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 2));
         target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 60, 1));
 
-        // 粒子效果
         if (this.level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(ParticleTypes.CRIMSON_SPORE,
                     target.getX(), target.getY() + target.getBbHeight() / 2, target.getZ(),
                     10, 0.2, 0.2, 0.2, 0.02);
         }
-    }
-
-    // ==================== 基础攻击 ====================
-    @Override
-    public boolean doHurtTarget(Entity target) {
-        triggerEatAnimation();
-
-        // 触发攻击动画
-        triggerAttackAnimation();
-
-        boolean result = super.doHurtTarget(target);
-
-        if (result && !this.level().isClientSide) {
-            float pitch = 0.7F + this.random.nextFloat() * 0.4F;
-            this.playSound(ModSounds.GROUND_CHI.get(), 1.2F, pitch);
-
-            if (this.level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ParticleTypes.SWEEP_ATTACK,
-                        target.getX(), target.getY() + target.getBbHeight() / 2, target.getZ(),
-                        2, 0.2, 0.2, 0.2, 0);
-            }
-
-            // 合体后攻击附带缠绕效果
-            if (target instanceof LivingEntity livingTarget && this.random.nextFloat() < 0.3f) {
-                applyVineSnare(livingTarget);
-            }
-
-            handleKill(target);
-        }
-
-        return result;
-    }
-
-    /**
-     * 触发攻击动画
-     */
-    private void triggerAttackAnimation() {
-        if (this.level().isClientSide) return;
-
-        this.entityData.set(DATA_PLAYING_ATTACK, true);
-        this.attackAnimationTicks = ATTACK_ANIMATION_DURATION;
-    }
-
-    /**
-     * 触发 hypocrisy 动画（合体特殊动作）
-     */
-    private void triggerHypocrisyAnimation() {
-        if (this.level().isClientSide) return;
-
-        this.entityData.set(DATA_PLAYING_HYPOCRISY, true);
-        this.hypocrisyAnimationTicks = HYPOCRISY_ANIMATION_DURATION;
-    }
-
-    private void triggerEatAnimation() {
-        if (this.level().isClientSide) return;
-
-        this.entityData.set(DATA_PLAYING_EAT, true);
-        this.entityData.set(DATA_EAT_TICKS, 35);
-        this.eatAnimationTicks = 35;
-        this.entityData.set(DATA_EAT_COOLDOWN, 15);
-        this.getNavigation().stop();
     }
 
     private void handleKill(Entity target) {
@@ -451,7 +654,7 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         this.entityData.set(DATA_TENTACLE_COUNT, newTentacleCount);
 
         // 播放触手生成动画
-        triggerHypocrisyAnimation();
+        performFusionAnimation();
 
         // 合体阶段提升
         if (this.getEvolutionLevel() >= 3) {
@@ -481,7 +684,8 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
     public void eatCorpseGib(CorpseGibEntity gib) {
         if (this.level().isClientSide) return;
 
-        triggerEatAnimation();
+        // 使用舌头攻击动画来表现吞噬
+        triggerTongueAttackAnimation();
         gib.discard();
         addCorpseHunger(2);
         addRegularHunger(40);
@@ -514,8 +718,6 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
 
     // ==================== 喂养系统 ====================
     public boolean feedFish(ItemStack stack) {
-        if (!canEat()) return false;
-
         int restoreAmount = 0;
         net.minecraft.world.item.Item item = stack.getItem();
 
@@ -536,7 +738,7 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         addRegularHunger(restoreAmount);
 
         if (!this.isInWater()) {
-            triggerEatAnimation();
+            triggerTongueAttackAnimation();
         }
 
         if (!this.level().isClientSide) {
@@ -544,10 +746,6 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         }
 
         return true;
-    }
-
-    private boolean canEat() {
-        return this.entityData.get(DATA_EAT_COOLDOWN) <= 0;
     }
 
     public void addRegularHunger(int amount) {
@@ -621,90 +819,50 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         }
     }
 
-    // ==================== 动画控制器（完整修复） ====================
+    // ==================== 动画控制器注册 ====================
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        // 主动画控制器
-        controllers.add(new AnimationController<>(this, "mainController", 5, this::mainAnimationController));
+        // 主动画控制器（循环动画：idle/walk）- 现在也处理合体动画
+        AnimationController<CocoZombieXEntity> mainController = new AnimationController<>(this, "mainController", 5, this::mainAnimationController);
 
-        // 攻击动画控制器（独立，优先级更高）
-        controllers.add(new AnimationController<>(this, "attackController", 3, this::attackAnimationController));
+        // 近战攻击动画控制器（可触发）
+        AnimationController<CocoZombieXEntity> meleeController = new AnimationController<>(this, "meleeController", 0, state -> PlayState.CONTINUE);
+        meleeController.triggerableAnim(ANIM_MELEE_ATTACK, MELEE_ATTACK_ANIM);
 
-        // 合体动画控制器
-        controllers.add(new AnimationController<>(this, "fusionController", 2, this::fusionAnimationController));
+        // 舌头攻击动画控制器（可触发）
+        AnimationController<CocoZombieXEntity> tongueController = new AnimationController<>(this, "tongueController", 0, state -> PlayState.CONTINUE);
+        tongueController.triggerableAnim(ANIM_TONGUE_ATTACK, TONGUE_ATTACK_ANIM);
 
-        // 舌头攻击动画控制器
-        controllers.add(new AnimationController<>(this, "tongueController", 4, this::tongueAnimationController));
+        // 破窗攻击动画控制器（可触发）
+        AnimationController<CocoZombieXEntity> breakController = new AnimationController<>(this, "breakController", 0, state -> PlayState.CONTINUE);
+        breakController.triggerableAnim(ANIM_BREAK_ATTACK, BREAK_ATTACK_ANIM);
+
+        controllers.add(mainController);
+        controllers.add(meleeController);
+        controllers.add(tongueController);
+        controllers.add(breakController);
+        // 删除 fusionController
     }
 
     /**
-     * 主动画控制器 - 处理待机、行走、游泳
+     * 主动画控制器 - 处理待机、行走、游泳（循环动画）
      */
     private <E extends CocoZombieXEntity> PlayState mainAnimationController(AnimationState<E> event) {
-        // 如果正在播放攻击动画，不干扰
-        if (this.entityData.get(DATA_PLAYING_ATTACK)) {
-            return PlayState.CONTINUE;
-        }
-
-        // 如果正在播放合体动画
-        if (this.entityData.get(DATA_PLAYING_HYPOCRISY) || this.entityData.get(DATA_FUSION_COMPLETE)) {
-            return PlayState.CONTINUE;
-        }
-
-        // 如果正在播放舌头攻击动画
-        if (this.entityData.get(DATA_PLAYING_EAT)) {
-            return PlayState.CONTINUE;
+        // 优先播放合体动画（使用标志位）
+        if (this.entityData.get(DATA_PLAYING_HYPOCRISY)) {
+            return event.setAndContinue(HYPOCRISY_ANIM);
         }
 
         // 水中播放游泳动画
         if (this.isInWater()) {
             return event.setAndContinue(SWIM_ANIM);
         }
-
         // 移动时播放行走动画
         if (event.isMoving()) {
             return event.setAndContinue(WALK_ANIM);
         }
-
         // 默认待机动画
-        return event.setAndContinue(FUSION_IDLE_ANIM);
-    }
-
-    /**
-     * 攻击动画控制器
-     */
-    private <E extends CocoZombieXEntity> PlayState attackAnimationController(AnimationState<E> event) {
-        if (this.entityData.get(DATA_PLAYING_ATTACK)) {
-            return event.setAndContinue(ATTACK_ANIM);
-        }
-        return PlayState.STOP;
-    }
-
-    /**
-     * 合体动画控制器
-     */
-    private <E extends CocoZombieXEntity> PlayState fusionAnimationController(AnimationState<E> event) {
-        // 播放合体完成动画
-        if (this.entityData.get(DATA_FUSION_COMPLETE)) {
-            return event.setAndContinue(FUSION_COMPLETE_ANIM);
-        }
-
-        // 播放 hypocrisy 动画
-        if (this.entityData.get(DATA_PLAYING_HYPOCRISY)) {
-            return event.setAndContinue(HYPOCRISY_ANIM);
-        }
-
-        return PlayState.STOP;
-    }
-
-    /**
-     * 舌头攻击动画控制器
-     */
-    private <E extends CocoZombieXEntity> PlayState tongueAnimationController(AnimationState<E> event) {
-        if (this.entityData.get(DATA_PLAYING_EAT)) {
-            return event.setAndContinue(TONGUE_ATTACK_ANIM);
-        }
-        return PlayState.STOP;
+        return event.setAndContinue(IDLE_ANIM);
     }
 
     @Override
@@ -712,84 +870,57 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         return this.cache;
     }
 
-    // ==================== 动画状态更新 ====================
-    private void tickAnimations() {
-        tickEatAnimation();
-        tickAttackAnimation();
-        tickHypocrisyAnimation();
-        tickFusionAnimation();
+    // ==================== 辅助方法 ====================
+// 修复 isBreakableBlock 方法 - 移除错误的类型转换
+    private boolean isBreakableBlock(BlockState state, BlockPos pos) {
+        return state.is(net.minecraft.world.level.block.Blocks.GLASS) ||
+                state.is(net.minecraft.world.level.block.Blocks.GLASS_PANE) ||
+                state.is(net.minecraft.world.level.block.Blocks.OAK_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.IRON_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.SPRUCE_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.BIRCH_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.JUNGLE_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.ACACIA_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.DARK_OAK_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.MANGROVE_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.CHERRY_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.BAMBOO_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.OAK_FENCE) ||
+                state.is(net.minecraft.world.level.block.Blocks.OAK_FENCE_GATE) ||
+                state.getDestroySpeed(this.level(), pos) < 5.0F;
     }
 
-    private void tickEatAnimation() {
-        if (this.level().isClientSide) return;
-
-        if (this.entityData.get(DATA_PLAYING_EAT)) {
-            int eatTicks = this.entityData.get(DATA_EAT_TICKS);
-            eatTicks--;
-            this.entityData.set(DATA_EAT_TICKS, eatTicks);
-
-            // 舌头攻击时，在特定帧造成伤害
-            if (this.entityData.get(DATA_TONGUE_ATTACKING) && eatTicks == 25) {
-                if (tongueTarget != null && tongueTarget.isAlive() && this.distanceTo(tongueTarget) <= TONGUE_RANGE) {
-                    float damage = (float) (this.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.5);
-                    tongueTarget.hurt(this.damageSources().mobAttack(this), damage);
-                }
-            }
-
-            if (eatTicks <= 0) {
-                this.entityData.set(DATA_PLAYING_EAT, false);
-                this.entityData.set(DATA_TONGUE_ATTACKING, false);
-                tongueTarget = null;
-            }
-        }
-
-        int eatCooldown = this.entityData.get(DATA_EAT_COOLDOWN);
-        if (eatCooldown > 0) {
-            this.entityData.set(DATA_EAT_COOLDOWN, eatCooldown - 1);
-        }
-    }
-
-    private void tickAttackAnimation() {
-        if (this.level().isClientSide) return;
-
-        if (this.entityData.get(DATA_PLAYING_ATTACK)) {
-            this.attackAnimationTicks--;
-            if (this.attackAnimationTicks <= 0) {
-                this.entityData.set(DATA_PLAYING_ATTACK, false);
-            }
-        }
-    }
-
-    private void tickHypocrisyAnimation() {
-        if (this.level().isClientSide) return;
-
-        if (this.entityData.get(DATA_PLAYING_HYPOCRISY)) {
-            this.hypocrisyAnimationTicks--;
-            if (this.hypocrisyAnimationTicks <= 0) {
-                this.entityData.set(DATA_PLAYING_HYPOCRISY, false);
-            }
-        }
-    }
-
-    private void tickFusionAnimation() {
-        if (this.level().isClientSide) return;
-
-        if (this.entityData.get(DATA_FUSION_COMPLETE)) {
-            this.fusionAnimationTimer--;
-            if (this.fusionAnimationTimer <= 0) {
-                this.entityData.set(DATA_FUSION_COMPLETE, false);
-                this.isFusing = false;
-                this.hasFused = true;
-            }
-        }
+    // 添加一个只接收 BlockState 的重载方法（用于 BreakObstacleGoal 内部调用）
+    private static boolean isBreakableBlock(BlockState state) {
+        return state.is(net.minecraft.world.level.block.Blocks.GLASS) ||
+                state.is(net.minecraft.world.level.block.Blocks.GLASS_PANE) ||
+                state.is(net.minecraft.world.level.block.Blocks.OAK_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.IRON_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.SPRUCE_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.BIRCH_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.JUNGLE_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.ACACIA_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.DARK_OAK_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.MANGROVE_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.CHERRY_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.BAMBOO_DOOR) ||
+                state.is(net.minecraft.world.level.block.Blocks.OAK_FENCE) ||
+                state.is(net.minecraft.world.level.block.Blocks.OAK_FENCE_GATE);
+        // 注意：静态方法无法获取 Level 实例，所以不能使用 getDestroySpeed
     }
 
     // ==================== 导航切换 ====================
     private void updateNavigation() {
-        if (this.isInWater()) {
-            this.navigation = waterNavigation;
+        if (this.isUnderWater()) {  // 只有完全在水下才用水路导航
+            if (this.navigation != waterNavigation) {
+                this.navigation = waterNavigation;
+                this.navigation.stop();
+            }
         } else {
-            this.navigation = groundNavigation;
+            if (this.navigation != groundNavigation) {
+                this.navigation = groundNavigation;
+                this.navigation.stop();
+            }
         }
     }
 
@@ -841,6 +972,7 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
     // ==================== 水中移动 ====================
     @Override
     public void travel(Vec3 travelVector) {
+        // 完全参照一阶段企鹅尸兄
         if (this.isEffectiveAi() && this.isInWater()) {
             this.moveRelative(0.04F, travelVector);
             this.move(MoverType.SELF, this.getDeltaMovement());
@@ -882,20 +1014,36 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
 
     @Override
     public void tick() {
+        // 关键：在 super.tick() 之前更新导航，确保 AI 决策时使用正确的导航器
+        updateNavigation();
+
+        // 强制让 AI 重新评估移动目标
+        if (this.getTarget() != null && !this.getNavigation().isInProgress()) {
+            this.getNavigation().moveTo(this.getTarget(), 1.3D);
+        }
+
         super.tick();
 
-        updateNavigation();
-        tickAnimations(); // 更新所有动画状态
+        tickHypocrisyAnimation();
 
         if (attackCooldown > 0) attackCooldown--;
         if (tongueAttackCooldown > 0) tongueAttackCooldown--;
+        if (breakAttackCooldown > 0) breakAttackCooldown--;
+
+        // 合体动画计时
+        if (isFusing) {
+            fusionAnimationTimer--;
+            if (fusionAnimationTimer <= 0) {
+                isFusing = false;
+                hasFused = true;
+            }
+        }
 
         if (!this.level().isClientSide) {
             hungerSystem.tick();
             handleRegularHungerDrain();
             handleAirSupply();
             handleSurfaceForAir();
-            updateNavigation();
 
             if (this.tickCount % 40 == 0) {
                 tryEatNearbyCorpseGib();
@@ -904,14 +1052,13 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
             tickFollowMaster();
             updateVisionRange();
 
-            // 自动使用舌头攻击
-            if (this.getTarget() != null && this.getTarget().isAlive() && !this.isFusing) {
+            // 攻击逻辑
+            if (this.getTarget() != null && this.getTarget().isAlive() && !isFusing) {
                 double distance = this.distanceTo(this.getTarget());
                 if (distance > 2.0 && distance <= TONGUE_RANGE && tongueAttackCooldown <= 0) {
                     performTongueAttack();
                 } else if (distance <= 2.0 && attackCooldown <= 0) {
-                    doHurtTarget(this.getTarget());
-                    attackCooldown = ATTACK_COOLDOWN_TICKS;
+                    performMeleeAttack();
                 }
             }
         }
@@ -1114,10 +1261,7 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         super.dropCustomDeathLoot(level, source, recentlyHit);
 
         // 播放掉落动画
-        if (!this.level().isClientSide) {
-            // 死亡时播放掉落动画（通过数据标记，客户端会处理）
-            this.entityData.set(DATA_PLAYING_HYPOCRISY, true);
-        }
+        triggerHypocrisyAnimation();
 
         // 掉落尸眼（更高概率）
         if (this.random.nextFloat() < 0.7f) {
@@ -1131,7 +1275,7 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
 
         // 掉落大叔的遗物（如果有）
         if (this.random.nextFloat() < 0.2f) {
-            this.spawnAtLocation(new ItemStack(net.minecraft.world.item.Items.PAPER), 0.0f); // 漫画稿
+            this.spawnAtLocation(new ItemStack(net.minecraft.world.item.Items.PAPER), 0.0f);
         }
 
         // 掉落鱼肉
@@ -1147,18 +1291,6 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
 
     public void setKills(int kills) {
         this.kills = kills;
-    }
-
-    public boolean isPlayingEat() {
-        return this.entityData.get(DATA_PLAYING_EAT);
-    }
-
-    public boolean isPlayingAttack() {
-        return this.entityData.get(DATA_PLAYING_ATTACK);
-    }
-
-    public boolean isPlayingHypocrisy() {
-        return this.entityData.get(DATA_PLAYING_HYPOCRISY);
     }
 
     public int getAirSupply() {
