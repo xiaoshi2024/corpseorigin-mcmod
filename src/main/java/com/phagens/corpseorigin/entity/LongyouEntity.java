@@ -164,6 +164,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
     
     // 被攻击状态
     private int lastHurtTick = -1000; // 上次被攻击的游戏刻
+    private net.minecraft.world.entity.LivingEntity lastHurtBy; // 上次攻击龙右的实体
     private static final int HURT_MEMORY_DURATION = 200; // 被攻击记忆持续时间（10秒）
 
     private final CorpseHungerSystem hungerSystem = new CorpseHungerSystem(this);
@@ -284,27 +285,27 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
         if (entity instanceof ICorpseBrother) return false;
         if (!(entity instanceof Player player)) return false;
         if (com.phagens.corpseorigin.player.PlayerCorpseData.isCorpse(player)) return false;
-        return shouldInitiateAttack();
+        return shouldInitiateAttack() || isBeingAttackedBy(entity);
     }
-    
+
     private boolean shouldAttackNonCorpseMob(net.minecraft.world.entity.LivingEntity entity) {
         if (entity instanceof ICorpseBrother) return false;
         if (entity instanceof Player) return false;
         if (entity instanceof Villager) return false;
         if (entity instanceof Animal) return false;
-        return shouldInitiateAttack();
+        return shouldInitiateAttack() || isBeingAttackedBy(entity);
     }
-    
+
     private boolean shouldAttackAnimal(net.minecraft.world.entity.LivingEntity entity) {
         if (!(entity instanceof Animal)) return false;
-        return shouldInitiateAttack();
+        return shouldInitiateAttack() || isBeingAttackedBy(entity);
     }
-    
+
     private boolean shouldAttackVillager(net.minecraft.world.entity.LivingEntity entity) {
         if (!(entity instanceof Villager)) return false;
-        return shouldInitiateAttack();
+        return shouldInitiateAttack() || isBeingAttackedBy(entity);
     }
-    
+
     private boolean shouldAttackRebelCorpsePlayer(net.minecraft.world.entity.LivingEntity entity) {
         if (!(entity instanceof Player player)) return false;
         if (entity instanceof ICorpseBrother) return false;
@@ -312,6 +313,12 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
         java.util.UUID playerId = player.getUUID();
         int attackCount = corpsePlayerAttacks.getOrDefault(playerId, 0);
         return attackCount >= CORPSE_PLAYER_ATTACK_THRESHOLD;
+    }
+
+    private boolean isBeingAttackedBy(net.minecraft.world.entity.LivingEntity attacker) {
+        if (attacker == null) return false;
+        return (this.tickCount - lastHurtTick) < HURT_MEMORY_DURATION && 
+               lastHurtBy == attacker;
     }
 
     @Override
@@ -505,8 +512,9 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
         // 原有逻辑（保留）
         if (this.tickCount >= 0) {
             lastHurtTick = this.tickCount;
-            // 记录被攻击的时间（用于反击逻辑）
-            if (source.getEntity() instanceof net.minecraft.world.entity.LivingEntity) {
+            net.minecraft.world.entity.LivingEntity hurtBy = source.getEntity() instanceof net.minecraft.world.entity.LivingEntity le ? le : null;
+            lastHurtBy = hurtBy;
+            if (hurtBy != null) {
                 hungerSystem.recordHurt();
             }
         }

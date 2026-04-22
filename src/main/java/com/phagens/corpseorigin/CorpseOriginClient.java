@@ -40,7 +40,6 @@ public class CorpseOriginClient {
 
     @SubscribeEvent
     static void onClientSetup(FMLClientSetupEvent event) {
-        // Some client setup code
         CorpseOrigin.LOGGER.info("HELLO FROM CLIENT SETUP");
         CorpseOrigin.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
     }
