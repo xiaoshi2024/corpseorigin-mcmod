@@ -171,6 +171,9 @@ dependencies {
 
     implementation "maven.modrinth:geckolib:gFmrC8Ru"
 
+    //mca联动
+    implementation "maven.modrinth:minecraft-comes-alive-reborn:uZa9ZX7n"
+
     implementation 'com.github.glitchfiend:TerraBlender-neoforge:1.21.1-4.1.0.3'
 
     // WTHIT integration

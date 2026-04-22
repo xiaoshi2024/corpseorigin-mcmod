@@ -111,5 +111,11 @@ public class EntityRegistry {
                     .updateInterval(2)
                     .build("coco_zombie_x"));
 
+    // MCA 联动 - MCA 感染尸兄实体
+    public static final DeferredHolder<EntityType<?>, EntityType<com.phagens.corpseorigin.entity.mca.McaZombieEntity>> MCA_ZOMBIE = ENTITIES.register("mca_zombie",
+            () -> EntityType.Builder.<com.phagens.corpseorigin.entity.mca.McaZombieEntity>of(com.phagens.corpseorigin.entity.mca.McaZombieEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.8F)
+                    .build("mca_zombie"));
+
 
 }
