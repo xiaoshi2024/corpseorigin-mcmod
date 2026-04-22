@@ -24,7 +24,7 @@ public abstract class AbstractSegmentedHead extends Monster {
         this.currentTotalHealth = this.totalMaxHealth;
     }
 
-    // 添加身体节段
+    //添加身体节段
     public void addSegment(AbstractSegmentedJoint segment) {
         this.segmentUUIDs.add(segment.getUUID());
         if (!level().isClientSide) {
@@ -40,7 +40,7 @@ public abstract class AbstractSegmentedHead extends Monster {
         }
     }
 
-    // --- 抽象方法：供子类实现具体的节段生成逻辑 ---
+    // 供子类实现具体的节段生成逻辑
     public abstract AbstractSegmentedJoint createSegment(int index);
 
     @Override
@@ -51,8 +51,9 @@ public abstract class AbstractSegmentedHead extends Monster {
     @Override
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
-        this.currentTotalHealth = compound.getFloat("TotalHealth");
-
+        if (compound.contains("TotalHealth")) {
+            this.currentTotalHealth = compound.getFloat("TotalHealth");
+        }
         this.segmentUUIDs.clear();
         ListTag listTag = compound.getList("Segments", 10); // 10 是 CompoundTag 的类型 ID
         for (int i = 0; i < listTag.size(); i++) {

@@ -6,6 +6,8 @@ import com.phagens.corpseorigin.entity.*;
 import com.phagens.corpseorigin.entity.Animals.CocoPenguinEntity;
 import com.phagens.corpseorigin.entity.Animals.CocoZombieEntity;
 import com.phagens.corpseorigin.entity.Animals.ZbWormEntity;
+import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.CentipedeHead;
+import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.CentipedeJoint;
 import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
 import com.phagens.corpseorigin.entity.npc.UncleEntity;
 
@@ -111,5 +113,23 @@ public class EntityRegistry {
                     .updateInterval(2)
                     .build("coco_zombie_x"));
 
+    /**
+     * 蜈蚣头部
+     */
+    public static final DeferredHolder<EntityType<?>, EntityType<CentipedeHead>> CENTIPEDE_HEAD = ENTITIES.register("centipede_head",
+            () -> EntityType.Builder.<CentipedeHead>of(CentipedeHead::new, MobCategory.MONSTER)
+                    .sized(1.0F, 1.0F)
+                    .clientTrackingRange(64)
+                    .updateInterval(2)
+                    .build("centipede_head"));
 
+    /**
+     * 蜈蚣关节实体
+     */
+    public static final DeferredHolder<EntityType<?>, EntityType<CentipedeJoint>> CENTIPEDE_JOINT = ENTITIES.register("centipede_joint",
+            () -> EntityType.Builder.<CentipedeJoint>of(CentipedeJoint::new, MobCategory.CREATURE)
+                    .sized(0.8F, 0.8F)
+                    .clientTrackingRange(64)
+                    .updateInterval(2)
+                    .build("centipede_joint"));
 }

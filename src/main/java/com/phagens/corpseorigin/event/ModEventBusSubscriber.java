@@ -31,6 +31,8 @@ import com.phagens.corpseorigin.entity.Animals.ZbWormEntity;
 import com.phagens.corpseorigin.entity.GuigunEntity;
 import com.phagens.corpseorigin.entity.LongyouEntity;
 import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
+import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.CentipedeHead;
+import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.CentipedeJoint;
 import com.phagens.corpseorigin.entity.ZbrFishEntity;
 import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
 import com.phagens.corpseorigin.entity.npc.UncleEntity;
@@ -73,5 +75,9 @@ public class ModEventBusSubscriber {
         event.put(EntityRegistry.UNCLE.get(), UncleEntity.createAttributes().build());
         //企鹅尸兄2阶
         event.put(EntityRegistry.COCO_ZOMBIE_X.get(), CocoZombieXEntity.createAttributes().build());
+        // 注册蜈蚣头部的属性
+        event.put(EntityRegistry.CENTIPEDE_HEAD.get(), CentipedeHead.createAttributes().build());
+        // 注册蜈蚣关节的属性
+        event.put(EntityRegistry.CENTIPEDE_JOINT.get(), CentipedeJoint.createAttributes().build());
     }
 }

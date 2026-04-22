@@ -7,6 +7,8 @@ import com.phagens.corpseorigin.client.Renderer.entity.*;
 import com.phagens.corpseorigin.entity.AlienatedSporeEntity;
 import com.phagens.corpseorigin.entity.CorpseGibEntity;
 
+import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.Renderer.CentipedeHeadRenderer;
+import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.Renderer.CentipedeJointRenderer;
 import com.phagens.corpseorigin.entity.skills.LongyouEarthquakeRenderer;
 import com.phagens.corpseorigin.register.BlockEntityRegistry;
 import com.phagens.corpseorigin.register.EntityRegistry;
@@ -65,6 +67,8 @@ public class CorpseOriginClient {
         event.registerEntityRenderer(EntityRegistry.UNCLE.get(), UncleRenderer::new);
         event.registerEntityRenderer(EntityRegistry.COCO_ZOMBIE_X.get(), CocoZombieXRenderer::new);
 
-
+        // 注册蜈蚣实体渲染器（GeckoLib）
+        event.registerEntityRenderer(EntityRegistry.CENTIPEDE_HEAD.get(), CentipedeHeadRenderer::new);
+        event.registerEntityRenderer(EntityRegistry.CENTIPEDE_JOINT.get(), CentipedeJointRenderer::new);
     }
 }
