@@ -68,7 +68,7 @@ import java.util.UUID;
 public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorpseBrother, ICorpseHunger {
 
     // ==================== 动画定义 - 使用动画文件中所有动画 ====================
-    // 循环动画
+// 循环动画
     private static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
     private static final RawAnimation WALK_ANIM = RawAnimation.begin().thenLoop("walk");
     private static final RawAnimation SWIM_ANIM = RawAnimation.begin().thenLoop("walk");
@@ -77,7 +77,8 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
     private static final RawAnimation MELEE_ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");     // 近战攻击
     private static final RawAnimation TONGUE_ATTACK_ANIM = RawAnimation.begin().thenPlay("eat");       // 舌头攻击（有舌头动画）
     private static final RawAnimation BREAK_ATTACK_ANIM = RawAnimation.begin().thenPlay("attackx");    // 破窗/破门
-    private static final RawAnimation HYPOCRISY_ANIM = RawAnimation.begin().thenPlay("hypocrisy");     // 合体/进化动画
+    private static final RawAnimation HYPOCRISY_ANIM = RawAnimation.begin().thenPlay("hypocrisy");     // 双臂动作（短动画）
+    private static final RawAnimation CHIMERA_ANIM = RawAnimation.begin().thenPlay("chimera");         // 真正的合体动画（长动画）
     private static final RawAnimation DROP_ANIM = RawAnimation.begin().thenPlayAndHold("drop");        // 死亡掉落
 
     // triggerAnim 动画名称常量
@@ -85,6 +86,7 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
     private static final String ANIM_TONGUE_ATTACK = "tongue_attack";
     private static final String ANIM_BREAK_ATTACK = "break_attack";
     private static final String ANIM_HYPOCRISY = "hypocrisy";
+    private static final String ANIM_CHIMERA = "chimera";           // 新增：合体动画
     private static final String ANIM_FUSION_COMPLETE = "fusion_complete";
 
     // ==================== 同步数据 ====================
@@ -97,8 +99,10 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
     private static final EntityDataAccessor<Integer> DATA_FUSION_TIER =
             SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.INT);
 
-    // 添加合体动画标志位
+    // 动画标志位
     private static final EntityDataAccessor<Boolean> DATA_PLAYING_HYPOCRISY =
+            SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_PLAYING_CHIMERA =  // 移到这里
             SynchedEntityData.defineId(CocoZombieXEntity.class, EntityDataSerializers.BOOLEAN);
 
     // ==================== 字段 ====================
@@ -142,6 +146,10 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
     private boolean isFusing = false;
     private boolean hasFused = false;
     private int fusionAnimationTimer = 0;
+
+    // 添加 chimera 动画计时字段
+    private int chimeraAnimationTicks = 0;
+    private static final int CHIMERA_ANIMATION_DURATION = 200;  // chimera 动画约10秒
 
     // 导航
     private final WaterBoundPathNavigation waterNavigation;
@@ -203,13 +211,18 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
     }
 
     /**
-     * 播放合体完成动画
+     * 播放合体完成动画 - 使用真正的 chimera 合体动画
      */
     private void playFusionCompleteAnimation() {
         this.isFusing = true;
-        this.fusionAnimationTimer = 60;
-        triggerFusionCompleteAnimation();
+        this.fusionAnimationTimer = CHIMERA_ANIMATION_DURATION;
+
+        // 使用真正的 chimera 合体动画
+        triggerChimeraAnimation();
+
         this.playSound(SoundEvents.WITHER_SPAWN, 1.5F, 0.8F);
+
+        CorpseOrigin.LOGGER.info("播放 chimera 合体完成动画");
     }
 
     // ==================== 属性（合体后强化） ====================
@@ -231,9 +244,8 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         builder.define(DATA_AIR_SUPPLY, MAX_AIR);
         builder.define(DATA_TENTACLE_COUNT, 4);
         builder.define(DATA_FUSION_TIER, 1);
-
-        builder.define(DATA_PLAYING_HYPOCRISY, false);  // 添加这行
-
+        builder.define(DATA_PLAYING_HYPOCRISY, false);
+        builder.define(DATA_PLAYING_CHIMERA, false);  // 新增：合体动画标志位
     }
 
     @Override
@@ -569,18 +581,39 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         }
     }
 
+    // 触发 hypocrisy 动画（短动画）
     private void triggerHypocrisyAnimation() {
         if (this.level().isClientSide) return;
-
-        // 使用标志位方式，而不是 triggerAnim
         this.entityData.set(DATA_PLAYING_HYPOCRISY, true);
         this.hypocrisyAnimationTicks = HYPOCRISY_ANIMATION_DURATION;
+        this.getNavigation().stop();
+        CorpseOrigin.LOGGER.debug("触发 hypocrisy 动画");
+    }
 
-        CorpseOrigin.LOGGER.debug("触发合体动画，标志位设置为 true");
+    // 触发 chimera 合体动画（长动画）- 用于真正的合体/进化
+    private void triggerChimeraAnimation() {
+        if (this.level().isClientSide) return;
+        this.entityData.set(DATA_PLAYING_CHIMERA, true);
+        this.chimeraAnimationTicks = CHIMERA_ANIMATION_DURATION;
+        this.getNavigation().stop();
+        CorpseOrigin.LOGGER.debug("触发 chimera 合体动画，持续时间: {} ticks", CHIMERA_ANIMATION_DURATION);
     }
 
     private void triggerFusionCompleteAnimation() {
         triggerHypocrisyAnimation();
+    }
+
+    // 添加 chimera 动画 tick 方法
+    private void tickChimeraAnimation() {
+        if (this.level().isClientSide) return;
+
+        if (this.entityData.get(DATA_PLAYING_CHIMERA)) {
+            this.chimeraAnimationTicks--;
+            if (this.chimeraAnimationTicks <= 0) {
+                this.entityData.set(DATA_PLAYING_CHIMERA, false);
+                CorpseOrigin.LOGGER.debug("chimera 合体动画结束");
+            }
+        }
     }
 
     private void tickHypocrisyAnimation() {
@@ -653,8 +686,8 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         int newTentacleCount = Math.min(8, 4 + this.getEvolutionLevel() / 2);
         this.entityData.set(DATA_TENTACLE_COUNT, newTentacleCount);
 
-        // 播放触手生成动画
-        performFusionAnimation();
+        // 播放 chimera 合体动画（真正的合体动画）
+        triggerChimeraAnimation();
 
         // 合体阶段提升
         if (this.getEvolutionLevel() >= 3) {
@@ -822,7 +855,7 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
     // ==================== 动画控制器注册 ====================
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        // 主动画控制器（循环动画：idle/walk）- 现在也处理合体动画
+        // 主动画控制器（循环动画：idle/walk）- 现在也处理 hypocrisy 和 chimera 动画
         AnimationController<CocoZombieXEntity> mainController = new AnimationController<>(this, "mainController", 5, this::mainAnimationController);
 
         // 近战攻击动画控制器（可触发）
@@ -841,14 +874,18 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         controllers.add(meleeController);
         controllers.add(tongueController);
         controllers.add(breakController);
-        // 删除 fusionController
     }
 
     /**
      * 主动画控制器 - 处理待机、行走、游泳（循环动画）
      */
     private <E extends CocoZombieXEntity> PlayState mainAnimationController(AnimationState<E> event) {
-        // 优先播放合体动画（使用标志位）
+        // 最高优先级：播放 chimera 合体动画
+        if (this.entityData.get(DATA_PLAYING_CHIMERA)) {
+            return event.setAndContinue(CHIMERA_ANIM);
+        }
+
+        // 次优先级：播放 hypocrisy 动画
         if (this.entityData.get(DATA_PLAYING_HYPOCRISY)) {
             return event.setAndContinue(HYPOCRISY_ANIM);
         }
@@ -1025,6 +1062,7 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, ICorp
         super.tick();
 
         tickHypocrisyAnimation();
+        tickChimeraAnimation();  // 新增
 
         if (attackCooldown > 0) attackCooldown--;
         if (tongueAttackCooldown > 0) tongueAttackCooldown--;
