@@ -25,6 +25,7 @@ package com.phagens.corpseorigin.event;
 
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
+import com.phagens.corpseorigin.data.CuriosDataProvider;
 import com.phagens.corpseorigin.entity.Animals.CocoPenguinEntity;
 import com.phagens.corpseorigin.entity.Animals.CocoZombieEntity;
 import com.phagens.corpseorigin.entity.Animals.ZbWormEntity;
@@ -39,6 +40,7 @@ import com.phagens.corpseorigin.entity.zbrs.CocoZombieXEntity;
 import com.phagens.corpseorigin.register.EntityRegistry;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.data.event.GatherDataEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 
 @EventBusSubscriber(modid = CorpseOrigin.MODID)
@@ -76,5 +78,10 @@ public class ModEventBusSubscriber {
         event.put(EntityRegistry.COCO_ZOMBIE_X.get(), CocoZombieXEntity.createAttributes().build());
         // 注册MCA尸兄的属性
         event.put(EntityRegistry.MCA_ZOMBIE.get(), McaZombieEntity.createAttributes().build());
+    }
+
+    @SubscribeEvent
+    public static void gatherData(GatherDataEvent event) {
+        CuriosDataProvider.gatherData(event);
     }
 }

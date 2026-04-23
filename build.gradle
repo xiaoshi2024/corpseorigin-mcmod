@@ -74,6 +74,11 @@ repositories {
     flatDir {
         dirs 'libs'
     }
+
+    maven {
+        name = "Curios"
+        url = uri("https://maven.theillusivec4.top/")
+    }
 }
 
 base {
@@ -180,6 +185,10 @@ dependencies {
     compileOnly "mcp.mobius.waila:wthit-api:neo-${wthit_version}"
     runtimeOnly "mcp.mobius.waila:wthit:neo-${wthit_version}"
     runtimeOnly "lol.bai:badpackets:neo-${badpackets_version}"
+
+    //curios饰品api
+    runtimeOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
+    compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}:api"
 
 //    implementation "curse.maven:customskinloader-286924:7372987"
 

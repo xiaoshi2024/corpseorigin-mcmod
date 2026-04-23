@@ -113,4 +113,37 @@ public class JuQue extends SwordItem implements GeoItem {
             }
         });
     }
+    
+    // ================= Curios 饰品支持 =================
+    
+    /**
+     * 处理 Curios 相关的方法调用
+     * 使用反射机制实现软依赖
+     */
+    public Object invokeCuriosMethod(String methodName, Object... args) {
+        if (!com.phagens.corpseorigin.compat.curios.CuriosIntegration.isCuriosAvailable()) {
+            return null;
+        }
+        
+        try {
+            com.phagens.corpseorigin.compat.curios.ReflectiveCurioItem curioItem = new com.phagens.corpseorigin.compat.curios.ReflectiveCurioItem(this);
+            
+            switch (methodName) {
+                case "onEquip":
+                    curioItem.onEquip(args[0], (net.minecraft.world.item.ItemStack) args[1], (net.minecraft.world.item.ItemStack) args[2]);
+                    return null;
+                case "onUnequip":
+                    curioItem.onUnequip(args[0], (net.minecraft.world.item.ItemStack) args[1], (net.minecraft.world.item.ItemStack) args[2]);
+                    return null;
+                case "canEquip":
+                    return curioItem.canEquip(args[0], (net.minecraft.world.item.ItemStack) args[1]);
+                case "canUnequip":
+                    return curioItem.canUnequip(args[0], (net.minecraft.world.item.ItemStack) args[1]);
+                default:
+                    return null;
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }
