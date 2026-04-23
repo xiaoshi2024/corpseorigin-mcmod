@@ -14,38 +14,77 @@ import java.util.UUID;
 
 //身体
 public abstract class AbstractSegmentedJoint extends Monster {
-    protected UUID previousUUID; //指向实体UUID
-    protected float localMaxHealth = 20.0f; //局部血量
-    protected float currentLocalHealth; //禁止物理碰撞
-
+    protected Entity previousEntity;
     public AbstractSegmentedJoint(EntityType<? extends Monster> type, Level level) {
         super(type, level);
-        this.currentLocalHealth = this.localMaxHealth;
-
     }
-
 
     @Override
     public void tick() {
         super.tick();
+
+        // 客户端不执行游戏逻辑
         if (level().isClientSide) return;
 
-        // 前5帧不检查连接，等待头部完全初始化
-        if (this.tickCount < 5) {
-            return;
+        // 跟随前一节移动（即使前一节死亡也要继续跟随，避免闪烁）
+        if (previousEntity != null) {
+            followEntity(previousEntity);
         }
+    }
 
-        Entity prev = getPreviousEntity();//获取上部
-        if (prev != null && prev.isAlive()) {
-            followEntity(prev); // 链式跟随
-        } else {
-            if (previousUUID == null) {
-                System.out.println("[CentipedeJoint] previousUUID is null, discarding");
-            } else {
-                System.out.println("[CentipedeJoint] Previous entity not found or dead: " + previousUUID);
-            }
-            this.discard();// 失去连接则死亡
+    /**
+     * 链式跟随算法
+     */
+    protected void followEntity(Entity target) {
+        Vec3 targetPos = target.position();
+        Vec3 myPos = this.position();
+
+        // 获取目标的朝向角度（转换为弧度）
+        float targetYaw = target.getYRot();
+        double yawRad = Math.toRadians(targetYaw);
+
+        // 计算目标后方的期望位置（翻转符号）
+        double expectedX = targetPos.x + Math.sin(yawRad) * getSegmentDistance();
+        double expectedZ = targetPos.z - Math.cos(yawRad) * getSegmentDistance();
+
+        // Y轴保持与目标相同的高度
+        double expectedY = targetPos.y;
+
+        // 计算当前位置到期望位置的偏移
+        double dx = expectedX - myPos.x;
+        double dy = expectedY - myPos.y;
+        double dz = expectedZ - myPos.z;
+        double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        // 如果距离超过阈值，向期望位置移动
+        if (dist > 0.1) {
+            double speed = 0.5;
+            double moveX = (dx / dist) * speed;
+            double moveY = (dy / dist) * speed;
+            double moveZ = (dz / dist) * speed;
+
+            this.setPos(myPos.x + moveX, myPos.y + moveY, myPos.z + moveZ);
+            this.setYRot(targetYaw);
         }
+    }
+
+    /**
+     * 获取相邻节段的固定间距（由子类定义）
+     */
+    public abstract double getSegmentDistance();
+
+    /**
+     * 设置前一节实体引用
+     */
+    public void setPreviousEntity(Entity entity) {
+        this.previousEntity = entity;
+    }
+
+    /**
+     * 获取前一节实体
+     */
+    public Entity getPreviousEntity() {
+        return this.previousEntity;
     }
 
     @Override
@@ -53,52 +92,4 @@ public abstract class AbstractSegmentedJoint extends Monster {
         super.defineSynchedData(builder);
     }
 
-    @Override
-    public void readAdditionalSaveData(CompoundTag compoundTag) {
-        if (compoundTag.hasUUID("PreviousUUID")) {
-            this.previousUUID = compoundTag.getUUID("PreviousUUID");
-        }
-        this.currentLocalHealth = compoundTag.getFloat("LocalHealth");
-    }
-
-    @Override
-    public void addAdditionalSaveData(CompoundTag compoundTag) {
-        if (this.previousUUID != null) {
-            compoundTag.putUUID("PreviousUUID", this.previousUUID);
-        }
-        compoundTag.putFloat("LocalHealth", this.currentLocalHealth);
-    }
-
-    protected void followEntity(Entity target) {
-        //上节目标和当前位置
-        Vec3 targetPos = target.position();
-        Vec3 myPos = this.position();
-        //计算两点距离
-        double dist = myPos.distanceTo(targetPos);
-        //根据子类定义间距
-        double fixedDist = getSegmentDistance();
-        //拉大追赶
-        if (dist > fixedDist) {
-            //1.计算向量 我指向目标 2.normalize 向量拉成一保留方向 3。每次移动0.4格
-            Vec3 moveVec = targetPos.subtract(myPos).normalize().scale(0.4); // 0.4 是跟随系数
-            //更新坐标
-            this.setPos(myPos.x + moveVec.x, myPos.y + moveVec.y, myPos.z + moveVec.z);
-
-            //自动砖头 看向移动方块
-            this.setYRot((float) (Mth.atan2(moveVec.z, moveVec.x) * (180 / Math.PI)) - 90);
-        }
-    }
-
-    public abstract double getSegmentDistance();
-
-    public Entity getPreviousEntity() {
-        if (previousUUID == null) return null;
-        if (level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-            return serverLevel.getEntity(previousUUID);
-        }
-        return null;
-    }
-    public void setPreviousUUID(UUID uuid) {
-        this.previousUUID = uuid;
-    }
 }
