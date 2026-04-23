@@ -5,21 +5,23 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.UUID;
 
 //身体
-public abstract class AbstractSegmentedJoint extends Entity {
-    protected UUID previousUUID;
-    protected float localMaxHealth = 20.0f;
-    protected float currentLocalHealth;
+public abstract class AbstractSegmentedJoint extends Monster {
+    protected UUID previousUUID; //指向实体UUID
+    protected float localMaxHealth = 20.0f; //局部血量
+    protected float currentLocalHealth; //禁止物理碰撞
 
-    public AbstractSegmentedJoint(EntityType<?> type, Level level) {
+    public AbstractSegmentedJoint(EntityType<? extends Monster> type, Level level) {
         super(type, level);
         this.currentLocalHealth = this.localMaxHealth;
-        this.noPhysics = true;
+
     }
 
 
@@ -28,21 +30,31 @@ public abstract class AbstractSegmentedJoint extends Entity {
         super.tick();
         if (level().isClientSide) return;
 
-        Entity prev = getPreviousEntity();
+        // 前5帧不检查连接，等待头部完全初始化
+        if (this.tickCount < 5) {
+            return;
+        }
+
+        Entity prev = getPreviousEntity();//获取上部
         if (prev != null && prev.isAlive()) {
-            followEntity(prev);
+            followEntity(prev); // 链式跟随
         } else {
+            if (previousUUID == null) {
+                System.out.println("[CentipedeJoint] previousUUID is null, discarding");
+            } else {
+                System.out.println("[CentipedeJoint] Previous entity not found or dead: " + previousUUID);
+            }
             this.discard();// 失去连接则死亡
         }
     }
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
-
+        super.defineSynchedData(builder);
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag compoundTag) {
+    public void readAdditionalSaveData(CompoundTag compoundTag) {
         if (compoundTag.hasUUID("PreviousUUID")) {
             this.previousUUID = compoundTag.getUUID("PreviousUUID");
         }
@@ -50,7 +62,7 @@ public abstract class AbstractSegmentedJoint extends Entity {
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag compoundTag) {
+    public void addAdditionalSaveData(CompoundTag compoundTag) {
         if (this.previousUUID != null) {
             compoundTag.putUUID("PreviousUUID", this.previousUUID);
         }
