@@ -23,6 +23,28 @@
   "item.corpseorigin.zbr_fish_spawn_egg": "Zombie Brother Fish Spawn Egg",
   "item.corpseorigin.kaiweinai_spawn_egg": "Kai Wei Nai Spawn Egg",
 
+  "key.corpseorigin.take_out_juque": "Take out JuQue from Back Slot",
+
+  "corpseorigin.configuration": "Corpse Origin Configuration",
+  "corpseorigin.configuration.general": "General Settings",
+  "corpseorigin.configuration.voice": "Voice Recognition Settings",
+
+  "corpseorigin.config.enableVoiceTrigger": "Enable Voice Trigger",
+  "corpseorigin.config.enableVoiceTrigger.tooltip": "Enable voice trigger system for skills",
+
+  "corpseorigin.config.showSkillIcon": "Show Skill Icon",
+  "corpseorigin.config.showSkillIcon.tooltip": "Show selected skill icon with cooldown indicator on HUD",
+
+  "corpseorigin.config.similarityThreshold": "Similarity Threshold",
+  "corpseorigin.config.similarityThreshold.tooltip": "Voice recognition similarity threshold (0.0-1.0)",
+
+  "corpseorigin.config.voiceLanguage": "Voice Language",
+  "corpseorigin.config.voiceLanguage.tooltip": "Select voice recognition language",
+
+  "corpseorigin.config.voiceLanguage.zh-CN": "Chinese (Simplified)",
+  "corpseorigin.config.voiceLanguage.en-US": "English (US)",
+  "corpseorigin.config.voiceLanguage.ja-JP": "Japanese",
+
   "entity.corpseorigin.coco_penguin": "CoCo",
   "item.corpseorigin.coco_penguin_spawn_egg": "CoCo Penguin Spawn Egg",
   "entity.corpseorigin.coco_zombie": "CoCo Zombie",

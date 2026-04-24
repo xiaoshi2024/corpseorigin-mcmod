@@ -72,6 +72,13 @@ public class NetworkRegister {
                 LongyouDialogueOptionsPacket::handle
         );
 
+        // ⭐ 新增：注册巨阙剑取出包 (客户端 → 服务端)
+        registrar.playToServer(
+                JuQueTakeOutPacket.TYPE,
+                JuQueTakeOutPacket.STREAM_CODEC,
+                JuQueTakeOutPacket::handle
+        );
+
         CorpseOrigin.LOGGER.info("NetworkRegister 网络包注册完成 - 共注册了 7 个包");
     }
 }

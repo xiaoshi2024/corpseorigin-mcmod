@@ -25,6 +25,28 @@
   "item.corpseorigin.uncle_spawn_egg": "大叔（少女漫画家）刷怪蛋",
   "entity.corpseorigin.uncle": "大叔（少女漫画家）",
 
+  "key.corpseorigin.take_out_juque": "从背部取出巨阙剑",
+
+  "corpseorigin.configuration": "尸源配置",
+  "corpseorigin.configuration.general": "通用设置",
+  "corpseorigin.configuration.voice": "语音识别设置",
+
+  "corpseorigin.config.enableVoiceTrigger": "启用语音触发",
+  "corpseorigin.config.enableVoiceTrigger.tooltip": "启用技能语音触发系统",
+
+  "corpseorigin.config.showSkillIcon": "显示技能图标",
+  "corpseorigin.config.showSkillIcon.tooltip": "在HUD上显示当前选中的技能图标和冷却时间",
+
+  "corpseorigin.config.similarityThreshold": "相似度阈值",
+  "corpseorigin.config.similarityThreshold.tooltip": "语音识别的相似度阈值，超过此值即视为匹配 (0.0-1.0)",
+
+  "corpseorigin.config.voiceLanguage": "语音识别语言",
+  "corpseorigin.config.voiceLanguage.tooltip": "选择语音识别的语言：zh-CN(中文), en-US(英文), ja-JP(日文)",
+
+  "corpseorigin.config.voiceLanguage.zh-CN": "中文 (简体)",
+  "corpseorigin.config.voiceLanguage.en-US": "English (US)",
+  "corpseorigin.config.voiceLanguage.ja-JP": "日本語",
+
   "entity.corpseorigin.coco_zombie_x": "CoCo尸兄-%s",
   "item.corpseorigin.coco_zombie_x_spawn_egg": "CoCo尸兄-%s刷怪蛋",
 
