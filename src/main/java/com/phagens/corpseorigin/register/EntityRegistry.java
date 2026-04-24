@@ -135,4 +135,12 @@ public class EntityRegistry {
                     .updateInterval(2)
                     .build("centipede_joint"));
 
+    // 巨阙剑气实体
+    public static final DeferredHolder<EntityType<?>, EntityType<JuQueBeamEntity>> JUQUE_BEAM = ENTITIES.register("juque_beam",
+            () -> EntityType.Builder.<JuQueBeamEntity>of(JuQueBeamEntity::new, MobCategory.MISC)
+                    .sized(0.5F, 0.5F)
+                    .clientTrackingRange(64)
+                    .updateInterval(1)
+                    .build("juque_beam"));
+
 }

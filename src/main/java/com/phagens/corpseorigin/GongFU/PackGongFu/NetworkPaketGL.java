@@ -79,7 +79,14 @@ public class NetworkPaketGL {
                 com.phagens.corpseorigin.network.ExperienceConvertPacket::handleOnServer
         );
 
-        CorpseOrigin.LOGGER.info("NetworkPaketGL 网络包注册完成，共注册了 6 个包");
+        // 注册巨阙剑气包（客户端到服务器）
+        registrar.playToServer(
+                com.phagens.corpseorigin.network.JuQueBeamPacket.TYPE,
+                com.phagens.corpseorigin.network.JuQueBeamPacket.STREAM_CODEC,
+                com.phagens.corpseorigin.network.JuQueBeamPacket::handle
+        );
+
+        CorpseOrigin.LOGGER.info("NetworkPaketGL 网络包注册完成，共注册了 7 个包");
     }
 
     private static void handleOpenGongFuMenu(OpenGongFuMenuPacket packet, IPayloadContext context) {
