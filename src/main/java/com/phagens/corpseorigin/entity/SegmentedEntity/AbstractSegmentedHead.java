@@ -254,7 +254,6 @@ public abstract class AbstractSegmentedHead extends Monster {
         float currentHealth = this.entityData.get(DATA_TOTAL_HEALTH);
         float newHealth = currentHealth - amount;
         setTotalHealth(newHealth);
-        this.setHealth(newHealth);
         // 死亡判定
         if (newHealth <= 0 && !this.isRemoved()) {
             this.die(this.damageSources().generic());
@@ -268,4 +267,8 @@ public abstract class AbstractSegmentedHead extends Monster {
         return this.entityData.get(DATA_TOTAL_HEALTH);
     }
 
+    @Override
+    public void setHealth(float health) {
+        this.entityData.set(DATA_TOTAL_HEALTH, health);
+    }
 }

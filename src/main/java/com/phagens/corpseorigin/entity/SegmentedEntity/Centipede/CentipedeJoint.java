@@ -49,33 +49,34 @@ public class CentipedeJoint extends AbstractSegmentedJoint implements GeoEntity 
         super.tick();
         if (level().isClientSide) return;
 
-        if (!hasNearbySegment()) {
-            org.apache.logging.log4j.LogManager.getLogger().info("[CentipedeJoint] 周围2格内无其他节段，自毁: " + this.getUUID());
+        // 只有当头部彻底消失（不仅仅是死亡，而是被移除）时才考虑自毁
+        if (this.previousEntity != null && this.previousEntity.isAlive()) {
+            followEntity(previousEntity);
+        } else {
+            // 前一节已死亡或消失，说明链条断了，这个节段也应该消失
             this.discard();
             return;
         }
-        // 接触伤害冷却倒计时
+
+
         if (contactDamageCooldown > 0) {
             contactDamageCooldown--;
         } else {
-            // 检测周围0.5格范围内的所有实体
             List<Entity> nearbyEntities = level().getEntities(this,
                     this.getBoundingBox().inflate(0.5D),
                     entity -> entity instanceof LivingEntity
                             && entity != this.getPreviousEntity()
-                            && !(entity instanceof CentipedeJoint));  // ✅ 关键：排除其他蜈蚣节段
+                            && !(entity instanceof CentipedeJoint));
 
-            // 对所有周围生物造成伤害（排除前一节和其他节段）
             for (Entity entity : nearbyEntities) {
                 if (entity instanceof LivingEntity livingEntity && entity.isAlive()) {
                     livingEntity.hurt(this.damageSources().generic(), 2.0F);
                 }
             }
-
-            // 重置冷却时间
             contactDamageCooldown = CONTACT_DAMAGE_COOLDOWN;
         }
     }
+
 
     /**
      * 检查周围2格内是否有头部或其他节段
