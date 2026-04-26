@@ -11,6 +11,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
@@ -31,7 +32,7 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
@@ -42,9 +43,10 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private final List<CentipedeJoint> segments = new ArrayList<>();
     private boolean segmentsInitialized = false;
-
-    // Boss 血条阈值：最大血量超过此值时显示 Boss 血条
-    private static final float BOSS_HEALTH_THRESHOLD = 150.0f;
+    protected static final RawAnimation RUN_ANIM = RawAnimation.begin().thenLoop("run");
+    protected static final RawAnimation GTWO_ANIM = RawAnimation.begin().thenPlay("Gone");
+    private int attackAnimationTimer = 0;
+    private static final int ATTACK_ANIMATION_DURATION = 20;
     // 攻击力基础值和每节血量提供的加成
     private static final float BASE_ATTACK_DAMAGE = 6.0f;
     private static final float ATTACK_BONUS_PER_SEGMENT = 1.0f;
@@ -83,38 +85,41 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity {
     @Override
     public void tick() {
         super.tick();
-        if (level().isClientSide) return;
+        if (!level().isClientSide) {
+            float customMaxHealth = this.entityData.get(DATA_MAX_HEALTH);
+            float customCurrentHealth = this.entityData.get(DATA_TOTAL_HEALTH);
 
-        float customMaxHealth = this.entityData.get(DATA_MAX_HEALTH);
-        float customCurrentHealth = this.entityData.get(DATA_TOTAL_HEALTH);
-
-        if (Math.abs(this.getAttribute(Attributes.MAX_HEALTH).getBaseValue() - customMaxHealth) > 0.1f) {
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(customMaxHealth);
-        }
-        if (Math.abs(this.getHealth() - customCurrentHealth) > 0.1f) {
-            this.setHealth(customCurrentHealth);
-        }
-        updateAttackDamageBasedOnHealth();
-
-        if (!segmentsInitialized) {
-            if (!segmentUUIDs.isEmpty()) {
-                org.apache.logging.log4j.LogManager.getLogger().info("[CentipedeHead] 检测到存档数据，删除所有旧节段并重新生成");
-                deleteAllOldSegments();
+            if (Math.abs(this.getAttribute(Attributes.MAX_HEALTH).getBaseValue() - customMaxHealth) > 0.1f) {
+                this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(customMaxHealth);
             }
-            int expectedCount = calculateExpectedSegmentCount();
-            if (segments.isEmpty()) {
-                initializeSegments(expectedCount);
+            if (Math.abs(this.getHealth() - customCurrentHealth) > 0.1f) {
+                this.setHealth(customCurrentHealth);
+            }
+            updateAttackDamageBasedOnHealth();
+
+            if (!segmentsInitialized) {
+                if (!segmentUUIDs.isEmpty()) {
+                    org.apache.logging.log4j.LogManager.getLogger().info("[CentipedeHead] 检测到存档数据，删除所有旧节段并重新生成");
+                    deleteAllOldSegments();
+                }
+                int expectedCount = calculateExpectedSegmentCount();
+                if (segments.isEmpty()) {
+                    initializeSegments(expectedCount);
+                }
+
+                segmentsInitialized = true;
+                org.apache.logging.log4j.LogManager.getLogger().info("[CentipedeHead] 初始化完成 | 最终节段数: " + segments.size());
             }
 
-            segmentsInitialized = true;
-            org.apache.logging.log4j.LogManager.getLogger().info("[CentipedeHead] 初始化完成 | 最终节段数: " + segments.size());
+            segments.removeIf(segment -> !segment.isAlive());
+            ensureChainIntegrity();
+
+            if (!segments.isEmpty()) {
+                syncSegmentUUIDs();
+            }
         }
-
-        segments.removeIf(segment -> !segment.isAlive());
-        ensureChainIntegrity();
-
-        if (!segments.isEmpty()) {
-            syncSegmentUUIDs();
+        if (attackAnimationTimer > 0) {
+            attackAnimationTimer--;
         }
     }
 
@@ -290,7 +295,20 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity {
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
+        controllerRegistrar.add(new AnimationController<>(this, "controller", 0, this::controlAnimation));
 
+    }
+
+    private <E extends CentipedeHead> PlayState controlAnimation(AnimationState<E> event) {
+        if (attackAnimationTimer > 0) {
+            return event.setAndContinue(GTWO_ANIM);
+        }
+
+        if (event.isMoving()) {
+            return event.setAndContinue(RUN_ANIM);
+        }
+
+        return PlayState.STOP;
     }
 
     @Override
@@ -384,6 +402,13 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity {
 
             spawnAtLocation(Items.IRON_INGOT, 2 + this.random.nextInt(3));
         }
+    }
+
+    @Override
+    public boolean doHurtTarget(Entity entity) {
+        attackAnimationTimer = ATTACK_ANIMATION_DURATION;
+        this.swing(InteractionHand.MAIN_HAND, true);
+        return super.doHurtTarget(entity);
     }
 
     @Override

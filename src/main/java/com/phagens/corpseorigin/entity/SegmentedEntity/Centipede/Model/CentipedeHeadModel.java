@@ -9,13 +9,13 @@ public class CentipedeHeadModel extends GeoModel<CentipedeHead> {
     @Override
     public ResourceLocation getModelResource(CentipedeHead animatable) {
         // TODO: 替换为实际的模型路径
-        return ResourceLocation.fromNamespaceAndPath("corpseorigin", "geo/entity/coco_penguin_zbrx.geo.json");
+        return ResourceLocation.fromNamespaceAndPath("corpseorigin", "geo/entity/centipede_head.geo.json");
     }
 
     @Override
     public ResourceLocation getTextureResource(CentipedeHead animatable) {
         // TODO: 替换为实际的纹理路径
-        return ResourceLocation.fromNamespaceAndPath("corpseorigin", "textures/entity/coco_penguin_zbrx.png");
+        return ResourceLocation.fromNamespaceAndPath("corpseorigin", "textures/entity/centipede_head.png");
     }
 
     @Override
