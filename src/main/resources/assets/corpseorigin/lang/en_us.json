@@ -53,6 +53,9 @@
   "item.corpseorigin.zb_worm_spawn_egg": "Zombie Brother Worm Spawn Egg",
   "entity.corpseorigin.uncle": "Uncle",
   "item.corpseorigin.uncle_spawn_egg": "Uncle Spawn Egg",
+
+  "entity.corpseorigin.centipede_head": "centipedeZombieBrother",
+  "item.corpseorigin.centipede_spawn_egg": "centipedeZombieBrotherBrushes Spawn Eggs",
   
   "entity.corpseorigin.coco_zombie_x": "CoCo Zombie-%s",
   "item.corpseorigin.coco_zombie_x_spawn_egg": "CoCo Zombie-%s Spawn Egg",

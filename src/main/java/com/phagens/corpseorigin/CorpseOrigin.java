@@ -81,6 +81,7 @@ public class CorpseOrigin {
                 output.accept(Moditems.LONGYOU_SPAWN_EGG.get());
                 output.accept(Moditems.ZBR_FISH_SPAWN_EGG.get());
                 output.accept(Moditems.KAIWEINAI_SPAWN_EGG.get());
+                output.accept(Moditems.CENTIPEDE_SPAWN_EGG.get());
                 output.accept(Moditems.GUIGUN_SPAWN_EGG.get());
 
                 // 添加尸兄器官掉落物

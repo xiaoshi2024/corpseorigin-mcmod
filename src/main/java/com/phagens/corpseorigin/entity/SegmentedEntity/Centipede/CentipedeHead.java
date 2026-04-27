@@ -2,6 +2,9 @@ package com.phagens.corpseorigin.entity.SegmentedEntity.Centipede;
 
 import com.phagens.corpseorigin.entity.SegmentedEntity.AbstractSegmentedHead;
 import com.phagens.corpseorigin.entity.SegmentedEntity.AbstractSegmentedJoint;
+import com.phagens.corpseorigin.entity.ICorpseBrother;
+import com.phagens.corpseorigin.entity.ICorpseHunger;
+import com.phagens.corpseorigin.entity.CorpseHungerSystem;
 import com.phagens.corpseorigin.register.EntityRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -18,6 +21,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
@@ -39,7 +44,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity {
+public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, ICorpseBrother, ICorpseHunger {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private final List<CentipedeJoint> segments = new ArrayList<>();
     private boolean segmentsInitialized = false;
@@ -50,6 +55,7 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity {
     // 攻击力基础值和每节血量提供的加成
     private static final float BASE_ATTACK_DAMAGE = 6.0f;
     private static final float ATTACK_BONUS_PER_SEGMENT = 1.0f;
+    private final CorpseHungerSystem hungerSystem = new CorpseHungerSystem(this);
     public CentipedeHead(EntityType<? extends Monster> type, Level level) {
         super(type, level);
         this.baseHealthPerSegment = 30.0f;
@@ -218,8 +224,8 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity {
         Vec3 prevPos = previousEntity.position();
         float prevYaw = previousEntity.getYRot();
         double yawRad = Math.toRadians(prevYaw);
-        double newX = prevPos.x + Math.sin(yawRad) * 1.5;
-        double newZ = prevPos.z - Math.cos(yawRad) * 1.5;
+        double newX = prevPos.x + Math.sin(yawRad) * 3.0;
+        double newZ = prevPos.z - Math.cos(yawRad) * 3.0;
         newSegment.moveTo(newX, prevPos.y, newZ);
 
         addSegment(newSegment);
@@ -262,7 +268,7 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity {
             for (int i = 0; i < segmentCount; i++) {
                 CentipedeJoint segment = (CentipedeJoint) createSegment(i);
                 segment.setPreviousEntity(previousEntity);
-                double offset = (i + 1) * 1.5;
+                double offset = (i + 1) * 3.0;
                 segment.moveTo(startX, startY, startZ - offset);
                 newSegments.add(segment);
                 previousEntity = segment;
@@ -349,6 +355,7 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity {
     @Override
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
+        hungerSystem.loadData(compound);
         this.segmentsInitialized = false;
         org.apache.logging.log4j.LogManager.getLogger().info("[CentipedeHead] 读档完成，重置状态 | 保存的血量: " + getTotalHealth());
     }
@@ -356,6 +363,7 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity {
     @Override
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
+        hungerSystem.saveData(compound);
         compound.putBoolean("SegmentsInitialized", this.segmentsInitialized);
     }
 
@@ -414,5 +422,90 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity {
     @Override
     public float getMaxTotalHealth() {
         return this.entityData.get(DATA_MAX_HEALTH);
+    }
+
+    // ==================== ICorpseBrother 接口 ====================
+    @Override
+    public boolean isCorpseBrotherOf(Mob entity) {
+        return entity instanceof ICorpseBrother;
+    }
+
+    @Override
+    public void setHiveMindTarget(LivingEntity target) {
+        hungerSystem.setHiveMindTarget(target);
+    }
+
+    @Override
+    public LivingEntity getHiveMindTarget() {
+        return hungerSystem.getHiveMindTarget();
+    }
+
+    @Override
+    public boolean hasAttackTarget() {
+        return this.getTarget() != null && this.getTarget().isAlive();
+    }
+
+    @Override
+    public int getEvolutionLevel() {
+        return hungerSystem.getEvolutionLevel();
+    }
+
+    @Override
+    public void setEvolutionLevel(int level) {
+        hungerSystem.setEvolutionLevel(level);
+    }
+
+    // ==================== ICorpseHunger 接口 ====================
+    @Override
+    public int getCorpseHunger() {
+        return hungerSystem.getCorpseHunger();
+    }
+
+    @Override
+    public void setCorpseHunger(int hunger) {
+        hungerSystem.setCorpseHunger(hunger);
+    }
+
+    public void addCorpseHunger(int amount) {
+        hungerSystem.setCorpseHunger(hungerSystem.getCorpseHunger() + amount);
+    }
+
+    @Override
+    public int getTicksExisted() {
+        return this.tickCount;
+    }
+
+    @Override
+    public Level getLevel() {
+        return this.level();
+    }
+
+    @Override
+    public BlockPos blockPosition() {
+        return super.blockPosition();
+    }
+
+    @Override
+    public boolean isAlive() {
+        return super.isAlive();
+    }
+
+    // ==================== 主人系统 ====================
+    public void setMaster(UUID masterUUID) {
+        hungerSystem.setMasterUUID(masterUUID);
+    }
+
+    public UUID getMasterUUID() {
+        return hungerSystem.getMasterUUID();
+    }
+
+    public boolean hasMaster() {
+        return hungerSystem.getMasterUUID() != null;
+    }
+
+    @Override
+    public void aiStep() {
+        super.aiStep();
+        hungerSystem.tick();
     }
 }

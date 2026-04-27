@@ -271,6 +271,8 @@
 
   "item.corpseorigin.ordinary_zb_eye": "普通尸眼",
   "item.corpseorigin.guigun_spawn_egg": "鬼棍刷怪蛋",
+  "entity.corpseorigin.centipede_head": "蜈蚣尸兄",
+  "item.corpseorigin.centipede_spawn_egg": "蜈蚣尸兄刷怪蛋",
 
   "item.corpseorigin.organ.type": "器官类型: %s",
   "item.corpseorigin.organ.evolution_chance": "进化概率: %d%%",

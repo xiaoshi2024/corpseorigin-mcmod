@@ -122,7 +122,7 @@ public class EntityRegistry {
     // 蜈蚣头部实体
     public static final DeferredHolder<EntityType<?>, EntityType<CentipedeHead>> CENTIPEDE_HEAD = ENTITIES.register("centipede_head",
             () -> EntityType.Builder.<CentipedeHead>of(CentipedeHead::new, MobCategory.MONSTER)
-                    .sized(1.0F, 1.0F)
+                    .sized(3.0F, 2.0F)
                     .clientTrackingRange(64)
                     .updateInterval(2)
                     .build("centipede_head"));
@@ -130,7 +130,7 @@ public class EntityRegistry {
     // 蜈蚣躯干节段实体
     public static final DeferredHolder<EntityType<?>, EntityType<CentipedeJoint>> CENTIPEDE_JOINT = ENTITIES.register("centipede_joint",
             () -> EntityType.Builder.<CentipedeJoint>of(CentipedeJoint::new, MobCategory.MONSTER)
-                    .sized(0.8F, 0.8F)
+                    .sized(2.5F, 1.5F)
                     .clientTrackingRange(64)
                     .updateInterval(2)
                     .build("centipede_joint"));

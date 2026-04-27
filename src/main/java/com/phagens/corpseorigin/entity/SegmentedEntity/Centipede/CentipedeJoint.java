@@ -106,9 +106,10 @@ public class CentipedeJoint extends AbstractSegmentedJoint implements GeoEntity 
         return !nearby.isEmpty();
     }
 
+    //每个节间隔的距离
     @Override
     public double getSegmentDistance() {
-        return 0.6;
+        return 0.7;
     }
 
     @Override

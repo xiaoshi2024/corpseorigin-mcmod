@@ -8,5 +8,6 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 public class CentipedeJointRenderer extends GeoEntityRenderer<CentipedeJoint> {
     public CentipedeJointRenderer(EntityRendererProvider.Context context) {
         super(context, new CentipedeJointModel());
+        this.withScale(3.0f);
     }
 }

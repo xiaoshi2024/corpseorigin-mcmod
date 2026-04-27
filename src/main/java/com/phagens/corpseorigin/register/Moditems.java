@@ -104,6 +104,10 @@ public class Moditems {
     public static final DeferredItem<Item> GUIGUN_SPAWN_EGG = ITEMS.register("guigun_spawn_egg",
             () -> new SpawnEggItem(EntityRegistry.GUIGUN.get(), 0x800080, 0x00FF00, new Item.Properties()));
 
+    // 蜈蚣尸兄刷怪蛋
+    public static final DeferredItem<Item> CENTIPEDE_SPAWN_EGG = ITEMS.register("centipede_spawn_egg",
+            () -> new SpawnEggItem(EntityRegistry.CENTIPEDE_HEAD.get(), 0x8B4513, 0xFF4500, new Item.Properties()));
+
     // ========== 尸兄器官掉落物 ==========
     // 普通尸眼 - 尸兄掉落物，食用可进化夜视能力
     public static final DeferredItem<Item> ORDINARY_ZB_EYE = ITEMS.register("ordinary_zb_eye",
