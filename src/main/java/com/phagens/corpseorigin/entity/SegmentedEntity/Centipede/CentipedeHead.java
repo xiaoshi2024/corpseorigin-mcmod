@@ -14,13 +14,12 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -29,7 +28,6 @@ import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -48,14 +46,35 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private final List<CentipedeJoint> segments = new ArrayList<>();
     private boolean segmentsInitialized = false;
+
+    // 修复：使用正确的动画名称
     protected static final RawAnimation RUN_ANIM = RawAnimation.begin().thenLoop("run");
-    protected static final RawAnimation GTWO_ANIM = RawAnimation.begin().thenPlay("Gone");
+    protected static final RawAnimation ATTACK_ANIM = RawAnimation.begin().thenPlay("gtwo");
+
     private int attackAnimationTimer = 0;
-    private static final int ATTACK_ANIMATION_DURATION = 20;
+    private static final int ATTACK_ANIMATION_DURATION = 15;
+    private boolean isAttacking = false;
+
     // 攻击力基础值和每节血量提供的加成
     private static final float BASE_ATTACK_DAMAGE = 6.0f;
     private static final float ATTACK_BONUS_PER_SEGMENT = 1.0f;
+
+    // 弯曲效果参数
+    private static final float MAX_SEGMENT_ANGLE = 35.0f;
+    private static final float ANGLE_SMOOTHING = 0.4f;
+    private static final float TURN_RESPONSE_FACTOR = 0.6f;
+    private static final float MIN_TURN_SPEED = 0.05f;
+
+    // 历史记录
+    private final List<Vec3> headPositionHistory = new ArrayList<>();
+    private final List<Float> headYawHistory = new ArrayList<>();
+    private static final int HISTORY_SIZE = 20;
+
+    private float lastHeadYaw = 0;
+    private Vec3 lastHeadPos = Vec3.ZERO;
+
     private final CorpseHungerSystem hungerSystem = new CorpseHungerSystem(this);
+
     public CentipedeHead(EntityType<? extends Monster> type, Level level) {
         super(type, level);
         this.baseHealthPerSegment = 30.0f;
@@ -91,7 +110,10 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
     @Override
     public void tick() {
         super.tick();
+
         if (!level().isClientSide) {
+            updateHeadHistory();
+
             float customMaxHealth = this.entityData.get(DATA_MAX_HEALTH);
             float customCurrentHealth = this.entityData.get(DATA_TOTAL_HEALTH);
 
@@ -105,41 +127,148 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
 
             if (!segmentsInitialized) {
                 if (!segmentUUIDs.isEmpty()) {
-                    org.apache.logging.log4j.LogManager.getLogger().info("[CentipedeHead] 检测到存档数据，删除所有旧节段并重新生成");
                     deleteAllOldSegments();
                 }
                 int expectedCount = calculateExpectedSegmentCount();
                 if (segments.isEmpty()) {
                     initializeSegments(expectedCount);
                 }
-
                 segmentsInitialized = true;
-                org.apache.logging.log4j.LogManager.getLogger().info("[CentipedeHead] 初始化完成 | 最终节段数: " + segments.size());
+                logSegmentInfo("初始化完成");
             }
 
             segments.removeIf(segment -> !segment.isAlive());
             ensureChainIntegrity();
+            applyNaturalBending();
 
             if (!segments.isEmpty()) {
                 syncSegmentUUIDs();
             }
         }
+
+        // 更新攻击动画计时器
         if (attackAnimationTimer > 0) {
             attackAnimationTimer--;
+            if (attackAnimationTimer <= 0) {
+                isAttacking = false;
+            }
         }
     }
 
-    /**
-     * 根据最大血量动态调整攻击力
-     * 公式：基础攻击力 + (节段数 × 每节加成)
-     */
+    private void updateHeadHistory() {
+        Vec3 currentPos = this.position();
+        float currentYaw = this.getYRot();
+
+        headPositionHistory.add(currentPos);
+        headYawHistory.add(currentYaw);
+
+        while (headPositionHistory.size() > HISTORY_SIZE) {
+            headPositionHistory.remove(0);
+        }
+        while (headYawHistory.size() > HISTORY_SIZE) {
+            headYawHistory.remove(0);
+        }
+
+        lastHeadPos = currentPos;
+        lastHeadYaw = currentYaw;
+    }
+
+    private void applyNaturalBending() {
+        if (segments.size() < 2) return;
+
+        float turnSpeed = calculateTurnSpeed();
+
+        if (Math.abs(turnSpeed) > MIN_TURN_SPEED) {
+            applyTurnBending(turnSpeed);
+        }
+
+        applySegmentAngleConstraints();
+        applyTailSway();
+    }
+
+    private float calculateTurnSpeed() {
+        if (headYawHistory.size() < 2) return 0;
+
+        float prevYaw = headYawHistory.get(headYawHistory.size() - 2);
+        float currentYaw = headYawHistory.get(headYawHistory.size() - 1);
+        float deltaYaw = Mth.wrapDegrees(currentYaw - prevYaw);
+
+        return deltaYaw * 20;
+    }
+
+    private void applyTurnBending(float turnSpeed) {
+        for (int i = 1; i < segments.size(); i++) {
+            CentipedeJoint segment = segments.get(i);
+            CentipedeJoint prevSegment = segments.get(i - 1);
+
+            float tailFactor = (float) i / segments.size();
+            float extraAngle = turnSpeed * TURN_RESPONSE_FACTOR * tailFactor * 0.05f;
+            extraAngle = Mth.clamp(extraAngle, -15, 15);
+
+            float currentRelativeYaw = Mth.wrapDegrees(segment.getYRot() - prevSegment.getYRot());
+            float targetRelativeYaw = extraAngle;
+            float newRelativeYaw = currentRelativeYaw + (targetRelativeYaw - currentRelativeYaw) * ANGLE_SMOOTHING;
+
+            float newYaw = prevSegment.getYRot() + Mth.clamp(newRelativeYaw, -MAX_SEGMENT_ANGLE, MAX_SEGMENT_ANGLE);
+            segment.setYRot(newYaw);
+        }
+    }
+
+    private void applySegmentAngleConstraints() {
+        for (int i = 1; i < segments.size(); i++) {
+            CentipedeJoint segment = segments.get(i);
+            CentipedeJoint prevSegment = segments.get(i - 1);
+            constrainSegmentAngle(segment, prevSegment);
+        }
+
+        if (!segments.isEmpty()) {
+            constrainSegmentAngle(segments.get(0), this);
+        }
+    }
+
+    private void constrainSegmentAngle(CentipedeJoint segment, Entity previousEntity) {
+        float currentYaw = segment.getYRot();
+        float prevYaw = previousEntity.getYRot();
+        float deltaYaw = Mth.wrapDegrees(currentYaw - prevYaw);
+
+        if (Math.abs(deltaYaw) > MAX_SEGMENT_ANGLE) {
+            float newYaw = prevYaw + Math.signum(deltaYaw) * MAX_SEGMENT_ANGLE;
+            segment.setYRot(newYaw);
+        }
+    }
+
+    private void applyTailSway() {
+        if (segments.size() < 3) return;
+
+        int tailStart = Math.max(0, segments.size() - 3);
+        float time = tickCount * 0.1f;
+
+        for (int i = tailStart; i < segments.size(); i++) {
+            CentipedeJoint segment = segments.get(i);
+            float tailFactor = (float) (i - tailStart) / (segments.size() - tailStart);
+            float swayAmplitude = 5.0f * tailFactor;
+
+            if (swayAmplitude > 0.1f) {
+                float sway = (float) Math.sin(time + i * 0.5) * swayAmplitude;
+                Entity prevEntity = (i > 0) ? segments.get(i - 1) : this;
+                float prevYaw = prevEntity.getYRot();
+                float currentYaw = segment.getYRot();
+                float relativeYaw = Mth.wrapDegrees(currentYaw - prevYaw);
+                float targetRelativeYaw = relativeYaw + sway * 0.3f;
+                float newRelativeYaw = Mth.clamp(targetRelativeYaw, -MAX_SEGMENT_ANGLE, MAX_SEGMENT_ANGLE);
+                float newYaw = prevYaw + newRelativeYaw;
+                float smoothedYaw = currentYaw + (newYaw - currentYaw) * 0.3f;
+                segment.setYRot(smoothedYaw);
+            }
+        }
+    }
+
     private void updateAttackDamageBasedOnHealth() {
         float maxHealth = this.entityData.get(DATA_MAX_HEALTH);
         int segmentCount = (int) Math.ceil(maxHealth / getBaseHealthPerSegment());
 
         float newAttackDamage = BASE_ATTACK_DAMAGE + (segmentCount * ATTACK_BONUS_PER_SEGMENT);
 
-        // 只有当攻击力变化时才更新属性
         float currentAttackDamage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
         if (Math.abs(currentAttackDamage - newAttackDamage) > 0.1f) {
             this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(newAttackDamage);
@@ -151,20 +280,15 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
         return super.canBeAffected(effectInstance);
     }
 
-    /**
-     * 确保链条完整性：检查每个节段的前一节是否正确
-     */
     private void ensureChainIntegrity() {
         if (segments.isEmpty()) return;
 
         boolean needsReconnect = false;
 
-        // 检查第一节是否指向头部
         if (segments.get(0).getPreviousEntity() != this) {
             needsReconnect = true;
         }
 
-        // 检查后续节段是否指向前一节
         for (int i = 1; i < segments.size(); i++) {
             if (segments.get(i).getPreviousEntity() != segments.get(i - 1)) {
                 needsReconnect = true;
@@ -172,12 +296,10 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
             }
         }
 
-        // 只有在链条断裂时才重连
         if (needsReconnect) {
             reconnectBrokenChain();
         }
     }
-
 
     private void deleteAllOldSegments() {
         if (level() instanceof ServerLevel serverLevel) {
@@ -185,7 +307,6 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
                 Entity entity = serverLevel.getEntity(uuid);
                 if (entity != null && entity.isAlive()) {
                     entity.discard();
-                    org.apache.logging.log4j.LogManager.getLogger().info("[CentipedeHead] 已删除旧节段: " + uuid);
                 }
             }
         }
@@ -197,11 +318,15 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
     public void awardKillScore(Entity killed, int scoreValue, DamageSource source) {
         super.awardKillScore(killed, scoreValue, source);
 
+        // 20% 概率增长新节段
         if (!level().isClientSide && this.random.nextFloat() < 0.2f) {
             growNewSegment();
         }
     }
 
+    /**
+     * 增长新节段 - 尾巴增加系统
+     */
     private void growNewSegment() {
         if (level().isClientSide) return;
 
@@ -210,28 +335,40 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
         this.entityData.set(DATA_MAX_HEALTH, newMaxHealth);
         this.entityData.set(DATA_TOTAL_HEALTH, newMaxHealth);
 
-        this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(newMaxHealth);
+        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(newMaxHealth);
         this.setHealth(newMaxHealth);
 
+        // 创建新节段
         CentipedeJoint newSegment = (CentipedeJoint) createSegment(segments.size());
 
+        // 确定前一节（尾部最后一节或头部）
         Entity previousEntity = this;
         if (!segments.isEmpty()) {
             previousEntity = segments.get(segments.size() - 1);
         }
         newSegment.setPreviousEntity(previousEntity);
 
+        // 计算新节段的位置（在最后一节后方）
         Vec3 prevPos = previousEntity.position();
         float prevYaw = previousEntity.getYRot();
-        double yawRad = Math.toRadians(prevYaw);
-        double newX = prevPos.x + Math.sin(yawRad) * 3.0;
-        double newZ = prevPos.z - Math.cos(yawRad) * 3.0;
+        double yawRad = Math.toRadians(prevYaw + 180);
+        double distance = 2.1;  // 与 getSegmentDistance() 保持一致
+        double newX = prevPos.x - Math.sin(yawRad) * distance;
+        double newZ = prevPos.z + Math.cos(yawRad) * distance;
         newSegment.moveTo(newX, prevPos.y, newZ);
 
+        // 设置角度跟随前一节
+        newSegment.setYRot(prevYaw);
+
+        // 添加到世界和列表
         addSegment(newSegment);
         segments.add(newSegment);
 
-        org.apache.logging.log4j.LogManager.getLogger().info("[CentipedeHead] 成长成功！当前节段数: " + segments.size() + ", 最大血量: " + newMaxHealth);
+        // 更新数据同步
+        syncSegmentUUIDs();
+        this.entityData.set(DATA_SEGMENT_COUNT, segments.size());
+
+        logSegmentInfo("增长新节段");
     }
 
     private void reconnectBrokenChain() {
@@ -252,35 +389,49 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
         this.entityData.set(DATA_SEGMENT_COUNT, segmentUUIDs.size());
     }
 
+    private void logSegmentInfo(String action) {
+        org.apache.logging.log4j.LogManager.getLogger().info(
+                "[CentipedeHead] " + action + " | 节段数: " + segments.size() +
+                        " | 血量: " + getTotalHealth() + "/" + getMaxTotalHealth()
+        );
+    }
+
     public void initializeSegments(int segmentCount) {
         if (!level().isClientSide && segments.isEmpty()) {
             float initialHealth = segmentCount * getBaseHealthPerSegment();
             this.entityData.set(DATA_MAX_HEALTH, initialHealth);
             this.entityData.set(DATA_TOTAL_HEALTH, initialHealth);
-            this.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH).setBaseValue(initialHealth);
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(initialHealth);
             this.setHealth(initialHealth);
-            double startX = getX();
-            double startY = getY();
-            double startZ = getZ();
+
             List<CentipedeJoint> newSegments = new ArrayList<>();
             Entity previousEntity = this;
 
             for (int i = 0; i < segmentCount; i++) {
                 CentipedeJoint segment = (CentipedeJoint) createSegment(i);
                 segment.setPreviousEntity(previousEntity);
-                double offset = (i + 1) * 3.0;
-                segment.moveTo(startX, startY, startZ - offset);
+
+                Vec3 prevPos = previousEntity.position();
+                float prevYaw = previousEntity.getYRot();
+                double yawRad = Math.toRadians(prevYaw + 180);
+                double distance = 2.1;
+                double newX = prevPos.x - Math.sin(yawRad) * distance;
+                double newZ = prevPos.z + Math.cos(yawRad) * distance;
+
+                segment.moveTo(newX, prevPos.y, newZ);
+                segment.setYRot(prevYaw + (i % 2 == 0 ? 5 : -5));
+
                 newSegments.add(segment);
                 previousEntity = segment;
             }
+
             for (CentipedeJoint segment : newSegments) {
                 addSegment(segment);
                 segments.add(segment);
             }
 
             this.entityData.set(DATA_SEGMENT_COUNT, segmentCount);
-
-            org.apache.logging.log4j.LogManager.getLogger().info("[CentipedeHead] 创建了 " + segmentCount + " 个节段，初始血量: " + initialHealth);
+            logSegmentInfo("创建了 " + segmentCount + " 个节段");
         }
     }
 
@@ -301,20 +452,24 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
-        controllerRegistrar.add(new AnimationController<>(this, "controller", 0, this::controlAnimation));
+        // 修复：创建动画控制器，正确触发攻击动画
+        AnimationController<CentipedeHead> controller = new AnimationController<>(this, "controller", 2, event -> {
+            // 攻击动画优先级最高
+            if (attackAnimationTimer > 0) {
+                // 每次攻击都重新触发动画
+                event.getController().setAnimation(ATTACK_ANIM);
+                return PlayState.CONTINUE;
+            }
 
-    }
+            // 移动动画
+            if (event.isMoving()) {
+                return event.setAndContinue(RUN_ANIM);
+            }
 
-    private <E extends CentipedeHead> PlayState controlAnimation(AnimationState<E> event) {
-        if (attackAnimationTimer > 0) {
-            return event.setAndContinue(GTWO_ANIM);
-        }
+            return PlayState.STOP;
+        });
 
-        if (event.isMoving()) {
-            return event.setAndContinue(RUN_ANIM);
-        }
-
-        return PlayState.STOP;
+        controllerRegistrar.add(controller);
     }
 
     @Override
@@ -357,7 +512,6 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
         super.readAdditionalSaveData(compound);
         hungerSystem.loadData(compound);
         this.segmentsInitialized = false;
-        org.apache.logging.log4j.LogManager.getLogger().info("[CentipedeHead] 读档完成，重置状态 | 保存的血量: " + getTotalHealth());
     }
 
     @Override
@@ -376,46 +530,36 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
                     segment.discard();
                 }
             }
-
         }
         super.die(damageSource);
     }
 
-    /**
-     * 根据最大血量分级掉落战利品
-     */
     private void dropLootBasedOnHealth() {
         float maxHealth = this.entityData.get(DATA_MAX_HEALTH);
         int segmentCount = (int) Math.ceil(maxHealth / getBaseHealthPerSegment());
 
-        // 基础掉落：每个节段概率掉落蜘蛛眼
         int eyeCount = this.random.nextInt(segmentCount) + 1;
         for (int i = 0; i < eyeCount; i++) {
             this.spawnAtLocation(Items.SPIDER_EYE);
         }
 
-        // 分级掉落逻辑
         if (maxHealth >= 300.0f) {
-
             spawnAtLocation(Items.ENDER_PEARL, 2 + this.random.nextInt(3));
             spawnAtLocation(Items.GOLDEN_APPLE);
             spawnAtLocation(Items.DIAMOND, 1 + this.random.nextInt(2));
-
         } else if (maxHealth >= 150.0f) {
-
             spawnAtLocation(Items.ENDER_PEARL);
             spawnAtLocation(Items.GOLD_INGOT, 2 + this.random.nextInt(3));
-
         } else if (maxHealth >= 60.0f) {
-
             spawnAtLocation(Items.IRON_INGOT, 2 + this.random.nextInt(3));
         }
     }
 
     @Override
     public boolean doHurtTarget(Entity entity) {
+        // 修复：触发攻击动画
         attackAnimationTimer = ATTACK_ANIMATION_DURATION;
-        this.swing(InteractionHand.MAIN_HAND, true);
+        this.swing(InteractionHand.MAIN_HAND);
         return super.doHurtTarget(entity);
     }
 

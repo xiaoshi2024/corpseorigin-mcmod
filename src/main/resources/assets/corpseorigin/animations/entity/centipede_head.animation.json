@@ -1,7 +1,7 @@
 {
 	"format_version": "1.8.0",
 	"animations": {
-		"Gone": {
+		"gone": {
 			"animation_length": 1,
 			"bones": {
 				"down2": {
@@ -30,7 +30,7 @@
 				}
 			}
 		},
-		"GTWO": {
+		"gtwo": {
 			"animation_length": 1.125,
 			"bones": {
 				"zong": {

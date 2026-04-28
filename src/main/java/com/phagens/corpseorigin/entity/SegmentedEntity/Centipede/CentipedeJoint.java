@@ -13,7 +13,6 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.AnimatableManager;
@@ -32,11 +31,11 @@ public class CentipedeJoint extends AbstractSegmentedJoint implements GeoEntity 
 
     private Vec3 lastPosition = Vec3.ZERO;
     private int contactDamageCooldown = 0;
-    private static final int CONTACT_DAMAGE_COOLDOWN = 10; // 10 tick = 0.5秒
+    private static final int CONTACT_DAMAGE_COOLDOWN = 10;
+
     public CentipedeJoint(EntityType<? extends Monster> type, Level level) {
         super(type, level);
         this.setInvulnerable(true);
-        this.setNoGravity(true);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -56,15 +55,10 @@ public class CentipedeJoint extends AbstractSegmentedJoint implements GeoEntity 
     public void tick() {
         super.tick();
         if (!level().isClientSide) {
-            // 只有当头部彻底消失（不仅仅是死亡，而是被移除）时才考虑自毁
-            if (this.previousEntity != null && this.previousEntity.isAlive()) {
-                followEntity(previousEntity);
-            } else {
-                // 前一节已死亡或消失，说明链条断了，这个节段也应该消失
+            if (this.previousEntity == null || !this.previousEntity.isAlive()) {
                 this.discard();
                 return;
             }
-
 
             if (contactDamageCooldown > 0) {
                 contactDamageCooldown--;
@@ -85,31 +79,10 @@ public class CentipedeJoint extends AbstractSegmentedJoint implements GeoEntity 
         }
     }
 
-
-    /**
-     * 检查周围2格内是否有头部或其他节段
-     */
-    private boolean hasNearbySegment() {
-        // 检查前一节是否存在且距离合理
-        if (this.previousEntity != null && this.previousEntity.isAlive()) {
-            double dist = this.distanceTo(this.previousEntity);
-            if (dist <= 2.0) {
-                return true;
-            }
-        }
-
-        // 检查周围2格内是否有其他蜈蚣节段或头部
-        List<Entity> nearby = level().getEntities(this,
-                this.getBoundingBox().inflate(2.0),
-                entity -> entity instanceof CentipedeHead || entity instanceof CentipedeJoint);
-
-        return !nearby.isEmpty();
-    }
-
-    //每个节间隔的距离
+    // 修复：恢复正确的节段间距（2.1 对应模型缩放3倍后的视觉距离）
     @Override
     public double getSegmentDistance() {
-        return 0.7;
+        return 2.1;
     }
 
     @Override
