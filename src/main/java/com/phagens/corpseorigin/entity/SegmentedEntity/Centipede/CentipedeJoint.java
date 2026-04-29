@@ -79,7 +79,7 @@ public class CentipedeJoint extends AbstractSegmentedJoint implements GeoEntity 
         }
     }
 
-    // 修复：恢复正确的节段间距（2.1 对应模型缩放3倍后的视觉距离）
+    // 修复：恢复正确的节段间距
     @Override
     public double getSegmentDistance() {
         return 2.1;
