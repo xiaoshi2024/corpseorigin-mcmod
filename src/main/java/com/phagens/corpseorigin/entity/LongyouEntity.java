@@ -77,6 +77,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
     private int earthquakeCooldown = 0;
     private int summonMinionsCooldown = 0;
     private int nestSummonCooldown = 0; // 尸巢召唤冷却
+    private int commanderCooldown = 0; // 统帅技能冷却
     
     // 天罡气技能冷却
     private int tianGangQiJiCooldown = 0;
@@ -248,6 +249,13 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
             if (tianGangPoCooldown <= 0) {
                 com.phagens.corpseorigin.entity.skills.LongyouTianGangQi.useTianGangPo(this);
                 tianGangPoCooldown = 1000;
+            }
+        }));
+        
+        availableSkills.add(new Skill("统帅", SkillType.BUFF, 800, () -> {
+            if (commanderCooldown <= 0) {
+                useCommanderSkill();
+                commanderCooldown = 800; // 40秒冷却
             }
         }));
     }
@@ -600,6 +608,8 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
         if (tianGangQiCooldown > 0) tianGangQiCooldown--;
         if (earthquakeCooldown > 0) earthquakeCooldown--;
         if (summonMinionsCooldown > 0) summonMinionsCooldown--;
+        if (nestSummonCooldown > 0) nestSummonCooldown--;
+        if (commanderCooldown > 0) commanderCooldown--;
         
         // 天罡气技能冷却更新
         if (tianGangQiJiCooldown > 0) tianGangQiJiCooldown--;
@@ -888,6 +898,7 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
                 case "玄武体" -> xuanwuBodyCooldown <= 0;
                 case "天罡气·灭" -> tianGangQiMieCooldown <= 0;
                 case "天罡破" -> tianGangPoCooldown <= 0;
+                case "统帅" -> commanderCooldown <= 0;
                 default -> false;
             };
             
@@ -1801,8 +1812,71 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
             nestSummonCooldown = 1200; // 60秒冷却
         }
         
+        // 统帅技能 - 当有手下且目标威胁较高时使用
+        if (commanderCooldown <= 0 && this.getMinionCount() > 0 && targetThreat > 0.3 && this.random.nextFloat() < 0.03F) {
+            useCommanderSkill();
+            commanderCooldown = 800; // 40秒冷却
+        }
+        
         // 天罡气技能
         useTianGangQiSkills(targetThreat);
+    }
+    
+    /**
+     * 统帅技能 - 激活群体智能系统，为附近尸兄提供战术加成
+     */
+    public void useCommanderSkill() {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        
+        CorpseOrigin.LOGGER.info("[龙右] 激活统帅技能！");
+        
+        // 获取群体智能管理器
+        CorpseSwarmIntelligence swarmIntelligence = CorpseSwarmIntelligence.get(serverLevel);
+        
+        // 根据手下数量确定统帅光环等级和范围
+        int minionCount = this.getMinionCount();
+        int auraLevel = Math.min(3, minionCount / 3 + 1); // 每3个手下提升一级
+        double auraRange = 30.0 + (auraLevel * 15);      // 基础30格，每级+15
+        
+        // 激活统帅光环
+        swarmIntelligence.activateCommanderAura(this.getUUID(), auraRange, auraLevel);
+        
+        // 更新群体战术
+        swarmIntelligence.adjustTactics(serverLevel, this);
+        
+        // 播放统帅技能动画和音效
+        triggerAuraSkill();
+        
+        // 发送系统消息给附近玩家
+        String message = switch (auraLevel) {
+            case 3 -> "§6§l龙右激活了终极统帅光环！范围内尸兄获得大幅加成！";
+            case 2 -> "§e§l龙右激活了统帅光环！附近尸兄获得战术加成！";
+            default -> "§d§l龙右激活了指挥光环！手下获得战斗加成！";
+        };
+        
+        for (Player player : serverLevel.getEntitiesOfClass(Player.class, this.getBoundingBox().inflate(64))) {
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(message));
+        }
+        
+        // 生成粒子效果
+        for (int i = 0; i < 30; i++) {
+            double x = this.getX() + (this.random.nextDouble() - 0.5) * 6;
+            double y = this.getY() + this.getBbHeight() * 0.5 + (this.random.nextDouble() - 0.5) * 3;
+            double z = this.getZ() + (this.random.nextDouble() - 0.5) * 6;
+            serverLevel.sendParticles(
+                net.minecraft.core.particles.ParticleTypes.GLOW,
+                x, y, z,
+                1, 0.2, 0.5, 0.2, 0.1
+            );
+        }
+        
+        // 播放音效
+        serverLevel.playSound(
+            null, this.getX(), this.getY(), this.getZ(),
+            net.minecraft.sounds.SoundEvents.WARDEN_ROAR,
+            net.minecraft.sounds.SoundSource.HOSTILE,
+            2.0F, 0.5F
+        );
     }
     
     /**

@@ -33,10 +33,13 @@ public class CorpseBrotherHiveMindGoal extends Goal {
         
         if (!hasLongyou) return false;
         
+        // 只有在没有当前目标但有共享目标时才激活
+        // 这样不会阻止其他目标选择器（如玩家检测）运行
         LivingEntity currentTarget = this.mob.getTarget();
         if (currentTarget != null && currentTarget.isAlive()) {
-            return true;
+            return false; // 已有目标，让其他选择器处理
         }
+        
         LivingEntity hiveTarget = this.brother.getHiveMindTarget();
         return hiveTarget != null && hiveTarget.isAlive();
     }
@@ -69,6 +72,11 @@ public class CorpseBrotherHiveMindGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
-        return this.mob.level() instanceof ServerLevel;
+        // 只有在没有当前目标且有共享目标时才继续激活
+        if (!(this.mob.level() instanceof ServerLevel)) return false;
+        if (this.mob.getTarget() != null && this.mob.getTarget().isAlive()) return false;
+        
+        LivingEntity hiveTarget = this.brother.getHiveMindTarget();
+        return hiveTarget != null && hiveTarget.isAlive();
     }
 }

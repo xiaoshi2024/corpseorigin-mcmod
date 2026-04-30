@@ -162,6 +162,16 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     private static final double FOLLOW_RANGE = 16.0D; // 跟随范围
     private static final double TELEPORT_RANGE = 32.0D; // 传送范围
     private int followCooldown = 0; // 跟随冷却
+    
+    // 群体智能系统
+    private CorpseSwarmIntelligence.SwarmRole swarmRole = null; // 当前角色
+    private int pheromoneScanCooldown = 0; // 信息素扫描冷却
+    private static final int PHEROMONE_SCAN_INTERVAL = 20; // 每1秒扫描一次
+    private static final double PHEROMONE_DETECTION_RANGE = 15.0D; // 信息素检测范围
+    private int commanderAuraTick = 0; // 统帅光环效果持续tick
+    private net.minecraft.world.entity.ai.attributes.AttributeModifier commanderDamageModifier;
+    private net.minecraft.world.entity.ai.attributes.AttributeModifier commanderSpeedModifier;
+    private net.minecraft.world.entity.ai.attributes.AttributeModifier commanderArmorModifier;
 
     // 尸兄命令状态
     public enum CommandState {
@@ -703,6 +713,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
             tickSpecialSkill();
 
             InnateSkillManager.tick(this);
+            
+            // 群体智能系统更新
+            tickSwarmIntelligence();
         }
 
         // 客户端：加载皮肤
@@ -1008,9 +1021,38 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
 
     /**
      * 跟随主人的tick逻辑
+     * 修复：追随行为不再无视其他AI任务
      */
     private void tickFollowMaster() {
+        // 如果没有主人，不执行跟随
         if (hungerSystem.getMasterUUID() == null) return;
+
+        // 如果有攻击目标，优先执行攻击任务，不跟随
+        if (this.getTarget() != null && this.getTarget().isAlive()) {
+            return;
+        }
+
+        // 如果正在执行其他导航任务（如前往集合点、食物源等），不打断
+        if (this.getNavigation().isInProgress()) {
+            // 检查当前导航目标是否是主人
+            var targetPos = this.getNavigation().getTargetPos();
+            if (targetPos != null) {
+                return; // 有其他导航任务，不打断
+            }
+        }
+
+        // 如果是治疗者角色且附近有受伤同伴，优先治疗
+        if (swarmRole == CorpseSwarmIntelligence.SwarmRole.HEALER) {
+            if (!(this.level() instanceof ServerLevel serverLevel)) return;
+            List<LowerLevelZbEntity> nearbyCorpses = serverLevel.getEntitiesOfClass(
+                LowerLevelZbEntity.class,
+                this.getBoundingBox().inflate(10.0D),
+                entity -> entity != this && entity.isAlive() && entity.getHealth() < entity.getMaxHealth() * 0.5
+            );
+            if (!nearbyCorpses.isEmpty()) {
+                return; // 优先治疗受伤同伴
+            }
+        }
 
         // 减少跟随冷却
         if (followCooldown > 0) {
@@ -2532,6 +2574,336 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Vibr
     @Override
     public boolean isAlive() {
         return super.isAlive();
+    }
+    
+    // ==================== 群体智能系统 ====================
+    
+    /**
+     * 群体智能系统主更新方法
+     */
+    private void tickSwarmIntelligence() {
+        // 更新统帅光环效果
+        updateCommanderAura();
+        
+        // 扫描信息素
+        if (--pheromoneScanCooldown <= 0) {
+            pheromoneScanCooldown = PHEROMONE_SCAN_INTERVAL;
+            scanPheromones();
+        }
+        
+        // 根据角色执行特定行为
+        handleSwarmRole();
+    }
+    
+    /**
+     * 扫描周围的信息素
+     */
+    private void scanPheromones() {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        
+        CorpseSwarmIntelligence swarmIntelligence = CorpseSwarmIntelligence.get(serverLevel);
+        List<CorpseSwarmIntelligence.Pheromone> nearbyPheromones = 
+            swarmIntelligence.getNearbyPheromones(this.blockPosition(), PHEROMONE_DETECTION_RANGE);
+        
+        for (CorpseSwarmIntelligence.Pheromone pheromone : nearbyPheromones) {
+            switch (pheromone.type) {
+                case ENEMY_LOCATION -> handleEnemyPheromone(pheromone);
+                case GATHER_POINT -> handleGatherPheromone(pheromone);
+                case DANGER_ZONE -> handleDangerPheromone(pheromone);
+                case FOOD_SOURCE -> handleFoodPheromone(pheromone);
+            }
+        }
+    }
+    
+    /**
+     * 处理敌人位置信息素
+     */
+    private void handleEnemyPheromone(CorpseSwarmIntelligence.Pheromone pheromone) {
+        // 如果当前没有目标，设置为信息素指向的目标
+        if (this.getTarget() == null && pheromone.target != null && pheromone.target.isAlive()) {
+            this.setTarget(pheromone.target);
+            CorpseOrigin.LOGGER.debug("尸兄 {} 通过信息素发现敌人: {}", this.getId(), pheromone.target.getName());
+        }
+    }
+    
+    /**
+     * 处理集合点信息素
+     */
+    private void handleGatherPheromone(CorpseSwarmIntelligence.Pheromone pheromone) {
+        // 如果没有攻击目标，向集合点移动
+        if (this.getTarget() == null && !this.getNavigation().isInProgress()) {
+            this.getNavigation().moveTo(pheromone.pos.getX() + 0.5, pheromone.pos.getY(), pheromone.pos.getZ() + 0.5, 1.0D);
+        }
+    }
+    
+    /**
+     * 处理危险区域信息素
+     */
+    private void handleDangerPheromone(CorpseSwarmIntelligence.Pheromone pheromone) {
+        // 如果在危险区域附近，远离
+        double distance = this.distanceToSqr(pheromone.pos.getX() + 0.5, pheromone.pos.getY(), pheromone.pos.getZ() + 0.5);
+        if (distance < 9.0D) { // 3格以内
+            // 向反方向移动
+            double dx = this.getX() - (pheromone.pos.getX() + 0.5);
+            double dz = this.getZ() - (pheromone.pos.getZ() + 0.5);
+            this.getNavigation().moveTo(this.getX() + dx, this.getY(), this.getZ() + dz, 1.2D);
+        }
+    }
+    
+    /**
+     * 处理食物源信息素
+     */
+    private void handleFoodPheromone(CorpseSwarmIntelligence.Pheromone pheromone) {
+        // 如果饥饿，向食物源移动
+        if (hungerSystem.isHungry() && this.getTarget() == null) {
+            this.getNavigation().moveTo(pheromone.pos.getX() + 0.5, pheromone.pos.getY(), pheromone.pos.getZ() + 0.5, 1.0D);
+        }
+    }
+    
+    /**
+     * 根据角色执行特定行为
+     */
+    private void handleSwarmRole() {
+        if (swarmRole == null) {
+            // 获取或分配角色
+            CorpseSwarmIntelligence swarmIntelligence = CorpseSwarmIntelligence.get((ServerLevel) this.level());
+            swarmRole = swarmIntelligence.getRole(this.getUUID());
+        }
+        
+        switch (swarmRole) {
+            case ATTACKER -> handleAttackerRole();
+            case THROWER -> handleThrowerRole();
+            case HEALER -> handleHealerRole();
+            case SCOUT -> handleScoutRole();
+            case DEFENDER -> handleDefenderRole();
+        }
+    }
+    
+    /**
+     * 前锋角色行为 - 优先近战攻击
+     */
+    private void handleAttackerRole() {
+        // 前锋保持激进的攻击姿态
+        if (this.getTarget() != null && this.distanceTo(this.getTarget()) > 2.0D) {
+            this.getNavigation().moveTo(this.getTarget(), 1.3D);
+        }
+    }
+    
+    /**
+     * 投掷手角色行为 - 保持远程距离
+     */
+    private void handleThrowerRole() {
+        if (this.getTarget() != null) {
+            double distance = this.distanceTo(this.getTarget());
+            // 保持4-8格的攻击距离
+            if (distance < 4.0D) {
+                // 后退
+                double dx = this.getX() - this.getTarget().getX();
+                double dz = this.getZ() - this.getTarget().getZ();
+                this.getNavigation().moveTo(this.getX() + dx * 0.5, this.getY(), this.getZ() + dz * 0.5, 1.0D);
+            } else if (distance > 8.0D) {
+                // 接近
+                this.getNavigation().moveTo(this.getTarget(), 1.0D);
+            }
+        }
+    }
+    
+    /**
+     * 治疗者角色行为 - 寻找受伤的同伴
+     */
+    private void handleHealerRole() {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        
+        // 寻找受伤的同伴
+        List<LowerLevelZbEntity> nearbyCorpses = serverLevel.getEntitiesOfClass(
+            LowerLevelZbEntity.class,
+            this.getBoundingBox().inflate(10.0D),
+            entity -> entity != this && entity.isAlive() && entity.getHealth() < entity.getMaxHealth() * 0.5
+        );
+        
+        if (!nearbyCorpses.isEmpty()) {
+            // 找到最需要治疗的同伴
+            LowerLevelZbEntity target = null;
+            double minHealthPercent = Double.MAX_VALUE;
+            
+            for (LowerLevelZbEntity corpse : nearbyCorpses) {
+                double healthPercent = corpse.getHealth() / corpse.getMaxHealth();
+                if (healthPercent < minHealthPercent) {
+                    minHealthPercent = healthPercent;
+                    target = corpse;
+                }
+            }
+            
+            if (target != null) {
+                // 向受伤同伴移动
+                double distance = this.distanceTo(target);
+                if (distance > 3.0D) {
+                    this.getNavigation().moveTo(target, 1.0D);
+                } else {
+                    // 靠近时尝试治疗
+                    attemptHeal(target);
+                }
+            }
+        }
+    }
+    
+    /**
+     * 尝试治疗同伴
+     */
+    private void attemptHeal(LowerLevelZbEntity target) {
+        if (hungerSystem.getCorpseHunger() >= 1) {
+            // 消耗饱腹值进行治疗
+            hungerSystem.setCorpseHunger(hungerSystem.getCorpseHunger() - 1);
+            target.heal((float) (target.getMaxHealth() * 0.1F)); // 恢复10%生命值
+            
+            if (this.level() instanceof ServerLevel serverLevel) {
+                serverLevel.sendParticles(
+                    net.minecraft.core.particles.ParticleTypes.HEART,
+                    target.getX(), target.getY() + 1, target.getZ(),
+                    5, 0.3, 0.5, 0.3, 0.1
+                );
+            }
+        }
+    }
+    
+    /**
+     * 侦察兵角色行为 - 探索周围区域
+     */
+    private void handleScoutRole() {
+        // 如果没有目标，随机探索
+        if (this.getTarget() == null && !this.getNavigation().isInProgress()) {
+            if (this.random.nextFloat() < 0.02F) {
+                // 随机选择一个方向探索
+                double x = this.getX() + (this.random.nextDouble() - 0.5) * 32;
+                double z = this.getZ() + (this.random.nextDouble() - 0.5) * 32;
+                this.getNavigation().moveTo(x, this.getY(), z, 1.2D);
+            }
+        }
+    }
+    
+    /**
+     * 防御者角色行为 - 保护首领
+     */
+    private void handleDefenderRole() {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        
+        // 寻找附近的龙右
+        List<LongyouEntity> nearbyLongyou = serverLevel.getEntitiesOfClass(
+            LongyouEntity.class,
+            this.getBoundingBox().inflate(20.0D)
+        );
+        
+        if (!nearbyLongyou.isEmpty()) {
+            LongyouEntity leader = nearbyLongyou.get(0);
+            
+            // 如果距离首领超过5格，靠近首领
+            double distance = this.distanceTo(leader);
+            if (distance > 5.0D) {
+                this.getNavigation().moveTo(leader, 1.0D);
+            } else {
+                // 在首领周围巡逻
+                if (this.random.nextFloat() < 0.01F) {
+                    double angle = this.random.nextDouble() * Math.PI * 2;
+                    double x = leader.getX() + Math.cos(angle) * 5;
+                    double z = leader.getZ() + Math.sin(angle) * 5;
+                    this.getNavigation().moveTo(x, this.getY(), z, 1.0D);
+                }
+            }
+        }
+    }
+    
+    /**
+     * 更新统帅光环效果
+     */
+    private void updateCommanderAura() {
+        if (!(this.level() instanceof ServerLevel serverLevel)) return;
+        
+        CorpseSwarmIntelligence swarmIntelligence = CorpseSwarmIntelligence.get(serverLevel);
+        CorpseSwarmIntelligence.CommanderAura aura = swarmIntelligence.getNearbyCommanderAura(serverLevel, this);
+        
+        if (aura != null) {
+            // 应用统帅加成
+            applyCommanderBonus(aura);
+            commanderAuraTick = 20; // 保持20tick的效果
+        } else if (commanderAuraTick > 0) {
+            commanderAuraTick--;
+            if (commanderAuraTick <= 0) {
+                // 移除统帅加成
+                dropCommanderBonus();
+            }
+        }
+    }
+    
+    /**
+     * 应用统帅加成
+     */
+    private void applyCommanderBonus(CorpseSwarmIntelligence.CommanderAura aura) {
+        // 先移除已存在的修饰符，避免重复添加
+        dropCommanderBonus();
+        
+        // 攻击伤害加成
+        commanderDamageModifier = new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+                ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "commander_damage_bonus"),
+            aura.damageBonus,
+            net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_BASE
+        );
+        this.getAttribute(Attributes.ATTACK_DAMAGE).addTransientModifier(commanderDamageModifier);
+        
+        // 移动速度加成
+        commanderSpeedModifier = new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "commander_speed_bonus"),
+            aura.speedBonus,
+            net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_BASE
+        );
+        this.getAttribute(Attributes.MOVEMENT_SPEED).addTransientModifier(commanderSpeedModifier);
+        
+        // 护甲加成
+        commanderArmorModifier = new net.minecraft.world.entity.ai.attributes.AttributeModifier(
+            ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "commander_armor_bonus"),
+            aura.defenseBonus,
+            net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_BASE
+        );
+        this.getAttribute(Attributes.ARMOR).addTransientModifier(commanderArmorModifier);
+        
+        // 生成粒子效果
+        if (this.level() instanceof ServerLevel serverLevel && this.tickCount % 5 == 0) {
+            serverLevel.sendParticles(
+                net.minecraft.core.particles.ParticleTypes.GLOW,
+                this.getX() + (this.random.nextDouble() - 0.5) * 0.5,
+                this.getY() + 0.5 + this.random.nextDouble() * 0.5,
+                this.getZ() + (this.random.nextDouble() - 0.5) * 0.5,
+                2, 0.1, 0.1, 0.1, 0.05
+            );
+        }
+    }
+    
+    /**
+     * 移除统帅加成
+     */
+    private void dropCommanderBonus() {
+        if (commanderDamageModifier != null) {
+            this.getAttribute(Attributes.ATTACK_DAMAGE).removeModifier(commanderDamageModifier);
+            commanderDamageModifier = null;
+        }
+        if (commanderSpeedModifier != null) {
+            this.getAttribute(Attributes.MOVEMENT_SPEED).removeModifier(commanderSpeedModifier);
+            commanderSpeedModifier = null;
+        }
+        if (commanderArmorModifier != null) {
+            this.getAttribute(Attributes.ARMOR).removeModifier(commanderArmorModifier);
+            commanderArmorModifier = null;
+        }
+    }
+    
+    /**
+     * 获取当前角色
+     */
+    public CorpseSwarmIntelligence.SwarmRole getSwarmRole() {
+        if (swarmRole == null) {
+            CorpseSwarmIntelligence swarmIntelligence = CorpseSwarmIntelligence.get((ServerLevel) this.level());
+            swarmRole = swarmIntelligence.getRole(this.getUUID());
+        }
+        return swarmRole;
     }
     
 }
