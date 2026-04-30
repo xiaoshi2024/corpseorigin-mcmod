@@ -119,18 +119,18 @@ public class EntityRegistry {
                     .sized(0.6F, 1.8F)
                     .build("mca_zombie"));
 
-    // 蜈蚣头部实体 - 调整碰撞箱位置
+    // 蜈蚣头部实体 - 根据模型重新调整碰撞箱
     public static final DeferredHolder<EntityType<?>, EntityType<CentipedeHead>> CENTIPEDE_HEAD = ENTITIES.register("centipede_head",
             () -> EntityType.Builder.<CentipedeHead>of(CentipedeHead::new, MobCategory.MONSTER)
-                    .sized(2.2F, 1.8F)
+                    .sized(2.8F, 2.8F)  // 头部宽度约2.8格，高度约3.2格
                     .clientTrackingRange(64)
                     .updateInterval(2)
                     .build("centipede_head"));
 
-    // 蜈蚣躯干节段实体 - 调整碰撞箱位置
+    // 蜈蚣躯干节段实体 - 根据模型重新调整碰撞箱
     public static final DeferredHolder<EntityType<?>, EntityType<CentipedeJoint>> CENTIPEDE_JOINT = ENTITIES.register("centipede_joint",
             () -> EntityType.Builder.<CentipedeJoint>of(CentipedeJoint::new, MobCategory.MONSTER)
-                    .sized(1.8F, 1.2F)
+                    .sized(1.5F, 1.2F)  // 躯干宽度约1.5格，高度约1.2格
                     .clientTrackingRange(64)
                     .updateInterval(2)
                     .build("centipede_joint"));

@@ -92,10 +92,14 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
     private static final float ATTACK_BONUS_PER_SEGMENT = 1.0f;
 
     // 弯曲效果参数
-    private static final float MAX_SEGMENT_ANGLE = 35.0f;
+    private static final float MAX_SEGMENT_ANGLE = 40.0f;
     private static final float ANGLE_SMOOTHING = 0.4f;
     private static final float TURN_RESPONSE_FACTOR = 0.6f;
     private static final float MIN_TURN_SPEED = 0.05f;
+    
+    // 头部转向限制
+    private static final float MAX_HEAD_TURN_ANGLE = 45.0f;
+    private float lastHeadYaw = 0.0f;
 
     // 历史记录
     private final List<Vec3> headPositionHistory = new ArrayList<>();
@@ -133,13 +137,13 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(2, new CentipedeMeleeAttackGoal(this, 1.3D, true));
-        this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.8D));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
 
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, true));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.npc.Villager.class, true));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Mob.class, true));
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 16, true, false, null));
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.npc.Villager.class, 16, true, false, null));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Mob.class, 12, true, false, entity -> entity instanceof net.minecraft.world.entity.monster.Monster));
     }
 
     @Override
@@ -147,6 +151,7 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
         super.tick();
 
         if (!level().isClientSide) {
+            applyHeadTurnLimit();
             updateHeadHistory();
 
             float customMaxHealth = this.entityData.get(DATA_MAX_HEALTH);
@@ -353,9 +358,9 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
 
     @Override
     public boolean isInvulnerableTo(DamageSource source) {
-        // 遁地时免疫摔落和墙壁伤害
+        // 遁地时免疫摔落、墙壁、挤压和窒息伤害
         if ((isUnderground || isBurrowed) &&
-                (source.is(DamageTypes.FALL) || source.is(DamageTypes.IN_WALL) || source.is(DamageTypes.CRAMMING))) {
+                (source.is(DamageTypes.FALL) || source.is(DamageTypes.IN_WALL) || source.is(DamageTypes.CRAMMING) || source.is(DamageTypes.DROWN))) {
             return true;
         }
         return super.isInvulnerableTo(source);
@@ -405,7 +410,7 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
                 moveDeeperIntoCave();
             }
 
-            if (undergroundTimer <= 0) {
+            if (isHungry() || undergroundTimer <= 0) {
                 prepareToSurface();
             }
 
@@ -419,7 +424,7 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
                         1, 0.1, 0.1, 0.1, 0.01);
             }
 
-            if (burrowedIdleTimer <= 0 || (getTarget() != null && getTarget().isAlive())) {
+            if (isHungry() || burrowedIdleTimer <= 0 || (getTarget() != null && getTarget().isAlive())) {
                 exitUnderground();
             }
 
@@ -433,6 +438,10 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
                 }
             }
         }
+    }
+
+    private boolean isHungry() {
+        return this.hungerSystem.isHungry();
     }
 
     private void spawnBurrowParticles(ServerLevel serverLevel) {
@@ -459,17 +468,25 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
             double dy = deeperCave.getY() + 0.5 - this.getY();
             double dz = deeperCave.getZ() + 0.5 - this.getZ();
 
-            this.setDeltaMovement(
-                    this.getDeltaMovement().x + dx * 0.02,
-                    this.getDeltaMovement().y + dy * 0.01,
-                    this.getDeltaMovement().z + dz * 0.02
-            );
+            double moveSpeed = 0.15;
+            double newX = this.getX() + dx * moveSpeed;
+            double newY = this.getY() + dy * moveSpeed * 0.5;
+            double newZ = this.getZ() + dz * moveSpeed;
+
+            if (canMoveToPosition(new BlockPos((int) Math.floor(newX), (int) Math.floor(newY), (int) Math.floor(newZ)))) {
+                this.moveTo(newX, newY, newZ, this.getYRot(), this.getXRot());
+            } else {
+                this.setDeltaMovement(
+                        this.getDeltaMovement().x + dx * 0.02,
+                        this.getDeltaMovement().y + dy * 0.01,
+                        this.getDeltaMovement().z + dz * 0.02
+                );
+            }
         } else {
-            this.setDeltaMovement(
-                    this.getDeltaMovement().x,
-                    Math.max(-0.1, this.getDeltaMovement().y - 0.005),
-                    this.getDeltaMovement().z
-            );
+            double newY = this.getY() - 0.05;
+            if (canMoveToPosition(new BlockPos((int) Math.floor(this.getX()), (int) Math.floor(newY), (int) Math.floor(this.getZ())))) {
+                this.moveTo(this.getX(), newY, this.getZ(), this.getYRot(), this.getXRot());
+            }
         }
     }
 
@@ -507,6 +524,21 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
         return space >= 2;
     }
 
+    private boolean canMoveToPosition(BlockPos pos) {
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                for (int dy = 0; dy <= 2; dy++) {
+                    BlockPos checkPos = pos.offset(dx, dy, dz);
+                    BlockState state = level().getBlockState(checkPos);
+                    if (!state.isAir() && !state.is(Blocks.WATER) && !state.is(Blocks.LAVA) && !state.is(Blocks.OAK_LEAVES) && !state.is(Blocks.GRASS_BLOCK)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     private void moveTowardsCaveOrTarget() {
         if (getTarget() == null) return;
 
@@ -515,12 +547,27 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
         if (cavePos != null) {
             double dx = cavePos.getX() + 0.5 - this.getX();
             double dz = cavePos.getZ() + 0.5 - this.getZ();
+            double distance = Math.sqrt(dx * dx + dz * dz);
 
-            this.setDeltaMovement(
-                    this.getDeltaMovement().x + dx * 0.025,
-                    this.getDeltaMovement().y,
-                    this.getDeltaMovement().z + dz * 0.025
-            );
+            if (distance > 0) {
+                dx /= distance;
+                dz /= distance;
+            }
+
+            double moveSpeed = 0.12;
+            double newX = this.getX() + dx * moveSpeed;
+            double newY = this.getY();
+            double newZ = this.getZ() + dz * moveSpeed;
+
+            if (canMoveToPosition(new BlockPos((int) Math.floor(newX), (int) Math.floor(newY), (int) Math.floor(newZ)))) {
+                this.moveTo(newX, newY, newZ, this.getYRot(), this.getXRot());
+            } else {
+                this.setDeltaMovement(
+                        this.getDeltaMovement().x + dx * 0.025,
+                        this.getDeltaMovement().y,
+                        this.getDeltaMovement().z + dz * 0.025
+                );
+            }
 
             if (this.distanceToSqr(cavePos.getX(), cavePos.getY(), cavePos.getZ()) < 9) {
                 moveBehindTarget();
@@ -545,11 +592,20 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
             perpZ /= length;
         }
 
-        this.setDeltaMovement(
-                this.getDeltaMovement().x + perpX * 0.03,
-                this.getDeltaMovement().y,
-                this.getDeltaMovement().z + perpZ * 0.03
-        );
+        double moveSpeed = 0.1;
+        double newX = this.getX() + perpX * moveSpeed;
+        double newY = this.getY();
+        double newZ = this.getZ() + perpZ * moveSpeed;
+
+        if (canMoveToPosition(new BlockPos((int) Math.floor(newX), (int) Math.floor(newY), (int) Math.floor(newZ)))) {
+            this.moveTo(newX, newY, newZ, this.getYRot(), this.getXRot());
+        } else {
+            this.setDeltaMovement(
+                    this.getDeltaMovement().x + perpX * 0.03,
+                    this.getDeltaMovement().y,
+                    this.getDeltaMovement().z + perpZ * 0.03
+            );
+        }
     }
 
     private BlockPos findNearbyCave() {
@@ -605,23 +661,11 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
         if (this.entityData.get(DATA_ATTACK_COOLDOWN) > 0) return false;
         if (!this.onGround()) return false;
 
-        boolean hasCave = hasCaveBelow() || hasCaveNearby();
-
         if (getTarget() != null && getTarget().isAlive()) {
-            double distance = this.distanceTo(getTarget());
-
-            if (distance <= 15 && distance >= 3) {
-                if (hasCave) {
-                    return true;
-                }
-                BlockPos feetPos = this.blockPosition().below();
-                BlockState feetState = level().getBlockState(feetPos);
-                if (!feetState.is(Blocks.BEDROCK) && feetState.isSolid()) {
-                    return true;
-                }
-            }
             return false;
         }
+
+        boolean hasCave = hasCaveBelow() || hasCaveNearby();
 
         if (hasCave) {
             BlockPos cavePos = findNearestCaveEntrance();
@@ -707,7 +751,7 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
     private void exitUnderground() {
         isUnderground = false;
         isBurrowed = false;
-        undergroundTimer = UNDERGROUND_COOLDOWN;
+        undergroundTimer = 0;
         preferredCavePos = null;
 
         teleportToGround();
@@ -771,6 +815,27 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
         return null;
     }
 
+    // ==================== 头部转向限制 ====================
+
+    private void applyHeadTurnLimit() {
+        float currentYaw = this.getYRot();
+        
+        if (lastHeadYaw == 0.0f) {
+            lastHeadYaw = currentYaw;
+            return;
+        }
+        
+        float deltaYaw = Mth.wrapDegrees(currentYaw - lastHeadYaw);
+        
+        if (Math.abs(deltaYaw) > MAX_HEAD_TURN_ANGLE) {
+            float clampedYaw = lastHeadYaw + Math.signum(deltaYaw) * MAX_HEAD_TURN_ANGLE;
+            this.setYRot(clampedYaw);
+            lastHeadYaw = clampedYaw;
+        } else {
+            lastHeadYaw = currentYaw;
+        }
+    }
+
     // ==================== 身体弯曲系统 ====================
 
     private void updateHeadHistory() {
@@ -798,6 +863,7 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
         }
 
         applySegmentAngleConstraints();
+        preventSegmentOverlap();
         applyTailSway();
     }
 
@@ -849,6 +915,34 @@ public class CentipedeHead extends AbstractSegmentedHead implements GeoEntity, I
         if (Math.abs(deltaYaw) > MAX_SEGMENT_ANGLE) {
             float newYaw = prevYaw + Math.signum(deltaYaw) * MAX_SEGMENT_ANGLE;
             segment.setYRot(newYaw);
+        }
+    }
+    
+    private void preventSegmentOverlap() {
+        if (segments.isEmpty()) return;
+        
+        float headYaw = this.getYRot();
+        
+        for (int i = 0; i < segments.size(); i++) {
+            CentipedeJoint segment = segments.get(i);
+            float segmentYaw = segment.getYRot();
+            float deltaFromHead = Mth.wrapDegrees(segmentYaw - headYaw);
+            
+            float maxAllowedAngle = MAX_SEGMENT_ANGLE * (i + 1);
+            if (Math.abs(deltaFromHead) > maxAllowedAngle) {
+                float clampedYaw = headYaw + Math.signum(deltaFromHead) * maxAllowedAngle;
+                segment.setYRot(clampedYaw);
+            }
+            
+            float segmentAngleFromPrev = (i == 0) ? 
+                Mth.wrapDegrees(segment.getYRot() - headYaw) : 
+                Mth.wrapDegrees(segment.getYRot() - segments.get(i - 1).getYRot());
+            
+            if (Math.abs(segmentAngleFromPrev) > MAX_SEGMENT_ANGLE) {
+                float prevYaw = (i == 0) ? headYaw : segments.get(i - 1).getYRot();
+                float newYaw = prevYaw + Math.signum(segmentAngleFromPrev) * MAX_SEGMENT_ANGLE;
+                segment.setYRot(newYaw);
+            }
         }
     }
 

@@ -8,8 +8,5 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 public class CentipedeHeadRenderer extends GeoEntityRenderer<CentipedeHead> {
     public CentipedeHeadRenderer(EntityRendererProvider.Context context) {
         super(context, new CentipedeHeadModel());
-        this.withScale(3.0f);
-        // 修复：调整模型渲染偏移，让模型显示在碰撞箱中心
-        this.shadowRadius = 1.0f;
     }
 }

@@ -32,6 +32,12 @@ public abstract class AbstractSegmentedJoint extends Monster {
 
     // 平滑参数
     protected static final float POSITION_SMOOTHING = 0.6f;  // 位置平滑系数 (0.3-0.8)
+    
+    // 飞行台阶效果参数
+    protected static final float FLYING_STEP_HEIGHT = 0.35f;  // 每个节段的台阶高度
+    protected static final float GROUND_CHECK_DISTANCE = 2.0f; // 判断是否在地面的距离
+    
+    protected int segmentIndex = 0;
 
     public AbstractSegmentedJoint(EntityType<? extends Monster> type, Level level) {
         super(type, level);
@@ -83,6 +89,16 @@ public abstract class AbstractSegmentedJoint extends Monster {
                 targetPos.z + Math.cos(angle) * distance
         );
 
+        // 飞行台阶效果：当蜈蚣不在地面时，节段像台阶一样排列
+        if (!this.onGround() && (target instanceof LivingEntity && !((LivingEntity) target).onGround())) {
+            int index = getSegmentIndex();
+            baseDesiredPos = new Vec3(
+                    baseDesiredPos.x,
+                    targetPos.y - (index * FLYING_STEP_HEIGHT),
+                    baseDesiredPos.z
+            );
+        }
+
         // 对期望位置进行平滑处理，减少抖动
         Vec3 desiredPos;
         if (lastTargetPosition == Vec3.ZERO) {
@@ -129,6 +145,13 @@ public abstract class AbstractSegmentedJoint extends Monster {
 
         // 更新旋转，使节段朝向移动方向
         updateRotationFromMovement();
+    }
+    
+    protected int getSegmentIndex() {
+        if (previousEntity instanceof AbstractSegmentedJoint) {
+            return ((AbstractSegmentedJoint) previousEntity).getSegmentIndex() + 1;
+        }
+        return 1;
     }
 
     /**
