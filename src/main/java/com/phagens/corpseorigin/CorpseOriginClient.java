@@ -1,6 +1,7 @@
 package com.phagens.corpseorigin;
 
 import com.phagens.corpseorigin.GongFU.FaXiang.Geo.Renderer.FaxiangRenderer;
+import com.phagens.corpseorigin.GongFU.MenuTypeRegister;
 import com.phagens.corpseorigin.client.Renderer.block.QiXingGuanRenderer;
 import com.phagens.corpseorigin.client.Renderer.block.ZBRFleshRenderer;
 import com.phagens.corpseorigin.client.Renderer.entity.*;
@@ -44,6 +45,7 @@ public class CorpseOriginClient {
     static void onClientSetup(FMLClientSetupEvent event) {
         CorpseOrigin.LOGGER.info("HELLO FROM CLIENT SETUP");
         CorpseOrigin.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+
     }
 
     @SubscribeEvent
@@ -76,7 +78,7 @@ public class CorpseOriginClient {
         event.registerEntityRenderer(EntityRegistry.CENTIPEDE_HEAD.get(), CentipedeHeadRenderer::new);
         event.registerEntityRenderer(EntityRegistry.CENTIPEDE_JOINT.get(), CentipedeJointRenderer::new);
         
-        // 注册巨阙剑气渲染器
+
         event.registerEntityRenderer(EntityRegistry.JUQUE_BEAM.get(), JuQueBeamRenderer::new);
     }
 }
