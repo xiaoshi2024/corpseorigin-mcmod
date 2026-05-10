@@ -14,8 +14,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.openjdk.nashorn.internal.runtime.regexp.joni.ast.ConsAltNode;
+import software.bernie.geckolib.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class TechniqueSwapTableEntity extends BlockEntity implements Container {
+public class TechniqueSwapTableEntity extends BlockEntity implements Container, GeoAnimatable {
 
     private static final int INPUT_SLOT_COUNT = 6;
 
@@ -24,6 +28,7 @@ public class TechniqueSwapTableEntity extends BlockEntity implements Container {
     private static final int TOTAL_SLOTS = 7;
     /** 物品列表：存储所有槽位的物品，使用NonNullList保证不会为null */
     private NonNullList<ItemStack> items = NonNullList.withSize(TOTAL_SLOTS, ItemStack.EMPTY);
+    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     public TechniqueSwapTableEntity(BlockPos pos, BlockState blockState) {
         super(BlockEntityRegistry.TECHNIQUE_SWAP_TABLE.get(), pos, blockState);
@@ -114,6 +119,7 @@ public class TechniqueSwapTableEntity extends BlockEntity implements Container {
             itemStack.setCount(this.getMaxStackSize());
         }
         this.setChanged();
+
     }
 
     @Override
@@ -144,6 +150,11 @@ public class TechniqueSwapTableEntity extends BlockEntity implements Container {
         return slot >= 0 && slot < INPUT_SLOT_COUNT;
     }
 
+    @Override
+    public boolean canTakeItem(Container target, int slot, ItemStack stack) {
+        return true;
+    }
+
     public NonNullList<ItemStack> getItems() {
         return this.items;
     }
@@ -153,5 +164,19 @@ public class TechniqueSwapTableEntity extends BlockEntity implements Container {
     }
 
 
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllerRegistrar) {
+
+    }
+
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return cache;
+    }
+
+    @Override
+    public double getTick(Object o) {
+        return level != null ? level.getGameTime() : 0;
+    }
 
 }

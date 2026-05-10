@@ -19,12 +19,12 @@ public class TechniqueSwapTableScreen extends AbstractContainerScreen<TechniqueS
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "textures/gui/technique_swap_table.png");
 
-    private static final int RECIPE_AREA_X = 134;
-    private static final int RECIPE_AREA_Y = 17;
+    private static final int RECIPE_AREA_X = 83;
+    private static final int RECIPE_AREA_Y = 20;
     private static final int RECIPE_SLOT_SIZE = 18;
-    private static final int RECIPES_PER_ROW = 3;
-    private static final int RECIPE_AREA_WIDTH = RECIPES_PER_ROW * RECIPE_SLOT_SIZE;
-    private static final int RECIPE_AREA_HEIGHT = 54;
+    private static final int RECIPES_PER_ROW = 5;
+    private static final int RECIPE_AREA_WIDTH = 85;
+    private static final int RECIPE_AREA_HEIGHT = 60;
 
     public TechniqueSwapTableScreen(TechniqueSwapTableMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -34,15 +34,18 @@ public class TechniqueSwapTableScreen extends AbstractContainerScreen<TechniqueS
     }
 
     @Override
-    protected void init() {
-        this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
+    protected void containerTick() {
+        super.containerTick();
+        this.menu.checkRecipeUpdate();
+    }
 
-        // 添加合成按钮
-        Button craftButton = Button.builder(
-                Component.literal("合成"),
-                button -> this.menu.craftSelectedItem()
-        ).bounds(this.leftPos + 134, this.topPos + 75, 40, 20).build();
-        this.addRenderableWidget(craftButton);
+    @Override
+    protected void init() {
+        super.init();
+
+        this.leftPos = (this.width - this.imageWidth) / 2;
+        this.topPos = (this.height - this.imageHeight) / 2;
+        this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
     }
 
 
@@ -52,13 +55,11 @@ public class TechniqueSwapTableScreen extends AbstractContainerScreen<TechniqueS
         int x = (this.width - this.imageWidth) / 2;
         int y = (this.height - this.imageHeight) / 2;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        // 渲染配方选择区域背景
         guiGraphics.fill(
-                this.leftPos + RECIPE_AREA_X - 2,
-                this.topPos + RECIPE_AREA_Y - 2,
-                this.leftPos + RECIPE_AREA_X + RECIPE_AREA_WIDTH + 2,
-                this.topPos + RECIPE_AREA_Y + RECIPE_AREA_HEIGHT + 2,
+                this.leftPos + 81,
+                this.topPos + 18,
+                this.leftPos + 166,
+                this.topPos + 80,
                 0x66000000
         );    }
     /**
@@ -70,11 +71,8 @@ public class TechniqueSwapTableScreen extends AbstractContainerScreen<TechniqueS
      */
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
-
         // 绘制配方列表标签
-        guiGraphics.drawString(this.font, "可选配方:", 134, 7, 4210752, false);
+        guiGraphics.drawString(this.font, "可选配方:", 81, 10, 4210752, false);
     }
 
     @Override
@@ -87,11 +85,7 @@ public class TechniqueSwapTableScreen extends AbstractContainerScreen<TechniqueS
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);}
     /**
-     * 渲染配方槽位（自定义方法）
-     * 作用：绘制所有可用配方的物品图标和选中状态
-     * 触发时机：render()方法内部调用
-     * 逻辑：遍历配方列表→计算每个槽位坐标→绘制背景→绘制物品→鼠标悬停显示提示
-     * 样式：选中=蓝色高亮+白色边框，未选中=灰色背景+灰色边框
+     * 渲染配方槽位
      */
     private void renderRecipeSlots(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         List<ItemStack> recipes = this.menu.getAvailableRecipes();

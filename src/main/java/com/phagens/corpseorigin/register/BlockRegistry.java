@@ -22,5 +22,5 @@ public class BlockRegistry {
             AlienatedFragmentBlock::new);
 
     public static final DeferredBlock<TechniqueSwapTableBlock> TECHNIQUE_SWAP_TABLE = Blocks.register("technique_swap_table",
-            () -> new TechniqueSwapTableBlock(Block.Properties.of()));
+            () -> new TechniqueSwapTableBlock(Block.Properties.of().strength(3.0f,3)));
 }

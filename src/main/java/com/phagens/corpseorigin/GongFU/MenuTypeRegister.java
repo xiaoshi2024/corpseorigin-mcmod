@@ -3,6 +3,7 @@ package com.phagens.corpseorigin.GongFU;
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.GongFU.Sceen.GongFuMenu;
 import com.phagens.corpseorigin.client.gui.TechniqueSwapTable.TechniqueSwapTableMenu;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
@@ -27,13 +28,18 @@ public class MenuTypeRegister {
      */
     public static final DeferredHolder<MenuType<?>, MenuType<TechniqueSwapTableMenu>> TECHNIQUE_SWAP_TABLE_MENU =
             MENUS.register("technique_swap_table_menu", () -> new MenuType<>(
-                    (IContainerFactory) (containerId, inventory, friendlyByteBuf) -> {
-                        // 从网络缓冲区读取 BlockPos
-                        var pos = friendlyByteBuf.readBlockPos();
-                        // 从客户端世界获取 BlockEntity
-                        if (inventory.player.level().getBlockEntity(pos) instanceof com.phagens.corpseorigin.block.entity.TechniqueSwapTableEntity entity) {
-                            return new com.phagens.corpseorigin.client.gui.TechniqueSwapTable.TechniqueSwapTableMenu(containerId, inventory, entity);
+                    (IContainerFactory<TechniqueSwapTableMenu>) (containerId, inventory, friendlyByteBuf) -> {
+                        if (friendlyByteBuf == null) {
+                            CorpseOrigin.LOGGER.error("功法兑换台Menu创建失败：网络缓冲区为空");
+                            return null;
                         }
+
+                        BlockPos pos = friendlyByteBuf.readBlockPos();
+                        if (inventory.player.level().getBlockEntity(pos) instanceof com.phagens.corpseorigin.block.entity.TechniqueSwapTableEntity entity) {
+                            return new TechniqueSwapTableMenu(containerId, inventory, entity);
+                        }
+
+                        CorpseOrigin.LOGGER.error("功法兑换台Menu创建失败：找不到BlockEntity at {}", pos);
                         return null;
                     },
                     FeatureFlags.DEFAULT_FLAGS

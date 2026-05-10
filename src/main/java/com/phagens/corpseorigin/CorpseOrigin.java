@@ -63,6 +63,7 @@ public class CorpseOrigin {
                 output.accept(QI_XING_GUAN_ITEM.get());
                 output.accept(Moditems.ZBR_FLESH_ITEM.get());
                 output.accept(Moditems.ALIENATED_FRAGMENT_ITEM.get());
+                output.accept(Moditems.TECHNIQUE_SWAP_TABLE_ITEM.get());
                 output.accept(Moditems.BYWATER_BUCKET.get());
                 output.accept(Moditems.BYWATER_BOTTLE.get());
                 output.accept(Moditems.S_AGENT.get());
@@ -177,6 +178,7 @@ public class CorpseOrigin {
         // 注册成就触发器
         CriterionTriggerRegister.TRIGGER_TYPES.register(modEventBus);
 
+
         Moditems.ITEMS.register(modEventBus);
 
         // 先注册实体，因为方块可能依赖实体
@@ -257,7 +259,9 @@ public class CorpseOrigin {
     }
 
     private static void addReloadListeners(AddReloadListenerEvent event) {
+
         GongFaJsonLoader.register(event);
+        event.addListener(com.phagens.corpseorigin.Recipe.TechniqueSwapRecipeManager.getInstance());
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {

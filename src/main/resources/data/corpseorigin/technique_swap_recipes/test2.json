@@ -1,0 +1,16 @@
+
+{
+  "inputs": [
+    {"item": "minecraft:diamond", "count": 1},
+    {"item": "minecraft:emerald", "count": 1},
+    {"item": "minecraft:emerald", "count": 1},
+    {"item": "minecraft:emerald", "count": 1},
+    {"item": "minecraft:emerald", "count": 1},
+    {"item": "minecraft:emerald", "count": 1}
+  ],
+  "output": {
+    "item": "minecraft:emerald",
+    "count": 50
+  },
+  "type": "normal"
+}

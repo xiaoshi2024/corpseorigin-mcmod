@@ -1,0 +1,14 @@
+{
+  "inputs": [
+    {"item": "minecraft:diamond", "count": 1},
+    {"item": "minecraft:emerald", "count": 1},
+    {"item": "minecraft:emerald", "count": 1},
+    {"item": "minecraft:emerald", "count": 1},
+    {"item": "minecraft:emerald", "count": 1},
+    {"item": "minecraft:emerald", "count": 1}
+  ],
+  "output": {
+    "gong_fa_data": "SHUI_QIU_REN_YI_NENG"
+  },
+  "type": "gong_fa"
+}

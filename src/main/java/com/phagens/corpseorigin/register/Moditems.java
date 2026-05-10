@@ -32,6 +32,9 @@ public class Moditems {
     public static final DeferredItem<BlockItem> ZBR_FLESH_ITEM = ITEMS.register("zbr_flesh_item",
             () -> new BlockItem(BlockRegistry.ZBR_FLESH.get(), new Item.Properties()));
 
+    public static final DeferredItem<BlockItem> TECHNIQUE_SWAP_TABLE_ITEM = ITEMS.register("technique_swap_table",
+            () -> new BlockItem(BlockRegistry.TECHNIQUE_SWAP_TABLE.get(), new Item.Properties()));
+
     // 异化碎块物品
     public static final DeferredItem<BlockItem> ALIENATED_FRAGMENT_ITEM = ITEMS.register("alienated_fragment_item",
             () -> new BlockItem(BlockRegistry.ALIENATED_FRAGMENT.get(), new Item.Properties()));

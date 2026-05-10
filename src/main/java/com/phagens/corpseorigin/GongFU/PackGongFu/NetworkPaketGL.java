@@ -3,10 +3,9 @@ package com.phagens.corpseorigin.GongFU.PackGongFu;
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.GongFU.PackGongFu.Paket.OpenGongFuMenuPacket;
 import com.phagens.corpseorigin.GongFU.Sceen.GongFuMenu;
-import com.phagens.corpseorigin.network.ActivateSkillPacket;
-import com.phagens.corpseorigin.network.SkillUnlockPacket;
-import com.phagens.corpseorigin.network.SyncSkillDataPacket;
-import com.phagens.corpseorigin.network.UnlockSkillPacket;
+
+import com.phagens.corpseorigin.network.*;
+import com.phagens.corpseorigin.network.TechniqueSwapCraftPacket;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
@@ -86,7 +85,11 @@ public class NetworkPaketGL {
                 com.phagens.corpseorigin.network.JuQueBeamPacket::handle
         );
 
-        CorpseOrigin.LOGGER.info("NetworkPaketGL 网络包注册完成，共注册了 7 个包");
+        registrar.playToServer(
+                com.phagens.corpseorigin.network.TechniqueSwapCraftPacket.TYPE,
+                com.phagens.corpseorigin.network.TechniqueSwapCraftPacket.STREAM_CODEC,
+                com.phagens.corpseorigin.network.TechniqueSwapCraftPacket::handle
+        );
     }
 
     private static void handleOpenGongFuMenu(OpenGongFuMenuPacket packet, IPayloadContext context) {

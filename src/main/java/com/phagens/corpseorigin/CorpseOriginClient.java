@@ -3,6 +3,7 @@ package com.phagens.corpseorigin;
 import com.phagens.corpseorigin.GongFU.FaXiang.Geo.Renderer.FaxiangRenderer;
 import com.phagens.corpseorigin.GongFU.MenuTypeRegister;
 import com.phagens.corpseorigin.client.Renderer.block.QiXingGuanRenderer;
+import com.phagens.corpseorigin.client.Renderer.block.TechniqueSwapTableRenderer;
 import com.phagens.corpseorigin.client.Renderer.block.ZBRFleshRenderer;
 import com.phagens.corpseorigin.client.Renderer.entity.*;
 import com.phagens.corpseorigin.entity.AlienatedSporeEntity;
@@ -52,6 +53,8 @@ public class CorpseOriginClient {
     public static void registerRenderers(final EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(BlockEntityRegistry.QI_XING_GUANS.get(), QiXingGuanRenderer::new);
         event.registerBlockEntityRenderer(BlockEntityRegistry.ZBR_FLESH.get(), ZBRFleshRenderer::new);
+        event.registerBlockEntityRenderer(BlockEntityRegistry.TECHNIQUE_SWAP_TABLE.get(), TechniqueSwapTableRenderer::new);
+
         event.registerEntityRenderer((EntityType<com.phagens.corpseorigin.entity.ZbrFishEntity>) EntityRegistry.ZBR_FISH.get(), ZbrFishRenderer::new);
         event.registerEntityRenderer((EntityType<com.phagens.corpseorigin.entity.LowerLevelZbEntity>) EntityRegistry.LOWER_LEVEL_ZB.get(), LowerLevelZbRenderer::new);
         event.registerEntityRenderer((EntityType<com.phagens.corpseorigin.entity.LongyouEntity>) EntityRegistry.LONGYOU.get(), LongyouRenderer::new);

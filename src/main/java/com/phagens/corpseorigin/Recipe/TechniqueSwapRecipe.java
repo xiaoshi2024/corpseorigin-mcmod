@@ -19,6 +19,7 @@ import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 功法兑换台配方数据类
@@ -31,12 +32,73 @@ public class TechniqueSwapRecipe {
 
     private final ResourceLocation id;
     private final List<Ingredient> inputs;
+    private final List<GongFaInput> gongFaInputs;
     private final ItemStack output;
     private final OutputType outputType;
-    private final String gongFaTypeId;
-    private final int gongFaRarity;
-    private final String gongFaCeng;
+    private final GongFaOutput gongFaOutput;
+    public static class GongFaOutput {
+        private final String typeId;
+        private final GongFaData outputData;
 
+        public GongFaOutput(String typeId, GongFaData outputData) {
+            this.typeId = typeId;
+            this.outputData = outputData;
+        }
+
+        public ItemStack createOutputItem() {
+            try {
+                if (outputData == null) {
+                    CorpseOrigin.LOGGER.error("无法创建功法物品：功法数据为空 {}", typeId);
+                    return ItemStack.EMPTY;
+                }
+
+                BaseGongFaItem baseItem = (BaseGongFaItem) com.phagens.corpseorigin.register.Moditems.BASE_GONG_FA.get();
+                ItemStack stack = new ItemStack(baseItem);
+                baseItem.setDataToItem(stack, outputData);
+
+                CorpseOrigin.LOGGER.info("创建功法物品：{} (稀有度:{}, 层数:{})",
+                        outputData.getName(), outputData.getRarity(), outputData.getCeng());
+
+                return stack;
+            } catch (Exception e) {
+                CorpseOrigin.LOGGER.error("创建功法物品失败", e);
+                return ItemStack.EMPTY;
+            }
+        }
+
+        public String getTypeId() { return typeId; }
+        public GongFaData getOutputData() { return outputData; }
+    }
+    public static class GongFaInput {
+        private final String typeId;
+        private final GongFaData templateData;
+
+        public GongFaInput(String typeId, GongFaData templateData) {
+            this.typeId = typeId;
+            this.templateData = templateData;
+        }
+
+        public boolean matches(ItemStack stack) {
+            if (stack.isEmpty() || !(stack.getItem() instanceof BaseGongFaItem)) {
+                return false;
+            }
+
+            BaseGongFaItem gongFaItem = (BaseGongFaItem) stack.getItem();
+            GongFaData data = gongFaItem.getDataFromItem(stack);
+
+            if (data == null || templateData == null) {
+                return false;
+            }
+
+            String itemTypeId = data.getTypeId();
+            String templateTypeId = templateData.getTypeId();
+
+            return itemTypeId != null && templateTypeId != null && itemTypeId.equalsIgnoreCase(templateTypeId);
+        }
+
+        public String getTypeId() { return typeId; }
+        public GongFaData getTemplateData() { return templateData; }
+    }
     /**
      * 输出类型枚举
      */
@@ -44,61 +106,26 @@ public class TechniqueSwapRecipe {
         NORMAL,      // 普通物品
         GONG_FA      // 功法物品
     }
-    
+
     public TechniqueSwapRecipe(ResourceLocation id, List<Ingredient> inputs, ItemStack output) {
         this.id = id;
         this.inputs = inputs;
+        this.gongFaInputs = new ArrayList<>();
         this.output = output;
         this.outputType = OutputType.NORMAL;
-        this.gongFaTypeId = null;
-        this.gongFaRarity = 0;
-        this.gongFaCeng = null;
+        this.gongFaOutput = null;
     }
 
-    public TechniqueSwapRecipe(ResourceLocation id, List<Ingredient> inputs,
-                               String gongFaTypeId, int gongFaRarity, String gongFaCeng) {
+    public TechniqueSwapRecipe(ResourceLocation id, List<Ingredient> inputs, List<GongFaInput> gongFaInputs,
+                               GongFaOutput gongFaOutput) {
         this.id = id;
         this.inputs = inputs;
+        this.gongFaInputs = gongFaInputs != null ? gongFaInputs : new ArrayList<>();
         this.outputType = OutputType.GONG_FA;
-        this.gongFaTypeId = gongFaTypeId;
-        this.gongFaRarity = gongFaRarity;
-        this.gongFaCeng = gongFaCeng;
-
-        // 创建功法物品产出
-        this.output = createGongFaOutput(gongFaTypeId, gongFaRarity, gongFaCeng);
+        this.gongFaOutput = gongFaOutput;
+        this.output = this.gongFaOutput != null ? this.gongFaOutput.createOutputItem() : ItemStack.EMPTY;
     }
 
-    /**
-     * 创建功法物品产出
-     */
-    private ItemStack createGongFaOutput(String typeId, int rarity, String ceng) {
-        try {
-            // 从JSON加载器获取功法数据
-            GongFaData data = GongFaJsonLoader.getGongFaData(typeId, rarity, ceng);
-
-            if (data == null) {
-                CorpseOrigin.LOGGER.error("无法创建功法物品：找不到功法数据 {}_{}_{}", typeId, rarity, ceng);
-                return ItemStack.EMPTY;
-            }
-
-            // 获取功法模板物品
-            BaseGongFaItem baseItem = (BaseGongFaItem) com.phagens.corpseorigin.register.Moditems.BASE_GONG_FA.get();
-
-            // 创建物品堆栈
-            ItemStack stack = new ItemStack(baseItem);
-
-            // 将功法数据写入物品NBT
-            baseItem.setDataToItem(stack, data);
-
-            CorpseOrigin.LOGGER.info("创建功法物品：{} (稀有度:{}, 层数:{})",
-                    data.getName(), rarity, ceng);
-
-            return stack;
-        } catch (Exception e) {
-            CorpseOrigin.LOGGER.error("创建功法物品失败", e);
-            return ItemStack.EMPTY;
-        }
-    }
     
     /**
      * 检查材料是否匹配
@@ -107,24 +134,40 @@ public class TechniqueSwapRecipe {
      */
     public boolean matches(ItemStack[] inputItems) {
         if (inputItems.length != 6) return false;
-        // 创建输入槽的副本，用于消耗匹配
+
         ItemStack[] remaining = new ItemStack[6];
         for (int i = 0; i < 6; i++) {
             remaining[i] = inputItems[i].copy();
         }
-        // 尝试匹配每个材料
+
         for (Ingredient ingredient : inputs) {
+            if (ingredient == Ingredient.EMPTY) continue;
+
             boolean matched = false;
             for (int i = 0; i < 6; i++) {
                 if (!remaining[i].isEmpty() && ingredient.test(remaining[i])) {
-                    remaining[i].shrink(1); // 消耗一个材料
+                    remaining[i].shrink(1);
                     matched = true;
                     break;
                 }
             }
-            if (!matched) return false; // 有材料不匹配
+            if (!matched) return false;
         }
-        
+
+        for (GongFaInput gongFaInput : gongFaInputs) {
+            boolean matched = false;
+            for (int i = 0; i < 6; i++) {
+                if (remaining[i].isEmpty()) continue;
+
+                if (gongFaInput.matches(remaining[i])) {
+                    remaining[i].shrink(1);
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) return false;
+        }
+
         return true;
     }
     
@@ -152,15 +195,23 @@ public class TechniqueSwapRecipe {
                 }
             }
         }
+
+        for (GongFaInput gongFaInput : gongFaInputs) {
+            for (int i = 0; i < 6; i++) {
+                if (!remaining[i].isEmpty() && gongFaInput.matches(remaining[i])) {
+                    inputItems[i].shrink(1);
+                    break;
+                }
+            }
+        }
         
         return output.copy();
     }
 
     public ResourceLocation getId() { return id; }
     public List<Ingredient> getInputs() { return inputs; }
+    public List<GongFaInput> getGongFaInputs() { return gongFaInputs; }
     public ItemStack getOutput() { return output; }
+    public GongFaOutput getGongFaOutput() { return gongFaOutput; }
     public OutputType getOutputType() { return outputType; }
-    public String getGongFaTypeId() { return gongFaTypeId; }
-    public int getGongFaRarity() { return gongFaRarity; }
-    public String getGongFaCeng() { return gongFaCeng; }
 }

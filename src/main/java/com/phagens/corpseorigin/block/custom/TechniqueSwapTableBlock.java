@@ -8,7 +8,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -71,7 +73,7 @@ public class TechniqueSwapTableBlock extends BaseEntityBlock {
                 MenuProvider menuProvider = this.createMenuProvider(level, pos);
                 if (menuProvider != null && player instanceof ServerPlayer serverPlayer) {
                     // 打开GUI界面
-                    serverPlayer.openMenu(menuProvider);
+                    serverPlayer.openMenu(menuProvider, buf -> buf.writeBlockPos(pos));
                 }
             }
         }
@@ -83,11 +85,17 @@ public class TechniqueSwapTableBlock extends BaseEntityBlock {
     public MenuProvider createMenuProvider(Level level, BlockPos pos) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof TechniqueSwapTableEntity tableEntity) {
-            return new SimpleMenuProvider(
-                    (containerId, inventory, player) ->
-                            new TechniqueSwapTableMenu(containerId, inventory, tableEntity),
-                    tableEntity.getDisplayName()
-            );
+            return new MenuProvider() {
+                @Override
+                public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player player) {
+                    return new TechniqueSwapTableMenu(containerId, inventory, tableEntity);
+                }
+
+                @Override
+                public net.minecraft.network.chat.Component getDisplayName() {
+                    return tableEntity.getDisplayName();
+                }
+            };
         }
         return null;
     }
