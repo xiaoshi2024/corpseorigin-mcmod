@@ -2,6 +2,7 @@ package com.phagens.corpseorigin.client.Renderer.entity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import com.phagens.corpseorigin.client.Models.entity.LowerLevelZbModel;
 import com.phagens.corpseorigin.client.skin.ZbSkinState;
 import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
@@ -10,10 +11,15 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 import software.bernie.geckolib.cache.object.BakedGeoModel;
+import software.bernie.geckolib.cache.object.GeoBone;
 import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
 import software.bernie.geckolib.renderer.layer.GeoRenderLayer;
 
+import javax.annotation.Nullable;
 import java.util.UUID;
 
 import static com.phagens.corpseorigin.CorpseOrigin.MODID;
@@ -28,6 +34,38 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity> 
     public LowerLevelZbRenderer(EntityRendererProvider.Context context) {
         super(context, new LowerLevelZbModel());
         this.addRenderLayer(new PlayerSkinLayer(this));
+
+        // 添加手持物品渲染层
+        this.addRenderLayer(new BlockAndItemGeoLayer<>(this) {
+            @Nullable
+            @Override
+            protected ItemStack getStackForBone(GeoBone bone, LowerLevelZbEntity entity) {
+                // 绑定右手骨骼
+                if ("rightItem".equals(bone.getName())) {
+                    return entity.getMainHandItem();
+                }
+                // 绑定左手骨骼（如果模型有 leftItem）
+                if ("leftItem".equals(bone.getName())) {
+                    return entity.getOffhandItem();
+                }
+                return null;
+            }
+
+            @Override
+            protected ItemDisplayContext getTransformTypeForStack(GeoBone bone, ItemStack stack, LowerLevelZbEntity entity) {
+                // 设置第三人称手持渲染模式
+                return ItemDisplayContext.THIRD_PERSON_RIGHT_HAND;
+            }
+
+            @Override
+            protected void renderStackForBone(PoseStack poseStack, GeoBone bone, ItemStack stack, LowerLevelZbEntity entity,
+                                              MultiBufferSource bufferSource, float partialTick, int packedLight, int packedOverlay) {
+                // 微调物品位置和旋转（根据你的模型调整数值）
+                poseStack.translate(0, 0.1, 0);
+                poseStack.mulPose(Axis.XP.rotationDegrees(-90));
+                super.renderStackForBone(poseStack, bone, stack, entity, bufferSource, partialTick, packedLight, packedOverlay);
+            }
+        });
     }
 
     @Override
