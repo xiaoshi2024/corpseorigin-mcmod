@@ -11,6 +11,7 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -20,6 +21,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 public class TechniqueSwapTableBlock extends BaseEntityBlock {
@@ -27,8 +31,12 @@ public class TechniqueSwapTableBlock extends BaseEntityBlock {
     public static final MapCodec<TechniqueSwapTableBlock> CODEC = simpleCodec(TechniqueSwapTableBlock::new);
 
     public TechniqueSwapTableBlock(Properties properties) {
-        super(Properties.of().strength(2.5F, 5.0F).sound(SoundType.WOOD).noOcclusion());
+        super(Properties.of().strength(25.0F, 1200.0F).sound(SoundType.WOOD).noOcclusion());
     }
+
+
+
+
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;

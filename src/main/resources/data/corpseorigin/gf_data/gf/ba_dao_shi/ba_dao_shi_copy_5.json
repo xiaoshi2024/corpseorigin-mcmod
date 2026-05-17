@@ -1,0 +1,16 @@
+{
+  "type_id": "BA_DAO_SHI",
+  "type": "gf",
+  "name": "霸刀势",
+  "rarity": 4,
+  "ceng": "copy_5",
+  "cooldown": 100,
+  "icon": "corpseorigin:textures/other_skills/ba_dao_shi.png",
+  "attributes": {
+    "attack_damage": 39.6,
+    "max_health": 45.0
+  },
+  "skills": [
+    "ba_dao_shi"
+  ]
+}

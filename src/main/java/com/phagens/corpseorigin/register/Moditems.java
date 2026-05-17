@@ -2,8 +2,10 @@ package com.phagens.corpseorigin.register;
 
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.Item.*;
+import com.phagens.corpseorigin.Item.GF.GongFaBaseItem;
 import com.phagens.corpseorigin.Item.Organic.DrMuEyeItem;
 import com.phagens.corpseorigin.Item.Organic.OrdinaryZbEyeItem;
+import com.phagens.corpseorigin.Item.YN.Baseitem;
 import com.phagens.corpseorigin.Item.YaoJi.Sagent;
 import com.phagens.corpseorigin.Item.zbritem.ZbWormitem;
 import com.phagens.corpseorigin.Item.tier.Modtiers;
@@ -133,6 +135,22 @@ public class Moditems {
     // 吹风机 - 尸兄模组第一个主题物品，丢进水里会放电，右键使用给幸运buff
     public static final DeferredItem<Item> HAIR_DRYER = ITEMS.register("hair_dryer",
             () -> new HairDryerItem(new Item.Properties().durability(90)));
+
+    //功法体系 or 异能 or 血脉基础
+    public static final DeferredItem<Item> GF_CY_REN = ITEMS.register("gf_cy_ren", () -> new GongFaBaseItem(new Item.Properties(), GongFaBaseItem.GongFaRarity.MORTAL));
+    public static final DeferredItem<Item> GF_CY_DI = ITEMS.register("gf_cy_di", () -> new GongFaBaseItem(new Item.Properties(), GongFaBaseItem.GongFaRarity.EARTH));
+    public static final DeferredItem<Item> GF_CY_TIAN = ITEMS.register("gf_cy_tian", () -> new GongFaBaseItem(new Item.Properties(), GongFaBaseItem.GongFaRarity.HEAVEN));
+    public static final DeferredItem<Item> GF_CY_SHEN = ITEMS.register("gf_cy_shen", () -> new GongFaBaseItem(new Item.Properties(), GongFaBaseItem.GongFaRarity.DIVINE));
+    public static final DeferredItem<Item> GF_CY_CHAOSHENG= ITEMS.register("gf_cy_chaoshen", () -> new GongFaBaseItem(new Item.Properties(), GongFaBaseItem.GongFaRarity.TRANSCENDENT));
+
+    public static final DeferredItem<Item> YNS_C= ITEMS.register("yns_c", () -> new Baseitem(new Item.Properties(), Baseitem.AbilityLevel.C_RANK));
+    public static final DeferredItem<Item> YNS_B= ITEMS.register("yns_b", () ->  new Baseitem(new Item.Properties(), Baseitem.AbilityLevel.B_RANK));
+    public static final DeferredItem<Item> YNS_A= ITEMS.register("yns_a", () ->  new Baseitem(new Item.Properties(), Baseitem.AbilityLevel.A_RANK));
+    public static final DeferredItem<Item> YNS_S= ITEMS.register("yns_s", () ->  new Baseitem(new Item.Properties(), Baseitem.AbilityLevel.S_RANK));
+    public static final DeferredItem<Item> YNS_SS= ITEMS.register("yns_ss", () ->  new Baseitem(new Item.Properties(), Baseitem.AbilityLevel.SS_RANK));
+    public static final DeferredItem<Item> YNS_SSS= ITEMS.register("yns_sss", () ->  new Baseitem(new Item.Properties(), Baseitem.AbilityLevel.SSS_RANK));
+
+
 }
 
 

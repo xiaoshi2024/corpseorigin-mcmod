@@ -113,6 +113,17 @@ public class CorpseOrigin {
                     .displayItems((parameters, output) -> {
                         // 添加所有功法物品，同样使用 try-catch
                         addGongFaItemsToCreativeTab(output);
+                        output.accept(Moditems.GF_CY_REN.get());
+                        output.accept(Moditems.GF_CY_DI.get());
+                        output.accept(Moditems.GF_CY_TIAN.get());
+                        output.accept(Moditems.GF_CY_SHEN.get());
+                        output.accept(Moditems.GF_CY_CHAOSHENG.get());
+                        output.accept(Moditems.YNS_SSS.get());
+                        output.accept(Moditems.YNS_SS.get());
+                        output.accept(Moditems.YNS_S.get());
+                        output.accept(Moditems.YNS_A.get());
+                        output.accept(Moditems.YNS_B.get());
+                        output.accept(Moditems.YNS_C.get());
                     })
                     .build());
 

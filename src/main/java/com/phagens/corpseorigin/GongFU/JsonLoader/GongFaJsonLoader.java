@@ -44,7 +44,7 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
 
         if (resourceLocationJsonElementMap.isEmpty()) {
             CorpseOrigin.LOGGER.error("⚠ 没有找到任何功法JSON文件！");
-            CorpseOrigin.LOGGER.error("⚠ 请确保 JSON 文件位于: data/corpseorigin/gf_data/");
+            CorpseOrigin.LOGGER.error("⚠ 请确保 JSON 文件位于: data/corpseorigin/gf_data/或者子目录下");
             CorpseOrigin.LOGGER.error("⚠ 文件名必须以 .json 结尾");
         }
         gongFaDataMap.clear();

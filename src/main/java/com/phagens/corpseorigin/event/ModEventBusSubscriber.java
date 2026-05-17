@@ -24,6 +24,9 @@
 package com.phagens.corpseorigin.event;
 
 import com.phagens.corpseorigin.CorpseOrigin;
+import com.phagens.corpseorigin.Datagen.ModChineseLanguageProvider;
+import com.phagens.corpseorigin.Datagen.ModEnglishLanguageProvider;
+import com.phagens.corpseorigin.Datagen.ModItemModelProvider;
 import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
 import com.phagens.corpseorigin.data.CuriosDataProvider;
 import com.phagens.corpseorigin.entity.Animals.CocoPenguinEntity;
@@ -91,5 +94,12 @@ public class ModEventBusSubscriber {
     @SubscribeEvent
     public static void gatherData(GatherDataEvent event) {
         CuriosDataProvider.gatherData(event);
+        var generator = event.getGenerator();
+        var packOutput = generator.getPackOutput();
+        var existingFileHelper = event.getExistingFileHelper();
+
+        generator.addProvider(event.includeClient(), new ModItemModelProvider(packOutput, existingFileHelper));
+        generator.addProvider(event.includeClient(), new ModChineseLanguageProvider(packOutput));
+        generator.addProvider(event.includeClient(), new ModEnglishLanguageProvider(packOutput));
     }
 }
