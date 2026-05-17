@@ -1,5 +1,6 @@
 package com.phagens.corpseorigin.register;
 
+import com.phagens.corpseorigin.GongFU.Domain.DomainEntity;
 import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
 import com.phagens.corpseorigin.client.skin.ZbSkinCache;
 import com.phagens.corpseorigin.entity.*;
@@ -51,6 +52,13 @@ public class EntityRegistry {
                     .clientTrackingRange(64)
                     .updateInterval(1)
                     .build("faxiang"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<DomainEntity>> DOMAIN = ENTITIES.register("domain",
+            () -> EntityType.Builder.<DomainEntity>of(DomainEntity::new, MobCategory.CREATURE)
+                    .sized(0.01F, 0.01F) // 极小尺寸（隐形）
+                    .clientTrackingRange(64)
+                    .updateInterval(1)
+                    .build("domain"));
 
     // 开胃奶NPC
     public static final DeferredHolder<EntityType<?>, EntityType<KaiWeiNaiEntity>> KAIWEINAI = ENTITIES.register("kaiweinai",

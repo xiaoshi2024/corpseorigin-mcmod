@@ -27,6 +27,7 @@ import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.Datagen.ModChineseLanguageProvider;
 import com.phagens.corpseorigin.Datagen.ModEnglishLanguageProvider;
 import com.phagens.corpseorigin.Datagen.ModItemModelProvider;
+import com.phagens.corpseorigin.GongFU.Domain.DomainEntity;
 import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
 import com.phagens.corpseorigin.data.CuriosDataProvider;
 import com.phagens.corpseorigin.entity.Animals.CocoPenguinEntity;
@@ -89,6 +90,8 @@ public class ModEventBusSubscriber {
         // 注册蜈蚣节段的属性
         event.put(EntityRegistry.CENTIPEDE_JOINT.get(), CentipedeJoint.createAttributes().build());
 
+        //注册领域
+        event.put(EntityRegistry.DOMAIN.get(), DomainEntity.createAttributes().build());
     }
 
     @SubscribeEvent

@@ -7,10 +7,10 @@
   "cooldown": 100,
   "icon": "corpseorigin:textures/other_skills/ba_dao_shi.png",
   "attributes": {
-    "attack_damage": 26.4,
+    "attack_damage": 22.0,
     "max_health": 30.0
   },
   "skills": [
-    "ba_dao_shi"
+    "霸刀势"
   ]
 }

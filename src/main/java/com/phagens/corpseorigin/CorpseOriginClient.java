@@ -1,5 +1,6 @@
 package com.phagens.corpseorigin;
 
+import com.phagens.corpseorigin.GongFU.Domain.DomainRenderer;
 import com.phagens.corpseorigin.GongFU.FaXiang.Geo.Renderer.FaxiangRenderer;
 import com.phagens.corpseorigin.GongFU.MenuTypeRegister;
 import com.phagens.corpseorigin.client.Renderer.block.QiXingGuanRenderer;
@@ -76,6 +77,9 @@ public class CorpseOriginClient {
         if (com.phagens.corpseorigin.entity.mca.McaZombieEntity.isMcaAvailable()) {
             event.registerEntityRenderer(EntityRegistry.MCA_ZOMBIE.get(), McaZombieRenderer::new);
         }
+
+        // ⭐ 注册领域实体渲染器（完全隐形）
+        event.registerEntityRenderer(EntityRegistry.DOMAIN.get(), DomainRenderer::new);
 
         // 注册蜈蚣实体渲染器（GeckoLib）
         event.registerEntityRenderer(EntityRegistry.CENTIPEDE_HEAD.get(), CentipedeHeadRenderer::new);

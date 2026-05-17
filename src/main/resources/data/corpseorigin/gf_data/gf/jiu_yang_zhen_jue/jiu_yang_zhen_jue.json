@@ -1,0 +1,16 @@
+{
+  "type_id": "JIU_YANG_ZHEN_JUE",
+  "type": "gf",
+  "name": "九阳真决",
+  "rarity": 3,
+  "ceng": "copy_1",
+  "cooldown": 300,
+  "attributes": {
+    "attack_damage": 12.0,
+    "max_health": 20.0,
+    "armor": 4.0
+  },
+  "skills": [
+    "九阳焚野域"
+  ]
+}
