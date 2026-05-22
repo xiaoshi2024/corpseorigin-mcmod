@@ -60,6 +60,10 @@ public class BaseGongFaItem extends Item {
             String type = data.getType();
             String cengPrefix = getCengPrefix(type);
             String attrPrefix = getAttributePrefix(type);
+            GongFaCategory category = GongFaTypeMapper.getCategoryForType(type);
+            tooltipComponents.add(Component.literal("类别：")
+                    .append(Component.literal(category.getDisplayName().getString())
+                            .withStyle(style -> style.withColor(category.getColor()))));
 
             tooltipComponents.add(Component.literal(getRarityColor(data.getRarity()) +
                     "品级：" + getRarityName(data.getRarity())));
@@ -77,6 +81,21 @@ public class BaseGongFaItem extends Item {
                         tooltipComponents.add(Component.literal("§7• " + skill)));
             }
         }
+    }
+
+    public GongFaCategory getItemCategory(ItemStack stack) {
+        if (stack.isEmpty() || !(stack.getItem() instanceof BaseGongFaItem)) {
+            return GongFaCategory.UNIVERSAL;
+        }
+
+        BaseGongFaItem gongFaItem = (BaseGongFaItem) stack.getItem();
+        GongFaData data = gongFaItem.getDataFromItem(stack);
+
+        if (data == null) {
+            return GongFaCategory.UNIVERSAL;
+        }
+
+        return GongFaTypeMapper.getCategoryForType(data.getType());
     }
     // 根据 type 返回体系名称
     private String getTypeName(String type) {

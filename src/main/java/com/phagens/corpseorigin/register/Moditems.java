@@ -151,6 +151,36 @@ public class Moditems {
     public static final DeferredItem<Item> YNS_SSS= ITEMS.register("yns_sss", () ->  new Baseitem(new Item.Properties(), Baseitem.AbilityLevel.SSS_RANK));
 
 
+
+    public static final DeferredItem<Item> SLOT_EXPANSION_GF = ITEMS.register("slot_expansion_gf",
+            () -> new com.phagens.corpseorigin.Item.SlotExpansionItem(
+                    new Item.Properties(),
+                    3,
+                    com.phagens.corpseorigin.GongFU.GongFaZL.GongFaCategory.GF,
+                    "功法槽位扩展包"));
+
+    public static final DeferredItem<Item> SLOT_EXPANSION_XM = ITEMS.register("slot_expansion_xm",
+            () -> new com.phagens.corpseorigin.Item.SlotExpansionItem(
+                    new Item.Properties(),
+                    2,
+                    com.phagens.corpseorigin.GongFU.GongFaZL.GongFaCategory.XM,
+                    "血脉槽位扩展包"));
+
+    public static final DeferredItem<Item> SLOT_EXPANSION_FB = ITEMS.register("slot_expansion_fb",
+            () -> new com.phagens.corpseorigin.Item.SlotExpansionItem(
+                    new Item.Properties(),
+                    2,
+                    com.phagens.corpseorigin.GongFU.GongFaZL.GongFaCategory.FB,
+                    "法宝槽位扩展包"));
+
+    public static final DeferredItem<Item> SLOT_EXPANSION_UNIVERSAL = ITEMS.register("slot_expansion_universal",
+            () -> new com.phagens.corpseorigin.Item.SlotExpansionItem(
+                    new Item.Properties(),
+                    5,
+                    com.phagens.corpseorigin.GongFU.GongFaZL.GongFaCategory.UNIVERSAL,
+                    "通用槽位扩展包"));
+
+
 }
 
 

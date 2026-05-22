@@ -10,6 +10,8 @@ import com.phagens.corpseorigin.skill.SkillAttachment;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -59,7 +61,11 @@ public record SyncGongFuContainerPacket(CompoundTag containerData) implements Cu
      * 从 packet 数据恢复物品列表
      */
     public NonNullList<ItemStack> getItems() {
-        NonNullList<ItemStack> items = NonNullList.withSize(6, ItemStack.EMPTY);
+        // 先尝试从NBT获取物品数量
+        ListTag itemList = containerData.getList("Items", Tag.TAG_COMPOUND);
+        int size = Math.max(6, itemList.size()); // 至少6个，或根据实际物品数量
+
+        NonNullList<ItemStack> items = NonNullList.withSize(size, ItemStack.EMPTY);
         ContainerHelper.loadAllItems(containerData, items, null);
         return items;
     }

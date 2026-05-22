@@ -32,7 +32,10 @@ public class GongFUDataUtlis {
         CompoundTag playerData = player.getPersistentData();    //持久化获取
         CompoundTag containerData = playerData.getCompound(CONTAINER_KEY);//获取容器数据
 
-        NonNullList<ItemStack> items = NonNullList.withSize(6, ItemStack.EMPTY);
+        // 根据实际解锁槽位数创建列表
+        int slotCount = com.phagens.corpseorigin.GongFU.GongFaZL.SlotConfigManager.getUnlockedSlotCount(player);
+        NonNullList<ItemStack> items = NonNullList.withSize(slotCount, ItemStack.EMPTY);
+
 
         if (!containerData.isEmpty()) {  // 如果存在保存的数据
             ContainerHelper.loadAllItems(containerData, items, player.registryAccess());

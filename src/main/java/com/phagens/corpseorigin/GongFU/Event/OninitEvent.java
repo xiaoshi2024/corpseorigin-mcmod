@@ -23,10 +23,8 @@ public class OninitEvent {
             int guiTop = inventoryScreen.getGuiTop();
 
             Button button= Button.builder(Component.literal("修行"),
-                    button1 -> {System.out.print("ANout");
+                    button1 -> {
                 if (Minecraft.getInstance().player != null){
-
-                    Minecraft.getInstance().player.sendSystemMessage(Component.literal("you dian ji le xiuxing"));
                     //网络包
                     PacketDistributor.sendToServer(new OpenGongFuMenuPacket());
                 }

@@ -5,6 +5,7 @@ import com.phagens.corpseorigin.GongFU.GongFaZL.BaseGongFaItem;
 import com.phagens.corpseorigin.GongFU.GongFaZL.GongFaData;
 import com.phagens.corpseorigin.GongFU.GongFaZL.GongFaSkillManager;
 import com.phagens.corpseorigin.GongFU.ModUtlis.GongFUDataUtlis;
+import com.phagens.corpseorigin.GongFU.PackGongFu.Paket.SyncSlotConfigPacket;
 import com.phagens.corpseorigin.Item.YaoJi.Sagent;
 import com.phagens.corpseorigin.skill.ISkillHandler;
 import com.phagens.corpseorigin.skill.SkillAttachment;
@@ -20,6 +21,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.Map;
 import java.util.UUID;
@@ -65,33 +67,59 @@ import static com.phagens.corpseorigin.GongFU.ModUtlis.GongFUDataUtlis.applyGong
 public class playerDie {
 
     /** 服务器级别的内存缓存 - 存储死亡玩家的功法数据 */
-    private static final Map<UUID, CompoundTag> DEATH_BACKUP = new ConcurrentHashMap<>();
+    private static final Map<String, CompoundTag> DEATH_BACKUP = new ConcurrentHashMap<>();
     @SubscribeEvent
     public static void onPlayerDeath(LivingDeathEvent event) {
         if (event.getEntity() instanceof Player player) {
 
             CompoundTag playerData = player.getPersistentData();
+
+            // 保存功法容器数据
             CompoundTag gongFuData = playerData.getCompound("GongFuContainer");
             if (!gongFuData.isEmpty()) {
-                // 保存到服务器内存缓存
-                DEATH_BACKUP.put(player.getUUID(), gongFuData.copy());
+                DEATH_BACKUP.put(player.getUUID().toString(), gongFuData.copy());
+            }
+
+            // 保存槽位配置数据
+            CompoundTag slotData = playerData.getCompound("GongFuSlotData");
+            if (!slotData.isEmpty()) {
+                DEATH_BACKUP.put(player.getUUID().toString() + "_SlotData", slotData.copy());
             }
 
             // 玩家死亡时移除所有CorpseOrigin添加的属性修饰符
             Sagent.removeAllPlayerAttributes(player);
         }
+
     }
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event){
-        Player original = event.getOriginal();  // 死亡前的玩家实体
-        Player newPlayer = event.getEntity();   // 重生后的玩家实体
-        // 玩家重生时恢复数据
-        UUID playerUUID = original.getUUID();
-        if (DEATH_BACKUP.containsKey(playerUUID)) {
-            CompoundTag backupData = DEATH_BACKUP.get(playerUUID);
-            newPlayer.getPersistentData().put("GongFuContainer", backupData);
-            DEATH_BACKUP.remove(playerUUID); // 清理缓存
+        Player original = event.getOriginal();
+        Player newPlayer = event.getEntity();
 
+        String uuidStr = original.getUUID().toString();
+
+        // 恢复功法容器数据
+        if (DEATH_BACKUP.containsKey(uuidStr)) {
+            CompoundTag backupData = DEATH_BACKUP.get(uuidStr);
+            newPlayer.getPersistentData().put("GongFuContainer", backupData);
+            DEATH_BACKUP.remove(uuidStr);
+        }
+
+        // 恢复槽位配置数据
+        String slotKey = uuidStr + "_SlotData";
+        if (DEATH_BACKUP.containsKey(slotKey)) {
+            CompoundTag slotBackup = DEATH_BACKUP.get(slotKey);
+            newPlayer.getPersistentData().put("GongFuSlotData", slotBackup);
+            DEATH_BACKUP.remove(slotKey);
+
+            // 同步槽位配置到客户端
+            if (!newPlayer.level().isClientSide && newPlayer instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
+                SyncSlotConfigPacket packet =
+                        SyncSlotConfigPacket.create(serverPlayer);
+                PacketDistributor.sendToPlayer(serverPlayer, packet);
+
+                CorpseOrigin.LOGGER.info("【玩家重生】已恢复并同步槽位配置数据");
+            }
         }
     }
 

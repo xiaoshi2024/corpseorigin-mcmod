@@ -2,6 +2,7 @@ package com.phagens.corpseorigin.GongFU.PackGongFu;
 
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.GongFU.PackGongFu.Paket.OpenGongFuMenuPacket;
+import com.phagens.corpseorigin.GongFU.PackGongFu.Paket.SyncSlotConfigPacket;
 import com.phagens.corpseorigin.GongFU.Sceen.GongFuMenu;
 
 import com.phagens.corpseorigin.network.*;
@@ -10,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -90,15 +92,32 @@ public class NetworkPaketGL {
                 com.phagens.corpseorigin.network.TechniqueSwapCraftPacket.STREAM_CODEC,
                 com.phagens.corpseorigin.network.TechniqueSwapCraftPacket::handle
         );
+
+
+
+        registrar.playToClient(
+                SyncSlotConfigPacket.TYPE,
+                SyncSlotConfigPacket.STREAM_CODEC,
+                SyncSlotConfigPacket::handleClient
+        );
+
     }
 
     private static void handleOpenGongFuMenu(OpenGongFuMenuPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer serverPlayer) {
-                serverPlayer.openMenu(new SimpleMenuProvider(
-                        (containerId, inventory, player) -> new GongFuMenu(containerId, inventory),
-                        Component.translatable("修行")
-                ));
+                // 强制关闭当前容器(如果存在)
+                serverPlayer.closeContainer();
+                // 同步槽位配置到客户端(防止重生后客户端槽位数据丢失)
+                SyncSlotConfigPacket syncPacket = SyncSlotConfigPacket.create(serverPlayer);
+                PacketDistributor.sendToPlayer(serverPlayer, syncPacket);
+                // 延迟一tick再打开新容器,确保客户端完全关闭
+                serverPlayer.getServer().execute(() -> {
+                    serverPlayer.openMenu(new SimpleMenuProvider(
+                            (containerId, inventory, player) -> new GongFuMenu(containerId, inventory),
+                            Component.translatable("修行")
+                    ));
+                });
             }
         });
     }

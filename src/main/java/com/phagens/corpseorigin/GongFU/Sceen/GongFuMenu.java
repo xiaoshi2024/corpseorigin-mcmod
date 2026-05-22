@@ -1,13 +1,13 @@
 package com.phagens.corpseorigin.GongFU.Sceen;
 
-import com.phagens.corpseorigin.GongFU.GongFaZL.BaseGongFaItem;
-import com.phagens.corpseorigin.GongFU.GongFaZL.GongFaData;
-import com.phagens.corpseorigin.GongFU.GongFaZL.GongFaSkillManager;
+import com.phagens.corpseorigin.CorpseOrigin;
+import com.phagens.corpseorigin.GongFU.GongFaZL.*;
 import com.phagens.corpseorigin.GongFU.MenuTypeRegister;
 import com.phagens.corpseorigin.GongFU.ModUtlis.GongFUDataUtlis;
 import com.phagens.corpseorigin.skill.ISkill;
 import com.phagens.corpseorigin.skill.ISkillHandler;
 import com.phagens.corpseorigin.skill.SkillAttachment;
+import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
@@ -19,62 +19,79 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.List;
+import java.util.Map;
 
 
 public class GongFuMenu extends AbstractContainerMenu {
 
-    private static final int CONTAINER_SIZE = 10; // 或其他你需要的数量
+    private static final int VISIBLE_ROWS = 4;
+    private static final int SLOTS_PER_ROW = 9;
+    private static final int VISIBLE_SLOTS = VISIBLE_ROWS * SLOTS_PER_ROW;
     // 使用持久化数据存储
-    private final SimpleContainer container;
+    private NonNullList<ItemStack> containerItems;
+    private final Player player;
+    private int unlockedSlotCount;
+    private int scrollOffset = 0;
 
 
     public GongFuMenu(int containerId, Inventory playerInventory) {
         super(MenuTypeRegister.GONG_FU_MENU.get(), containerId);
-        this.container =loadOrCreateContainer(playerInventory.player);
-        Player player = playerInventory.player;
-        // 添加自定义槽位
+        this.player = playerInventory.player;
+        this.unlockedSlotCount = SlotConfigManager.getUnlockedSlotCount(player);
+
+        this.containerItems = loadOrCreateContainerItems(player);
+
         addCustomSlots();
-        // 添加玩家背包槽位
         addPlayerInventorySlots(player);
+
+        CorpseOrigin.LOGGER.info("【功法容器】创建容器 - 槽位数: {}, 总槽位数(含背包): {}",
+                unlockedSlotCount, this.slots.size());
     }
 
 
 
-    private SimpleContainer loadOrCreateContainer(Player player) {
-        // 从玩家NBT数据中加载容器数据
+    private NonNullList<ItemStack> loadOrCreateContainerItems(Player player) {
         CompoundTag playerData = player.getPersistentData();
         CompoundTag containerData = playerData.getCompound("GongFuContainer");
-        SimpleContainer container = new SimpleContainer(CONTAINER_SIZE) {
-            @Override
-            public void setChanged() {
-                super.setChanged();
-                // 保存到玩家数据
-                saveContainerData(player, this);
-                GongFuMenu.this.slotsChanged(this);
-                GongFUDataUtlis.applyGongFaAttributes(player);
+
+        int currentUnlockedSlots = SlotConfigManager.getUnlockedSlotCount(player);
+        NonNullList<ItemStack> items = NonNullList.withSize(currentUnlockedSlots, ItemStack.EMPTY);
+
+        if (!containerData.isEmpty()) {
+            ContainerHelper.loadAllItems(containerData, items, player.registryAccess());
+
+            // 如果加载的物品数量与当前槽位数不匹配，调整大小
+            if (items.size() != currentUnlockedSlots) {
+                CorpseOrigin.LOGGER.warn("功法容器大小不匹配：NBT中有{}个槽位，但当前解锁{}个槽位，调整为{}",
+                        items.size(), currentUnlockedSlots, currentUnlockedSlots);
+
+                net.minecraft.core.NonNullList<ItemStack> newItems = net.minecraft.core.NonNullList.withSize(currentUnlockedSlots, ItemStack.EMPTY);
+                for (int i = 0; i < Math.min(items.size(), currentUnlockedSlots); i++) {
+                    newItems.set(i, items.get(i));
+                }
+                items = newItems;
             }
-
-        };
-        // 从NBT恢复物品
-        if (!containerData.isEmpty()) {   // 如果存在保存的数据
-                                        //目标NBT标签 用于存储序列化物品数据  //要保存的物品堆栈   //注册表访问提供者
-            ContainerHelper.loadAllItems(containerData,container.getItems(),player.registryAccess());   // 从NBT恢复物品
         }
-        return  container;
+
+        CorpseOrigin.LOGGER.debug("创建功法容器，槽位数: {}", currentUnlockedSlots);
+        return items;
     }
-    private void saveContainerData(Player player, SimpleContainer container) {
-        CompoundTag playerData = player.getPersistentData();   // 获取玩家的持久化数据
-        CompoundTag containerData = new CompoundTag();    // 获取修行容器的NBT数据
 
-        // 正确的参数顺序：tag, items, registryProvider
-        ContainerHelper.saveAllItems(containerData, container.getItems(), player.registryAccess()); // 序列化所有物品到NBT
+    private void saveContainerData() {
+        CompoundTag playerData = player.getPersistentData();
+        CompoundTag containerData = new CompoundTag();
+        ContainerHelper.saveAllItems(containerData, containerItems, player.registryAccess());
+        playerData.put("GongFuContainer", containerData);
+    }
 
-        playerData.put("GongFuContainer", containerData);  // 将容器数据保存到玩家数据中
+    private void onContainerChanged() {
+        saveContainerData();
+        GongFUDataUtlis.applyGongFaAttributes(player);
     }
 
     private boolean hasGongFaType(String typeId) {
-        for (int i = 0; i < container.getContainerSize(); i++) {
-            ItemStack stack = container.getItem(i);
+        for (ItemStack stack : containerItems) {
             if (!stack.isEmpty() && stack.getItem() instanceof BaseGongFaItem gongFaItem) {
                 GongFaData data = gongFaItem.getDataFromItem(stack);
                 if (data != null && data.getTypeId().equals(typeId)) {
@@ -107,24 +124,48 @@ public class GongFuMenu extends AbstractContainerMenu {
     }
 
 
+
     private void addCustomSlots() {
-        //1列
-        this.addSlot(new GongFuSlot(container, 0, 16, 20));
-        this.addSlot(new GongFuSlot(container, 1, 16, 45));
-        //2列
-        this.addSlot(new GongFuSlot(container, 2, 48, 20));
-        this.addSlot(new GongFuSlot(container, 3, 48, 45));
-        //3列
-        this.addSlot(new GongFuSlot(container, 4, 80, 20));
-        this.addSlot(new GongFuSlot(container, 5, 80, 45));
+        for (int i = 0; i < Math.min(unlockedSlotCount, VISIBLE_SLOTS); i++) {
+            int row = i / SLOTS_PER_ROW;
+            int col = i % SLOTS_PER_ROW;
 
-        this.addSlot(new GongFuSlot(container, 6, 110, 20));
-        this.addSlot(new GongFuSlot(container, 7, 110, 45));
+            int x = 9 + col * 18;
+            int y = 8 + row * 18;
 
-        this.addSlot(new GongFuSlot(container, 8, 140, 20));
-        this.addSlot(new GongFuSlot(container, 9, 140, 45));
+            GongFaCategory category = SlotConfigManager.getSlotCategory(player, i);
+
+            this.addSlot(new TypeRestrictedSlot(i, x, y, category));
+        }
+    }
+
+    public void refreshSlots() {
 
     }
+
+    public void updateScrollOffset(int offset) {
+
+    }
+
+    public int getScrollOffset() {
+        return 0;
+    }
+
+    public int getMaxScroll() {
+        return 0;
+    }
+
+    public boolean canScroll() {
+        return false;
+    }
+
+
+    public int getUnlockedSlotCount() {
+        return unlockedSlotCount;
+    }
+
+
+
 
     @Override//快速移动
     public ItemStack quickMoveStack(Player player, int i) {
@@ -132,15 +173,15 @@ public class GongFuMenu extends AbstractContainerMenu {
         if (slot.hasItem()) {
             ItemStack itemstack = slot.getItem();
             ItemStack itemstack1 = itemstack.copy();
+
+            int customSlotCount = Math.min(unlockedSlotCount, VISIBLE_SLOTS);
             // 定义移动规则：从容器槽位到玩家背包，或反之
-            if (i < CONTAINER_SIZE) {
-                // 从自定义容器移动到玩家背包
-                if (!this.moveItemStackTo(itemstack1, CONTAINER_SIZE, this.slots.size(), true)) {
+            if (i < customSlotCount) {
+                if (!this.moveItemStackTo(itemstack1, customSlotCount, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
             } else {
-                // 从玩家背包移动到自定义容器
-                if (!this.moveItemStackTo(itemstack1, 0, CONTAINER_SIZE, false)) {
+                if (!this.moveItemStackTo(itemstack1, 0, customSlotCount, false)) {
                     return ItemStack.EMPTY;
                 }
             }
@@ -156,8 +197,8 @@ public class GongFuMenu extends AbstractContainerMenu {
     }
 
     // 添加getter方法
-    public SimpleContainer getContainer() {
-        return this.container;
+    public NonNullList<ItemStack> getContainer() {
+        return this.containerItems;
     }
 
     @Override
@@ -183,10 +224,8 @@ public class GongFuMenu extends AbstractContainerMenu {
         ISkillHandler handler = SkillAttachment.getSkillHandler(player);
         if (handler == null) return;
 
-        // 获取当前容器中的所有功法
         java.util.Set<ResourceLocation> equippedGongFuSkills = new java.util.HashSet<>();
-        for (int i = 0; i < container.getContainerSize(); i++) {
-            ItemStack stack = container.getItem(i);
+        for (ItemStack stack : containerItems) {
             if (!stack.isEmpty() && stack.getItem() instanceof BaseGongFaItem gongFaItem) {
                 GongFaData data = gongFaItem.getDataFromItem(stack);
                 if (data != null) {
@@ -194,7 +233,6 @@ public class GongFuMenu extends AbstractContainerMenu {
                             .getGongFuSkillId(data.getTypeId(), data.getRarity(), data.getCeng());
                     if (skillId != null) {
                         equippedGongFuSkills.add(skillId);
-                        // 学习技能 - 使用 learnGongFuSkill 绕过尸兄检查
                         if (!handler.hasLearned(skillId)) {
                             if (handler instanceof com.phagens.corpseorigin.skill.SkillHandler skillHandler) {
                                 skillHandler.learnGongFuSkill(skillId);
@@ -205,7 +243,6 @@ public class GongFuMenu extends AbstractContainerMenu {
             }
         }
 
-        // 遗忘不再装备的功法技能
         for (ISkill skill : handler.getLearnedSkills()) {
             if (skill.getId().getPath().startsWith("gongfu_")) {
                 if (!equippedGongFuSkills.contains(skill.getId())) {
@@ -215,22 +252,110 @@ public class GongFuMenu extends AbstractContainerMenu {
         }
     }
 
-    public class GongFuSlot extends Slot {
-        public GongFuSlot(Container container, int slot, int x, int y) {
-            super(container, slot, x, y);
+    public class TypeRestrictedSlot extends Slot {
+        private final GongFaCategory allowedCategory;
+
+        public TypeRestrictedSlot(int index, int x, int y, GongFaCategory category) {
+            super(new Container() {
+                @Override
+                public void clearContent() {
+                    containerItems.clear();
+                }
+
+                @Override
+                public int getContainerSize() {
+                    return containerItems.size();
+                }
+
+                @Override
+                public boolean isEmpty() {
+                    return containerItems.stream().allMatch(ItemStack::isEmpty);
+                }
+
+                @Override
+                public ItemStack getItem(int slot) {
+                    if (slot >= 0 && slot < containerItems.size()) {
+                        return containerItems.get(slot);
+                    }
+                    return ItemStack.EMPTY;
+                }
+
+                @Override
+                public ItemStack removeItem(int slot, int amount) {
+                    if (slot >= 0 && slot < containerItems.size()) {
+                        ItemStack stack = containerItems.get(slot);
+                        if (!stack.isEmpty()) {
+                            ItemStack result = stack.split(amount);
+                            onContainerChanged();
+                            return result;
+                        }
+                    }
+                    return ItemStack.EMPTY;
+                }
+
+                @Override
+                public ItemStack removeItemNoUpdate(int slot) {
+                    if (slot >= 0 && slot < containerItems.size()) {
+                        ItemStack stack = containerItems.get(slot);
+                        containerItems.set(slot, ItemStack.EMPTY);
+                        return stack;
+                    }
+                    return ItemStack.EMPTY;
+                }
+
+                @Override
+                public void setItem(int slot, ItemStack stack) {
+                    if (slot >= 0 && slot < containerItems.size()) {
+                        containerItems.set(slot, stack);
+                        onContainerChanged();
+                    }
+                }
+
+                @Override
+                public void setChanged() {
+                    onContainerChanged();
+                }
+
+                @Override
+                public boolean stillValid(Player player) {
+                    return true;
+                }
+
+                @Override
+                public void startOpen(Player player) {}
+
+                @Override
+                public void stopOpen(Player player) {}
+
+                @Override
+                public int getMaxStackSize() {
+                    return 64;
+                }
+            }, index, x, y);
+            this.allowedCategory = category;
         }
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            if (stack.getItem() instanceof BaseGongFaItem gongFaItem) {
-                GongFaData newData = gongFaItem.getDataFromItem(stack);
-                if (newData != null) {
-                    if (hasGongFaType(newData.getTypeId())) {
-                        return false;
-                    }
-                }
+            if (!(stack.getItem() instanceof BaseGongFaItem gongFaItem)) {
+                return false;
             }
-            return true;
+
+            GongFaData newData = gongFaItem.getDataFromItem(stack);
+            if (newData == null) {
+                return false;
+            }
+
+            if (hasGongFaType(newData.getTypeId())) {
+                return false;
+            }
+
+            if (allowedCategory == GongFaCategory.UNIVERSAL) {
+                return true;
+            }
+
+            GongFaCategory itemCategory = gongFaItem.getItemCategory(stack);
+            return allowedCategory == itemCategory;
         }
 
         @Override
@@ -241,6 +366,14 @@ public class GongFuMenu extends AbstractContainerMenu {
         @Override
         public int getMaxStackSize(ItemStack stack) {
             return 1;
+        }
+
+        public GongFaCategory getAllowedCategory() {
+            return allowedCategory;
+        }
+
+        public boolean isEmptyWithCategory() {
+            return getItem().isEmpty();
         }
     }
 

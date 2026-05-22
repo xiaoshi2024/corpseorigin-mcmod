@@ -27,6 +27,7 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         addConfigurationTranslations();
         addSubtitleTranslations();
         addOtherTranslations();
+        addGongFaState();
     }
 
     private void addItemTranslations() {
@@ -291,5 +292,20 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("itemGroup.corpseorigin", "尸兄模组");
         add("message.corpseorigin.cultivation_opened", "修行界面已打开");
         add("message.corpseorigin.water_infected", "这片水已被尸水污染！");
+    }
+
+    private  void addGongFaState(){
+        add("gongfa.category.gf","功法");
+        add("gongfa.category.yn","异能");
+        add("gongfa.category.xm","血脉");
+        add("gongfa.category.fb","法宝");
+        add("gongfa.category.st","神通");
+        add("gongfa.category.sg","神格");
+        add("gongfa.category.sz","神藏");
+        add("gongfa.category.tfst","天赋神通");
+        add("gongfa.category.qy","星宿");
+        add("gongfa.category.universal","通用");
+
+
     }
 }

@@ -23,7 +23,6 @@ public class GongFaData {
     private final String Type;
     private final String name;  // 名字
     private final Map<String, Double> attributes;  // 属性加成
-
     private final List<String> skills;  // 技能列表
     private final int rarity;  // 稀有度 1-9
     private final String Ceng;//层级
