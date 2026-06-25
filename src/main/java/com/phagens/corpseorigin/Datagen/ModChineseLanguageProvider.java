@@ -28,6 +28,8 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         addSubtitleTranslations();
         addOtherTranslations();
         addGongFaState();
+        addDialogueTranslations();
+        addAdvancementTranslations();
     }
 
     private void addItemTranslations() {
@@ -39,12 +41,6 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("item.corpseorigin.gf_cy_shen", "神阶功法残页");
         add("item.corpseorigin.gf_cy_chaoshen", "超神阶功法残页");
 
-        add("item.corpseorigin.yns_c", "觉醒石-平庸");
-        add("item.corpseorigin.yns_b", "觉醒石-普通");
-        add("item.corpseorigin.yns_a", "觉醒石-优秀");
-        add("item.corpseorigin.yns_s", "觉醒石-卓越");
-        add("item.corpseorigin.yns_ss", "觉醒石-传说");
-        add("item.corpseorigin.yns_sss", "觉醒石-大师");
         
         // 武器
         add("item.corpseorigin.ming_juque", "巨阙剑");
@@ -67,6 +63,51 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("item.corpseorigin.ordinary_zb_eye", "普通尸眼");
         add("item.corpseorigin.dr_mu_eye", "穆博士的眼睛");
         add("item.corpseorigin.zb_worm_item", "尸兄虫");
+
+        // 穆博士的眼睛相关（中文）
+        add("item.corpseorigin.dr_mu_eye.effect1", "§7食用效果:");
+        add("item.corpseorigin.dr_mu_eye.effect2", "  §a• 失去意识的尸兄可恢复人类智慧");
+        add("item.corpseorigin.dr_mu_eye.effect3", "  §e• 已有意识的尸兄获得智慧增强");
+
+// 普通尸眼相关
+        add("item.corpseorigin.ordinary_zb_eye.effect1", "§7食用效果:");
+        add("item.corpseorigin.ordinary_zb_eye.effect2", "  §a• %d%%概率获得永久夜视 (需食用%d个)");
+        add("item.corpseorigin.ordinary_zb_eye.effect3", "  §a• %d%%概率长出额外眼睛 (需食用%d个)");
+        add("item.corpseorigin.ordinary_zb_eye.evolution_success", "§a§l你感受到了进化的力量！");
+        add("item.corpseorigin.ordinary_zb_eye.consumed", "§7已食用尸眼: %d/%d");
+        add("item.corpseorigin.ordinary_zb_eye.night_vision_unlocked", "§6你进化出了永久夜视能力！");
+        add("item.corpseorigin.ordinary_zb_eye.extra_eye_grown", "§c你长出了第%d只额外眼睛！");
+        add("item.corpseorigin.ordinary_zb_eye.multi_eye_evolved", "§c§l你进化出了多眼形态！全部9只眼睛已觉醒！");
+
+// 尸兄虫相关
+        add("item.corpseorigin.zb_worm.description", "一只蠕动的尸兄虫，散发着诡异的气息");
+        add("item.corpseorigin.zb_worm.effect1", "  §a• %d%%概率获得速度增益");
+        add("item.corpseorigin.zb_worm.effect2", "  §a• %d%%概率获得挖掘效率增益");
+        add("item.corpseorigin.zb_worm.corpse_bonus", "§a尸兄食用可获得额外效果");
+        add("item.corpseorigin.zb_worm.not_corpse_warning", "§c你不是尸兄，食用会让你感到不适");
+        add("item.corpseorigin.zb_worm.consumed", "§7你食用了尸兄虫");
+        add("item.corpseorigin.zb_worm.effect_gained", "§a你获得了特殊效果！");
+
+// 任务纸条相关
+        add("item.corpseorigin.mission_scroll.type", "任务类型：%s");
+        add("item.corpseorigin.mission_scroll.progress", "进度：%d / %d");
+        add("item.corpseorigin.mission_scroll.completed", "§a§l已完成！请回到尸王处提交任务");
+        add("item.corpseorigin.mission_scroll.incomplete", "§e任务未完成");
+        add("item.corpseorigin.mission_scroll.reward_points", "奖励：%d 进化点");
+        add("item.corpseorigin.mission_scroll.reward_levels", "奖励：+1 进化等级");
+        add("item.corpseorigin.mission_scroll.can_submit", "§a任务已完成，请拿着纸条右键尸王提交任务！");
+        add("item.corpseorigin.mission_scroll.remaining", "§e还需击杀 %d 个目标");
+
+// 觉醒石（中文）
+        add("item.corpseorigin.yns_c", "觉醒石-平庸");
+        add("item.corpseorigin.yns_b", "觉醒石-普通");
+        add("item.corpseorigin.yns_a", "觉醒石-优秀");
+        add("item.corpseorigin.yns_s", "觉醒石-卓越");
+        add("item.corpseorigin.yns_ss", "觉醒石-传说");
+        add("item.corpseorigin.yns_sss", "觉醒石-大师");
+
+// 功法相关
+        add("item.corpseorigin.lei_xi_gong_fa", "雷系功法");
         
         // 方块物品
         add("item.corpseorigin.qi_xings_guan_item", "七星棺");
@@ -109,6 +150,9 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("entity.corpseorigin.coco_zombie_x", "CoCo尸兄-%s");
         add("entity.corpseorigin.guigun", "鬼棍");
         add("entity.corpseorigin.centipede_head", "蜈蚣尸兄");
+
+        add("entity.corpseorigin.corpse", "尸体");
+        add("entity.corpseorigin.corpse_gib", "尸体残肢");
     }
 
     private void addEffectTranslations() {
@@ -185,12 +229,30 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("skill.corpseorigin.corpse_king_power.desc", "模拟龙右的感染能力，可以感染其他玩家成为尸兄，并短暂控制被感染的玩家");
         add("skill.corpseorigin.shadow_strike", "影袭");
         add("skill.corpseorigin.shadow_strike.desc", "进入隐身状态并大幅提升速度");
-        
+
+        // 多眼技能
+        add("skill.corpseorigin.multi_eye_perception", "多眼感知");
+        add("skill.corpseorigin.multi_eye_perception.desc", "触发多眼的力量，感知周围32格内的敌意生物，高亮显示24格内的敌人");
+        add("skill.corpseorigin.multi_eye.activated", "§c§l多眼感知已激活！你感受到了周围的敌意！");
+        add("skill.corpseorigin.multi_eye.ended", "§7多眼感知效果已结束");
+        add("skill.corpseorigin.multi_eye.cooldown", "§c技能冷却中，还需 %d 秒");
+        add("skill.corpseorigin.multi_eye.detected", "§e感知到 %d 个敌意目标");
+        add("skill.corpseorigin.multi_eye.auto_learned", "§c§l你的多眼觉醒了！获得了多眼感知能力！");
+        add("skill.corpseorigin.disguise", "伪装");
+        add("skill.corpseorigin.disguise.desc", "我看起来像人类？");
+
         // 技能树
         add("skilltree.corpseorigin.corpse_evolution", "尸兄进化");
         add("skilltree.corpseorigin.corpse_evolution.desc", "尸兄的进化路线，通过吞噬获得力量");
         add("skilltree.corpseorigin.corpse_evolution.condition", "成为尸兄后自动解锁");
-        
+
+        add("skilltype.corpseorigin.basic_evolution", "基础进化");
+        add("skilltype.corpseorigin.power_mutation", "力量变异");
+        add("skilltype.corpseorigin.agility_mutation", "敏捷变异");
+        add("skilltype.corpseorigin.special_mutation", "特殊变异");
+        add("skilltype.corpseorigin.divine_ability", "神级能力");
+        add("skilltype.corpseorigin.supreme_ability", "超神能力");
+
         // 技能提示
         add("skill.corpseorigin.no_activatable", "无可激活技能");
         add("skill.corpseorigin.cooldown", "技能冷却中，剩余 %d 秒");
@@ -211,6 +273,15 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("tooltip.corpseorigin.gongfa.ceng", "功法层级: %s");
         add("tooltip.corpseorigin.gongfa.attribute", "武学加持:");
         add("tooltip.corpseorigin.gongfa.skills", "技艺:");
+
+        // ===== 添加器官相关的工具提示 =====
+        add("item.corpseorigin.organ.type", "器官类型: %s");
+        add("item.corpseorigin.organ.evolution_chance", "进化概率: %d%%");
+        add("item.corpseorigin.organ.required_amount", "所需数量: %d");
+        add("item.corpseorigin.organ.corpse_only", "§c只有尸兄才能消化此物");
+        add("item.corpseorigin.organ.not_corpse_warning", "§c你不是尸兄，食用器官会中毒！");
+
+
     }
 
     private void addDeathMessageTranslations() {
@@ -227,6 +298,8 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("key.corpseorigin.skill_release", "技能释放");
         add("key.corpseorigin.skill_wheel", "技能轮盘");
         add("key.corpseorigin.skill_tree", "技能树");
+
+        add("key.corpseorigin.voice_listen", "语音监听");
     }
 
     private void addGuiTranslations() {
@@ -238,6 +311,17 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("gui.corpseorigin.skill_already_learned", "§a已学习");
         add("gui.corpseorigin.skill_error", "§c无法解锁");
         add("gui.corpseorigin.skill_unknown", "§c未知原因");
+
+        add("gui.corpseorigin.unlock", "解锁技能");
+        add("gui.corpseorigin.cost", "消耗: %d 进化点");
+        add("gui.corpseorigin.type", "类型: %s");
+        add("gui.corpseorigin.unlocked", "§a已解锁");
+        add("gui.corpseorigin.can_unlock", "§e可解锁");
+        add("gui.corpseorigin.locked", "§c未解锁");
+        add("gui.corpseorigin.prerequisites", "前置技能:");
+        add("gui.corpseorigin.evolution_points", "进化点: %d");
+        add("gui.corpseorigin.evolution_level", "进化等级: %d");
+        add("gui.corpseorigin.convert_experience", "转化经验");
     }
 
     private void addCommandTranslations() {
@@ -292,6 +376,102 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("itemGroup.corpseorigin", "尸兄模组");
         add("message.corpseorigin.cultivation_opened", "修行界面已打开");
         add("message.corpseorigin.water_infected", "这片水已被尸水污染！");
+
+        add("message.corpseorigin.ordinary_player", "§c你只是个普通人");
+        add("message.corpseorigin.skill_tree_coming_soon", "技能树界面即将推出");
+        add("message.corpseorigin.evolution_points_gained", "§a吞噬 %2$s 获得 %1$d 进化点数！");
+        add("message.corpseorigin.voice_recording_start", "§e开始语音录音...（按住V键说话）");
+        add("message.corpseorigin.voice_too_short", "§c录音时间太短或没有检测到声音");
+        add("message.corpseorigin.voice_not_recognized", "§c无法识别语音指令");
+        add("message.corpseorigin.voice_listening", "§e正在监听语音...");
+        add("message.corpseorigin.voice_listening_stopped", "§7语音监听已停止");
+        add("message.corpseorigin.voice_skill_activated", "§a通过语音激活技能: %s");
+        add("message.corpseorigin.voice_skill_not_unlocked", "§c技能未解锁或不可用");
+        add("message.corpseorigin.voice_skill_failed", "§c技能激活失败");
+        add("message.corpseorigin.voice_record_available_skills", "§e=== 可录制的技能 ===");
+        add("message.corpseorigin.voice_record_usage", "§e使用方法: /corpsevoice record <技能ID>");
+        add("message.corpseorigin.voice_record_example", "§7示例: /corpsevoice record berserk");
+        add("message.corpseorigin.voice_record_invalid_skill", "§c无效的技能ID: %s");
+        add("message.corpseorigin.voice_record_check_list", "§7请使用 /corpsevoice record 查看可用技能列表");
+        add("message.corpseorigin.voice_record_start", "§e开始录制 §f%s §e语音模板，请按住V键说话...");
+        add("message.corpseorigin.voice_record_client_only", "§c语音录制只能在客户端执行");
+        add("message.corpseorigin.voice_templates_loaded", "§e已加载 %d 个语音模板");
+        add("message.corpseorigin.voice_templates_empty", "§7使用 /corpsevoice record <技能名> 录制模板");
+        add("message.corpseorigin.voice_templates_client_only", "§c语音模板只能在客户端查看");
+        add("message.corpseorigin.skill_not_found", "§c技能不存在");
+        add("message.corpseorigin.skill_already_learned", "§c你已经学习了这个技能");
+        add("message.corpseorigin.not_enough_points", "§c进化点数不足");
+        add("message.corpseorigin.missing_prerequisite", "§c缺少前置技能");
+        add("message.corpseorigin.skill_learned", "§a成功学习技能: %s");
+        add("message.corpseorigin.evolution_point_gained", "§a你获得了 1 点进化点！");
+        add("message.corpseorigin.experience_converted", "§a你的 5 级经验已转化为 1 点进化点！");
+        add("message.corpseorigin.evolution_level_up", "§a你的进化等级提升至 %s 级！");
+        add("message.corpseorigin.mission_completed", "§a§l任务完成！请回到尸王处提交任务！");
+        add("message.corpseorigin.mission_progress", "§e任务进度：还需完成 %d 个目标");
+        add("message.corpseorigin.mission_progress_kill", "§e任务进度：还需击杀 %d 个目标");
+        add("message.corpseorigin.mission_progress_collect", "§e任务进度：还需收集 %d 个目标");
+        add("message.corpseorigin.mission_progress_infect", "§e任务进度：还需感染 %d 个玩家");
+        add("message.corpseorigin.corpse_infected", "§c§l尸体开始被尸水感染...");
+        add("message.corpseorigin.corpse_transformed", "§4§l尸体变成了尸兄！");
+    }
+
+    private void addDialogueTranslations(){
+        // 任务类型
+        add("mission.corpseorigin.kill_villager", "屠杀村民");
+        add("mission.corpseorigin.kill_zombie", "消灭僵尸/尸兄");
+        add("mission.corpseorigin.kill_any", "击杀生物");
+        add("mission.corpseorigin.infect_player", "感染玩家");
+        add("mission.corpseorigin.collect_item", "收集物品");
+        add("mission.corpseorigin.collect_block", "收集方块");
+
+// 龙右对话
+        add("dialogue.longyou.greeting", "[尸王·龙右] 你来了，我的部下。");
+        add("dialogue.longyou.option.command", "大人您有何吩咐？");
+        add("dialogue.longyou.option.task", "任务升级系统");
+        add("dialogue.longyou.option.appointment", "尸王钦点");
+        add("dialogue.longyou.option.about", "关于尸族");
+        add("dialogue.longyou.command.line1", "§6§l[尸王·龙右] §r我的部下，去为我收集更多的生命力，壮大我尸族的势力。");
+        add("dialogue.longyou.command.line2", "§6§l[尸王·龙右] §r消灭那些反抗我们的人类，将他们转化为我们的同类。");
+        add("dialogue.longyou.command.line3", "§6§l[尸王·龙右] §r当你变得足够强大时，我会赐予你更强大的力量。");
+        add("dialogue.longyou.task.line1", "§6§l[尸王·龙右] §r我已为你开通了任务系统，完成任务可获得进化点和特殊奖励。");
+        add("dialogue.longyou.task.line2", "§6§l[尸王·龙右] §r任务分为：消灭人类、感染村民、收集资源等多种类型。");
+        add("dialogue.longyou.task.line3", "§6§l[尸王·龙右] §r完成的任务越多，你的等级越高，获得的奖励也越丰厚。");
+        add("dialogue.longyou.appointment.line1", "§6§l[尸王·龙右] §r作为我的部下，你展现出了非凡的潜力。");
+        add("dialogue.longyou.appointment.line2", "§6§l[尸王·龙右] §r我钦点你为尸族的精英战士，赐予你特殊的能力。");
+        add("dialogue.longyou.appointment.line3", "§6§l[尸王·龙右] §r好好利用这份力量，为尸族的崛起而战！");
+        add("dialogue.longyou.about.line1", "§6§l[尸王·龙右] §r我们尸族是这个世界的新主宰，将取代脆弱的人类。");
+        add("dialogue.longyou.about.line2", "§6§l[尸王·龙右] §r通过不断进化，我们将变得更加强大，无可匹敌。");
+        add("dialogue.longyou.about.line3", "§6§l[尸王·龙右] §r尸族的未来，就掌握在你们这些部下的手中。");
+        add("dialogue.longyou.invalid_option", "§4§l无效的选项！");
+        add("dialogue.longyou.only_corpse", "§4§l只有尸兄才能与尸王对话！");
+        add("dialogue.longyou.rebellion", "§4§l[尸王·龙右] §r你竟敢对我动手，视为造反！");
+        add("dialogue.longyou.rebellion.broadcast", "§4§l[尸王·龙右] §r%s 竟敢对我动手，视为造反！");
+        add("dialogue.longyou.option.receive_mission", "领取任务");
+        add("dialogue.longyou.option.submit_mission", "提交任务");
+        add("dialogue.longyou.mission.already_has", "§c§l[尸王·龙右] §r你已有未完成的任务，先去完成它！");
+        add("dialogue.longyou.mission.received", "§a§l[尸王·龙右] §r这是你的任务纸条，完成后拿来给我。任务：%s");
+        add("dialogue.longyou.mission.kill_villager", "§6§l[尸王·龙右] §r去屠杀 %d 个村民，让他们知道尸族的力量！");
+        add("dialogue.longyou.mission.kill_zombie", "§6§l[尸王·龙右] §r去消灭 %d 个僵尸或尸兄，清理那些低等的同类！");
+        add("dialogue.longyou.mission.kill_any", "§6§l[尸王·龙右] §r去击杀 %d 个生物，展示你的力量！");
+        add("dialogue.longyou.mission.infect_player", "§6§l[尸王·龙右] §r去感染 %d 个玩家！让他们成为我们尸族的一员！这是最有价值的任务！");
+        add("dialogue.longyou.mission.collect_item", "§6§l[尸王·龙右] §r去收集 %d 个物品！我对这个世界的新奇事物很感兴趣！");
+        add("dialogue.longyou.mission.completed", "§a§l[尸王·龙右] §r做得好！你完成了任务，这是你的奖励！");
+        add("dialogue.longyou.mission.reward_points", "§a你获得了 %d 点进化点！");
+        add("dialogue.longyou.mission.reward_level", "§a你的进化等级提升至 %d 级！");
+        add("dialogue.longyou.mission.no_completed", "§c§l[尸王·龙右] §r你没有完成的任务！先去完成任务再来找我！");
+    }
+
+    private void addAdvancementTranslations(){
+        add("advancements.corpseorigin.root.title", "尸兄起源");
+        add("advancements.corpseorigin.root.description", "欢迎来到尸兄的世界");
+        add("advancements.corpseorigin.become_corpse.title", "尸兄降临");
+        add("advancements.corpseorigin.become_corpse.description", "你已被尸水感染，成为了尸兄的一员");
+        add("advancements.corpseorigin.meet_corpse_king.title", "初见尸王");
+        add("advancements.corpseorigin.meet_corpse_king.description", "你遇见了传说中的尸王龙右");
+        add("advancements.corpseorigin.weapon_shattered.title", "相鼠有皮");
+        add("advancements.corpseorigin.weapon_shattered.description", "远程攻击尸王，武器被其强大的力量震坏");
+        add("advancements.corpseorigin.cannibalism_discovery.title", "吞噬本能");
+        add("advancements.corpseorigin.cannibalism_discovery.description", "你目睹了尸兄之间弱肉强食的残酷法则");
     }
 
     private  void addGongFaState(){
