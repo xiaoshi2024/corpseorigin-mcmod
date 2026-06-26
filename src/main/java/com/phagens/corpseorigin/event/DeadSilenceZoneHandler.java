@@ -36,8 +36,7 @@ public class DeadSilenceZoneHandler {
     private static final Set<DeferredHolder<EntityType<?>, ? extends EntityType<?>>> CORPSE_BROTHER_HOLDERS = Set.of(
             EntityRegistry.LOWER_LEVEL_ZB,
             EntityRegistry.LONGYOU,
-            EntityRegistry.ZBR_FISH,
-            EntityRegistry.GUIGUN
+            EntityRegistry.ZBR_FISH
     );
 
     private static SimpleSoundInstance ambienceSound = null;

@@ -89,13 +89,6 @@ config="${mod_id}.mixins.json"
     side="BOTH"
 
 [[dependencies.${mod_id}]]
-    modId="terrablender"
-    type="required"
-    versionRange="[4.1,)"
-    ordering="AFTER"
-    side="BOTH"
-
-[[dependencies.${mod_id}]]
     modId="wthit"
     type="optional"
     versionRange="[1.0,)"

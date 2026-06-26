@@ -5,6 +5,7 @@ import com.phagens.corpseorigin.api.infection.EntityInfectionRegistry;
 import com.phagens.corpseorigin.api.infection.InfectionAPI;
 import com.phagens.corpseorigin.data.InfectionData;
 import com.phagens.corpseorigin.entity.CorpseGibEntity;
+import com.phagens.corpseorigin.register.BiomeRegistry;
 import com.phagens.corpseorigin.register.EntityRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -298,6 +299,9 @@ public class CorpseInfectionHandler {
 
     /**
      * 检查残肢是否接触尸水
+     * 判断条件：（满足任一即可）
+     * 1. 水源被七星棺感染（InfectionData中记录）
+     * 2. 残肢所在位置的群系是死寂群系
      */
     private static boolean isInCorpseWater(Level level, CorpseGibEntity gib) {
         BlockPos pos = gib.blockPosition();
@@ -317,10 +321,17 @@ public class CorpseInfectionHandler {
                     BlockPos checkPos = new BlockPos(x, y, z);
                     BlockState state = level.getBlockState(checkPos);
 
-                    // 检查是否是水且被感染
+                    // 检查是否是水
                     if (state.getFluidState().is(FluidTags.WATER)) {
                         if (level instanceof ServerLevel serverLevel) {
-                            if (InfectionData.isWaterInfectedStatic(serverLevel, checkPos)) {
+                            // 检查条件1：水源被感染（InfectionData记录）
+                            boolean isWaterInfected = InfectionData.isWaterInfectedStatic(serverLevel, checkPos);
+                            
+                            // 检查条件2：残肢所在群系是死寂群系
+                            boolean isInCorpseBiome = serverLevel.getBiome(checkPos).is(BiomeRegistry.DEAD_SILENCE);
+                            
+                            // 满足任一条件即为尸水
+                            if (isWaterInfected || isInCorpseBiome) {
                                 return true;
                             }
                         }

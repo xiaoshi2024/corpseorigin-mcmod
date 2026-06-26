@@ -176,7 +176,7 @@ dependencies {
 
     implementation "maven.modrinth:geckolib:gFmrC8Ru"
 
-    implementation 'com.github.glitchfiend:TerraBlender-neoforge:1.21.1-4.1.0.3'
+//    implementation 'com.github.glitchfiend:TerraBlender-neoforge:1.21.1-4.1.0.3'
 
     // WTHIT integration
     compileOnly "mcp.mobius.waila:wthit-api:neo-${wthit_version}"

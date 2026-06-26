@@ -1,50 +1,59 @@
 /**
  * 七星棺方块类 - 尸王龙右的召唤核心
- * 
+ *
  * 【功能说明】
- * 1. 海洋环境生成：当放置在海洋中时，会感染周围32格范围内的水源
+ * 1. 群系替换：当放置时，将周围区域替换为尸兄群系（死寂群系）
  * 2. 尸王召唤机制：当棺材周围8格内有至少3个尸兄时，开馆召唤尸王龙右
- * 3. 水源感染系统：使用BFS算法传播感染，能量随距离衰减
- * 
+ * 3. 水源感染系统：尸兄群系内的所有水源自动被感染，玩家接触会中毒
+ *
  * 【工作原理】
- * - 放置时：检测是否在海洋环境(16x16范围内超过100个水方块)，开始感染周围水源
- * - 移除时：清除该棺材造成的所有水源感染
+ * - 放置时：检测周围群系并替换为死寂群系
+ * - 移除时：清除该棺材造成的所有水源感染（但群系不会恢复）
  * - tick时：检测周围尸兄数量，满足条件则召唤尸王
- * 
+ *
  * 【重要参数】
- * - MAX_ENERGY: 15 - 棺材位置的能量最大值
- * - ENERGY_DECAY: 1 - 每格距离的能量衰减值
- * - MAX_DISTANCE: 32 - 感染传播的最大距离
+ * - BIOME_REPLACEMENT_RADIUS: 16 - 群系替换的半径范围
  * - DETECTION_RADIUS: 8 - 检测尸兄的半径
  * - REQUIRED_ZB_COUNT: 3 - 召唤尸王所需的最小尸兄数量
- * 
+ *
  * 【关联系统】
  * - QiXingGuanBlockEntity: 处理棺材的动画渲染
  * - InfectionData: 存储水源感染数据的世界保存数据
  * - LowerLevelZbEntity: 被检测的尸兄实体
- * 
+ * - BiomeRegistry: 死寂群系注册
+ *
  * @author Phagens
- * @version 1.0
+ * @version 2.1
  */
 package com.phagens.corpseorigin.block.custom;
 
-
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.block.entity.QiXingGuanBlockEntity;
-import com.phagens.corpseorigin.data.InfectionData;
 import com.phagens.corpseorigin.entity.LowerLevelZbEntity;
+import com.phagens.corpseorigin.register.BiomeRegistry;
+import com.phagens.corpseorigin.effect.BYeffect;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientboundChunksBiomesPacket;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkPacketData;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.FluidTags;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -52,11 +61,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -69,7 +80,7 @@ import java.util.function.Supplier;
  * 七星棺方块主类
  * 继承Block实现基础方块功能，实现EntityBlock接口以支持方块实体
  */
-public class QiXingGuan extends Block implements EntityBlock , LiquidBlockContainer, SimpleWaterloggedBlock {
+public class QiXingGuan extends Block implements EntityBlock, LiquidBlockContainer, SimpleWaterloggedBlock {
     /** 要召唤的实体类型(尸王龙右) */
     private final Supplier<EntityType<?>> ENTITY;
 
@@ -98,13 +109,11 @@ public class QiXingGuan extends Block implements EntityBlock , LiquidBlockContai
                 .setValue(WATERLOGGED, false));
     }
 
-
     @Override
     protected FluidState getFluidState(BlockState state) {
         // 根据 WATERLOGGED 属性动态返回
         return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : Fluids.EMPTY.defaultFluidState();
     }
-
 
     /**
      * 注册方块状态属性
@@ -117,11 +126,8 @@ public class QiXingGuan extends Block implements EntityBlock , LiquidBlockContai
 
     /**
      * 方块被放置时的处理
-     * - 服务器端：开始感染周围水源
+     * - 服务器端：替换周围群系为尸兄群系，并感染该区域的水源
      * - 安排20tick后的首次检测
-     */
-    /**
-     * 方块被放置时的处理
      */
     @Override
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
@@ -133,7 +139,9 @@ public class QiXingGuan extends Block implements EntityBlock , LiquidBlockContai
             if (fluidState.getType() == Fluids.WATER && !state.getValue(WATERLOGGED)) {
                 level.setBlock(pos, state.setValue(WATERLOGGED, true), 3);
             }
-            spreadWaterInfection(level, pos);
+
+            // 替换周围群系为尸兄群系，并感染水源
+            replaceBiomeAndInfectWater((ServerLevel) level, pos);
         }
         level.scheduleTick(pos, this, 20);
     }
@@ -148,15 +156,17 @@ public class QiXingGuan extends Block implements EntityBlock , LiquidBlockContai
         return this.defaultBlockState()
                 .setValue(WATERLOGGED, fluidState.getType() == Fluids.WATER);
     }
+
     /**
      * 方块被移除时的处理
-     * 清除该棺材造成的所有水源感染
+     * 注意：群系不会被恢复，这是永久性改变
+     * 水源感染通过群系检查实现，无需清理
      */
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         super.onRemove(state, level, pos, newState, movedByPiston);
         if (!level.isClientSide && state.is(state.getBlock())) {
-            clearInfection(pos, level);
+            CorpseOrigin.LOGGER.info("七星棺已移除");
         }
     }
 
@@ -176,130 +186,169 @@ public class QiXingGuan extends Block implements EntityBlock , LiquidBlockContai
         level.scheduleTick(pos, this, 20);
     }
 
-    /** 最大能量值（类似红石强度） */
-    private static final int MAX_ENERGY = 15;
-    /** 每格距离能量衰减值 */
-    private static final int ENERGY_DECAY = 1;
+    /** 群系替换半径 - 棺材周围16格范围内替换群系 */
+    private static final int BIOME_REPLACEMENT_RADIUS = 16;
 
     /**
-     * 传播水源感染 - 使用BFS算法
-     * 从棺材位置开始向周围水源传播感染，能量随距离衰减
-     * 
-     * @param level 世界实例
+     * 替换周围群系为尸兄群系
+     *
+     * 【工作流程】
+     * 1. 获取死寂群系的Holder
+     * 2. 在指定半径范围内遍历所有方块列
+     * 3. 通过Chunk API替换每列的群系为死寂群系
+     * 4. 标记受影响的区块为未保存
+     * 5. 向附近玩家发送区块更新包
+     *
+     * @param level 服务器世界
      * @param pos 棺材位置
      */
-    private void spreadWaterInfection(Level level, BlockPos pos) {
-        if (!(level instanceof ServerLevel serverLevel)) {
+    private void replaceBiomeAndInfectWater(ServerLevel level, BlockPos pos) {
+        // 获取死寂群系
+        var biomeRegistry = level.registryAccess().registryOrThrow(Registries.BIOME);
+        var deadSilenceBiome = biomeRegistry.getHolder(BiomeRegistry.DEAD_SILENCE);
+
+        if (deadSilenceBiome.isEmpty()) {
+            CorpseOrigin.LOGGER.error("无法获取死寂群系！");
             return;
         }
-        
-        InfectionData data = InfectionData.get(serverLevel);
-        Queue<BlockPos> queue = new LinkedList<>();
-        Set<BlockPos> visited = new HashSet<>();
-        Set<BlockPos> infectedPositions = new HashSet<>();
-        queue.offer(pos);
-        visited.add(pos);
-        data.setWaterEnergy(pos, MAX_ENERGY); // 棺材位置能量最高
-        final int MAX_DISTANCE = 32;
 
-        // BFS遍历周围水源
-        while (!queue.isEmpty()) {
-            BlockPos current = queue.poll();
-            int currentEnergy = data.getWaterEnergy(current);
-            // 计算切比雪夫距离
-            int distance = Math.max(
-                    Math.abs(current.getX() - pos.getX()),
-                    Math.max(
-                            Math.abs(current.getY() - pos.getY()),
-                            Math.abs(current.getZ() - pos.getZ())
-                    )
+        // 遍历棺材周围半径范围内的所有区块
+        int minChunkX = (pos.getX() - BIOME_REPLACEMENT_RADIUS) >> 4;
+        int maxChunkX = (pos.getX() + BIOME_REPLACEMENT_RADIUS) >> 4;
+        int minChunkZ = (pos.getZ() - BIOME_REPLACEMENT_RADIUS) >> 4;
+        int maxChunkZ = (pos.getZ() + BIOME_REPLACEMENT_RADIUS) >> 4;
+
+        int replacedBiomeCount = 0;
+        Set<ChunkPos> affectedChunks = new HashSet<>();
+
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
+                ChunkAccess chunk = level.getChunk(chunkX, chunkZ);
+
+                // 获取区块内所有 LevelChunkSection
+                for (int sectionY = 0; sectionY < chunk.getSectionsCount(); sectionY++) {
+                    LevelChunkSection section = chunk.getSection(sectionY);
+                    if (section != null) {
+                        // 获取 biomes 容器并重新创建它
+                        PalettedContainer<Holder<Biome>> biomesContainer = section.getBiomes().recreate();
+
+                        // 遍历 section 内的所有生物群系位置 (4x4x4 网格)
+                        for (int biomeX = 0; biomeX < 4; biomeX++) {
+                            for (int biomeY = 0; biomeY < 4; biomeY++) {
+                                for (int biomeZ = 0; biomeZ < 4; biomeZ++) {
+                                    // 计算世界坐标，检查是否在替换半径内
+                                    int worldX = (chunkX << 4) + (biomeX << 2);
+                                    int worldZ = (chunkZ << 4) + (biomeZ << 2);
+
+                                    // 检查是否在半径范围内（只检查XZ平面）
+                                    double dx = worldX - pos.getX();
+                                    double dz = worldZ - pos.getZ();
+                                    if (dx * dx + dz * dz <= BIOME_REPLACEMENT_RADIUS * BIOME_REPLACEMENT_RADIUS) {
+                                        // 设置生物群系
+                                        biomesContainer.getAndSetUnchecked(biomeX, biomeY, biomeZ, deadSilenceBiome.get());
+                                        replacedBiomeCount++;
+                                    }
+                                }
+                            }
+                        }
+
+                        // 重新设置 section 的 biomes
+                        try {
+                            java.lang.reflect.Field biomesField = LevelChunkSection.class.getDeclaredField("biomes");
+                            biomesField.setAccessible(true);
+                            biomesField.set(section, biomesContainer);
+                        } catch (Exception e) {
+                            CorpseOrigin.LOGGER.error("无法设置生物群系: {}", e.getMessage());
+                        }
+                    }
+                }
+
+                chunk.setUnsaved(true);
+                affectedChunks.add(chunkPos);
+            }
+        }
+
+        // 向附近玩家发送区块更新包，让客户端同步群系变化
+        // 使用 ClientboundLevelChunkPacketData 来更新整个区块
+        for (ChunkPos chunkPos : affectedChunks) {
+            LevelChunk chunk = level.getChunk(chunkPos.x, chunkPos.z);
+
+            // 注意：ClientboundLevelChunkPacketData 不能直接发送，需要通过 ClientboundLevelChunkWithLightPacket
+            // 或者直接发送给玩家
+            var packet = new net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket(
+                    chunk,
+                    level.getLightEngine(),
+                    null,
+                    null
             );
-            if (distance >= MAX_DISTANCE || currentEnergy <= 0) {
+
+            // 向附近的玩家发送更新包
+            Vec3 chunkCenter = Vec3.atLowerCornerOf(chunkPos.getWorldPosition()).add(8, 0, 8);
+            for (ServerPlayer player : level.getPlayers(p ->
+                    p.distanceToSqr(chunkCenter) < 256 * 256)) {
+                player.connection.send(packet);
+            }
+        }
+
+        CorpseOrigin.LOGGER.info("七星棺已放置！替换群系: {} 个位置，影响区块: {} 个",
+                replacedBiomeCount, affectedChunks.size());
+
+        infectNearbyVillagers(level, pos);
+    }
+
+    /** 村民感染检测半径 - 棺材周围64格范围内检测村庄和村民 */
+    private static final int VILLAGER_INFECTION_RADIUS = 64;
+
+    /** 村民感染概率 - 每个村民有30%概率被感染 */
+    private static final float VILLAGER_INFECTION_CHANCE = 0.3f;
+
+    /**
+     * 检测周围村庄和村民，概率性感染村民
+     *
+     * 【工作流程】
+     * 1. 检测棺材周围64格范围内的所有村民
+     * 2. 对每个村民进行概率判定（30%概率感染）
+     * 3. 被感染的村民获得尸兄感染buff（BYeffect）
+     * 4. 记录感染日志
+     *
+     * @param level 服务器世界
+     * @param pos 棺材位置
+     */
+    private void infectNearbyVillagers(ServerLevel level, BlockPos pos) {
+        // 检测周围村民
+        List<Villager> nearbyVillagers = level.getEntitiesOfClass(
+                Villager.class,
+                new AABB(pos).inflate(VILLAGER_INFECTION_RADIUS)
+        );
+
+        if (nearbyVillagers.isEmpty()) {
+            CorpseOrigin.LOGGER.debug("七星棺周围 {} 格内未检测到村民", VILLAGER_INFECTION_RADIUS);
+            return;
+        }
+
+        int infectedCount = 0;
+        for (Villager villager : nearbyVillagers) {
+            // 检查村民是否已经被感染
+            if (villager.hasEffect(com.phagens.corpseorigin.register.EffectRegister.QIANS)) {
                 continue;
             }
 
-            // 遍历6个方向
-            for (Direction direction : Direction.values()) {
-                BlockPos neighbor = current.relative(direction);
-                if (visited.contains(neighbor)) {
-                    continue;
-                }
-                BlockState neighborState = level.getBlockState(neighbor);
-                if (neighborState.getFluidState().is(FluidTags.WATER)) {
-                    int neighborEnergy = currentEnergy - ENERGY_DECAY;
-                    if (neighborEnergy > 0) {
-                        markInfectedWithEnergy(data, pos, neighbor, neighborEnergy, infectedPositions);
-                        visited.add(neighbor);
-                        queue.offer(neighbor);
-                    }
-                }
+            // 概率性感染
+            if (level.getRandom().nextFloat() < VILLAGER_INFECTION_CHANCE) {
+                BYeffect.applyInfection(villager, level);
+                infectedCount++;
+                CorpseOrigin.LOGGER.info("村民 {} 被七星棺感染！", villager.getName().getString());
             }
         }
-    }
-    
-    /**
-     * 标记感染的水位置并设置能量
-     */
-    private void markInfectedWithEnergy(InfectionData data, BlockPos coffinPos, BlockPos waterPos, int energy, Set<BlockPos> infectedPositions) {
-        infectedPositions.add(waterPos);
-        data.addInfectedWater(coffinPos, waterPos, energy);
-    }
 
-    /**
-     * 标记水为感染状态（静态方法，供外部调用）
-     * 注意：实际使用时会通过事件处理器传入 ServerLevel
-     */
-    public static void markWaterInfected(BlockPos pos) {
-        // 预留接口
-    }
-
-    /**
-     * 检查水是否被感染
-     * 注意：实际使用时会通过事件处理器传入 ServerLevel
-     */
-    public static boolean isWaterInfected(BlockPos pos) {
-        return false;
-    }
-
-    /**
-     * 清除棺材的感染
-     * 当棺材被移除时调用，清除该棺材造成的所有水源感染
-     */
-    private void clearInfection(BlockPos coffinPos, Level level) {
-        if (!(level instanceof ServerLevel serverLevel)) {
-            return;
+        if (infectedCount > 0) {
+            CorpseOrigin.LOGGER.info("七星棺周围检测到 {} 个村民，成功感染 {} 个",
+                    nearbyVillagers.size(), infectedCount);
+        } else {
+            CorpseOrigin.LOGGER.info("七星棺周围检测到 {} 个村民，但本次没有村民被感染（概率判定）",
+                    nearbyVillagers.size());
         }
-
-        if (!isInOcean(level, coffinPos)) {
-            return;
-        }
-
-        InfectionData data = InfectionData.get(serverLevel);
-        data.removeCoffinInfections(coffinPos);
-    }
-
-    /**
-     * 检查棺材是否在海洋环境中
-     * 检测16x16x16范围内是否有超过100个水方块
-     *
-     * @param level 世界实例
-     * @param pos 棺材位置
-     * @return 是否在海洋环境中
-     */
-    private boolean isInOcean(Level level, BlockPos pos) {
-        final int RANGE = 8; // 16x16范围，半径8格
-        final int WATER_THRESHOLD = 100; // 水方块数量阈值
-
-        int waterCount = 0;
-        for (BlockPos checkPos : BlockPos.betweenClosed(pos.offset(-RANGE, -RANGE, -RANGE), pos.offset(RANGE, RANGE, RANGE))) {
-            if (level.getBlockState(checkPos).getFluidState().is(FluidTags.WATER)) {
-                waterCount++;
-                if (waterCount >= WATER_THRESHOLD) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     /**
