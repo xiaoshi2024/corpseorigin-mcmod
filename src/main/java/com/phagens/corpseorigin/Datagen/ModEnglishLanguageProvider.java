@@ -36,13 +36,7 @@ public class ModEnglishLanguageProvider extends LanguageProvider {
         add("item.corpseorigin.gf_cy_tian", "Heaven Rank Inheritance");
         add("item.corpseorigin.gf_cy_shen", "Divine Rank Inheritance");
         add("item.corpseorigin.gf_cy_chaoshen", "Transcendent Rank Inheritance");
-
-        add("item.corpseorigin.baseball_bat", "Baseball Bat");
-        add("item.corpseorigin.blood_sword", "Blood Sword");
-        add("item.corpseorigin.blood_sword.desc", "§cLife Steal: Heals 10% of attack damage");
-
-
-
+        
         add("item.corpseorigin.ming_juque", "Juque Sword");
         add("item.corpseorigin.ming_juque_tw", "Juque Sword II");
         
