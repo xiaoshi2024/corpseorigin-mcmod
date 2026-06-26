@@ -3,8 +3,8 @@
  *
  * 【功能说明】
  * 1. 检测玩家是否接触到被七星棺感染的水源
- * 2. 根据水源能量值决定是否施加中毒效果（玩家）
- * 3. 支持水源感染的扩散（放置水源时检查相邻感染水源）
+ * 2. 检测玩家是否在死寂群系（尸兄群系）中接触水源
+ * 3. 根据水源状态决定是否施加中毒效果（玩家）
  * 4. 冷却机制防止效果频繁触发
  *
  * 【注意】
@@ -14,28 +14,29 @@
  *
  * 【工作原理】
  * - 每500毫秒检查一次玩家位置
- * - 检查实体所在方块是否为感染水源
+ * - 检查实体所在方块是否为感染水源 或 是否在死寂群系中
  * - 满足条件则施加对应效果
  * - 中毒效果有3000毫秒冷却时间
  *
- * 【感染条件】
- * 1. 实体所在位置的水源被感染（InfectionData中记录）
- * 2. 水源能量值 > 0
+ * 【感染条件】（满足任一即可）
+ * 1. 水源被感染（InfectionData中记录）
+ * 2. 玩家所在位置的群系是死寂群系
  * 3. 通过冷却时间检查
  *
  * 【关联系统】
- * - InfectionData: 水源感染数据存储
+ * - InfectionData: 水源感染数据存储（棺材感染）
+ * - BiomeRegistry: 死寂群系注册
  * - MobEffects.POISON: 玩家中毒效果
- * - BlockEvent.EntityPlaceEvent: 水源放置事件
  * - CorpseInfectionHandler: 尸体感染系统（村民感染新途径）
  *
  * @author Phagens
- * @version 1.1
+ * @version 2.0
  */
 package com.phagens.corpseorigin.event;
 
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.data.InfectionData;
+import com.phagens.corpseorigin.register.BiomeRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
@@ -46,7 +47,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 import java.util.HashMap;
@@ -95,51 +95,28 @@ public class ByWaterEventHandler {
     // 村民接触尸水不再直接获得变异buff，改为通过尸体感染系统实现
     // 参见 CorpseInfectionHandler 和龙右感染机制
 
-
-    @SubscribeEvent
-    public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
-        if (event.getEntity() instanceof Player && event.getLevel() instanceof ServerLevel serverLevel) {
-            BlockState state = event.getPlacedBlock();
-            if (state.getFluidState().is(FluidTags.WATER)) {
-                BlockPos pos = event.getPos();
-                if (isNextToInfectedWater(serverLevel, pos)) {
-                    InfectionData.markWaterInfectedStatic(serverLevel, pos);
-                }
-            }
-        }
-
-    }
-
+    /**
+     * 检查玩家是否在感染水中
+     * 判断条件：（满足任一即可）
+     * 1. 水源被七星棺感染（InfectionData中记录）
+     * 2. 玩家所在位置的群系是死寂群系
+     * 
+     * @param level 世界
+     * @param pos 玩家位置
+     * @return 是否在感染水中
+     */
     private static boolean isPlayerInInfectedWater(Level level, BlockPos pos) {
         BlockState blockState = level.getBlockState(pos);
         if (blockState.getFluidState().is(FluidTags.WATER)) {
             if (level instanceof ServerLevel serverLevel) {
-                return InfectionData.isWaterInfectedStatic(serverLevel, pos);
-            }
-        }
-        return false;
-    }
-
-    private static boolean isNextToInfectedWater(ServerLevel level, BlockPos pos) {
-        // 限制同化范围为1格（直接相邻）
-        final int MAX_RANGE = 1;
-        
-        for (int x = -MAX_RANGE; x <= MAX_RANGE; x++) {
-            for (int y = -MAX_RANGE; y <= MAX_RANGE; y++) {
-                for (int z = -MAX_RANGE; z <= MAX_RANGE; z++) {
-                    // 跳过自身
-                    if (x == 0 && y == 0 && z == 0) {
-                        continue;
-                    }
-                    // 计算曼哈顿距离，确保在范围内
-                    int distance = Math.abs(x) + Math.abs(y) + Math.abs(z);
-                    if (distance <= MAX_RANGE) {
-                        BlockPos neighbor = pos.offset(x, y, z);
-                        if (InfectionData.isWaterInfectedStatic(level, neighbor)) {
-                            return true;
-                        }
-                    }
-                }
+                // 检查条件1：水源被感染（InfectionData记录）
+                boolean isWaterInfected = InfectionData.isWaterInfectedStatic(serverLevel, pos);
+                
+                // 检查条件2：玩家所在群系是死寂群系
+                boolean isInCorpseBiome = serverLevel.getBiome(pos).is(BiomeRegistry.DEAD_SILENCE);
+                
+                // 满足任一条件即为感染水
+                return isWaterInfected || isInCorpseBiome;
             }
         }
         return false;

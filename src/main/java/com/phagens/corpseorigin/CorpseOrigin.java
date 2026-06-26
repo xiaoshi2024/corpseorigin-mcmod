@@ -282,11 +282,6 @@ public class CorpseOrigin {
 
     private void commonSetup(FMLCommonSetupEvent event) {
         LOGGER.info("HELLO FROM COMMON SETUP");
-
-        event.enqueueWork(() -> {
-            terrablender.api.Regions.register(new com.phagens.corpseorigin.worldgen.DeadSilenceRegion());
-            LOGGER.info("死寂群系已通过TerraBlender注册到主世界");
-        });
     }
 
 

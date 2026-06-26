@@ -1188,41 +1188,53 @@ public class LongyouEntity extends PathfinderMob implements GeoEntity, ICorpseBr
 
     /**
      * 评估村民的价值
-     * 大多数村民作为食物（85%），极少数感染成同伴（15%）
+     * 龙右只在村民残血时（血量低于30%）才考虑感染
      */
     private VillagerValue evaluateVillager(Villager villager) {
-        // 随机决定村民的价值，15%概率感染，85%概率作为食物
-        // 龙右作为尸王，更倾向于把村民当作食物来恢复自身
-        return this.random.nextFloat() < 0.15 ? VillagerValue.INFECT : VillagerValue.FOOD;
+        // 计算村民血量百分比
+        float healthPercent = villager.getHealth() / villager.getMaxHealth();
+        
+        // 只有在村民残血时（血量低于30%）才考虑感染
+        if (healthPercent < 0.3f) {
+            // 残血时有50%概率感染，50%概率作为食物
+            return this.random.nextFloat() < 0.5 ? VillagerValue.INFECT : VillagerValue.FOOD;
+        }
+        
+        // 血量健康的村民一律作为食物
+        return VillagerValue.FOOD;
     }
 
     /**
      * 评估玩家的价值
-     * 根据玩家的装备、生命值等因素决定是感染还是吃掉
-     * 20%概率感染（有潜力的玩家），80%概率作为食物
+     * 龙右只在玩家残血时（血量低于30%）才考虑感染
      */
     private PlayerValue evaluatePlayer(Player player) {
-        // 计算玩家的"潜力值"
-        int potential = 0;
+        // 计算玩家血量百分比
+        float healthPercent = player.getHealth() / player.getMaxHealth();
         
-        // 根据装备计算潜力
-        for (net.minecraft.world.item.ItemStack item : player.getInventory().armor) {
-            if (!item.isEmpty()) {
-                potential += 5;
+        // 只有在玩家残血时（血量低于30%）才考虑感染
+        if (healthPercent < 0.3f) {
+            // 计算玩家的"潜力值"（用于评估是否有感染价值）
+            int potential = 0;
+            
+            // 根据装备计算潜力
+            for (net.minecraft.world.item.ItemStack item : player.getInventory().armor) {
+                if (!item.isEmpty()) {
+                    potential += 5;
+                }
             }
+            
+            // 根据经验等级计算潜力
+            potential += player.experienceLevel;
+            
+            // 潜力高的玩家有更高概率被感染（最高50%概率）
+            float infectChance = 0.3f + Math.min(0.2f, potential / 100f);
+            
+            return this.random.nextFloat() < infectChance ? PlayerValue.INFECT : PlayerValue.FOOD;
         }
         
-        // 根据生命值计算潜力
-        float healthPercent = player.getHealth() / player.getMaxHealth();
-        potential += (int)(healthPercent * 10);
-        
-        // 根据经验等级计算潜力
-        potential += player.experienceLevel;
-        
-        // 潜力高的玩家有更高概率被感染（最高40%概率）
-        float infectChance = 0.2f + Math.min(0.2f, potential / 100f);
-        
-        return this.random.nextFloat() < infectChance ? PlayerValue.INFECT : PlayerValue.FOOD;
+        // 血量健康的玩家一律作为食物
+        return PlayerValue.FOOD;
     }
 
     /**

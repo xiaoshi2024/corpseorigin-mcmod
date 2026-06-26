@@ -2,6 +2,7 @@ package com.phagens.corpseorigin.event;
 
 import com.phagens.corpseorigin.CorpseOrigin;
 import com.phagens.corpseorigin.data.InfectionData;
+import com.phagens.corpseorigin.register.BiomeRegistry;
 import com.phagens.corpseorigin.register.Moditems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -13,6 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -29,39 +31,80 @@ public class BottleFillEventHandler {
         }
 
         ItemStack heldItem = event.getItemStack();
+        Player player = event.getEntity();
+        Level level = player.level();
+
+        if (level.isClientSide) {
+            return;
+        }
+
+        // 检查玩家视线是否对准水方块
+        BlockHitResult hitResult = level.clip(new ClipContext(
+                player.getEyePosition(),
+                player.getEyePosition().add(player.getViewVector(1.0F).scale(5.0F)),
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.ANY,
+                player
+        ));
+
+        if (hitResult.getType() != HitResult.Type.BLOCK) {
+            return;
+        }
+
+        BlockPos targetPos = hitResult.getBlockPos();
+        if (!level.getBlockState(targetPos).getFluidState().is(FluidTags.WATER)) {
+            return;
+        }
+
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        // 检查条件：水源被感染（InfectionData记录） 或 在死寂群系中
+        boolean isWaterInfected = InfectionData.isWaterInfectedStatic(serverLevel, targetPos);
+        boolean isInCorpseBiome = serverLevel.getBiome(targetPos).is(BiomeRegistry.DEAD_SILENCE);
+
+        if (!isWaterInfected && !isInCorpseBiome) {
+            return;
+        }
+
+        // 玻璃瓶舀取尸水
         if (heldItem.getItem() == Items.GLASS_BOTTLE) {
-            Player player = event.getEntity();
-            Level level = player.level();
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+            event.setCanceled(true);
+            handleBottleFill(player, event.getHand(), heldItem);
+            level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                    SoundEvents.BOTTLE_FILL, SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
+        // 铁桶舀取尸水
+        else if (heldItem.getItem() == Items.BUCKET) {
+            event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+            event.setCanceled(true);
+            handleBucketFill(player, event.getHand(), heldItem);
+            level.setBlock(targetPos, Blocks.AIR.defaultBlockState(), 3);
+            level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                    SoundEvents.BUCKET_FILL, SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
+    }
 
-            if (level.isClientSide) {
-                return;
-            }
+    /**
+     * 处理铁桶舀取尸水
+     * @param player 玩家
+     * @param hand 手部
+     * @param bucketStack 铁桶物品栈
+     */
+    private static void handleBucketFill(Player player, net.minecraft.world.InteractionHand hand, ItemStack bucketStack) {
+        if (!player.getAbilities().instabuild) {
+            bucketStack.shrink(1);
+        }
 
-            // 检查玩家视线是否对准水方块
-            BlockHitResult hitResult = level.clip(new ClipContext(
-                    player.getEyePosition(),
-                    player.getEyePosition().add(player.getViewVector(1.0F).scale(5.0F)),
-                    ClipContext.Block.COLLIDER,
-                    ClipContext.Fluid.ANY,
-                    player
-            ));
+        ItemStack bywaterBucket = new ItemStack(Moditems.BYWATER_BUCKET.get());
 
-            if (hitResult.getType() == HitResult.Type.BLOCK) {
-                BlockPos targetPos = hitResult.getBlockPos();
-                if (level.getBlockState(targetPos).getFluidState().is(FluidTags.WATER)) {
-                    if (level instanceof ServerLevel serverLevel && InfectionData.isWaterInfectedStatic(serverLevel, targetPos)) {
-                        // 取消原事件，手动处理
-                        event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
-                        event.setCanceled(true);
-
-                        // 处理玻璃瓶的消耗和尸水瓶的获取
-                        handleBottleFill(player, event.getHand(), heldItem);
-
-                        // 播放音效
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                                SoundEvents.BOTTLE_FILL, SoundSource.PLAYERS, 1.0F, 1.0F);
-                    }
-                }
+        if (bucketStack.isEmpty()) {
+            player.setItemInHand(hand, bywaterBucket);
+        } else {
+            if (!player.getInventory().add(bywaterBucket)) {
+                player.drop(bywaterBucket, false);
             }
         }
     }
