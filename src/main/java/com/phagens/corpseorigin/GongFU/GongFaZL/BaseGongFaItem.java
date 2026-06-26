@@ -191,9 +191,9 @@ public class BaseGongFaItem extends Item {
     private String getRarityName(int rarity) {
         return switch (rarity) {
             case 1 -> "人"; case 2 -> "地"; case 3 -> "天";
-            case 4 -> "神"; case 5 -> "超神";case 6 -> "地阴";
-            case 7 -> "天阳";case 8 -> "黑洞级";case 9 -> "白洞级";
-            case 10 -> "星海";case 11 -> "寰宇";default -> "？";
+            case 4 -> "神"; case 5 -> "超神";case 6 -> "霸主级";
+            case 7 -> "王者级";case 8 -> "帝王级";case 9 -> "神明级";
+            case 10 -> "真神";case 11 -> "超脱";default -> "？";
         };
     }
 

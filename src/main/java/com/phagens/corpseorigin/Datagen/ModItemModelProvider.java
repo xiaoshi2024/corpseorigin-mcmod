@@ -15,7 +15,8 @@ public class ModItemModelProvider extends ItemModelProvider {
 
     @Override
     protected void registerModels() {
-
+        basicItem(Moditems.BALL_BAT.get());
+        basicItem(Moditems.BLOOD_SWROD.get());
         basicItem(Moditems.BASE_GONG_FA.get());
         basicItem(Moditems.GF_CY_REN.get());
         basicItem(Moditems.GF_CY_DI.get());

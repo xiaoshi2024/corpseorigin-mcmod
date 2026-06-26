@@ -176,15 +176,12 @@ dependencies {
 
     implementation "maven.modrinth:geckolib:gFmrC8Ru"
 
-    //mca联动
-    implementation "maven.modrinth:minecraft-comes-alive-reborn:uZa9ZX7n"
-
     implementation 'com.github.glitchfiend:TerraBlender-neoforge:1.21.1-4.1.0.3'
 
     // WTHIT integration
     compileOnly "mcp.mobius.waila:wthit-api:neo-${wthit_version}"
-    runtimeOnly "mcp.mobius.waila:wthit:neo-${wthit_version}"
-    runtimeOnly "lol.bai:badpackets:neo-${badpackets_version}"
+//    runtimeOnly "mcp.mobius.waila:wthit:neo-${wthit_version}"
+//    runtimeOnly "lol.bai:badpackets:neo-${badpackets_version}"
 
     //curios饰品api
     runtimeOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"

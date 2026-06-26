@@ -121,12 +121,6 @@ public class EntityRegistry {
                     .updateInterval(2)
                     .build("coco_zombie_x"));
 
-    // MCA 联动 - MCA 感染尸兄实体
-    public static final DeferredHolder<EntityType<?>, EntityType<com.phagens.corpseorigin.entity.mca.McaZombieEntity>> MCA_ZOMBIE = ENTITIES.register("mca_zombie",
-            () -> EntityType.Builder.<com.phagens.corpseorigin.entity.mca.McaZombieEntity>of(com.phagens.corpseorigin.entity.mca.McaZombieEntity::new, MobCategory.MONSTER)
-                    .sized(0.6F, 1.8F)
-                    .build("mca_zombie"));
-
     // 蜈蚣头部实体 - 根据模型重新调整碰撞箱
     public static final DeferredHolder<EntityType<?>, EntityType<CentipedeHead>> CENTIPEDE_HEAD = ENTITIES.register("centipede_head",
             () -> EntityType.Builder.<CentipedeHead>of(CentipedeHead::new, MobCategory.MONSTER)

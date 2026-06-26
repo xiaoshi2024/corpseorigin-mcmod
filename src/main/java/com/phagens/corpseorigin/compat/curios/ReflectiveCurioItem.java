@@ -1,6 +1,6 @@
 package com.phagens.corpseorigin.compat.curios;
 
-import com.phagens.corpseorigin.Item.JuQue;
+import com.phagens.corpseorigin.Item.Swrod.JuQue;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 

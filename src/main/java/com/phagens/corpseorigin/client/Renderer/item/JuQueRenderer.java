@@ -1,6 +1,6 @@
 package com.phagens.corpseorigin.client.Renderer.item;
 
-import com.phagens.corpseorigin.Item.JuQue;
+import com.phagens.corpseorigin.Item.Swrod.JuQue;
 import com.phagens.corpseorigin.client.Models.item.JuQueModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.EntityModel;

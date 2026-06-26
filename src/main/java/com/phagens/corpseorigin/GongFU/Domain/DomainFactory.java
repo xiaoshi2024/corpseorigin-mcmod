@@ -76,7 +76,6 @@ public class DomainFactory {
             domain.setDomainParticleType(domainParticleType != null ? domainParticleType : ParticleTypes.FLAME);
             domain.setDomainHitCallback(domainHitCallback);
 
-            // ⭐ 设置自定义粒子参数
             domain.setParticleCountPerTick(particleCountPerTick > 0 ? particleCountPerTick : 30);
             domain.setParticleSpread(particleSpreadX, particleSpreadY, particleSpreadZ);
             domain.setParticleSpeed(particleSpeed);

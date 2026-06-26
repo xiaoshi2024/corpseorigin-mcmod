@@ -49,7 +49,11 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         // 武器
         add("item.corpseorigin.ming_juque", "巨阙剑");
         add("item.corpseorigin.ming_juque_tw", "巨阙剑 贰阶");
-        
+        add("item.corpseorigin.ball_bat", "棒球棍");
+        add("item.corpseorigin.blood_sword", "血剑");
+        add("item.corpseorigin.blood_sword.desc", "§c吸血：造成10%攻击力的治疗");
+
+
         // 药水与容器
         add("item.corpseorigin.bywater_bucket", "尸水桶");
         add("item.corpseorigin.bywater_bottle", "尸水瓶");

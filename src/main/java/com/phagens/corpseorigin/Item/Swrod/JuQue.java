@@ -1,4 +1,4 @@
-package com.phagens.corpseorigin.Item;
+package com.phagens.corpseorigin.Item.Swrod;
 
 import com.phagens.corpseorigin.client.Renderer.item.JuQueRenderer;
 import com.phagens.corpseorigin.network.JuQueBeamPacket;

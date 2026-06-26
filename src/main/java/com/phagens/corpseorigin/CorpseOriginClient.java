@@ -72,11 +72,6 @@ public class CorpseOriginClient {
         event.registerEntityRenderer(EntityRegistry.ZB_WORM.get(), ZbWormRenderer::new);
         event.registerEntityRenderer(EntityRegistry.UNCLE.get(), UncleRenderer::new);
         event.registerEntityRenderer(EntityRegistry.COCO_ZOMBIE_X.get(), CocoZombieXRenderer::new);
-        
-        // MCA 联动 - 只有在 MCA 模组存在时才注册渲染器
-        if (com.phagens.corpseorigin.entity.mca.McaZombieEntity.isMcaAvailable()) {
-            event.registerEntityRenderer(EntityRegistry.MCA_ZOMBIE.get(), McaZombieRenderer::new);
-        }
 
         // ⭐ 注册领域实体渲染器（完全隐形）
         event.registerEntityRenderer(EntityRegistry.DOMAIN.get(), DomainRenderer::new);

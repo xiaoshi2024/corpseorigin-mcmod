@@ -1,7 +1,7 @@
 package com.phagens.corpseorigin.client.Models.item;
 
 import com.phagens.corpseorigin.CorpseOrigin;
-import com.phagens.corpseorigin.Item.JuQue;
+import com.phagens.corpseorigin.Item.Swrod.JuQue;
 import net.minecraft.resources.ResourceLocation;
 import software.bernie.geckolib.model.GeoModel;
 

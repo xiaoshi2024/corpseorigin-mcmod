@@ -92,7 +92,8 @@ public class CorpseOrigin {
 
                 // 添加尸兄主题物品
                 output.accept(Moditems.HAIR_DRYER.get());
-
+                output.accept(Moditems.BALL_BAT.get());
+                output.accept(Moditems.BLOOD_SWROD.get());
             }).build());
 
     // 新增：功法专属标签页
@@ -124,6 +125,10 @@ public class CorpseOrigin {
                         output.accept(Moditems.YNS_A.get());
                         output.accept(Moditems.YNS_B.get());
                         output.accept(Moditems.YNS_C.get());
+                        output.accept(Moditems.SLOT_EXPANSION_FB.get());
+                        output.accept(Moditems.SLOT_EXPANSION_GF.get());
+                        output.accept(Moditems.SLOT_EXPANSION_XM.get());
+                        output.accept(Moditems.SLOT_EXPANSION_UNIVERSAL.get());
                     })
                     .build());
 

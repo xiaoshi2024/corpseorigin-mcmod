@@ -1,16 +1,12 @@
 
 {
   "inputs": [
-    {"item": "minecraft:diamond", "count": 1},
-    {"item": "minecraft:emerald", "count": 1},
-    {"item": "minecraft:emerald", "count": 1},
-    {"item": "minecraft:emerald", "count": 1},
-    {"item": "minecraft:emerald", "count": 1},
-    {"item": "minecraft:emerald", "count": 1}
+    {"item": "minecraft:iron_ingot", "count": 27},
+    {"item": "minecraft:iron_bars", "count": 64}
   ],
   "output": {
-    "item": "minecraft:gold_ingot",
-    "count": 5
+    "item": "corpseorigin:ball_bat",
+    "count": 1
   },
   "type": "normal"
 }

@@ -1,9 +1,9 @@
 package com.phagens.corpseorigin.network;
 
 import com.phagens.corpseorigin.CorpseOrigin;
+import com.phagens.corpseorigin.Item.Swrod.JuQue;
 import com.phagens.corpseorigin.entity.JuQueBeamEntity;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
@@ -35,7 +35,7 @@ public record JuQueBeamPacket() implements CustomPacketPayload {
                 ItemStack stack = player.getMainHandItem();
                 
                 // 检查是否持有巨阙武器
-                if (stack.getItem() instanceof com.phagens.corpseorigin.Item.JuQue juQue) {
+                if (stack.getItem() instanceof JuQue juQue) {
                     // 检查冷却时间
                     if (player.getCooldowns().isOnCooldown(juQue)) {
                         return;

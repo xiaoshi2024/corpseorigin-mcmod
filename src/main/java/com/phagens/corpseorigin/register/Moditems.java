@@ -5,6 +5,9 @@ import com.phagens.corpseorigin.Item.*;
 import com.phagens.corpseorigin.Item.GF.GongFaBaseItem;
 import com.phagens.corpseorigin.Item.Organic.DrMuEyeItem;
 import com.phagens.corpseorigin.Item.Organic.OrdinaryZbEyeItem;
+import com.phagens.corpseorigin.Item.Swrod.BaseballBat;
+import com.phagens.corpseorigin.Item.Swrod.BloodSword;
+import com.phagens.corpseorigin.Item.Swrod.JuQue;
 import com.phagens.corpseorigin.Item.YN.Baseitem;
 import com.phagens.corpseorigin.Item.YaoJi.Sagent;
 import com.phagens.corpseorigin.Item.zbritem.ZbWormitem;
@@ -12,9 +15,7 @@ import com.phagens.corpseorigin.Item.tier.Modtiers;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.item.*;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -29,6 +30,9 @@ public class Moditems {
 
     public static final DeferredItem<BlockItem> QI_XING_GUAN_ITEM = ITEMS.register("qi_xings_guan_item",
             () -> new BlockItem(BlockRegistry.QI_XING_GUAN.get(), new Item.Properties()));
+    //武器
+    public static final DeferredItem<Item> BALL_BAT = ITEMS.register("ball_bat", () -> new BaseballBat(Tiers.IRON, 6, -2.8f));
+    public static final DeferredItem<Item> BLOOD_SWROD = ITEMS.register("blood_sword", () -> new BloodSword(Tiers.IRON, 10, -2.8f));
 
     // 尸兄肉块物品
     public static final DeferredItem<BlockItem> ZBR_FLESH_ITEM = ITEMS.register("zbr_flesh_item",
