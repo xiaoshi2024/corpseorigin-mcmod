@@ -196,7 +196,16 @@ public class CorpseOrigin {
 
 
         Moditems.ITEMS.register(modEventBus);
+        // Register ourselves for server and other game events we are interested in.
+        NeoForge.EVENT_BUS.register(this);
 
+        // 注册修行容器特殊效果事件处理器
+        NeoForge.EVENT_BUS.register(com.phagens.corpseorigin.GongFU.ModUtlis.GongFuContainerBonusHandler.class);
+
+        // 初始化修行容器特殊物品效果默认配置
+        com.phagens.corpseorigin.GongFU.ModUtlis.GongFuContainerEffect.registerDefaults();
+
+        modEventBus.addListener(this::onClientSetup);
         // 先注册实体，因为方块可能依赖实体
         EntityRegistry.ENTITIES.register(modEventBus);
 
