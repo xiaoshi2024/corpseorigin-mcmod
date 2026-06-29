@@ -5,13 +5,16 @@ import com.phagens.corpseorigin.GongFU.GongFaZL.BaseGongFaItem;
 import com.phagens.corpseorigin.GongFU.GongFaZL.GongFaData;
 import com.phagens.corpseorigin.GongFU.JsonLoader.GongFaJsonLoader;
 import com.phagens.corpseorigin.GongFU.MenuTypeRegister;
+import com.phagens.corpseorigin.GongFU.ModUtlis.GongFuContainerBonusHandler;
+import com.phagens.corpseorigin.GongFU.ModUtlis.GongFuContainerEffect;
 import com.phagens.corpseorigin.GongFU.PackGongFu.NetworkPaketGL;
 import com.phagens.corpseorigin.advancement.AdvancementEventHandler;
 import com.phagens.corpseorigin.advancement.CriterionTriggerRegister;
 import com.phagens.corpseorigin.event.player.playerDie;
 import com.phagens.corpseorigin.player.CorpsePlayerAttachment;
-import com.phagens.corpseorigin.register.*;
+import com.phagens.corpseorigin.api.watercompany.WaterCompanyAPI;
 import com.phagens.corpseorigin.character.BaiXiaoFei;
+import com.phagens.corpseorigin.register.*;
 import com.phagens.corpseorigin.character.CharacterManager;
 import com.phagens.corpseorigin.character.LongYou;
 import com.phagens.corpseorigin.skill.*;
@@ -203,10 +206,10 @@ public class CorpseOrigin {
         NeoForge.EVENT_BUS.register(this);
 
         // 注册修行容器特殊效果事件处理器
-        NeoForge.EVENT_BUS.register(com.phagens.corpseorigin.GongFU.ModUtlis.GongFuContainerBonusHandler.class);
+        NeoForge.EVENT_BUS.register(GongFuContainerBonusHandler.class);
 
         // 初始化修行容器特殊物品效果默认配置
-        com.phagens.corpseorigin.GongFU.ModUtlis.GongFuContainerEffect.registerDefaults();
+        GongFuContainerEffect.registerDefaults();
 
         modEventBus.addListener(this::onClientSetup);
         // 先注册实体，因为方块可能依赖实体
@@ -299,6 +302,7 @@ public class CorpseOrigin {
 
     private void commonSetup(FMLCommonSetupEvent event) {
         LOGGER.info("HELLO FROM COMMON SETUP");
+        WaterCompanyAPI.init();
     }
 
 
