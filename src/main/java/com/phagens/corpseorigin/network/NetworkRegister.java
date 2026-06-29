@@ -79,6 +79,13 @@ public class NetworkRegister {
                 JuQueTakeOutPacket::handle
         );
 
-        CorpseOrigin.LOGGER.info("NetworkRegister 网络包注册完成 - 共注册了 7 个包");
+        // ⭐ 新增：注册角色同步包 (服务端 → 客户端)
+        registrar.playToClient(
+                CharacterSyncPacket.TYPE,
+                CharacterSyncPacket.STREAM_CODEC,
+                CharacterSyncPacket::handle
+        );
+
+        CorpseOrigin.LOGGER.info("NetworkRegister 网络包注册完成 - 共注册了 8 个包");
     }
 }

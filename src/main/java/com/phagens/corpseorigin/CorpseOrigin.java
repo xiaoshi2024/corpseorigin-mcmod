@@ -11,6 +11,9 @@ import com.phagens.corpseorigin.advancement.CriterionTriggerRegister;
 import com.phagens.corpseorigin.event.player.playerDie;
 import com.phagens.corpseorigin.player.CorpsePlayerAttachment;
 import com.phagens.corpseorigin.register.*;
+import com.phagens.corpseorigin.character.BaiXiaoFei;
+import com.phagens.corpseorigin.character.CharacterManager;
+import com.phagens.corpseorigin.character.LongYou;
 import com.phagens.corpseorigin.skill.*;
 import com.phagens.corpseorigin.voice.VoiceCommandRegistration;
 import com.phagens.corpseorigin.worldgen.CorpseOriginDatapackProvider;
@@ -225,6 +228,11 @@ public class CorpseOrigin {
         CorpseSkills.init();
         CorpseEvolutionTree.init();
         CorpseSkillTree.init();
+
+        // 初始化角色系统
+        CharacterManager.getInstance().registerCharacter(new BaiXiaoFei());
+        CharacterManager.getInstance().registerCharacter(new LongYou());
+        CorpseOrigin.LOGGER.info("注册了 {} 个角色", CharacterManager.getInstance().getRegisteredCharacters().size());
 
         NetworkPaketGL.registerPackets(modEventBus);
 

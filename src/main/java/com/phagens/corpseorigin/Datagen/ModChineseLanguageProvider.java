@@ -257,6 +257,32 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("skilltype.corpseorigin.divine_ability", "神级能力");
         add("skilltype.corpseorigin.supreme_ability", "超神能力");
 
+        // 白小飞技能
+        add("skill.corpseorigin.baixiaofei.hot_blood", "热血");
+        add("skill.corpseorigin.baixiaofei.hot_blood.desc", "白小飞的热血意志，增加攻击力");
+        add("skill.corpseorigin.baixiaofei.fighting_technique", "格斗术");
+        add("skill.corpseorigin.baixiaofei.fighting_technique.desc", "精通各种格斗技巧");
+        add("skill.corpseorigin.baixiaofei.survival_instinct", "生存本能");
+        add("skill.corpseorigin.baixiaofei.survival_instinct.desc", "危险时自动触发防御");
+        add("skill.corpseorigin.baixiaofei.flying_kick", "飞踢");
+        add("skill.corpseorigin.baixiaofei.flying_kick.desc", "高速冲刺并踢击敌人");
+        add("skill.corpseorigin.baixiaofei.sword_mastery", "剑术精通");
+        add("skill.corpseorigin.baixiaofei.sword_mastery.desc", "精通剑术，伤害提升");
+
+        // 龙右技能
+        add("skill.corpseorigin.longyou.corpse_king_authority", "尸王威压");
+        add("skill.corpseorigin.longyou.corpse_king_authority.desc", "尸王的威严，大幅提升属性");
+        add("skill.corpseorigin.longyou.dark_energy", "黑暗能量");
+        add("skill.corpseorigin.longyou.dark_energy.desc", "释放黑暗能量，强化自身");
+        add("skill.corpseorigin.longyou.blood_line", "血继限界");
+        add("skill.corpseorigin.longyou.blood_line.desc", "尸王血脉，持续恢复生命");
+        add("skill.corpseorigin.longyou.undead_immortality", "不死不灭");
+        add("skill.corpseorigin.longyou.undead_immortality.desc", "尸王的不死之身，增加护甲");
+        add("skill.corpseorigin.longyou.haunt", "怨灵缠身");
+        add("skill.corpseorigin.longyou.haunt.desc", "释放怨灵攻击周围敌人");
+        add("skill.corpseorigin.longyou.fear_dominance", "恐惧支配");
+        add("skill.corpseorigin.longyou.fear_dominance.desc", "支配恐惧，隐身并削弱敌人");
+
         // 技能提示
         add("skill.corpseorigin.no_activatable", "无可激活技能");
         add("skill.corpseorigin.cooldown", "技能冷却中，剩余 %d 秒");
@@ -343,6 +369,27 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("command.corpseorigin.voice.status_bindings", "  绑定数量: %d");
         add("command.corpseorigin.voice.check_available", "§a语音系统可用");
         add("command.corpseorigin.voice.check_unavailable", "§c语音系统不可用，请检查麦克风设置");
+
+        // 角色指令翻译
+        add("command.corpseorigin.character.list", "§e=== 可用角色列表 ===");
+        add("command.corpseorigin.character.list.entry", "§6- %s: %s");
+        add("command.corpseorigin.character.set.success", "§a已将 %s 的角色设置为 %s");
+        add("command.corpseorigin.character.set.self", "§a你的角色已切换为 %s");
+        add("command.corpseorigin.character.set.skills", "§e获得技能: %s");
+        add("command.corpseorigin.character.clear.success", "§a已清除 %s 的角色，恢复为凡人");
+        add("command.corpseorigin.character.info", "§e=== %s 的角色信息 ===");
+        add("command.corpseorigin.character.info.current", "§6当前角色: %s");
+        add("command.corpseorigin.character.info.description", "§7描述: %s");
+        add("command.corpseorigin.character.info.skills", "§6技能:");
+        add("command.corpseorigin.character.info.skill", "  §a• %s");
+        add("command.corpseorigin.character.info.no_skills", "  §7无特殊技能");
+        add("command.corpseorigin.character.info.traits", "§6特质:");
+        add("command.corpseorigin.character.info.trait", "  §c• %s");
+        add("command.corpseorigin.character.info.mortal", "§7凡人 - 没有特殊能力");
+        add("command.corpseorigin.character.info.self", "§6当前角色: %s");
+        add("command.corpseorigin.character.error.not_found", "§c角色不存在: %s");
+        add("command.corpseorigin.character.error.player_not_found", "§c玩家不存在");
+        add("command.corpseorigin.character.error.already_set", "§c%s 已经是 %s 了");
     }
 
     private void addConfigurationTranslations() {
@@ -380,6 +427,19 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("itemGroup.corpseorigin", "尸兄模组");
         add("message.corpseorigin.cultivation_opened", "修行界面已打开");
         add("message.corpseorigin.water_infected", "这片水已被尸水污染！");
+
+        // 角色翻译
+        add("character.corpseorigin.mortal", "凡人");
+        add("character.corpseorigin.mortal.desc", "普通的人类，没有特殊能力");
+        add("character.corpseorigin.mortal.trait", "平凡的人类");
+        add("character.corpseorigin.baixiaofei", "白小飞");
+        add("character.corpseorigin.baixiaofei.desc", "尸兄世界的主角，热血青年，拥有强大的战斗意志");
+        add("character.corpseorigin.baixiaofei.trait1", "热血青年");
+        add("character.corpseorigin.baixiaofei.trait2", "战斗天才");
+        add("character.corpseorigin.longyou", "龙右");
+        add("character.corpseorigin.longyou.desc", "尸王，尸族的统治者，拥有恐怖的力量");
+        add("character.corpseorigin.longyou.trait1", "尸王威压");
+        add("character.corpseorigin.longyou.trait2", "不死不灭");
 
         add("message.corpseorigin.ordinary_player", "§c你只是个普通人");
         add("message.corpseorigin.skill_tree_coming_soon", "技能树界面即将推出");
