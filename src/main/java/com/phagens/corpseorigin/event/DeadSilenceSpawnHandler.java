@@ -22,9 +22,7 @@ import java.util.Set;
 public class DeadSilenceSpawnHandler {
 
     private static final Set<DeferredHolder<EntityType<?>, ? extends EntityType<?>>> CORPSE_BROTHER_HOLDERS = Set.of(
-            EntityRegistry.LOWER_LEVEL_ZB,
-            EntityRegistry.LONGYOU,
-            EntityRegistry.ZBR_FISH
+            EntityRegistry.LOWER_LEVEL_ZB
     );
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -33,6 +31,12 @@ public class DeadSilenceSpawnHandler {
         Level level = mob.level();
 
         if (level.isClientSide) return;
+
+        // 在1.21.1中，setSpawnCancelled只能在实体真正生成前调用
+        // 检查实体是否已经在tick中（死亡时killedEntity可能触发Late调用）
+        if (mob.isRemoved() || mob.level().getEntities(mob, mob.getBoundingBox()).contains(mob)) {
+            return;
+        }
 
         EntityType<?> entityType = mob.getType();
         boolean isCorpseBrother = isCorpseBrotherType(entityType);

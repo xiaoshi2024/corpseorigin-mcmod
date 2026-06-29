@@ -268,5 +268,65 @@ public class ModEnglishLanguageProvider extends LanguageProvider {
         add("itemGroup.corpseorigin", "Corpse Origin Mod");
         add("message.corpseorigin.cultivation_opened", "Cultivation interface opened");
         add("message.corpseorigin.water_infected", "This water is contaminated with corpse water!");
+
+        // Character translations
+        add("character.corpseorigin.mortal", "Mortal");
+        add("character.corpseorigin.mortal.desc", "A normal human with no special abilities");
+        add("character.corpseorigin.mortal.trait", "Ordinary Human");
+        add("character.corpseorigin.baixiaofei", "Bai Xiaofei");
+        add("character.corpseorigin.baixiaofei.desc", "The protagonist of the Corpse world, a hot-blooded youth with powerful combat will");
+        add("character.corpseorigin.baixiaofei.trait1", "Hot-blooded Youth");
+        add("character.corpseorigin.baixiaofei.trait2", "Combat Prodigy");
+        add("character.corpseorigin.longyou", "Long You");
+        add("character.corpseorigin.longyou.desc", "The Corpse King, ruler of the Corpse Clan, with terrifying power");
+        add("character.corpseorigin.longyou.trait1", "Corpse King Aura");
+        add("character.corpseorigin.longyou.trait2", "Immortal");
+
+        // Bai Xiaofei Skills
+        add("skill.corpseorigin.baixiaofei.hot_blood", "Hot Blood");
+        add("skill.corpseorigin.baixiaofei.hot_blood.desc", "Bai Xiaofei's hot-blooded will, increases attack damage");
+        add("skill.corpseorigin.baixiaofei.fighting_technique", "Fighting Technique");
+        add("skill.corpseorigin.baixiaofei.fighting_technique.desc", "Master of various combat techniques");
+        add("skill.corpseorigin.baixiaofei.survival_instinct", "Survival Instinct");
+        add("skill.corpseorigin.baixiaofei.survival_instinct.desc", "Automatically triggers defense when in danger");
+        add("skill.corpseorigin.baixiaofei.flying_kick", "Flying Kick");
+        add("skill.corpseorigin.baixiaofei.flying_kick.desc", "High-speed dash and kick attack on enemies");
+        add("skill.corpseorigin.baixiaofei.sword_mastery", "Sword Mastery");
+        add("skill.corpseorigin.baixiaofei.sword_mastery.desc", "Master of swordsmanship, damage increase");
+
+        // Long You Skills
+        add("skill.corpseorigin.longyou.corpse_king_authority", "Corpse King Authority");
+        add("skill.corpseorigin.longyou.corpse_king_authority.desc", "The majesty of the Corpse King, greatly increases attributes");
+        add("skill.corpseorigin.longyou.dark_energy", "Dark Energy");
+        add("skill.corpseorigin.longyou.dark_energy.desc", "Release dark energy to strengthen yourself");
+        add("skill.corpseorigin.longyou.blood_line", "Blood Line");
+        add("skill.corpseorigin.longyou.blood_line.desc", "Corpse King bloodline, continuous health regeneration");
+        add("skill.corpseorigin.longyou.undead_immortality", "Undead Immortality");
+        add("skill.corpseorigin.longyou.undead_immortality.desc", "Corpse King's immortal body, increases armor");
+        add("skill.corpseorigin.longyou.haunt", "Haunt");
+        add("skill.corpseorigin.longyou.haunt.desc", "Release vengeful spirits to attack surrounding enemies");
+        add("skill.corpseorigin.longyou.fear_dominance", "Fear Dominance");
+        add("skill.corpseorigin.longyou.fear_dominance.desc", "Dominate fear, become invisible and weaken enemies");
+
+        // Character Command translations
+        add("command.corpseorigin.character.list", "§e=== Available Character List ===");
+        add("command.corpseorigin.character.list.entry", "§6- %s: %s");
+        add("command.corpseorigin.character.set.success", "§aSet %s's character to %s");
+        add("command.corpseorigin.character.set.self", "§aYour character changed to %s");
+        add("command.corpseorigin.character.set.skills", "§eGained skills: %s");
+        add("command.corpseorigin.character.clear.success", "§aCleared %s's character, restored to Mortal");
+        add("command.corpseorigin.character.info", "§e=== %s's Character Info ===");
+        add("command.corpseorigin.character.info.current", "§6Current character: %s");
+        add("command.corpseorigin.character.info.description", "§7Description: %s");
+        add("command.corpseorigin.character.info.skills", "§6Skills:");
+        add("command.corpseorigin.character.info.skill", "  §a• %s");
+        add("command.corpseorigin.character.info.no_skills", "  §7No special skills");
+        add("command.corpseorigin.character.info.traits", "§6Traits:");
+        add("command.corpseorigin.character.info.trait", "  §c• %s");
+        add("command.corpseorigin.character.info.mortal", "§7Mortal - No special abilities");
+        add("command.corpseorigin.character.info.self", "§6Current character: %s");
+        add("command.corpseorigin.character.error.not_found", "§cCharacter not found: %s");
+        add("command.corpseorigin.character.error.player_not_found", "§cPlayer not found");
+        add("command.corpseorigin.character.error.already_set", "§c%s is already %s");
     }
 }

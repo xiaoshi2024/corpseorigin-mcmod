@@ -34,9 +34,7 @@ public class DeadSilenceZoneHandler {
     private static final int CHECK_INTERVAL = 40;
 
     private static final Set<DeferredHolder<EntityType<?>, ? extends EntityType<?>>> CORPSE_BROTHER_HOLDERS = Set.of(
-            EntityRegistry.LOWER_LEVEL_ZB,
-            EntityRegistry.LONGYOU,
-            EntityRegistry.ZBR_FISH
+            EntityRegistry.LOWER_LEVEL_ZB
     );
 
     private static SimpleSoundInstance ambienceSound = null;
