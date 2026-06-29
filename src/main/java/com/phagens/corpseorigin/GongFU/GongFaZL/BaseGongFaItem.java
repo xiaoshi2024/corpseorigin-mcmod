@@ -4,12 +4,16 @@ import com.phagens.corpseorigin.GongFU.JsonLoader.GongFaJsonLoader;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.component.CustomModelData;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import static com.phagens.corpseorigin.GongFU.ModUtlis.GongFUDataUtlis.getCengMultiplier;
 
@@ -21,7 +25,9 @@ public class BaseGongFaItem extends Item {
         super(properties);
         this.gongFaType = type;
     }
-    
+
+
+
     /**
      * 创建带有默认数据的功法物品
      */
@@ -164,7 +170,10 @@ public class BaseGongFaItem extends Item {
         CompoundTag rootTag = new CompoundTag();
         rootTag.put("GongFaData", data.toNBT());
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(rootTag));
+
+
     }
+
 
     //属性名
     private String getAttributeName(String attrKey) {
@@ -215,4 +224,6 @@ public class BaseGongFaItem extends Item {
         }
         return super.getName(stack);
     }
+
+
 }

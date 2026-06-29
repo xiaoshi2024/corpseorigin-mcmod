@@ -141,6 +141,8 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
         String ceng = json.has("ceng") ? json.get("ceng").getAsString() : "copy_1";
         int cooldown =json.has("cooldown")?json.get("cooldown").getAsInt():300;
         String icon = json.has("icon") ? json.get("icon").getAsString() : null;
+        String itemTexture = json.has("item_texture") ? json.get("item_texture").getAsString() : null;
+
         // 解析属性 Map
         Map<String, Double> attributes = new HashMap<>();
         if (json.has("attributes")) {
@@ -157,7 +159,7 @@ public class GongFaJsonLoader extends SimpleJsonResourceReloadListener {
             });
         }
 
-        return new GongFaData(typeId,type,name,attributes, skills, rarity, ceng,cooldown, icon);
+        return new GongFaData(typeId,type,name,attributes, skills, rarity, ceng,cooldown, icon,itemTexture);
     }
     /**
      * 获取特定的功法数据

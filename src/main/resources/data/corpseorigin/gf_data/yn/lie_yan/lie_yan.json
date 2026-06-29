@@ -5,6 +5,7 @@
   "rarity": 2,
   "ceng": "copy_1",
   "cooldown": 200,
+  "item_texture": "corpseorigin:item/gf_cy_di",
   "attributes": {
     "armor": 8.0,
     "knockback_resistance": 0.4,
