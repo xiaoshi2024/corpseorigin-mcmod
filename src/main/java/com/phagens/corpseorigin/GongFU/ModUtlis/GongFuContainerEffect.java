@@ -57,18 +57,14 @@ public class GongFuContainerEffect {
      */
     public static void registerDefaults() {
         // 示例1：普通物品 — 攻击力×2 + 击杀怪物30%掉钻石 + 受伤反弹1.5倍
-        new GongFuContainerEffect(() -> com.phagens.corpseorigin.register.Moditems.ORDINARY_ZB_EYE.get())
-                .attrMultiplier("attack_damage", 2.0)
-                .killDrop(t -> t instanceof net.minecraft.world.entity.monster.Monster,
-                        () -> new ItemStack(net.minecraft.world.item.Items.DIAMOND), 0.3f)
-                .hurtRetaliate(1.5f);
+//        new GongFuContainerEffect(() -> com.phagens.corpseorigin.register.Moditems.ORDINARY_ZB_EYE.get())
+//                .attrMultiplier("attack_damage", 2.0)
+//                .killDrop(t -> t instanceof net.minecraft.world.entity.monster.Monster,
+//                        () -> new ItemStack(net.minecraft.world.item.Items.DIAMOND), 0.3f)
+//                .hurtRetaliate(1.5f);
 
         // 示例2：气甲术(稀有度2, 一层) — 全属性×1.5 + 减伤30%
         forGongFa("QI_JIA_SHU", 2, "copy_1")
-                .attrMultiplier("max_health", 1.5)
-                .attrMultiplier("armor", 1.5)
-                .attrMultiplier("knockback_resistance", 1.3)
-                .damageReduction(0.3f)
                 .killDrop(t -> true,
                         () -> new ItemStack(net.minecraft.world.item.Items.NETHER_STAR), 1.0f);
 
@@ -76,7 +72,6 @@ public class GongFuContainerEffect {
         // 示例3：霸刀势(稀有度4, 一层) — 攻击力×2 + 吸血20% + 击杀回血4
         forGongFa("BA_DAO_SHI", 4, "copy_1")
                 .attrMultiplier("attack_damage", 2.0)
-                .attackLifeSteal(0.2f)
                 .killHeal(4.0f);
     }
 

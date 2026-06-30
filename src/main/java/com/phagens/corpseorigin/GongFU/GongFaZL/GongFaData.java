@@ -28,8 +28,9 @@ public class GongFaData {
     private final String Ceng;//层级
     private final int cooldown;   //冷却时间
     private final String iconPath;   //图片路径
+    private final String itemTexture; // 物品贴图路径（新字段）
 
-    public GongFaData(String typeId, String type, String name, Map<String, Double> attributes, List<String> skills, int rarity, String ceng, int cooldown, String iconPath) {
+    public GongFaData(String typeId, String type, String name, Map<String, Double> attributes, List<String> skills, int rarity, String ceng, int cooldown, String iconPath, String itemTexture) {
         this.typeId = typeId;
         this.Type = type;
         this.name = name;
@@ -39,6 +40,7 @@ public class GongFaData {
         this.Ceng=ceng ;
         this.cooldown = cooldown > 0 ? cooldown : 300;
         this.iconPath = iconPath;
+        this.itemTexture = itemTexture;
     }
 
     public String getTypeId() { return typeId; }
@@ -51,6 +53,7 @@ public class GongFaData {
     public int getCooldown() {return cooldown;}
     public String getIconPath() {return iconPath;}
     public String getType() { return Type; }
+    public String getItemTexture() { return itemTexture; }
     //序列化到nbt
     public CompoundTag toNBT() {
         CompoundTag tag = new CompoundTag();
@@ -61,6 +64,7 @@ public class GongFaData {
         tag.putString("Ceng", Ceng);
         tag.putInt("Cooldown", cooldown);
         tag.putString("icon", iconPath != null ? iconPath : "");
+        tag.putString("ItemTexture", itemTexture != null ? itemTexture : "");
         // 保存属性
         CompoundTag attrTag = new CompoundTag();
         attributes.forEach(attrTag::putDouble);
@@ -81,7 +85,7 @@ public class GongFaData {
         String ceng =tag.getString("Ceng");
         int cooldown = tag.contains("Cooldown") ? tag.getInt("Cooldown") : 300;
         String icon = tag.getString("icon");
-
+        String itemTexture = tag.contains("ItemTexture") ? tag.getString("ItemTexture") : null;
 
 
         Map<String, Double> attributes = new HashMap<>();
@@ -100,7 +104,7 @@ public class GongFaData {
             }
         }
 
-        return new GongFaData(typeId, type,name,attributes, skills, rarity,ceng, cooldown,icon);
+        return new GongFaData(typeId, type,name,attributes, skills, rarity,ceng, cooldown,icon,itemTexture);
     }
 
 

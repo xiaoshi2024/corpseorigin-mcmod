@@ -7,6 +7,7 @@ import com.phagens.corpseorigin.client.Renderer.block.QiXingGuanRenderer;
 import com.phagens.corpseorigin.client.Renderer.block.TechniqueSwapTableRenderer;
 import com.phagens.corpseorigin.client.Renderer.block.ZBRFleshRenderer;
 import com.phagens.corpseorigin.client.Renderer.entity.*;
+import com.phagens.corpseorigin.client.model.GongFuItemBakedModel;
 import com.phagens.corpseorigin.entity.AlienatedSporeEntity;
 import com.phagens.corpseorigin.entity.CorpseGibEntity;
 
@@ -16,6 +17,9 @@ import com.phagens.corpseorigin.entity.skills.LongyouEarthquakeRenderer;
 import com.phagens.corpseorigin.register.BlockEntityRegistry;
 import com.phagens.corpseorigin.register.EntityRegistry;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -24,6 +28,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
@@ -82,5 +87,15 @@ public class CorpseOriginClient {
         
 
         event.registerEntityRenderer(EntityRegistry.JUQUE_BEAM.get(), JuQueBeamRenderer::new);
+    }
+    @SubscribeEvent
+    public static void onModelBaked(ModelEvent.ModifyBakingResult event) {
+        ModelResourceLocation key = ModelResourceLocation.inventory(
+                ResourceLocation.fromNamespaceAndPath(CorpseOrigin.MODID, "base_gong_fa"));
+        BakedModel original = event.getModels().get(key);
+        if (original != null) {
+            event.getModels().put(key, new GongFuItemBakedModel(original));
+            CorpseOrigin.LOGGER.info("✓ 已注册功法物品动态贴图模型");
+        }
     }
 }
