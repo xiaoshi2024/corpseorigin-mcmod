@@ -27,11 +27,11 @@ public class CorpseOriginDatapackProvider extends net.neoforged.neoforge.common.
                         event.getLookupProvider()
                 )
         );
-        event.getGenerator().addProvider(event.includeClient(),
-                new ModItemModelProvider(
-                        event.getGenerator().getPackOutput(),
-                        event.getExistingFileHelper()
-                )
-        );
+//        event.getGenerator().addProvider(event.includeClient(),
+//                new ModItemModelProvider(
+//                        event.getGenerator().getPackOutput(),
+//                        event.getExistingFileHelper()
+//                )
+//        );
     }
 }
