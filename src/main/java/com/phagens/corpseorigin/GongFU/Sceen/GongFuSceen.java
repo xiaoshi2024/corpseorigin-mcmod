@@ -130,7 +130,7 @@ public class GongFuSceen extends AbstractContainerScreen<GongFuMenu> {
             }
         }
 
-        if (hoveredSlot instanceof GongFuMenu.TypeRestrictedSlot typeSlot) {
+        if (hoveredSlot instanceof GongFuMenu.TypeRestrictedSlot typeSlot && !hoveredSlot.hasItem()) {
             GongFaCategory category = typeSlot.getAllowedCategory();
             Component tooltipText = Component.literal("槽位类型: ")
                     .append(Component.translatable("gongfa.category." + category.getName())
