@@ -76,6 +76,7 @@ public class CorpseOriginClient {
         event.registerEntityRenderer((EntityType<com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity>) EntityRegistry.FAXIANG.get(), FaxiangRenderer::new);
         event.registerEntityRenderer(EntityRegistry.ZB_WORM.get(), ZbWormRenderer::new);
         event.registerEntityRenderer(EntityRegistry.UNCLE.get(), UncleRenderer::new);
+        event.registerEntityRenderer(EntityRegistry.CHOUNIU.get(), ChouniuRenderer::new);
         event.registerEntityRenderer(EntityRegistry.COCO_ZOMBIE_X.get(), CocoZombieXRenderer::new);
 
         // ⭐ 注册领域实体渲染器（完全隐形）

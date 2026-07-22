@@ -130,6 +130,7 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("item.corpseorigin.uncle_spawn_egg", "大叔（少女漫画家）刷怪蛋");
         add("item.corpseorigin.coco_zombie_x_spawn_egg", "CoCo尸兄-%s刷怪蛋");
         add("item.corpseorigin.guigun_spawn_egg", "鬼棍刷怪蛋");
+        add("item.corpseorigin.chouniu_spawn_egg", "丑牛刷怪蛋");
         add("item.corpseorigin.centipede_spawn_egg", "蜈蚣尸兄刷怪蛋");
     }
 
@@ -153,6 +154,7 @@ public class ModChineseLanguageProvider extends LanguageProvider {
         add("entity.corpseorigin.uncle", "大叔（少女漫画家）");
         add("entity.corpseorigin.coco_zombie_x", "CoCo尸兄-%s");
         add("entity.corpseorigin.guigun", "鬼棍");
+        add("entity.corpseorigin.chouniu", "丑牛");
         add("entity.corpseorigin.centipede_head", "蜈蚣尸兄");
 
         add("entity.corpseorigin.corpse", "尸体");

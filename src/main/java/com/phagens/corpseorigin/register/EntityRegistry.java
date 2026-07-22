@@ -9,6 +9,7 @@ import com.phagens.corpseorigin.entity.Animals.CocoZombieEntity;
 import com.phagens.corpseorigin.entity.Animals.ZbWormEntity;
 import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.CentipedeHead;
 import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.CentipedeJoint;
+import com.phagens.corpseorigin.entity.npc.ChouniuEntity;
 import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
 import com.phagens.corpseorigin.entity.npc.UncleEntity;
 
@@ -136,6 +137,14 @@ public class EntityRegistry {
                     .clientTrackingRange(64)
                     .updateInterval(2)
                     .build("centipede_joint"));
+
+    // 丑牛实体（尸兄组织成员，力量型）
+    public static final DeferredHolder<EntityType<?>, EntityType<ChouniuEntity>> CHOUNIU = ENTITIES.register("chouniu",
+            () -> EntityType.Builder.<ChouniuEntity>of(ChouniuEntity::new, MobCategory.MONSTER)
+                    .sized(0.8F, 2.0F)
+                    .clientTrackingRange(64)
+                    .updateInterval(2)
+                    .build("chouniu"));
 
     // 巨阙剑气实体
     public static final DeferredHolder<EntityType<?>, EntityType<JuQueBeamEntity>> JUQUE_BEAM = ENTITIES.register("juque_beam",
