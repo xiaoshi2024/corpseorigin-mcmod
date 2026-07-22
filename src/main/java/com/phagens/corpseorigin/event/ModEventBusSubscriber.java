@@ -24,8 +24,6 @@
 package com.phagens.corpseorigin.event;
 
 import com.phagens.corpseorigin.CorpseOrigin;
-import com.phagens.corpseorigin.Datagen.ModChineseLanguageProvider;
-import com.phagens.corpseorigin.Datagen.ModEnglishLanguageProvider;
 import com.phagens.corpseorigin.Datagen.ModItemModelProvider;
 import com.phagens.corpseorigin.GongFU.Domain.DomainEntity;
 import com.phagens.corpseorigin.GongFU.FaXiang.FaxiangEntity;
@@ -104,7 +102,10 @@ public class ModEventBusSubscriber {
         var existingFileHelper = event.getExistingFileHelper();
 
         generator.addProvider(event.includeClient(), new ModItemModelProvider(packOutput, existingFileHelper));
-        generator.addProvider(event.includeClient(), new ModChineseLanguageProvider(packOutput));
-        generator.addProvider(event.includeClient(), new ModEnglishLanguageProvider(packOutput));
-    }
+/**
+ * 我们不在使用数据lang
+    generator.addProvider(event.includeClient(), new ModChineseLanguageProvider(packOutput));
+     generator.addProvider(event.includeClient(), new ModEnglishLanguageProvider(packOutput));
+ **/
+ }
 }

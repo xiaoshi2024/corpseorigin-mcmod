@@ -1,8 +1,6 @@
 package com.phagens.corpseorigin.network;
 
 import com.phagens.corpseorigin.CorpseOrigin;
-import com.phagens.corpseorigin.character.CharacterManager;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -29,14 +27,7 @@ public record CharacterSyncPacket(int playerId, String characterId) implements C
 
     public static void handle(CharacterSyncPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            CharacterManager.getInstance().setClientCachedCharacter(packet.characterId());
-
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null) {
-                mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-                        "§a角色已切换为: " + CharacterManager.getInstance().getPlayerCharacter(mc.player).getName().getString()
-                ));
-            }
+            ClientHandler.handleCharacterSync(packet.characterId(), context);
         });
     }
 }
