@@ -77,6 +77,9 @@ public class CorpseOriginClient {
         event.registerEntityRenderer(EntityRegistry.ZB_WORM.get(), ZbWormRenderer::new);
         event.registerEntityRenderer(EntityRegistry.UNCLE.get(), UncleRenderer::new);
         event.registerEntityRenderer(EntityRegistry.CHOUNIU.get(), ChouniuRenderer::new);
+        event.registerEntityRenderer(EntityRegistry.ZISHU.get(), ZishuRenderer::new);
+        event.registerEntityRenderer(EntityRegistry.MAOTU.get(), MaotuRenderer::new);
+        event.registerEntityRenderer(EntityRegistry.MAOTU_PROJECTILE.get(), MaotuProjectileRenderer::new);
         event.registerEntityRenderer(EntityRegistry.COCO_ZOMBIE_X.get(), CocoZombieXRenderer::new);
 
         // ⭐ 注册领域实体渲染器（完全隐形）

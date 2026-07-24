@@ -30,5 +30,20 @@ public class ModItemModelProvider extends ItemModelProvider {
         basicItem(Moditems.YNS_S.get());
         basicItem(Moditems.YNS_SS.get());
         basicItem(Moditems.YNS_SSS.get());
+
+        withExistingParent(Moditems.LOWER_LEVEL_ZB_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(Moditems.LONGYOU_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(Moditems.ZBR_FISH_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(Moditems.KAIWEINAI_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(Moditems.COCO_PENGUIN_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(Moditems.COCO_ZOMBIE_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(Moditems.ZB_WORM_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(Moditems.UNCLE_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(Moditems.COCO_ZOMBIE_X_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(Moditems.GUIGUN_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(Moditems.CENTIPEDE_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(Moditems.CHOUNIU_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(Moditems.ZISHU_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(Moditems.MAOTU_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
     }
 }

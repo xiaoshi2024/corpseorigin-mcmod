@@ -11,7 +11,9 @@ import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.CentipedeHead;
 import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.CentipedeJoint;
 import com.phagens.corpseorigin.entity.npc.ChouniuEntity;
 import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
+import com.phagens.corpseorigin.entity.npc.MaotuEntity;
 import com.phagens.corpseorigin.entity.npc.UncleEntity;
+import com.phagens.corpseorigin.entity.npc.ZishuEntity;
 
 import com.phagens.corpseorigin.entity.skills.LongyouEarthquakeEntity;
 import com.phagens.corpseorigin.entity.zbrs.CocoZombieXEntity;
@@ -138,13 +140,38 @@ public class EntityRegistry {
                     .updateInterval(2)
                     .build("centipede_joint"));
 
-    // 丑牛实体（尸兄组织成员，力量型）
+    // 丑牛实体
     public static final DeferredHolder<EntityType<?>, EntityType<ChouniuEntity>> CHOUNIU = ENTITIES.register("chouniu",
             () -> EntityType.Builder.<ChouniuEntity>of(ChouniuEntity::new, MobCategory.MONSTER)
                     .sized(0.8F, 2.0F)
                     .clientTrackingRange(64)
                     .updateInterval(2)
                     .build("chouniu"));
+
+    // 子鼠实体
+    public static final DeferredHolder<EntityType<?>, EntityType<ZishuEntity>> ZISHU = ENTITIES.register("zishu",
+            () -> EntityType.Builder.<ZishuEntity>of(ZishuEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.4F)
+                    .clientTrackingRange(64)
+                    .updateInterval(2)
+                    .build("zishu"));
+
+    // 卯兔实体
+    public static final DeferredHolder<EntityType<?>, EntityType<MaotuEntity>> MAOTU = ENTITIES.register("maotu",
+            () -> EntityType.Builder.<MaotuEntity>of(MaotuEntity::new, MobCategory.MONSTER)
+                    .sized(0.6F, 1.6F)
+                    .clientTrackingRange(64)
+                    .updateInterval(2)
+                    .build("maotu"));
+
+
+    // 追踪投掷物导弹
+    public static final DeferredHolder<EntityType<?>, EntityType<MaotuProjectileEntity>> MAOTU_PROJECTILE = ENTITIES.register("maotu_projectile",
+            () -> EntityType.Builder.<MaotuProjectileEntity>of(MaotuProjectileEntity::new, MobCategory.MISC)
+                    .sized(0.3F, 0.3F)
+                    .clientTrackingRange(64)
+                    .updateInterval(1)
+                    .build("maotu_projectile"));
 
     // 巨阙剑气实体
     public static final DeferredHolder<EntityType<?>, EntityType<JuQueBeamEntity>> JUQUE_BEAM = ENTITIES.register("juque_beam",

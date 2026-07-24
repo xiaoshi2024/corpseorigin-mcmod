@@ -70,6 +70,8 @@ public class ModEnglishLanguageProvider extends LanguageProvider {
         add("item.corpseorigin.coco_zombie_x_spawn_egg", "CoCo Zombie-%s Spawn Egg");
         add("item.corpseorigin.guigun_spawn_egg", "Gui Gun Spawn Egg");
         add("item.corpseorigin.centipede_spawn_egg", "Centipede Zombie Spawn Egg");
+        add("item.corpseorigin.chouniu_spawn_egg", "Chou Niu Spawn Egg");
+        add("item.corpseorigin.zishu_spawn_egg", "Zi Shu Spawn Egg");
     }
 
     private void addBlockTranslations() {
@@ -93,6 +95,8 @@ public class ModEnglishLanguageProvider extends LanguageProvider {
         add("entity.corpseorigin.coco_zombie_x", "CoCo Zombie-%s");
         add("entity.corpseorigin.guigun", "Gui Gun");
         add("entity.corpseorigin.centipede_head", "Centipede Zombie");
+        add("entity.corpseorigin.chouniu", "Chou Niu");
+        add("entity.corpseorigin.zishu", "Zi Shu");
     }
 
     private void addEffectTranslations() {

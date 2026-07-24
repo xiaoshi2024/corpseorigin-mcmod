@@ -121,6 +121,14 @@ public class Moditems {
     public static final DeferredItem<Item> CHOUNIU_SPAWN_EGG = ITEMS.register("chouniu_spawn_egg",
             () -> new SpawnEggItem(EntityRegistry.CHOUNIU.get(), 0x654321, 0xCC3300, new Item.Properties()));
 
+    // 子鼠刷怪蛋（尸兄组织成员）
+    public static final DeferredItem<Item> ZISHU_SPAWN_EGG = ITEMS.register("zishu_spawn_egg",
+            () -> new SpawnEggItem(EntityRegistry.ZISHU.get(), 0x4A4A4A, 0x9933CC, new Item.Properties()));
+
+    // 卯兔刷怪蛋（尸兄组织成员）
+    public static final DeferredItem<Item> MAOTU_SPAWN_EGG = ITEMS.register("maotu_spawn_egg",
+            () -> new SpawnEggItem(EntityRegistry.MAOTU.get(), 0xF5F5DC, 0xFF69B4, new Item.Properties()));
+
     // ========== 尸兄器官掉落物 ==========
     // 普通尸眼 - 尸兄掉落物，食用可进化夜视能力
     public static final DeferredItem<Item> ORDINARY_ZB_EYE = ITEMS.register("ordinary_zb_eye",

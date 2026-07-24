@@ -40,7 +40,9 @@ import com.phagens.corpseorigin.entity.ZbrFishEntity;
 
 import com.phagens.corpseorigin.entity.npc.ChouniuEntity;
 import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
+import com.phagens.corpseorigin.entity.npc.MaotuEntity;
 import com.phagens.corpseorigin.entity.npc.UncleEntity;
+import com.phagens.corpseorigin.entity.npc.ZishuEntity;
 import com.phagens.corpseorigin.entity.zbrs.CocoZombieXEntity;
 import com.phagens.corpseorigin.register.EntityRegistry;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -82,6 +84,10 @@ public class ModEventBusSubscriber {
         event.put(EntityRegistry.UNCLE.get(), UncleEntity.createAttributes().build());
         //丑牛
         event.put(EntityRegistry.CHOUNIU.get(), ChouniuEntity.createAttributes().build());
+        //子鼠
+        event.put(EntityRegistry.ZISHU.get(), ZishuEntity.createAttributes().build());
+        //卯兔
+        event.put(EntityRegistry.MAOTU.get(), MaotuEntity.createAttributes().build());
         //企鹅尸兄2阶
         event.put(EntityRegistry.COCO_ZOMBIE_X.get(), CocoZombieXEntity.createAttributes().build());
         // 注册蜈蚣头部的属性
