@@ -38,11 +38,7 @@ import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.CentipedeHead;
 import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.CentipedeJoint;
 import com.phagens.corpseorigin.entity.ZbrFishEntity;
 
-import com.phagens.corpseorigin.entity.npc.ChouniuEntity;
-import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
-import com.phagens.corpseorigin.entity.npc.MaotuEntity;
-import com.phagens.corpseorigin.entity.npc.UncleEntity;
-import com.phagens.corpseorigin.entity.npc.ZishuEntity;
+import com.phagens.corpseorigin.entity.npc.*;
 import com.phagens.corpseorigin.entity.zbrs.CocoZombieXEntity;
 import com.phagens.corpseorigin.register.EntityRegistry;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -95,6 +91,9 @@ public class ModEventBusSubscriber {
 
         // 注册蜈蚣节段的属性
         event.put(EntityRegistry.CENTIPEDE_JOINT.get(), CentipedeJoint.createAttributes().build());
+
+        // 注册葫芦娃cos的属性
+        event.put(EntityRegistry.CALABASH_BOY_COS.get(), CalabashBoyCosEntity.createAttributes().build());
 
         //注册领域
         event.put(EntityRegistry.DOMAIN.get(), DomainEntity.createAttributes().build());

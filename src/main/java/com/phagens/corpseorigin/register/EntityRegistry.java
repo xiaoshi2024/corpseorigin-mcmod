@@ -9,11 +9,7 @@ import com.phagens.corpseorigin.entity.Animals.CocoZombieEntity;
 import com.phagens.corpseorigin.entity.Animals.ZbWormEntity;
 import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.CentipedeHead;
 import com.phagens.corpseorigin.entity.SegmentedEntity.Centipede.CentipedeJoint;
-import com.phagens.corpseorigin.entity.npc.ChouniuEntity;
-import com.phagens.corpseorigin.entity.npc.KaiWeiNaiEntity;
-import com.phagens.corpseorigin.entity.npc.MaotuEntity;
-import com.phagens.corpseorigin.entity.npc.UncleEntity;
-import com.phagens.corpseorigin.entity.npc.ZishuEntity;
+import com.phagens.corpseorigin.entity.npc.*;
 
 import com.phagens.corpseorigin.entity.skills.LongyouEarthquakeEntity;
 import com.phagens.corpseorigin.entity.zbrs.CocoZombieXEntity;
@@ -62,6 +58,12 @@ public class EntityRegistry {
                     .clientTrackingRange(64)
                     .updateInterval(1)
                     .build("domain"));
+
+    // 葫芦娃人类cos
+    public static final DeferredHolder<EntityType<?>, EntityType<CalabashBoyCosEntity>> CALABASH_BOY_COS = ENTITIES.register("calabash_boy_cos",
+            () -> EntityType.Builder.<CalabashBoyCosEntity>of(CalabashBoyCosEntity::new, MobCategory.CREATURE)
+                    .sized(0.6F, 1.8F)
+                    .build("calabash_boy_cos"));
 
     // 开胃奶NPC
     public static final DeferredHolder<EntityType<?>, EntityType<KaiWeiNaiEntity>> KAIWEINAI = ENTITIES.register("kaiweinai",

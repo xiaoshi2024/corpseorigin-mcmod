@@ -88,7 +88,8 @@ public class CorpseOriginClient {
         // 注册蜈蚣实体渲染器（GeckoLib）
         event.registerEntityRenderer(EntityRegistry.CENTIPEDE_HEAD.get(), CentipedeHeadRenderer::new);
         event.registerEntityRenderer(EntityRegistry.CENTIPEDE_JOINT.get(), CentipedeJointRenderer::new);
-        
+
+        event.registerEntityRenderer(EntityRegistry.CALABASH_BOY_COS.get(), CalabashBoyCosRenderer::new);
 
         event.registerEntityRenderer(EntityRegistry.JUQUE_BEAM.get(), JuQueBeamRenderer::new);
     }
