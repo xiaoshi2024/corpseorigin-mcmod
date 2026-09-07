@@ -16,7 +16,8 @@ public final class CorpsePayloads {
         return Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, path);
     }
 
-    /** 选择角色 C2S */
+    // ==================== 角色选择 ====================
+
     public record SelectCharacterC2S(String characterId) implements CustomPacketPayload {
         public static final Type<SelectCharacterC2S> TYPE = new Type<>(id("select_character"));
         public static final StreamCodec<ByteBuf, SelectCharacterC2S> CODEC =
@@ -30,7 +31,6 @@ public final class CorpsePayloads {
         }
     }
 
-    /** 角色同步 S2C */
     public record CharacterSyncS2C(String characterId) implements CustomPacketPayload {
         public static final Type<CharacterSyncS2C> TYPE = new Type<>(id("character_sync"));
         public static final StreamCodec<ByteBuf, CharacterSyncS2C> CODEC =
@@ -43,4 +43,6 @@ public final class CorpsePayloads {
             return TYPE;
         }
     }
+
+    // ❌ 删除 ZbSkinUpdateC2S，使用独立的 ZbSkinUpdatePacket
 }
