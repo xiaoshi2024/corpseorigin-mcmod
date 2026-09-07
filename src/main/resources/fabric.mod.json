@@ -18,6 +18,9 @@
 		"main": [
 			"xiaoshi2022.corpseorigin.CorpseOrigin"
 		],
+		"client": [
+			"xiaoshi2022.corpseorigin.client.CorpseOriginClient"
+		],
 		"fabric-datagen": [
 			"xiaoshi2022.corpseorigin.CorpseOriginDataGenerator"
 		]
