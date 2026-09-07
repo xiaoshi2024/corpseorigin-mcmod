@@ -3,15 +3,15 @@
 	"id": "corpseorigin",
 	"version": "${version}",
 	"name": "CorpseOrigin",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "This is an ZombieBrother mcmod of fans made",
 	"authors": [
-		"Me!"
+		"xiaoshi2022<UFO噬x>!"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://space.bilibili.com/1410016591",
+		"sources": "https://github.com/xiaoshi2024/corpseorigin-neoforge-1.21.1/tree/corpseorigin-fabric-26.2"
 	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/corpseorigin/icon.png",
 	"environment": "*",
 	"entrypoints": {

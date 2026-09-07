@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:block/cube_all",
-  "textures": {
-    "all": "corpseorigin:block/technique_swap_table"
-  }
-}
