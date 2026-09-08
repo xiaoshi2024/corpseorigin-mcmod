@@ -30,12 +30,11 @@ public class CombinedSkinBuilder {
     private static final int TEXTURE_WIDTH = 64;
     private static final int TEXTURE_HEIGHT = 64;
 
+    // ✅ 使用皮肤纹理路径作为缓存 key，而不是实体ID
     private static final Map<String, Identifier> CACHE = new ConcurrentHashMap<>();
 
-    // ✅ 使用 fromNamespaceAndPath 创建 Identifier
     private static final Identifier DEFAULT_SKIN = DefaultPlayerSkin.getDefaultTexture();
 
-    // 尸化骨骼叠加纹理
     private static final Identifier SKELETON_OVERLAY =
             Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "textures/entity/lower_level_zb_render.png");
 
@@ -43,23 +42,26 @@ public class CombinedSkinBuilder {
 
     /**
      * 获取组合纹理（皮肤 + 骨骼叠加）
+     * ✅ 使用皮肤纹理作为缓存 key，相同皮肤复用同一组合纹理
      */
-    public static Identifier getOrCreate(String key, Identifier skinTexture) {
-        if (key == null || key.isEmpty()) {
+    public static Identifier getOrCreate(Identifier skinTexture) {
+        if (skinTexture == null) {
             return getDefaultCombined();
         }
 
-        Identifier cached = CACHE.get(key);
+        String cacheKey = skinTexture.toString();
+        Identifier cached = CACHE.get(cacheKey);
         if (cached != null) {
             return cached;
         }
 
         try {
             Identifier combined = buildCombinedSkin(skinTexture);
-            CACHE.put(key, combined);
+            CACHE.put(cacheKey, combined);
+            LOGGER.info("✅ 组合纹理已创建并缓存: {} -> {}", skinTexture, combined);
             return combined;
         } catch (Exception e) {
-            LOGGER.error("❌ 创建组合纹理失败: {}", key, e);
+            LOGGER.error("❌ 创建组合纹理失败: {}", cacheKey, e);
             return getDefaultCombined();
         }
     }
@@ -71,7 +73,6 @@ public class CombinedSkinBuilder {
         TextureManager textureManager = Minecraft.getInstance().getTextureManager();
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
 
-        // ✅ 使用正确的 NativeImage 构造方法 (width, height, zero)
         NativeImage combined = new NativeImage(TEXTURE_WIDTH, TEXTURE_HEIGHT, true);
 
         // 1. 加载玩家皮肤
@@ -85,7 +86,7 @@ public class CombinedSkinBuilder {
             LOGGER.warn("⚠️ 使用默认皮肤替代: {}", skinTexture);
         }
 
-        // 2. 叠加尸化骨骼纹理（80%透明度）
+        // 2. 叠加尸化骨骼纹理
         NativeImage skeletonImage = loadSkeletonTexture(resourceManager);
         if (skeletonImage != null) {
             overlaySkeletonTexture(combined, skeletonImage);
@@ -100,13 +101,11 @@ public class CombinedSkinBuilder {
                 "skins/zb_combined_" + hash
         );
 
-        // ✅ 修复：使用正确的 DynamicTexture 构造方法 (Supplier<String>, NativeImage)
         DynamicTexture texture = new DynamicTexture(
                 () -> location.toString(),
                 combined
         );
 
-        // ✅ 修复：TextureManager.register 接收 Identifier 和 AbstractTexture
         textureManager.register(location, texture);
         LOGGER.info("✅ 组合纹理已创建: {}", location);
         return location;

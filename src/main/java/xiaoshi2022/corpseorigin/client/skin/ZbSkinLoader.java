@@ -26,23 +26,30 @@ public class ZbSkinLoader {
         if (cached != null) {
             entity.setSkinTexture(cached);
             entity.setSkinState(ZbSkinState.LOADED);
-            LOGGER.debug("✅ 从缓存加载皮肤: {}", username);
+            LOGGER.info("✅ 从缓存加载皮肤: {} -> {}", username, cached);
             return;
         }
 
         entity.setSkinState(ZbSkinState.LOADING);
+        LOGGER.info("⏳ 开始异步加载皮肤: {}", username);
 
-        // ✅ 使用异步方法加载
-        ZbSkinIntegration.getPlayerSkinAsync(username).thenAcceptAsync(skin -> {
-            if (skin != null) {
-                entity.setSkinTexture(skin);
-                entity.setSkinState(ZbSkinState.LOADED);
-                ZbSkinCache.put(username, skin);
-                LOGGER.info("✅ 皮肤加载成功: {}", username);
-            } else {
-                setDefaultSkin(entity, username);
-            }
-        }, Minecraft.getInstance());
+        ZbSkinIntegration.getPlayerSkinAsync(username)
+                .thenAcceptAsync(skin -> {
+                    if (skin != null) {
+                        entity.setSkinTexture(skin);
+                        entity.setSkinState(ZbSkinState.LOADED);
+                        ZbSkinCache.put(username, skin);
+                        LOGGER.info("✅ 皮肤加载成功: {} -> {}", username, skin);
+                    } else {
+                        LOGGER.warn("⚠️ 皮肤加载失败，使用默认: {}", username);
+                        setDefaultSkin(entity, username);
+                    }
+                }, Minecraft.getInstance())
+                .exceptionally(throwable -> {
+                    LOGGER.error("❌ 皮肤加载异常: {}", throwable.getMessage());
+                    setDefaultSkin(entity, username);
+                    return null;
+                });
     }
 
     private static void setDefaultSkin(LowerLevelZbEntity entity, String username) {
@@ -51,6 +58,6 @@ public class ZbSkinLoader {
         entity.setSkinTexture(defaultSkin);
         entity.setSkinState(ZbSkinState.LOADED);
         ZbSkinCache.put(username, defaultSkin);
-        LOGGER.info("⚠️ 使用默认皮肤: {}", username);
+        LOGGER.info("⚠️ 使用默认皮肤: {} -> {}", username, defaultSkin);
     }
 }
