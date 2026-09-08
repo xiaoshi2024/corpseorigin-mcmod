@@ -8,6 +8,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.resources.Identifier;
 import xiaoshi2022.corpseorigin.client.model.LowerLevelZbModel;
+import xiaoshi2022.corpseorigin.client.skin.CombinedSkinBuilder;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinState;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 
@@ -17,7 +18,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, LivingEntityRenderState> {
 
-    private static final Map<Integer, Identifier> SKIN_CACHE = new ConcurrentHashMap<>();
+    // ✅ 使用静态缓存存储组合纹理
+    private static final Map<Integer, Identifier> COMBINED_SKIN_CACHE = new ConcurrentHashMap<>();
+
+    // 当前实体ID（用于 getTextureLocation）
     private int currentEntityId = -1;
 
     public LowerLevelZbRenderer(EntityRendererProvider.Context context) {
@@ -32,36 +36,46 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
         int entityId = entity.getId();
         currentEntityId = entityId;
 
-        Identifier skin = null;
-        if (entity.getSkinState() == ZbSkinState.LOADED) {
-            skin = entity.getSkinTexture();
+        // 检查缓存
+        if (COMBINED_SKIN_CACHE.containsKey(entityId)) {
+            return;
         }
-        if (skin == null) {
+
+        // 获取皮肤纹理
+        Identifier skinTexture = null;
+        if (entity.getSkinState() == ZbSkinState.LOADED) {
+            skinTexture = entity.getSkinTexture();
+        }
+        if (skinTexture == null) {
             String playerName = entity.getPlayerSkinName();
             if (playerName != null && !playerName.isEmpty()) {
                 UUID fakeUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes());
-                skin = DefaultPlayerSkin.get(fakeUuid).body().texturePath();
+                skinTexture = DefaultPlayerSkin.get(fakeUuid).body().texturePath();
             } else {
-                skin = DefaultPlayerSkin.getDefaultTexture();
+                skinTexture = DefaultPlayerSkin.getDefaultTexture();
             }
         }
-        if (skin != null) {
-            SKIN_CACHE.put(entityId, skin);
+
+        // 构建组合纹理并缓存
+        if (skinTexture != null) {
+            String cacheKey = entity.getCustomId() + "_" + entityId;
+            Identifier combinedTexture = CombinedSkinBuilder.getOrCreate(cacheKey, skinTexture);
+            COMBINED_SKIN_CACHE.put(entityId, combinedTexture);
         }
     }
 
     @Override
     public Identifier getTextureLocation(LivingEntityRenderState renderState) {
-        if (currentEntityId != -1 && SKIN_CACHE.containsKey(currentEntityId)) {
-            return SKIN_CACHE.get(currentEntityId);
+        // 从缓存获取组合纹理
+        if (currentEntityId != -1 && COMBINED_SKIN_CACHE.containsKey(currentEntityId)) {
+            return COMBINED_SKIN_CACHE.get(currentEntityId);
         }
         return DefaultPlayerSkin.getDefaultTexture();
     }
 
     @Override
     public RenderType getRenderType(LivingEntityRenderState renderState, Identifier texture) {
-        // ✅ 使用 entityTranslucent 替代 entityCutout
-        // 这样可以正确处理透明层并保持渲染顺序
-        return RenderTypes.entityTranslucent(texture);
+        // ✅ 使用 entityCutout 正确处理透明区域
+        return RenderTypes.entityCutout(texture);
     }
 }
