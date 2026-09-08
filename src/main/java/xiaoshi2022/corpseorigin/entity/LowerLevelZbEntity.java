@@ -108,12 +108,21 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity {
     }
 
     private PlayState controlAnimation(AnimationTest<LowerLevelZbEntity> test) {
+        // 攻击动画优先
         if (this.swinging) {
             return test.setAndContinue(ATTACK_ANIM);
         }
+
+        // 移动动画
         if (test.isMoving()) {
+            // 检测是否在跑步（速度 > 走路速度）
+            boolean isSprinting = this.isSprinting() || this.getSpeed() > 0.3F;
+            if (isSprinting) {
+                return test.setAndContinue(WALK_ANIM);
+            }
             return test.setAndContinue(WALK_ANIM);
         }
+
         return test.setAndContinue(IDLE_ANIM);
     }
 
