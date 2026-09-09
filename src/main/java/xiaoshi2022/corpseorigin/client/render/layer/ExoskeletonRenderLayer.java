@@ -30,7 +30,7 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
     public void submit(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int packedLight,
                        AvatarRenderState state, float yRot, float xRot) {
 
-        // ✅ 只渲染尸兄玩家
+        // 只渲染尸兄玩家
         CorpseOriginClient.ClientCorpseData corpseData = CorpseOriginClient.corpseDataCache.get(state.id);
         if (corpseData == null || !corpseData.isCorpse || corpseData.isDisguised()) {
             return;
@@ -44,8 +44,6 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
 
         poseStack.pushPose();
 
-        // ✅ 使用 submitModelPart 提交模型部件
-        // 或者直接使用 order().submitModelPart
         submitNodeCollector.order(0).submitModelPart(
                 model.getShieye(),
                 poseStack,
@@ -56,5 +54,12 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
         );
 
         poseStack.popPose();
+    }
+
+    /**
+     * ✅ 触发挥砍动画（由 AttackAnimationHandler 调用）
+     */
+    public void triggerSwing() {
+        model.triggerSwing();
     }
 }

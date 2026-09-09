@@ -1,11 +1,13 @@
 package xiaoshi2022.corpseorigin.client;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderingRegistry;
 import net.minecraft.client.color.block.BlockTintSources;
 import net.minecraft.client.renderer.block.FluidModel;
+import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
@@ -13,6 +15,7 @@ import net.minecraft.util.ARGB;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.renderer.entity.LowerLevelZbRenderer;
+import xiaoshi2022.corpseorigin.event.AttackAnimationHandler;
 import xiaoshi2022.corpseorigin.network.CorpsePayloads;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.registry.ModFluids;
@@ -39,6 +42,9 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         // 5. 玩家尸兄渲染层
         CorpsePlayerRenderHandler.register();
+
+        // ✅ 注册客户端攻击事件监听
+        AttackAnimationHandler.register();
 
         // 6. 网络接收
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.CharacterSyncS2C.TYPE, (payload, context) -> {

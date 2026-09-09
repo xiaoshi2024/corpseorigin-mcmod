@@ -17,6 +17,9 @@ public final class CorpsePlayerRenderHandler {
 
     private static boolean registered = false;
 
+    // ✅ 保存渲染层实例（供外部调用）
+    public static ExoskeletonRenderLayer renderLayerInstance = null;
+
     private CorpsePlayerRenderHandler() {
     }
 
@@ -43,9 +46,11 @@ public final class CorpsePlayerRenderHandler {
                 var modelSet = Minecraft.getInstance().getEntityModels();
                 var exoskeletonModel = new ExoskeletonModel(modelSet.bakeLayer(ModModelLayers.EXOSKELETON));
 
-                // ✅ 直接使用 Mixin 调用，忽略泛型警告
+                // ✅ 创建并保存渲染层实例
+                renderLayerInstance = new ExoskeletonRenderLayer(playerRenderer, exoskeletonModel);
+
                 var mixin = (LivingEntityRendererMixin) playerRenderer;
-                mixin.callAddLayer(new ExoskeletonRenderLayer(playerRenderer, exoskeletonModel));
+                mixin.callAddLayer(renderLayerInstance);
 
                 CorpseOrigin.LOGGER.info("✅ 尸兄玩家外骨骼渲染层已注册");
             } else {

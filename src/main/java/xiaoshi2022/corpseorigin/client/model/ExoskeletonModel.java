@@ -1,7 +1,5 @@
 package xiaoshi2022.corpseorigin.client.model;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -26,6 +24,10 @@ public class ExoskeletonModel extends EntityModel<AvatarRenderState> {
     private final ModelPart group5;
     private final ModelPart group6;
     private final ModelPart rightItem;
+
+    // ✅ 动画状态
+    private boolean isSwinging = false;
+    private float swingTime = 0.0F;
 
     public ExoskeletonModel(ModelPart root) {
         super(root);
@@ -146,10 +148,148 @@ public class ExoskeletonModel extends EntityModel<AvatarRenderState> {
         return LayerDefinition.create(modelData, 64, 64);
     }
 
+    // ==================== ✅ 新增：setupAnim 动画逻辑 ====================
+
     @Override
     public void setupAnim(AvatarRenderState state) {
-        // 动画由 ExoskeletonRenderLayer 控制
+        if (shieye == null) return;
+
+        // ✅ 重置所有部件
+        resetAllParts();
+
+        // ✅ 设置头部旋转
+        if (Head != null) {
+            Head.xRot = state.xRot * Mth.DEG_TO_RAD;
+            Head.yRot = state.yRot * Mth.DEG_TO_RAD;
+        }
+
+        // ✅ 先复制头部完整姿势
+        copyFromHead(Head);
+
+        // ✅ 然后在此基础上叠加动画（使用 += 而不是 =）
+        applyIdleAnimationAdditive(state.ageInTicks);
+        applyWalkAnimationAdditive(state.walkAnimationPos, state.walkAnimationSpeed);
+
+        if (isSwinging) {
+            swingTime += 0.05F;
+            applyAttackAnimationAdditive(swingTime);
+            if (swingTime >= 1.75F) {
+                isSwinging = false;
+                swingTime = 0.0F;
+            }
+        }
     }
+
+    /**
+     * ✅ 叠加式待机动画
+     */
+    private void applyIdleAnimationAdditive(float ageInTicks) {
+        if (shieye == null) return;
+        float time = ageInTicks * 0.05F;
+
+        // 使用 += 叠加
+        float breathe = Mth.sin(time * 0.5F) * 0.02F;
+        shieye.y += breathe;
+
+        if (group2 != null) {
+            group2.xRot += Mth.sin(time * 0.3F) * 0.05F;
+            group2.zRot += Mth.cos(time * 0.2F) * 0.03F;
+        }
+        if (group7 != null) {
+            group7.xRot += Mth.sin(time * 0.25F + 0.5F) * 0.08F;
+            group7.yRot += Mth.sin(time * 0.15F) * 0.05F;
+        }
+        if (group3 != null) {
+            group3.xRot += Mth.sin(time * 0.2F + 1.0F) * 0.1F;
+            group3.zRot += Mth.cos(time * 0.18F) * 0.08F;
+        }
+        if (group4 != null) {
+            group4.yRot += Mth.sin(time * 0.35F + 1.5F) * 0.12F;
+        }
+        if (group5 != null) {
+            group5.zRot += Mth.sin(time * 0.4F) * 0.05F;
+        }
+        if (group6 != null) {
+            group6.zRot += Mth.cos(time * 0.45F) * 0.05F;
+        }
+    }
+
+    /**
+     * ✅ 叠加式行走动画
+     */
+    private void applyWalkAnimationAdditive(float limbSwing, float limbSwingAmount) {
+        if (limbSwingAmount <= 0.01F) return;
+        if (shieye == null) return;
+
+        float walkScale = Mth.PI / 8 * limbSwingAmount;
+
+        if (group2 != null) {
+            group2.xRot += Mth.cos(limbSwing * 0.5F) * walkScale * 0.5F;
+        }
+        if (group7 != null) {
+            group7.xRot += Mth.sin(limbSwing * 0.5F + 0.5F) * walkScale * 0.7F;
+        }
+        if (group3 != null) {
+            group3.xRot += Mth.cos(limbSwing * 0.5F + 1.0F) * walkScale;
+        }
+        shieye.y += Mth.sin(limbSwing * 0.5F) * 0.1F * limbSwingAmount;
+    }
+
+    /**
+     * ✅ 叠加式攻击动画
+     */
+    private void applyAttackAnimationAdditive(float time) {
+        float attackProgress = Math.min(time / 1.75F, 1.0F);
+        float attackAngle = Mth.sin(attackProgress * Mth.PI) * 0.5F;
+
+        if (group2 != null) {
+            group2.xRot -= attackAngle * 0.8F;
+        }
+        if (group7 != null) {
+            group7.xRot -= attackAngle * 1.2F;
+        }
+        if (group3 != null) {
+            group3.xRot -= attackAngle * 1.5F;
+        }
+        float spread = Mth.sin(attackProgress * Mth.PI) * 0.3F;
+        if (group5 != null) {
+            group5.yRot += spread;
+        }
+        if (group6 != null) {
+            group6.yRot -= spread;
+        }
+    }
+
+    /**
+     * ✅ 触发挥砍动画（由外部调用）
+     */
+    public void triggerSwing() {
+        this.isSwinging = true;
+        this.swingTime = 0.0F;
+        resetAllParts();
+    }
+
+    /**
+     * 重置所有部件姿势
+     */
+    private void resetAllParts() {
+        safeReset(shieye);
+        safeReset(group2);
+        safeReset(group7);
+        safeReset(group3);
+        safeReset(group4);
+        safeReset(group5);
+        safeReset(group6);
+        safeReset(rightItem);
+    }
+
+    private void safeReset(ModelPart part) {
+        if (part != null) {
+            part.resetPose();
+        }
+    }
+
+    // ==================== 原有的 Getter 和 copyFromHead ====================
 
     public ModelPart getWaist() {
         return Waist;
@@ -159,12 +299,40 @@ public class ExoskeletonModel extends EntityModel<AvatarRenderState> {
         return shieye;
     }
 
+    public ModelPart getGroup2() {
+        return group2;
+    }
+
+    public ModelPart getGroup7() {
+        return group7;
+    }
+
+    public ModelPart getGroup3() {
+        return group3;
+    }
+
+    public ModelPart getGroup4() {
+        return group4;
+    }
+
+    public ModelPart getGroup5() {
+        return group5;
+    }
+
+    public ModelPart getGroup6() {
+        return group6;
+    }
+
+    public ModelPart getRightItem() {
+        return rightItem;
+    }
+
     public void copyFromHead(ModelPart head) {
         if (this.shieye != null && head != null) {
             PartPose headPose = head.storePose();
             this.shieye.loadPose(headPose);
             this.shieye.x += 1.1F;
-            this.shieye.y -= 0.3F;
+            this.shieye.y -= -10.0F;
             this.shieye.z += 2.0F;
         }
     }
