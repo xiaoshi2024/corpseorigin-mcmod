@@ -1,4 +1,4 @@
-package xiaoshi2022.corpseorigin.client.renderer;
+package xiaoshi2022.corpseorigin.client.renderer.entity;
 
 import com.geckolib.renderer.GeoEntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -9,7 +9,7 @@ import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import xiaoshi2022.corpseorigin.client.model.LowerLevelZbModel;
+import xiaoshi2022.corpseorigin.client.model.entity.LowerLevelZbModel;
 import xiaoshi2022.corpseorigin.client.skin.CombinedSkinBuilder;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinLoader;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinState;

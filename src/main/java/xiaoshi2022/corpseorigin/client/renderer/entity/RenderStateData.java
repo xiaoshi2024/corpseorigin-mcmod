@@ -1,4 +1,4 @@
-package xiaoshi2022.corpseorigin.client.renderer;
+package xiaoshi2022.corpseorigin.client.renderer.entity;
 
 import com.geckolib.constant.dataticket.DataTicket;
 import com.google.common.reflect.TypeToken;

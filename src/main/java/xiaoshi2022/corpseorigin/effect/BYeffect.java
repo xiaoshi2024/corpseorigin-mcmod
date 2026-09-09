@@ -1,6 +1,8 @@
 package xiaoshi2022.corpseorigin.effect;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -8,7 +10,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.villager.Villager;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
+import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModEffects;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 
@@ -16,16 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * 尸兄感染效果 - 核心转化机制
- *
- * 【功能说明】
- * 1. 村民转化：感染效果结束时，村民转化为尸兄实体
- * 2. 感染源追踪：记录是谁传播的感染
- */
 public class BYeffect extends MobEffect {
 
-    /** 存储感染源映射：被感染者UUID -> 感染者UUID */
     private static final Map<UUID, UUID> infectionSource = new HashMap<>();
 
     public BYeffect(MobEffectCategory category, int color) {
@@ -46,7 +42,6 @@ public class BYeffect extends MobEffect {
         return duration == 1;
     }
 
-    // ✅ 修复：Fabric 26.2 中 applyEffectTick 签名变了
     @Override
     public boolean applyEffectTick(ServerLevel level, LivingEntity livingEntity, int amplifier) {
         performTransformation(livingEntity, level);
@@ -54,43 +49,41 @@ public class BYeffect extends MobEffect {
     }
 
     /**
-     * 执行转化逻辑
+     * 执行转化逻辑 - ✅ 添加玩家转化
      */
     private void performTransformation(LivingEntity livingEntity, ServerLevel serverLevel) {
         // 村民转化为尸兄
         if (livingEntity instanceof Villager villager) {
             convertVillagerToZb(villager, serverLevel);
         }
+        // ✅ 玩家转化为尸族
+        else if (livingEntity instanceof ServerPlayer player) {
+            convertPlayerToCorpse(player);
+        }
 
-        // 清除感染源记录
         infectionSource.remove(livingEntity.getUUID());
     }
 
     /**
-     * 将村民转化为尸兄实体
+     * 将村民转化为尸兄
      */
     private void convertVillagerToZb(Villager villager, ServerLevel serverLevel) {
         try {
-            // 创建尸兄实体
             LowerLevelZbEntity zb = new LowerLevelZbEntity(ModEntities.LOWER_LEVEL_ZB, serverLevel);
             zb.setPos(villager.getX(), villager.getY(), villager.getZ());
             zb.setYRot(villager.getYRot());
             zb.setXRot(villager.getXRot());
 
-            // 设置皮肤为村民的名字
             String villagerName = villager.getName().getString();
             zb.setPlayerSkinName(villagerName);
             zb.setCustomName(villager.getCustomName());
             zb.setCustomNameVisible(villager.isCustomNameVisible());
 
-            // 检查是否有感染源
             UUID sourceUUID = infectionSource.get(villager.getUUID());
             if (sourceUUID != null) {
                 CorpseOrigin.LOGGER.info("村民 {} 转化为尸兄，感染源: {}", villagerName, sourceUUID);
-                // TODO: 后续可扩展尸王系统
             }
 
-            // 移除村民，添加尸兄
             villager.remove(Entity.RemovalReason.CHANGED_DIMENSION);
             serverLevel.addFreshEntity(zb);
 
@@ -100,32 +93,56 @@ public class BYeffect extends MobEffect {
         }
     }
 
-    // ==================== 静态方法：应用感染 ====================
-
     /**
-     * 给实体添加感染效果（随机延迟3-15秒）
+     * ✅ 将玩家转化为尸族
      */
+    private void convertPlayerToCorpse(ServerPlayer player) {
+        // 设置玩家为尸族状态
+        PlayerCorpseComponent.setPlayerAsCorpse(player, 1);
+
+        boolean hasConsciousness = PlayerCorpseComponent.get(player).hasInnateConsciousness();
+
+        // 广播给所有玩家
+        CorpseNetwork.broadcastPlayerCorpseSync(player);
+
+        // 播放转化特效
+        player.level().broadcastEntityEvent(player, (byte) 35);
+
+        // 消息
+        if (hasConsciousness) {
+            player.sendSystemMessage(Component.literal(
+                    "§c§l你已被感染成为尸兄！§r\n" +
+                            "§a§l幸运的是，你保留了人类的意识！§r\n" +
+                            "§7击杀生物可获得进化点来解锁更多技能！"
+            ));
+            CorpseOrigin.LOGGER.info("玩家 {} 已转化为尸族！幸运地保留了意识！", player.getName().getString());
+        } else {
+            player.sendSystemMessage(Component.literal(
+                    "§c§l你已被感染成为尸兄！§r\n" +
+                            "§4§l你的意识被黑暗吞噬，只剩下本能...§r\n" +
+                            "§7寻找穆博士的眼睛 或 进化到3级 可恢复意识"
+            ));
+            CorpseOrigin.LOGGER.info("玩家 {} 已转化为尸族！失去了人类意识...", player.getName().getString());
+        }
+    }
+
+    // ==================== 静态方法 ====================
+
     public static void applyInfection(LivingEntity target, ServerLevel serverLevel) {
         applyInfection(target, serverLevel, null);
     }
 
-    /**
-     * 给实体添加感染效果（随机延迟3-15秒，带感染源）
-     */
     public static void applyInfection(LivingEntity target, ServerLevel serverLevel, UUID sourceUUID) {
         if (target == null || serverLevel == null) return;
 
-        // ✅ 使用 ModEffects.QIANS（需要导入）
         if (target.hasEffect(ModEffects.QIANS)) {
             return;
         }
 
-        // 记录感染源
         if (sourceUUID != null) {
             infectionSource.put(target.getUUID(), sourceUUID);
         }
 
-        // 随机延迟3-15秒（60-300 ticks）
         int duration = 60 + serverLevel.getRandom().nextInt(241);
 
         target.addEffect(new MobEffectInstance(
@@ -141,9 +158,6 @@ public class BYeffect extends MobEffect {
                 target.getName().getString(), duration / 20);
     }
 
-    /**
-     * 给实体添加感染效果（自定义延迟）
-     */
     public static void applyInfection(LivingEntity target, ServerLevel serverLevel, int durationTicks, UUID sourceUUID) {
         if (target == null || serverLevel == null) return;
 
@@ -165,23 +179,21 @@ public class BYeffect extends MobEffect {
         ));
     }
 
-    /**
-     * 检查目标是否可以被感染
-     */
     public static boolean canInfect(LivingEntity target) {
-        return target instanceof Villager;
+        if (target instanceof Villager) {
+            return true;
+        }
+        // ✅ 玩家可以被感染（非尸族玩家）
+        if (target instanceof ServerPlayer player) {
+            return !PlayerCorpseComponent.isCorpse(player);
+        }
+        return false;
     }
 
-    /**
-     * 获取感染源
-     */
     public static UUID getInfectionSource(UUID targetUUID) {
         return infectionSource.get(targetUUID);
     }
 
-    /**
-     * 清除感染源记录
-     */
     public static void clearInfectionSource(UUID targetUUID) {
         infectionSource.remove(targetUUID);
     }

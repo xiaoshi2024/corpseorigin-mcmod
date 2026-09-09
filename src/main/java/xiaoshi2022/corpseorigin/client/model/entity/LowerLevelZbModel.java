@@ -1,4 +1,4 @@
-package xiaoshi2022.corpseorigin.client.model;
+package xiaoshi2022.corpseorigin.client.model.entity;
 
 import com.geckolib.model.DefaultedEntityGeoModel;
 import com.geckolib.renderer.base.GeoRenderState;
@@ -6,7 +6,7 @@ import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
-import xiaoshi2022.corpseorigin.client.renderer.RenderStateData;
+import xiaoshi2022.corpseorigin.client.renderer.entity.RenderStateData;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinState;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 
