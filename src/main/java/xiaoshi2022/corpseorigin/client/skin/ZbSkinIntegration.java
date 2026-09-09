@@ -1,7 +1,6 @@
 package xiaoshi2022.corpseorigin.client.skin;
 
 import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.logging.LogUtils;
 import net.fabricmc.api.EnvType;

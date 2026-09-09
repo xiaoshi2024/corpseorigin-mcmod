@@ -10,7 +10,9 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class PlayerCharacterData extends SavedData {
 
