@@ -11,6 +11,7 @@ import xiaoshi2022.corpseorigin.command.CharacterCommands;
 import xiaoshi2022.corpseorigin.command.SummonZbCommand;
 import xiaoshi2022.corpseorigin.event.ByWaterEventHandler;
 import xiaoshi2022.corpseorigin.event.ServerEvents;
+import xiaoshi2022.corpseorigin.event.ZombieKinEventHandler;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.*;
 
@@ -60,6 +61,7 @@ public class CorpseOrigin implements ModInitializer {
 		// ✅ 10. 事件
 		ByWaterEventHandler.register();
 		ServerEvents.register();
+		ZombieKinEventHandler.register();
 
 		// ✅ 11. 命令
 		net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback.EVENT.register(

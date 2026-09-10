@@ -21,17 +21,17 @@ public class ZbSkinLoader {
             return;
         }
 
-        // 检查缓存
+        // ✅ 缓存命中
         Identifier cached = ZbSkinCache.get(username);
         if (cached != null) {
             entity.setSkinTexture(cached);
             entity.setSkinState(ZbSkinState.LOADED);
-            LOGGER.info("✅ 从缓存加载皮肤: {} -> {}", username, cached);
+            LOGGER.debug("♻️ 从缓存加载皮肤: {} -> {}", username, cached);  // ← debug
             return;
         }
 
         entity.setSkinState(ZbSkinState.LOADING);
-        LOGGER.info("⏳ 开始异步加载皮肤: {}", username);
+        LOGGER.debug("⏳ 开始异步加载皮肤: {}", username);  // ← debug
 
         ZbSkinIntegration.getPlayerSkinAsync(username)
                 .thenAcceptAsync(skin -> {
@@ -39,7 +39,7 @@ public class ZbSkinLoader {
                         entity.setSkinTexture(skin);
                         entity.setSkinState(ZbSkinState.LOADED);
                         ZbSkinCache.put(username, skin);
-                        LOGGER.info("✅ 皮肤加载成功: {} -> {}", username, skin);
+                        LOGGER.info("✅ 皮肤加载成功: {} -> {}", username, skin);  // ← info（首次）
                     } else {
                         LOGGER.warn("⚠️ 皮肤加载失败，使用默认: {}", username);
                         setDefaultSkin(entity, username);
@@ -58,6 +58,6 @@ public class ZbSkinLoader {
         entity.setSkinTexture(defaultSkin);
         entity.setSkinState(ZbSkinState.LOADED);
         ZbSkinCache.put(username, defaultSkin);
-        LOGGER.info("⚠️ 使用默认皮肤: {} -> {}", username, defaultSkin);
+        LOGGER.debug("⚠️ 使用默认皮肤: {} -> {}", username, defaultSkin);  // ← debug
     }
 }

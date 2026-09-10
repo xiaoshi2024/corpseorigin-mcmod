@@ -15,18 +15,20 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.client.CorpseOriginClient;
 import xiaoshi2022.corpseorigin.client.model.ExoskeletonModel;
 
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, PlayerModel> {
 
     public static final Identifier EXOSKELETON_TEXTURE =
             Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "textures/entity/lower_level_zb_eye.png");
 
+    /** ✅ 实体ID → UUID 缓存 */
+    private static final Map<Integer, UUID> UUID_CACHE = new ConcurrentHashMap<>();
+
     private final ExoskeletonModel model;
 
-    /**
-     * ✅ 用原始类型构造函数，兼容 AvatarRendererMixin 的调用
-     */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public ExoskeletonRenderLayer(RenderLayerParent parent, ExoskeletonModel model) {
         super(parent);
@@ -66,11 +68,28 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
     }
 
     private UUID getEntityUuid(int entityId) {
+        UUID cached = UUID_CACHE.get(entityId);
+        if (cached != null) return cached;
+
         Minecraft client = Minecraft.getInstance();
         if (client.level == null) return null;
 
         Entity entity = client.level.getEntity(entityId);
-        return entity != null ? entity.getUUID() : null;
+        if (entity == null) return null;
+
+        UUID uuid = entity.getUUID();
+        UUID_CACHE.put(entityId, uuid);
+        return uuid;
+    }
+
+    /** ✅ 实体卸载时清理 */
+    public static void onEntityRemoved(int entityId) {
+        UUID_CACHE.remove(entityId);
+    }
+
+    /** ✅ 清空所有缓存（玩家退出时） */
+    public static void clearCache() {
+        UUID_CACHE.clear();
     }
 
     public void triggerSwing() {

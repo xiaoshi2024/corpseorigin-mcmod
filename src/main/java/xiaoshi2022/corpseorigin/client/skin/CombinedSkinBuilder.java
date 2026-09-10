@@ -15,13 +15,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 尸兄组合纹理构建器
- * 将玩家皮肤 + 尸化骨骼纹理组合成一张纹理
+ * <p>
+ * - 使用 LRU 缓存限制纹理数量
+ * - 引用计数管理纹理生命周期
+ * - 皮肤路径作 key，同一皮肤复用
  */
 public class CombinedSkinBuilder {
 
@@ -30,8 +33,27 @@ public class CombinedSkinBuilder {
     private static final int TEXTURE_WIDTH = 64;
     private static final int TEXTURE_HEIGHT = 64;
 
-    // ✅ 使用皮肤纹理路径作为缓存 key，而不是实体ID
-    private static final Map<String, Identifier> CACHE = new ConcurrentHashMap<>();
+    /** ✅ LRU 缓存最大容量 */
+    private static final int MAX_CACHE_SIZE = 64;
+
+    /**
+     * ✅ LRU 缓存
+     * key = 皮肤路径字符串
+     * value = 组合纹理 + 引用计数
+     */
+    private static final LinkedHashMap<String, CacheEntry> CACHE =
+            new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, CacheEntry> eldest) {
+                    if (size() > MAX_CACHE_SIZE && eldest.getValue().refCount <= 0) {
+                        // ✅ 引用计数为 0 才释放
+                        releaseTexture(eldest.getValue().texture);
+                        LOGGER.info("🗑️ LRU 释放纹理: {}", eldest.getValue().texture);
+                        return true;
+                    }
+                    return false;
+                }
+            };
 
     private static final Identifier DEFAULT_SKIN = DefaultPlayerSkin.getDefaultTexture();
 
@@ -40,29 +62,112 @@ public class CombinedSkinBuilder {
 
     private static Identifier defaultCombined = null;
 
+    /** 缓存的条目：组合纹理 + 引用计数 */
+    private static class CacheEntry {
+        final Identifier texture;
+        int refCount;
+
+        CacheEntry(Identifier texture) {
+            this.texture = texture;
+            this.refCount = 1;
+        }
+    }
+
+    // ==================== 公共 API ====================
+
     /**
-     * 获取组合纹理（皮肤 + 骨骼叠加）
-     * ✅ 使用皮肤纹理作为缓存 key，相同皮肤复用同一组合纹理
+     * ✅ 获取组合纹理（增加引用计数）
+     * <p>
+     * 相同皮肤路径复用同一个组合纹理。
      */
-    public static Identifier getOrCreate(Identifier skinTexture) {
+    public static synchronized Identifier acquire(Identifier skinTexture) {
         if (skinTexture == null) {
             return getDefaultCombined();
         }
 
         String cacheKey = skinTexture.toString();
-        Identifier cached = CACHE.get(cacheKey);
-        if (cached != null) {
-            return cached;
+        CacheEntry entry = CACHE.get(cacheKey);
+
+        if (entry != null) {
+            entry.refCount++;
+            LOGGER.debug("♻️ 复用组合纹理: {} (ref={})", entry.texture, entry.refCount);
+            return entry.texture;
         }
 
+        // 创建新纹理
         try {
             Identifier combined = buildCombinedSkin(skinTexture);
-            CACHE.put(cacheKey, combined);
-            LOGGER.info("✅ 组合纹理已创建并缓存: {} -> {}", skinTexture, combined);
+            CACHE.put(cacheKey, new CacheEntry(combined));
+            LOGGER.info("✅ 组合纹理已创建: {} -> {} (ref=1)", skinTexture, combined);
             return combined;
         } catch (Exception e) {
             LOGGER.error("❌ 创建组合纹理失败: {}", cacheKey, e);
             return getDefaultCombined();
+        }
+    }
+
+    /**
+     * ✅ 释放组合纹理（减少引用计数）
+     * <p>
+     * 当引用计数为 0 时，纹理保留在缓存中，等 LRU 淘汰时释放。
+     */
+    public static synchronized void release(Identifier skinTexture) {
+        if (skinTexture == null) return;
+
+        String cacheKey = skinTexture.toString();
+        CacheEntry entry = CACHE.get(cacheKey);
+        if (entry != null) {
+            entry.refCount = Math.max(0, entry.refCount - 1);
+            LOGGER.debug("➖ 释放组合纹理引用: {} (ref={})", entry.texture, entry.refCount);
+        }
+    }
+
+    /**
+     * ✅ 手动释放某个皮肤的组合纹理（强制）
+     * <p>
+     * 用于实体死亡时清理。
+     */
+    public static synchronized void forceRelease(Identifier skinTexture) {
+        if (skinTexture == null) return;
+
+        String cacheKey = skinTexture.toString();
+        CacheEntry entry = CACHE.remove(cacheKey);
+        if (entry != null) {
+            releaseTexture(entry.texture);
+            LOGGER.info("🗑️ 强制释放组合纹理: {}", entry.texture);
+        }
+    }
+
+    /**
+     * ✅ 清空所有缓存
+     */
+    public static synchronized void clearCache() {
+        for (CacheEntry entry : CACHE.values()) {
+            releaseTexture(entry.texture);
+        }
+        CACHE.clear();
+        defaultCombined = null;
+        LOGGER.info("🧹 已清除所有组合纹理缓存");
+    }
+
+    /**
+     * ✅ 获取当前缓存大小（调试用）
+     */
+    public static synchronized int getCacheSize() {
+        return CACHE.size();
+    }
+
+    // ==================== 内部实现 ====================
+
+    /**
+     * 释放纹理（从 TextureManager 注销）
+     */
+    private static void releaseTexture(Identifier location) {
+        if (location == null) return;
+        try {
+            Minecraft.getInstance().getTextureManager().release(location);
+        } catch (Exception e) {
+            LOGGER.warn("释放纹理失败: {} - {}", location, e.getMessage());
         }
     }
 
@@ -80,7 +185,6 @@ public class CombinedSkinBuilder {
         if (skinImage != null) {
             copyImageToRegion(combined, skinImage, 0, 0);
             skinImage.close();
-            LOGGER.debug("✅ 玩家皮肤已加载: {}", skinTexture);
         } else {
             loadDefaultSkinToRegion(combined, resourceManager);
             LOGGER.warn("⚠️ 使用默认皮肤替代: {}", skinTexture);
@@ -91,15 +195,19 @@ public class CombinedSkinBuilder {
         if (skeletonImage != null) {
             overlaySkeletonTexture(combined, skeletonImage);
             skeletonImage.close();
-            LOGGER.debug("✅ 骨骼纹理已叠加");
         }
 
-        // 3. 注册组合纹理
-        String hash = UUID.randomUUID().toString().substring(0, 8);
+        // 3. 注册组合纹理（用确定性 hash，避免随机 UUID）
+        String hash = Integer.toHexString(skinTexture.toString().hashCode());
         Identifier location = Identifier.fromNamespaceAndPath(
                 CorpseOrigin.MOD_ID,
                 "skins/zb_combined_" + hash
         );
+
+        // ✅ 如果已存在同名纹理，先释放（避免泄漏）
+        if (textureManager.getTexture(location) != null) {
+            textureManager.release(location);
+        }
 
         DynamicTexture texture = new DynamicTexture(
                 () -> location.toString(),
@@ -107,15 +215,10 @@ public class CombinedSkinBuilder {
         );
 
         textureManager.register(location, texture);
-        LOGGER.info("✅ 组合纹理已创建: {}", location);
         return location;
     }
 
-    /**
-     * 加载玩家皮肤纹理（支持 CSL 缓存）
-     */
     private static NativeImage loadSkinImage(Identifier skin, ResourceManager resourceManager) {
-        // 尝试从资源管理器加载
         try {
             var resource = resourceManager.getResource(skin);
             if (resource.isPresent()) {
@@ -127,23 +230,19 @@ public class CombinedSkinBuilder {
             LOGGER.debug("从资源管理器加载皮肤失败: {}", skin);
         }
 
-        // 尝试从缓存路径加载（CSL 下载的皮肤）
         Path cachedPath = getSkinFilePath(skin);
         if (cachedPath != null && Files.exists(cachedPath)) {
             try (InputStream input = Files.newInputStream(cachedPath)) {
-                LOGGER.debug("从缓存路径加载皮肤: {}", skin);
                 return NativeImage.read(input);
             } catch (Exception e) {
                 LOGGER.debug("从缓存路径加载失败: {}", e.getMessage());
             }
         }
 
-        // 尝试从纹理管理器获取
         Object texture = Minecraft.getInstance().getTextureManager().getTexture(skin);
         if (texture instanceof DynamicTexture dynamicTexture) {
             NativeImage pixels = dynamicTexture.getPixels();
             if (pixels != null && !pixels.isClosed()) {
-                // ✅ 使用 getPixel 和 setPixel（不是 getPixelRGBA/setPixelRGBA）
                 NativeImage copy = new NativeImage(pixels.getWidth(), pixels.getHeight(), true);
                 for (int x = 0; x < pixels.getWidth(); x++) {
                     for (int y = 0; y < pixels.getHeight(); y++) {
@@ -157,9 +256,6 @@ public class CombinedSkinBuilder {
         return null;
     }
 
-    /**
-     * 加载尸化骨骼纹理
-     */
     private static NativeImage loadSkeletonTexture(ResourceManager resourceManager) {
         try {
             var resource = resourceManager.getResource(SKELETON_OVERLAY);
@@ -174,16 +270,12 @@ public class CombinedSkinBuilder {
         return null;
     }
 
-    /**
-     * 叠加骨骼纹理到皮肤上
-     */
     private static void overlaySkeletonTexture(NativeImage combined, NativeImage skeletonImage) {
         int width = Math.min(skeletonImage.getWidth(), TEXTURE_WIDTH);
         int height = Math.min(skeletonImage.getHeight(), TEXTURE_HEIGHT);
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                // ✅ 使用 getPixel 获取像素（返回 ARGB 格式）
                 int skeletonColor = skeletonImage.getPixel(x, y);
                 int alpha = (skeletonColor >> 24) & 0xFF;
 
@@ -196,9 +288,6 @@ public class CombinedSkinBuilder {
         }
     }
 
-    /**
-     * 颜色混合
-     */
     private static int blendColors(int base, int overlay, float alpha) {
         int ba = (base >> 24) & 0xFF;
         int br = (base >> 16) & 0xFF;
@@ -218,24 +307,17 @@ public class CombinedSkinBuilder {
         return (ba << 24) | (r << 16) | (g << 8) | b;
     }
 
-    /**
-     * 复制图片到区域
-     */
     private static void copyImageToRegion(NativeImage dest, NativeImage src, int offsetX, int offsetY) {
         int width = Math.min(src.getWidth(), dest.getWidth() - offsetX);
         int height = Math.min(src.getHeight(), dest.getHeight() - offsetY);
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                // ✅ 使用 getPixel 和 setPixel
                 dest.setPixel(offsetX + x, offsetY + y, src.getPixel(x, y));
             }
         }
     }
 
-    /**
-     * 加载默认史蒂夫皮肤到区域
-     */
     private static void loadDefaultSkinToRegion(NativeImage combined, ResourceManager resourceManager) {
         try {
             var resource = resourceManager.getResource(DEFAULT_SKIN);
@@ -251,9 +333,6 @@ public class CombinedSkinBuilder {
         }
     }
 
-    /**
-     * 获取皮肤文件缓存路径（CSL）
-     */
     private static Path getSkinFilePath(Identifier skinLocation) {
         try {
             Path skinRoot = Minecraft.getInstance().getResourcePackDirectory().getParent()
@@ -269,9 +348,6 @@ public class CombinedSkinBuilder {
         return null;
     }
 
-    /**
-     * 获取默认组合纹理
-     */
     private static Identifier getDefaultCombined() {
         if (defaultCombined != null) {
             return defaultCombined;
@@ -287,9 +363,9 @@ public class CombinedSkinBuilder {
         }
     }
 
-    public static void clearCache() {
-        CACHE.clear();
-        defaultCombined = null;
-        LOGGER.info("🧹 已清除组合纹理缓存");
+    /** 兼容旧 API */
+    @Deprecated
+    public static Identifier getOrCreate(Identifier skinTexture) {
+        return acquire(skinTexture);
     }
 }

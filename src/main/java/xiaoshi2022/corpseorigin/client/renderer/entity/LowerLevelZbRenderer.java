@@ -15,6 +15,7 @@ import xiaoshi2022.corpseorigin.client.skin.ZbSkinLoader;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinState;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -22,19 +23,16 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
 
     private static final Logger LOGGER = LoggerFactory.getLogger(LowerLevelZbRenderer.class);
 
-    private static final ConcurrentHashMap<String, CachedSkinData> SKIN_CACHE = new ConcurrentHashMap<>();
+    /** ✅ 每个实体 → 绑定信息 */
+    private static final Map<Integer, EntitySkinBinding> ENTITY_BINDING = new ConcurrentHashMap<>();
 
-    private static final class CachedSkinData {
-        final Identifier texture;
-        final ZbSkinState state;
-        final int entityId;
-        final String skinKey;
+    private static final class EntitySkinBinding {
+        final Identifier skinTexture;      // ✅ 原始皮肤路径（用于变化检测）
+        final Identifier combinedTexture;  // ✅ 组合纹理（用于渲染复用）
 
-        CachedSkinData(Identifier texture, ZbSkinState state, int entityId, String skinKey) {
-            this.texture = texture;
-            this.state = state;
-            this.entityId = entityId;
-            this.skinKey = skinKey;
+        EntitySkinBinding(Identifier skinTexture, Identifier combinedTexture) {
+            this.skinTexture = skinTexture;
+            this.combinedTexture = combinedTexture;
         }
     }
 
@@ -49,71 +47,74 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
 
         int entityId = entity.getId();
         String playerName = entity.getPlayerSkinName();
-        String skinKey = playerName != null ? playerName : "default";
-        String cacheKey = entityId + ":" + skinKey;
+        ZbSkinState currentState = entity.getSkinState();
 
-        CachedSkinData cached = SKIN_CACHE.get(cacheKey);
+        // 1. 解析皮肤路径
+        Identifier skinTexture = resolveSkinTexture(entity, playerName, currentState);
+        if (skinTexture == null) {
+            skinTexture = DefaultPlayerSkin.getDefaultTexture();
+        }
 
-        // ✅ 如果缓存存在且状态一致，直接复用
-        if (cached != null && cached.state == entity.getSkinState()) {
-            renderState.addGeckolibData(RenderStateData.CUSTOM_SKIN_TEXTURE, cached.texture);
-            renderState.addGeckolibData(RenderStateData.SKIN_STATE, cached.state);
+        // 2. 检查绑定
+        EntitySkinBinding binding = ENTITY_BINDING.get(entityId);
+
+        if (binding != null && binding.skinTexture.equals(skinTexture)) {
+            // ✅ 皮肤没变，直接复用组合纹理（绝不 acquire！）
+            renderState.addGeckolibData(RenderStateData.CUSTOM_SKIN_TEXTURE, binding.combinedTexture);
+            renderState.addGeckolibData(RenderStateData.SKIN_STATE, currentState);
             return;
         }
 
-        // 🔍 状态变化或首次加载，打印日志
-        if (cached == null) {
-            LOGGER.info("🔍 [extractRenderState] 首次加载: entityId={}, player={}, skinState={}",
-                    entityId, playerName, entity.getSkinState());
-        } else {
-            LOGGER.info("🔍 [extractRenderState] 状态变化: entityId={}, {} -> {}",
-                    entityId, cached.state, entity.getSkinState());
+        // 3. 皮肤变了（首次/切换），释放旧的
+        if (binding != null) {
+            CombinedSkinBuilder.release(binding.skinTexture);
+            LOGGER.debug("🔄 实体 {} 皮肤变化: {} -> {}", entityId, binding.skinTexture, skinTexture);
         }
 
-        // ✅ 获取皮肤纹理
-        Identifier skinTexture = null;
-        ZbSkinState currentState = entity.getSkinState();
+        // 4. 获取新组合纹理
+        Identifier combinedTexture = CombinedSkinBuilder.acquire(skinTexture);
+        ENTITY_BINDING.put(entityId, new EntitySkinBinding(skinTexture, combinedTexture));
 
-        if (currentState == ZbSkinState.LOADED) {
-            skinTexture = entity.getSkinTexture();
-            LOGGER.info("🔍 [extractRenderState] 从实体获取皮肤纹理: {}", skinTexture);
-        } else if (currentState == ZbSkinState.NOT_LOADED || currentState == ZbSkinState.FAILED) {
-            // ✅ 触发皮肤加载
-            if (playerName != null && !playerName.isEmpty()) {
-                LOGGER.info("🔍 [extractRenderState] 触发皮肤加载: {}", playerName);
-                ZbSkinLoader.loadSkinAsync(entity, playerName);
-            }
-            // 临时使用默认皮肤
-            skinTexture = DefaultPlayerSkin.getDefaultTexture();
-        } else {
-            // LOADING 状态，使用默认皮肤
-            skinTexture = DefaultPlayerSkin.getDefaultTexture();
-        }
-
-        // 如果还是 null，使用默认
-        if (skinTexture == null) {
-            if (playerName != null && !playerName.isEmpty()) {
-                UUID fakeUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes());
-                skinTexture = DefaultPlayerSkin.get(fakeUuid).body().texturePath();
-            } else {
-                skinTexture = DefaultPlayerSkin.getDefaultTexture();
-            }
-            LOGGER.warn("⚠️ [extractRenderState] skinTexture为null，使用默认: {}", skinTexture);
-        }
-
-        // ✅ 使用皮肤纹理作为缓存 key（不再使用 entityId）
-        Identifier combinedTexture = CombinedSkinBuilder.getOrCreate(skinTexture);
-        ZbSkinState state = entity.getSkinState();
-
+        // 5. 写入
         renderState.addGeckolibData(RenderStateData.CUSTOM_SKIN_TEXTURE, combinedTexture);
-        renderState.addGeckolibData(RenderStateData.SKIN_STATE, state);
+        renderState.addGeckolibData(RenderStateData.SKIN_STATE, currentState);
+    }
 
-        SKIN_CACHE.put(cacheKey, new CachedSkinData(combinedTexture, state, entityId, skinKey));
-
+    private Identifier resolveSkinTexture(LowerLevelZbEntity entity, String playerName, ZbSkinState state) {
         if (state == ZbSkinState.LOADED) {
-            LOGGER.info("✅ [extractRenderState] 皮肤加载完成: entityId={}, texture={}, combined={}",
-                    entityId, skinTexture, combinedTexture);
+            Identifier texture = entity.getSkinTexture();
+            if (texture != null) {
+                return texture;
+            }
         }
+
+        if ((state == ZbSkinState.NOT_LOADED || state == ZbSkinState.FAILED)
+                && playerName != null && !playerName.isEmpty()) {
+            ZbSkinLoader.loadSkinAsync(entity, playerName);
+        }
+
+        if (playerName != null && !playerName.isEmpty()) {
+            UUID fakeUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes());
+            return DefaultPlayerSkin.get(fakeUuid).body().texturePath();
+        }
+        return DefaultPlayerSkin.getDefaultTexture();
+    }
+
+    public static void onEntityRemoved(int entityId) {
+        EntitySkinBinding binding = ENTITY_BINDING.remove(entityId);
+        if (binding != null) {
+            CombinedSkinBuilder.release(binding.skinTexture);
+            LOGGER.debug("🗑️ 实体 {} 已移除，释放皮肤纹理引用: {}", entityId, binding.skinTexture);
+        }
+    }
+
+    public static void clearCache() {
+        for (EntitySkinBinding binding : ENTITY_BINDING.values()) {
+            CombinedSkinBuilder.release(binding.skinTexture);
+        }
+        ENTITY_BINDING.clear();
+        CombinedSkinBuilder.clearCache();
+        LOGGER.info("🧹 所有皮肤缓存已清理");
     }
 
     @Override
@@ -130,10 +131,5 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
     @Override
     public RenderType getRenderType(LivingEntityRenderState renderState, Identifier texture) {
         return RenderTypes.entityCutout(texture);
-    }
-
-    public static void clearCache() {
-        SKIN_CACHE.clear();
-        LOGGER.info("🧹 皮肤缓存已清理");
     }
 }

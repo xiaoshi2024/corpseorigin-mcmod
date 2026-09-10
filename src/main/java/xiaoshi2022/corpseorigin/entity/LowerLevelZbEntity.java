@@ -20,10 +20,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -37,7 +39,7 @@ import java.util.Optional;
 
 // 删除: import xiaoshi2022.corpseorigin.client.renderer.state.ZbEntityRenderState;
 
-public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity {
+public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, ZombieKin {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -55,6 +57,30 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity {
             SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<String> DATA_CUSTOM_ID =
             SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.STRING);
+    // ==================== 饥饿值 ====================
+    private static final EntityDataAccessor<Integer> DATA_HUNGER =
+            SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.INT);
+
+    /** 饥饿阈值：低于这个值才攻击同类 */
+    private static final int HUNGER_THRESHOLD = 30;
+    /** 每次攻击同类消耗的饥饿值 */
+    private static final int ATTACK_SAME_KIN_HUNGER_COST = 15;
+
+    public int getHunger() {
+        return this.entityData.get(DATA_HUNGER);
+    }
+
+    public void setHunger(int hunger) {
+        this.entityData.set(DATA_HUNGER, Math.max(0, Math.min(100, hunger)));
+    }
+
+    public boolean isHungry() {
+        return getHunger() < HUNGER_THRESHOLD;
+    }
+
+    public boolean isStarving() {
+        return getHunger() <= 0;
+    }
 
     // ==================== GeckoLib ====================
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -125,9 +151,30 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity {
 
     @Override
     public boolean doHurtTarget(ServerLevel level, Entity target) {
+        // ✅ 检查是否可以攻击
+        if (!ZombieKin.canAttack(this, target)) {
+            return false;
+        }
+
         boolean result = super.doHurtTarget(level, target);
 
         if (result && !this.level().isClientSide()) {
+            // ✅ 只要是活体就进食
+            if (target instanceof LivingEntity) {
+                int hungerGain;
+
+                if (ZombieKin.isZombieKin(target)) {
+                    // 同类相食：回复少一点
+                    hungerGain = 10;
+                    LOGGER.info("尸兄 {} 吞噬同类，回复 {} 饥饿值", this.getId(), hungerGain);
+                } else {
+                    // 正常食物（人类/动物）
+                    hungerGain = 20;
+                }
+
+                setHunger(getHunger() + hungerGain);
+            }
+
             float pitch = 0.8F + this.random.nextFloat() * 0.4F;
             this.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, pitch);
 
@@ -144,7 +191,6 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity {
     }
 
     // ==================== AI 目标 ====================
-
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
@@ -153,7 +199,50 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity {
         this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
 
-        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        // ✅ 优先级0：被攻击后立刻反击（最高优先级）
+        this.targetSelector.addGoal(0, new HurtByTargetGoal(this));
+
+        // ✅ 优先级1：攻击非尸族玩家（永远）
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<Player>(
+                this,
+                Player.class,
+                10,
+                true,
+                false,
+                (target, level) -> ZombieKin.isNotZombieKin(target)
+        ));
+
+        // ✅ 优先级2：饥饿时攻击尸族玩家（同类相食）
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<Player>(
+                this,
+                Player.class,
+                10,
+                true,
+                false,
+                (target, level) -> {
+                    if (!this.isHungry()) return false;
+                    if (!ZombieKin.isZombieKin(target)) return false;
+                    return target != this;
+                }
+        ));
+
+        // ✅ 优先级3：饥饿时攻击其他尸兄生物
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<LowerLevelZbEntity>(
+                this,
+                LowerLevelZbEntity.class,
+                10,
+                true,
+                false,
+                (target, level) -> {
+                    if (!this.isHungry()) return false;
+
+                    // ✅ 先判断类型，再调用 LowerLevelZbEntity 的方法
+                    if (!(target instanceof LowerLevelZbEntity other)) return false;
+                    if (other == this) return false;
+
+                    return other.getEvolutionLevel() < this.getEvolutionLevel() || this.isStarving();
+                }
+        ));
     }
 
     // ==================== 数据同步 ====================
@@ -165,6 +254,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity {
         builder.define(DATA_CUSTOM_ID, "");
         builder.define(DATA_SKIN_STATE, ZbSkinState.NOT_LOADED.getCode());
         builder.define(DATA_EVOLUTION_LEVEL, 1);
+        builder.define(DATA_HUNGER, 100);  // ✅ 默认满饥饿
     }
 
     // ==================== 自定义 ID 系统 ====================
@@ -248,6 +338,24 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity {
     public void tick() {
         super.tick();
 
+        if (!this.level().isClientSide()) {
+            // ✅ 每 200 tick（10秒）降低 1 点饥饿值
+            if (this.tickCount % 200 == 0) {
+                setHunger(getHunger() - 1);
+            }
+
+            // ✅ 极度饥饿时显示粒子效果
+            if (this.isStarving() && this.tickCount % 20 == 0) {
+                if (this.level() instanceof ServerLevel serverLevel) {
+                    serverLevel.sendParticles(
+                            ParticleTypes.ANGRY_VILLAGER,
+                            this.getX(), this.getY() + 1.5, this.getZ(),
+                            1, 0, 0, 0, 0
+                    );
+                }
+            }
+        }
+
         if (this.level().isClientSide()) {
             tickClient();
         }
@@ -284,6 +392,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity {
         output.putString("CustomId", this.getCustomId());
         output.putInt("SkinState", this.entityData.get(DATA_SKIN_STATE));
         output.putInt("EvolutionLevel", this.getEvolutionLevel());
+        output.putInt("Hunger", this.getHunger());
     }
 
     @Override

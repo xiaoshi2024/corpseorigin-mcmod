@@ -13,7 +13,8 @@ import net.minecraft.util.ARGB;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.renderer.entity.LowerLevelZbRenderer;
-import xiaoshi2022.corpseorigin.event.AttackAnimationHandler;
+import xiaoshi2022.corpseorigin.event.client.AttackAnimationHandler;
+import xiaoshi2022.corpseorigin.event.client.ClientEntityEventHandler;
 import xiaoshi2022.corpseorigin.network.CorpsePayloads;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.registry.ModFluids;
@@ -46,6 +47,8 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         // ✅ 注册客户端攻击事件监听
         AttackAnimationHandler.register();
+        // ✅ 注册客户端实体事件
+        ClientEntityEventHandler.register();
 
         // 6. 网络接收
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.CharacterSyncS2C.TYPE, (payload, context) -> {

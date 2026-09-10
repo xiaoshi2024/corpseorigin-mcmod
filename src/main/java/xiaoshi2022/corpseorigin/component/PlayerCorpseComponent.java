@@ -12,7 +12,6 @@ public class PlayerCorpseComponent {
     private static final String KEY_SKIN_UUID = "skin_uuid";
     private static final String KEY_EVOLUTION_LEVEL = "evolution_level";
     private static final String KEY_KILLS = "kills";
-    private static final String KEY_HUNGER = "hunger";
     private static final String KEY_IS_GREEDY = "is_greedy";
     private static final String KEY_VARIANT = "variant";
     private static final String KEY_HAS_WING = "has_wing";
@@ -133,14 +132,32 @@ public class PlayerCorpseComponent {
 
     // ==================== 饥饿值 ====================
 
+    /**
+     * ✅ 尸兄饥饿值（0-100），映射到原版饥饿值（0-20）
+     * <p>
+     * 映射关系：
+     * - 原版 foodLevel 0 → 尸兄 0（极度饥饿）
+     * - 原版 foodLevel 20 → 尸兄 100（饱腹）
+     * - 比例：1 foodLevel = 5 尸兄饥饿值
+     */
     public int getHunger() {
-        return getData().getInt(KEY_HUNGER).orElse(100);
+        // 原版 0-20 → 尸兄 0-100
+        return player.getFoodData().getFoodLevel() * 5;
     }
 
     public void setHunger(int hunger) {
-        CompoundTag tag = getData();
-        tag.putInt(KEY_HUNGER, Math.max(0, Math.min(100, hunger)));
-        setData(tag);
+        // 尸兄 0-100 → 原版 0-20
+        int foodLevel = Math.max(0, Math.min(20, hunger / 5));
+        player.getFoodData().setFoodLevel(foodLevel);
+    }
+
+    /**
+     * ✅ 是否饥饿（用于同类相食逻辑）
+     * <p>
+     * 30 / 5 = foodLevel 6，即原版饥饿值低于 6 时算饥饿
+     */
+    public boolean isHungry() {
+        return getHunger() < 30;
     }
 
     // ==================== 特性 ====================
@@ -270,7 +287,6 @@ public class PlayerCorpseComponent {
         tag.putString(KEY_ORIGINAL_NAME, player.getName().getString());
         tag.putString(KEY_SKIN_UUID, player.getUUID().toString());
         tag.putInt(KEY_EVOLUTION_LEVEL, 1);
-        tag.putInt(KEY_HUNGER, 100);
         tag.putBoolean(KEY_IS_GREEDY, player.getRandom().nextFloat() < 0.5f);
         tag.putInt(KEY_VARIANT, player.getRandom().nextFloat() < 0.3f ? 1 : 0);
         tag.putBoolean(KEY_HAS_WING, false);
