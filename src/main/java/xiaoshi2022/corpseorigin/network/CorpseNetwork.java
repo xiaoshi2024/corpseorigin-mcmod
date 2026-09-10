@@ -50,6 +50,11 @@ public final class CorpseNetwork {
             });
         });
 
+        PayloadTypeRegistry.clientboundPlay().register(
+                CorpsePayloads.TempRedEyeSyncS2C.TYPE,
+                CorpsePayloads.TempRedEyeSyncS2C.CODEC);
+
+
         // ✅ 学习技能（C2S）
         PayloadTypeRegistry.serverboundPlay().register(
                 CorpsePayloads.LearnSkillC2S.TYPE,
@@ -149,6 +154,20 @@ public final class CorpseNetwork {
     public static void sendInfectionSync(ServerPlayer player) {
         int infection = PlayerCorpseComponent.get(player).getInfection();
         ServerPlayNetworking.send(player, new CorpsePayloads.InfectionSyncS2C(infection));
+    }
+
+
+    public static void broadcastTempRedEye(ServerPlayer player, int durationTicks) {
+        CorpsePayloads.TempRedEyeSyncS2C packet =
+                new CorpsePayloads.TempRedEyeSyncS2C(player.getUUID(), durationTicks);
+        MinecraftServer server = player.level().getServer();
+        if (server != null) {
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                ServerPlayNetworking.send(p, packet);
+            }
+        } else {
+            ServerPlayNetworking.send(player, packet);
+        }
     }
 
     /**

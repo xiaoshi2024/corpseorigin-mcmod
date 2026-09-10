@@ -24,6 +24,10 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
     public static final Identifier EXOSKELETON_TEXTURE =
             Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "textures/entity/lower_level_zb_eye.png");
 
+    /** ✅ 红眼叠加贴图 */
+    public static final Identifier RED_EYE_OVERLAY =
+            Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "textures/entity/red_eye_overlay.png");
+
     /** ✅ 实体ID → UUID 缓存 */
     private static final Map<Integer, UUID> UUID_CACHE = new ConcurrentHashMap<>();
 
@@ -42,29 +46,43 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
         UUID uuid = getEntityUuid(state.id);
         if (uuid == null) return;
 
-        CorpseOriginClient.ClientCorpseData corpseData = CorpseOriginClient.corpseDataCache.get(uuid);
-        if (corpseData == null || !corpseData.isCorpse || corpseData.isDisguised()) {
-            return;
-        }
-
         var parentModel = this.getParentModel();
         if (parentModel == null) return;
 
-        model.copyFromHead(parentModel.head);
-        model.setupAnim(state);
+        // ==================== 1. 尸兄器官渲染（原有逻辑） ====================
+        CorpseOriginClient.ClientCorpseData corpseData = CorpseOriginClient.corpseDataCache.get(uuid);
+        if (corpseData != null && corpseData.isCorpse && !corpseData.isDisguised()) {
+            model.copyFromHead(parentModel.head);
+            model.setupAnim(state);
 
-        poseStack.pushPose();
+            poseStack.pushPose();
+            submitNodeCollector.order(0).submitModelPart(
+                    model.getShieye(),
+                    poseStack,
+                    RenderTypes.entityTranslucent(EXOSKELETON_TEXTURE),
+                    packedLight,
+                    OverlayTexture.NO_OVERLAY,
+                    null
+            );
+            poseStack.popPose();
+        }
 
-        submitNodeCollector.order(0).submitModelPart(
-                model.getShieye(),
-                poseStack,
-                RenderTypes.entityTranslucent(EXOSKELETON_TEXTURE),
-                packedLight,
-                OverlayTexture.NO_OVERLAY,
-                null
-        );
+        // ==================== 2. 红眼特效渲染（杀戮觉醒） ====================
+        int remain = CorpseOriginClient.tempRedEyeTicks.getOrDefault(uuid, 0);
+        if (remain > 0) {
+            poseStack.pushPose();
 
-        poseStack.popPose();
+            submitNodeCollector.order(1).submitModelPart(
+                    parentModel.head,                   // ✅ head 的 pose 一定是对的
+                    poseStack,
+                    RenderTypes.eyes(RED_EYE_OVERLAY),
+                    packedLight,
+                    OverlayTexture.NO_OVERLAY,
+                    null
+            );
+
+            poseStack.popPose();
+        }
     }
 
     private UUID getEntityUuid(int entityId) {

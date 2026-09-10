@@ -24,6 +24,7 @@ import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.registry.ModFluids;
 import xiaoshi2022.corpseorigin.registry.ModModelLayers;
 
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,6 +32,9 @@ public class CorpseOriginClient implements ClientModInitializer {
 
     // ✅ 客户端尸兄数据缓存（用 UUID 作为键）
     public static final java.util.Map<UUID, ClientCorpseData> corpseDataCache = new ConcurrentHashMap<>();
+
+    /** ✅ 临时红眼状态：UUID → 剩余 tick */
+    public static final Map<UUID, Integer> tempRedEyeTicks = new ConcurrentHashMap<>();
 
     @Override
     public void onInitializeClient() {
@@ -95,6 +99,10 @@ public class CorpseOriginClient implements ClientModInitializer {
                 context.client().execute(() ->
                         ClientState.infection = payload.infection()));
 
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.TempRedEyeSyncS2C.TYPE, (payload, context) ->
+                context.client().execute(() ->
+                        tempRedEyeTicks.put(payload.playerUuid(), payload.durationTicks())));
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (CorpseKeyBindings.openSkillWheel.consumeClick()) {
                 Minecraft.getInstance().gui.setScreen(new SkillWheelScreen());
@@ -102,10 +110,8 @@ public class CorpseOriginClient implements ClientModInitializer {
             while (CorpseKeyBindings.openSkillTree.consumeClick()) {
                 Minecraft.getInstance().gui.setScreen(new SkillTreeScreen());
             }
-            // ✅ 切换 HUD
             while (CorpseKeyBindings.toggleHud.consumeClick()) {
                 ClientState.hudVisible = !ClientState.hudVisible;
-                // 可选：给玩家一条提示
                 if (Minecraft.getInstance().player != null) {
                     Minecraft.getInstance().player.sendSystemMessage(
                             Component.translatable(ClientState.hudVisible
@@ -113,6 +119,12 @@ public class CorpseOriginClient implements ClientModInitializer {
                                     : "hud.corpseorigin.toggle.off")
                     );
                 }
+            }
+
+            // ✅ 红眼计时自减（安全写法）
+            if (!tempRedEyeTicks.isEmpty()) {
+                tempRedEyeTicks.replaceAll((k, v) -> v - 1);
+                tempRedEyeTicks.entrySet().removeIf(e -> e.getValue() <= 0);
             }
         });
 

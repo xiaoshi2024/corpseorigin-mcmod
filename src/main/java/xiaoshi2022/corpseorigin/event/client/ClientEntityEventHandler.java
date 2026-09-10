@@ -11,6 +11,8 @@ import xiaoshi2022.corpseorigin.client.renderer.entity.LowerLevelZbRenderer;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinCache;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 
+import static xiaoshi2022.corpseorigin.client.CorpseOriginClient.tempRedEyeTicks;
+
 @Environment(EnvType.CLIENT)
 public class ClientEntityEventHandler {
 
@@ -26,6 +28,7 @@ public class ClientEntityEventHandler {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             LowerLevelZbRenderer.clearCache();
             ZbSkinCache.clearAll();
+            CorpseOriginClient.tempRedEyeTicks.clear();
             ExoskeletonRenderLayer.clearCache();
             CorpseOriginClient.corpseDataCache.clear();
             CorpseOrigin.LOGGER.info("🧹 玩家退出世界，清空所有缓存");

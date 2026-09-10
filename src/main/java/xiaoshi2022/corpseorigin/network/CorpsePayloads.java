@@ -62,6 +62,15 @@ public final class CorpsePayloads {
         }
     }
 
+    public record TempRedEyeSyncS2C(UUID playerUuid, int durationTicks) implements CustomPacketPayload {
+        public static final Type<TempRedEyeSyncS2C> TYPE = new Type<>(id("temp_red_eye_sync"));
+        public static final StreamCodec<ByteBuf, TempRedEyeSyncS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, p -> p.playerUuid().toString(),
+                ByteBufCodecs.INT, TempRedEyeSyncS2C::durationTicks,
+                (s, t) -> new TempRedEyeSyncS2C(UUID.fromString(s), t));
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
     // ==================== ✅ 玩家尸兄数据同步（用 UUID） ====================
 
     public record PlayerCorpseSyncS2C(
