@@ -16,6 +16,7 @@ import net.minecraft.util.ARGB;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.client.hud.InfectionHudOverlay;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
+import xiaoshi2022.corpseorigin.client.renderer.entity.JuQueBeamRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.LowerLevelZbRenderer;
 import xiaoshi2022.corpseorigin.event.client.AttackAnimationHandler;
 import xiaoshi2022.corpseorigin.event.client.ClientEntityEventHandler;
@@ -43,6 +44,7 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         // 2. 实体渲染器
         EntityRendererRegistry.register(ModEntities.LOWER_LEVEL_ZB, LowerLevelZbRenderer::new);
+        EntityRendererRegistry.register(ModEntities.JUQUE_BEAM, JuQueBeamRenderer::new);
 
         // 3. 模型层注册
         ModModelLayers.register();

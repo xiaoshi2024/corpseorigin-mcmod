@@ -11,6 +11,7 @@ import net.minecraft.world.item.Items;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.item.ByWaterBottleItem;
 import xiaoshi2022.corpseorigin.item.ByWaterBucketItem;
+import xiaoshi2022.corpseorigin.item.sword.JuQue;
 
 public final class ModItems {
 
@@ -35,6 +36,11 @@ public final class ModItems {
                     .setId(itemKey("bywater_bottle")))
     );
 
+    public static final Item JUQUE_TW = register(
+            "juque_tw",
+            JuQue.create(itemKey("juque_tw"))
+    );
+
     // ==================== 创造物品栏 ====================
     public static final CreativeModeTab CORPSE_ORIGIN_TAB = CreativeModeTab.builder(
                     CreativeModeTab.Row.TOP, 8)
@@ -43,6 +49,7 @@ public final class ModItems {
             .displayItems((parameters, output) -> {
                 output.accept(BYWATER_BUCKET);
                 output.accept(BYWATER_BOTTLE);
+                output.accept(JUQUE_TW);
             })
             .build();
 

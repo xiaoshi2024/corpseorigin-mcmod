@@ -9,13 +9,21 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.ItemStack;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinState;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.effect.BYeffect;
+import xiaoshi2022.corpseorigin.entity.JuQueBeamEntity;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
+import xiaoshi2022.corpseorigin.item.sword.JuQue;
 import xiaoshi2022.corpseorigin.skill.SkillManager;
 
 import java.nio.charset.StandardCharsets;
@@ -148,7 +156,52 @@ public final class CorpseNetwork {
             }
         });
 
+        // ==================== ✅ 巨阙剑气（C2S） ====================
+        PayloadTypeRegistry.serverboundPlay().register(
+                JuQueBeamPacket.TYPE,
+                JuQueBeamPacket.CODEC);
+
+        ServerPlayNetworking.registerGlobalReceiver(JuQueBeamPacket.TYPE, (payload, context) -> {
+            ServerPlayer player = context.player();
+            context.server().execute(() -> {
+                handleJuQueBeam(player);
+            });
+        });
+
         CorpseOrigin.LOGGER.info("CorpseOrigin network registered (Fabric 26.2)");
+    }
+
+    private static void handleJuQueBeam(ServerPlayer player) {
+        ItemStack stack = player.getMainHandItem();
+
+        if (!(stack.getItem() instanceof JuQue juQue)) return;
+        if (player.getCooldowns().isOnCooldown(stack)) return;
+
+        // 消耗耐久
+        if (!player.isCreative()) {
+            stack.hurtAndBreak(1, player,
+                    player.getUsedItemHand() == InteractionHand.MAIN_HAND
+                            ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
+        }
+
+        // 音效
+        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.4F, 0.5F);
+
+        // 计算伤害
+        float baseDamage = (float) player.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        float damage = baseDamage * JuQue.BEAM_DAMAGE_MULT;
+
+        // 创建剑气
+        JuQueBeamEntity beam = new JuQueBeamEntity(player.level(), player);
+        beam.setDamage(damage);
+        beam.setLevel(JuQue.BEAM_LEVEL);
+        beam.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F,
+                beam.getVelocity(), 1.0F);
+        player.level().addFreshEntity(beam);
+
+        // 冷却
+        player.getCooldowns().addCooldown(stack, JuQue.COOLDOWN);
     }
 
     public static void sendInfectionSync(ServerPlayer player) {

@@ -8,6 +8,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.entity.JuQueBeamEntity;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 
 public final class ModEntities {
@@ -17,6 +18,15 @@ public final class ModEntities {
             EntityType.Builder.<LowerLevelZbEntity>of(LowerLevelZbEntity::new, MobCategory.MONSTER)
                     .sized(0.6f, 1.8f)
                     .clientTrackingRange(8)
+    );
+
+    // ✅ 新增剑气实体
+    public static final EntityType<JuQueBeamEntity> JUQUE_BEAM = register(
+            "juque_beam",
+            EntityType.Builder.<JuQueBeamEntity>of(JuQueBeamEntity::new, MobCategory.MISC)
+                    .sized(0.5f, 0.5f)
+                    .clientTrackingRange(4)
+                    .updateInterval(1)
     );
 
     private static <T extends Entity> EntityType<T> register(String name, EntityType.Builder<T> builder) {
@@ -29,6 +39,5 @@ public final class ModEntities {
     }
 
     public static void init() {
-        // 静态初始化已经完成，这里只是为了触发类加载
     }
 }
