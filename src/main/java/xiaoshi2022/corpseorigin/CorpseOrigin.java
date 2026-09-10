@@ -51,6 +51,9 @@ public class CorpseOrigin implements ModInitializer {
 		// ✅ 8. 角色系统
 		CharacterManager.getInstance().registerDefaults();
 
+		// ✅ 注册 DataAttachment（必须在网络之前）
+		ModDataAttachments.init();
+
 		// ✅ 9. 网络
 		CorpseNetwork.register();
 

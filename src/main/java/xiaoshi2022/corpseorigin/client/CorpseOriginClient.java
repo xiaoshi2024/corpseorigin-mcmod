@@ -1,13 +1,11 @@
 package xiaoshi2022.corpseorigin.client;
 
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderingRegistry;
 import net.minecraft.client.color.block.BlockTintSources;
 import net.minecraft.client.renderer.block.FluidModel;
-import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
@@ -21,10 +19,13 @@ import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.registry.ModFluids;
 import xiaoshi2022.corpseorigin.registry.ModModelLayers;
 
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class CorpseOriginClient implements ClientModInitializer {
 
-    // 客户端尸兄数据缓存
-    public static final java.util.Map<Integer, ClientCorpseData> corpseDataCache = new java.util.concurrent.ConcurrentHashMap<>();
+    // ✅ 客户端尸兄数据缓存（用 UUID 作为键）
+    public static final java.util.Map<UUID, ClientCorpseData> corpseDataCache = new ConcurrentHashMap<>();
 
     @Override
     public void onInitializeClient() {
@@ -52,18 +53,17 @@ public class CorpseOriginClient implements ClientModInitializer {
                     CharacterManagerBridge.setCharacter(payload.characterId()));
         });
 
-        // ✅ 接收玩家尸兄数据同步
+        // ✅ 接收玩家尸兄数据同步（用 UUID）
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.PlayerCorpseSyncS2C.TYPE, (payload, context) -> {
             context.client().execute(() -> {
-                // 缓存数据
                 ClientCorpseData data = new ClientCorpseData(
                         payload.isCorpse(),
                         payload.corpseType(),
                         payload.corpseData()
                 );
-                corpseDataCache.put(payload.playerId(), data);
-                CorpseOrigin.LOGGER.debug("收到玩家尸兄数据: playerId={}, isCorpse={}",
-                        payload.playerId(), payload.isCorpse());
+                corpseDataCache.put(payload.playerUuid(), data);  // ✅ 用 UUID
+                CorpseOrigin.LOGGER.debug("收到玩家尸兄数据: uuid={}, isCorpse={}",
+                        payload.playerUuid(), payload.isCorpse());
             });
         });
 

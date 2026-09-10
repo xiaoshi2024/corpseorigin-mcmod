@@ -8,6 +8,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 
+import java.util.UUID;
+
 public final class CorpsePayloads {
 
     private CorpsePayloads() {
@@ -45,10 +47,10 @@ public final class CorpsePayloads {
         }
     }
 
-    // ==================== ✅ 玩家尸兄数据同步 ====================
+    // ==================== ✅ 玩家尸兄数据同步（用 UUID） ====================
 
     public record PlayerCorpseSyncS2C(
-            int playerId,
+            UUID playerUuid,       // ✅ 改为 UUID
             boolean isCorpse,
             int corpseType,
             CompoundTag corpseData
@@ -56,15 +58,16 @@ public final class CorpsePayloads {
         public static final Type<PlayerCorpseSyncS2C> TYPE = new Type<>(id("player_corpse_sync"));
 
         public static final StreamCodec<ByteBuf, PlayerCorpseSyncS2C> CODEC = StreamCodec.composite(
-                ByteBufCodecs.INT,
-                PlayerCorpseSyncS2C::playerId,
-                ByteBufCodecs.BOOL,  // ✅ 修复：使用 BOOL 而不是 BOOLEAN
+                ByteBufCodecs.STRING_UTF8,
+                p -> p.playerUuid().toString(),
+                ByteBufCodecs.BOOL,
                 PlayerCorpseSyncS2C::isCorpse,
                 ByteBufCodecs.INT,
                 PlayerCorpseSyncS2C::corpseType,
                 ByteBufCodecs.COMPOUND_TAG,
                 PlayerCorpseSyncS2C::corpseData,
-                PlayerCorpseSyncS2C::new
+                (uuidStr, isCorpse, corpseType, corpseData) ->
+                        new PlayerCorpseSyncS2C(UUID.fromString(uuidStr), isCorpse, corpseType, corpseData)
         );
 
         @Override
@@ -72,6 +75,4 @@ public final class CorpsePayloads {
             return TYPE;
         }
     }
-
-    // ❌ 删除 ZbSkinUpdateC2S，使用独立的 ZbSkinUpdatePacket
 }

@@ -1,16 +1,10 @@
 package xiaoshi2022.corpseorigin.component;
 
-import net.minecraft.core.component.DataComponentHolder;
-import net.minecraft.core.component.DataComponentType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
-import xiaoshi2022.corpseorigin.registry.ModDataComponents;
-
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
+import xiaoshi2022.corpseorigin.registry.ModDataAttachments;
 
 public class PlayerCorpseComponent {
 
@@ -34,76 +28,55 @@ public class PlayerCorpseComponent {
 
     private final Player player;
 
-    // 回退缓存（当 DataComponent 不可用时使用）
-    private static final Map<java.util.UUID, CompoundTag> fallbackCache = new ConcurrentHashMap<>();
-
     public PlayerCorpseComponent(Player player) {
         this.player = player;
     }
 
-    // ==================== 数据读写 ====================
+    // ==================== ✅ 数据读写（每次都返回副本） ====================
 
-    @SuppressWarnings("unchecked")
+    /**
+     * ✅ 获取数据副本，避免外部修改内部引用
+     */
     private CompoundTag getData() {
-        // 方式1：尝试从 DataComponent 获取
-        if (player instanceof DataComponentHolder holder) {
-            CompoundTag tag = holder.get(ModDataComponents.PLAYER_CORPSE);
-            if (tag != null) {
-                return tag;
-            }
-        }
-        // 方式2：从回退缓存获取
-        java.util.UUID uuid = player.getUUID();
-        CompoundTag tag = fallbackCache.get(uuid);
-        if (tag == null) {
-            tag = new CompoundTag();
-            fallbackCache.put(uuid, tag);
-        }
-        return tag;
+        CompoundTag tag = player.getAttachedOrCreate(ModDataAttachments.PLAYER_CORPSE);
+        // ✅ 返回副本，防止外部直接修改引用
+        return tag.copy();
     }
 
-    // ✅ 添加公共方法供网络同步使用
+    /**
+     * ✅ 公共方法，返回副本
+     */
     public CompoundTag getDataPublic() {
         return getData();
     }
 
-    @SuppressWarnings("unchecked")
+    /**
+     * ✅ 写入数据（保证是干净的副本）
+     */
     private void setData(CompoundTag tag) {
-        // 方式1：尝试设置到 DataComponent
-        try {
-            if (player instanceof net.minecraft.world.entity.Entity) {
-                try {
-                    java.lang.reflect.Method setMethod = player.getClass().getMethod("setDataComponent", DataComponentType.class, Object.class);
-                    setMethod.invoke(player, ModDataComponents.PLAYER_CORPSE, tag);
-                    return;
-                } catch (Exception e) {
-                    // 反射失败，使用回退
-                }
-            }
-        } catch (Exception e) {
-            // 忽略
-        }
+        // ✅ 存入时也复制，避免外部引用污染
+        player.setAttached(ModDataAttachments.PLAYER_CORPSE, tag.copy());
+    }
 
-        // 方式2：回退到缓存
-        fallbackCache.put(player.getUUID(), tag);
+    public boolean hasData() {
+        CompoundTag tag = player.getAttached(ModDataAttachments.PLAYER_CORPSE);
+        return tag != null && !tag.isEmpty();
     }
 
     // ==================== 核心状态 ====================
 
     public boolean isCorpse() {
-        Optional<Boolean> value = getData().getBoolean(KEY_IS_CORPSE);
-        return value.orElse(false);
+        return getData().getBoolean(KEY_IS_CORPSE).orElse(false);
     }
 
     public void setCorpse(boolean isCorpse) {
-        CompoundTag tag = getData();
+        CompoundTag tag = getData();  // 已经是副本
         tag.putBoolean(KEY_IS_CORPSE, isCorpse);
-        setData(tag);
+        setData(tag);  // setData 会再复制一次
     }
 
     public int getCorpseType() {
-        Optional<Integer> value = getData().getInt(KEY_CORPSE_TYPE);
-        return value.orElse(0);
+        return getData().getInt(KEY_CORPSE_TYPE).orElse(0);
     }
 
     public void setCorpseType(int type) {
@@ -115,8 +88,7 @@ public class PlayerCorpseComponent {
     // ==================== 基础信息 ====================
 
     public String getOriginalName() {
-        Optional<String> value = getData().getString(KEY_ORIGINAL_NAME);
-        return value.orElse("");
+        return getData().getString(KEY_ORIGINAL_NAME).orElse("");
     }
 
     public void setOriginalName(String name) {
@@ -126,8 +98,7 @@ public class PlayerCorpseComponent {
     }
 
     public String getSkinUuid() {
-        Optional<String> value = getData().getString(KEY_SKIN_UUID);
-        return value.orElse("");
+        return getData().getString(KEY_SKIN_UUID).orElse("");
     }
 
     public void setSkinUuid(String uuid) {
@@ -139,8 +110,7 @@ public class PlayerCorpseComponent {
     // ==================== 进化系统 ====================
 
     public int getEvolutionLevel() {
-        Optional<Integer> value = getData().getInt(KEY_EVOLUTION_LEVEL);
-        return value.orElse(1);
+        return getData().getInt(KEY_EVOLUTION_LEVEL).orElse(1);
     }
 
     public void setEvolutionLevel(int level) {
@@ -152,22 +122,19 @@ public class PlayerCorpseComponent {
     // ==================== 击杀 ====================
 
     public int getKills() {
-        Optional<Integer> value = getData().getInt(KEY_KILLS);
-        return value.orElse(0);
+        return getData().getInt(KEY_KILLS).orElse(0);
     }
 
     public void addKill() {
         CompoundTag tag = getData();
-        int kills = getKills();
-        tag.putInt(KEY_KILLS, kills + 1);
+        tag.putInt(KEY_KILLS, getKills() + 1);
         setData(tag);
     }
 
     // ==================== 饥饿值 ====================
 
     public int getHunger() {
-        Optional<Integer> value = getData().getInt(KEY_HUNGER);
-        return value.orElse(100);
+        return getData().getInt(KEY_HUNGER).orElse(100);
     }
 
     public void setHunger(int hunger) {
@@ -179,8 +146,7 @@ public class PlayerCorpseComponent {
     // ==================== 特性 ====================
 
     public boolean isGreedy() {
-        Optional<Boolean> value = getData().getBoolean(KEY_IS_GREEDY);
-        return value.orElse(false);
+        return getData().getBoolean(KEY_IS_GREEDY).orElse(false);
     }
 
     public void setGreedy(boolean greedy) {
@@ -190,8 +156,7 @@ public class PlayerCorpseComponent {
     }
 
     public int getVariant() {
-        Optional<Integer> value = getData().getInt(KEY_VARIANT);
-        return value.orElse(0);
+        return getData().getInt(KEY_VARIANT).orElse(0);
     }
 
     public void setVariant(int variant) {
@@ -203,8 +168,7 @@ public class PlayerCorpseComponent {
     // ==================== 身体部件 ====================
 
     public boolean hasWing() {
-        Optional<Boolean> value = getData().getBoolean(KEY_HAS_WING);
-        return value.orElse(false);
+        return getData().getBoolean(KEY_HAS_WING).orElse(false);
     }
 
     public void setHasWing(boolean hasWing) {
@@ -214,8 +178,7 @@ public class PlayerCorpseComponent {
     }
 
     public boolean hasTail() {
-        Optional<Boolean> value = getData().getBoolean(KEY_HAS_TAIL);
-        return value.orElse(false);
+        return getData().getBoolean(KEY_HAS_TAIL).orElse(false);
     }
 
     public void setHasTail(boolean hasTail) {
@@ -225,8 +188,7 @@ public class PlayerCorpseComponent {
     }
 
     public boolean isDisguised() {
-        Optional<Boolean> value = getData().getBoolean(KEY_IS_DISGUISED);
-        return value.orElse(false);
+        return getData().getBoolean(KEY_IS_DISGUISED).orElse(false);
     }
 
     public void setDisguised(boolean disguised) {
@@ -238,8 +200,7 @@ public class PlayerCorpseComponent {
     // ==================== 多眼系统 ====================
 
     public int getExtraEyeCount() {
-        Optional<Integer> value = getData().getInt(KEY_EXTRA_EYE_COUNT);
-        return value.orElse(0);
+        return getData().getInt(KEY_EXTRA_EYE_COUNT).orElse(0);
     }
 
     public void setExtraEyeCount(int count) {
@@ -263,22 +224,18 @@ public class PlayerCorpseComponent {
 
     public boolean hasConsciousness() {
         CompoundTag tag = getData();
-        Optional<Boolean> restored = tag.getBoolean(KEY_CONSCIOUSNESS_RESTORED);
-        if (restored.orElse(false)) {
+        if (tag.getBoolean(KEY_CONSCIOUSNESS_RESTORED).orElse(false)) {
             return true;
         }
-        Optional<Boolean> innate = tag.getBoolean(KEY_HAS_CONSCIOUSNESS);
-        return innate.orElse(false);
+        return tag.getBoolean(KEY_HAS_CONSCIOUSNESS).orElse(false);
     }
 
     public boolean hasInnateConsciousness() {
-        Optional<Boolean> value = getData().getBoolean(KEY_HAS_CONSCIOUSNESS);
-        return value.orElse(false);
+        return getData().getBoolean(KEY_HAS_CONSCIOUSNESS).orElse(false);
     }
 
     public boolean isConsciousnessRestored() {
-        Optional<Boolean> value = getData().getBoolean(KEY_CONSCIOUSNESS_RESTORED);
-        return value.orElse(false);
+        return getData().getBoolean(KEY_CONSCIOUSNESS_RESTORED).orElse(false);
     }
 
     public void restoreConsciousness() {
@@ -301,35 +258,39 @@ public class PlayerCorpseComponent {
         return get(player).isCorpse();
     }
 
+    /**
+     * ✅ 一次性写入所有数据（避免多次 setData）
+     */
     public static void setPlayerAsCorpse(Player player, int corpseType) {
-        PlayerCorpseComponent comp = get(player);
-        comp.setCorpse(true);
-        comp.setCorpseType(corpseType);
-        comp.setOriginalName(player.getName().getString());
-        comp.setSkinUuid(player.getUUID().toString());
-        comp.setEvolutionLevel(1);
-        comp.setHunger(100);
-        comp.setGreedy(player.getRandom().nextFloat() < 0.5f);
-        comp.setVariant(player.getRandom().nextFloat() < 0.3f ? 1 : 0);
-        comp.setHasWing(false);
-        comp.setHasTail(false);
-        comp.setDisguised(false);
-        comp.setExtraEyeCount(0);
+        CompoundTag tag = new CompoundTag();
+
+        // ✅ 一次性构建所有数据
+        tag.putBoolean(KEY_IS_CORPSE, true);
+        tag.putInt(KEY_CORPSE_TYPE, corpseType);
+        tag.putString(KEY_ORIGINAL_NAME, player.getName().getString());
+        tag.putString(KEY_SKIN_UUID, player.getUUID().toString());
+        tag.putInt(KEY_EVOLUTION_LEVEL, 1);
+        tag.putInt(KEY_HUNGER, 100);
+        tag.putBoolean(KEY_IS_GREEDY, player.getRandom().nextFloat() < 0.5f);
+        tag.putInt(KEY_VARIANT, player.getRandom().nextFloat() < 0.3f ? 1 : 0);
+        tag.putBoolean(KEY_HAS_WING, false);
+        tag.putBoolean(KEY_HAS_TAIL, false);
+        tag.putBoolean(KEY_IS_DISGUISED, false);
+        tag.putInt(KEY_EXTRA_EYE_COUNT, 0);
 
         boolean hasConsciousness = player.getRandom().nextFloat() < CONSCIOUSNESS_RETAIN_CHANCE;
-        CompoundTag tag = comp.getData();
         tag.putBoolean(KEY_HAS_CONSCIOUSNESS, hasConsciousness);
         tag.putBoolean(KEY_CONSCIOUSNESS_RESTORED, false);
-        comp.setData(tag);
 
+        // ✅ 一次性写入
+        player.setAttached(ModDataAttachments.PLAYER_CORPSE, tag);
+
+        // ✅ 只同步一次
         syncToClient(player);
     }
 
     public static void removeCorpseState(Player player) {
-        PlayerCorpseComponent comp = get(player);
-        comp.setCorpse(false);
-        comp.setCorpseType(0);
-        comp.setData(new CompoundTag());
+        player.setAttached(ModDataAttachments.PLAYER_CORPSE, new CompoundTag());
         syncToClient(player);
     }
 
