@@ -22,7 +22,11 @@ import java.util.UUID;
 
 public class BYeffect extends MobEffect {
 
+    /** 感染源记录 */
     private static final Map<UUID, UUID> infectionSource = new HashMap<>();
+
+    /** ✅ 记录每个目标的初始感染总时长（tick） */
+    private static final Map<UUID, Integer> TOTAL_DURATION = new HashMap<>();
 
     public BYeffect(MobEffectCategory category, int color) {
         super(category, color);
@@ -32,6 +36,13 @@ public class BYeffect extends MobEffect {
     public void onEffectAdded(LivingEntity livingEntity, int amplifier) {
         super.onEffectAdded(livingEntity, amplifier);
         if (!livingEntity.level().isClientSide()) {
+            // ✅ 如果没有记录，用当前效果时长补一个（兜底）
+            if (!TOTAL_DURATION.containsKey(livingEntity.getUUID())) {
+                MobEffectInstance instance = livingEntity.getEffect(ModEffects.QIANS);
+                if (instance != null) {
+                    TOTAL_DURATION.put(livingEntity.getUUID(), instance.getDuration());
+                }
+            }
             CorpseOrigin.LOGGER.info("感染效果添加到 {}，将在效果结束时变异",
                     livingEntity.getName().getString());
         }
@@ -39,34 +50,65 @@ public class BYeffect extends MobEffect {
 
     @Override
     public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
-        return duration == 1;
+        // ✅ 每 10 tick 更新一次感染度；最后一 tick 必须触发转化
+        return duration % 10 == 0 || duration <= 1;
     }
 
     @Override
     public boolean applyEffectTick(ServerLevel level, LivingEntity livingEntity, int amplifier) {
-        performTransformation(livingEntity, level);
+        MobEffectInstance instance = livingEntity.getEffect(ModEffects.QIANS);
+        if (instance == null) {
+            return true;
+        }
+
+        int remaining = instance.getDuration();
+
+        // ===== 最后一 tick：转化 =====
+        if (remaining <= 1) {
+            performTransformation(livingEntity, level);
+
+            // 清理 + 清零感染度
+            TOTAL_DURATION.remove(livingEntity.getUUID());
+            infectionSource.remove(livingEntity.getUUID());
+
+            if (livingEntity instanceof ServerPlayer player) {
+                PlayerCorpseComponent comp = PlayerCorpseComponent.get(player);
+                comp.setInfection(0);
+                CorpseNetwork.sendInfectionSync(player);
+            }
+            return true;
+        }
+
+        // ===== 中间：按比例更新感染度（只对玩家）=====
+        if (livingEntity instanceof ServerPlayer player) {
+            Integer total = TOTAL_DURATION.get(player.getUUID());
+            if (total == null || total <= 0) {
+                // 兜底：没有记录就跳过
+                return true;
+            }
+
+            int infection = (int) ((total - remaining) * 100.0 / total);
+            infection = Math.max(0, Math.min(100, infection));
+
+            PlayerCorpseComponent comp = PlayerCorpseComponent.get(player);
+            comp.setInfection(infection);
+            CorpseNetwork.sendInfectionSync(player);
+        }
+
         return true;
     }
 
     /**
-     * 执行转化逻辑 - ✅ 添加玩家转化
+     * 执行转化逻辑
      */
     private void performTransformation(LivingEntity livingEntity, ServerLevel serverLevel) {
-        // 村民转化为尸兄
         if (livingEntity instanceof Villager villager) {
             convertVillagerToZb(villager, serverLevel);
-        }
-        // ✅ 玩家转化为尸族
-        else if (livingEntity instanceof ServerPlayer player) {
+        } else if (livingEntity instanceof ServerPlayer player) {
             convertPlayerToCorpse(player);
         }
-
-        infectionSource.remove(livingEntity.getUUID());
     }
 
-    /**
-     * 将村民转化为尸兄
-     */
     private void convertVillagerToZb(Villager villager, ServerLevel serverLevel) {
         try {
             LowerLevelZbEntity zb = new LowerLevelZbEntity(ModEntities.LOWER_LEVEL_ZB, serverLevel);
@@ -93,22 +135,14 @@ public class BYeffect extends MobEffect {
         }
     }
 
-    /**
-     * ✅ 将玩家转化为尸族
-     */
     private void convertPlayerToCorpse(ServerPlayer player) {
-        // 设置玩家为尸族状态
         PlayerCorpseComponent.setPlayerAsCorpse(player, 1);
 
         boolean hasConsciousness = PlayerCorpseComponent.get(player).hasInnateConsciousness();
 
-        // 广播给所有玩家
         CorpseNetwork.broadcastPlayerCorpseSync(player);
-
-        // 播放转化特效
         player.level().broadcastEntityEvent(player, (byte) 35);
 
-        // 消息
         if (hasConsciousness) {
             player.sendSystemMessage(Component.literal(
                     "§c§l你已被感染成为尸兄！§r\n" +
@@ -134,16 +168,16 @@ public class BYeffect extends MobEffect {
 
     public static void applyInfection(LivingEntity target, ServerLevel serverLevel, UUID sourceUUID) {
         if (target == null || serverLevel == null) return;
+        if (target.hasEffect(ModEffects.QIANS)) return;
 
-        if (target.hasEffect(ModEffects.QIANS)) {
-            return;
-        }
+        int duration = 60 + serverLevel.getRandom().nextInt(241);
 
         if (sourceUUID != null) {
             infectionSource.put(target.getUUID(), sourceUUID);
         }
 
-        int duration = 60 + serverLevel.getRandom().nextInt(241);
+        // ✅ 记录总时长（必须在 addEffect 之前或之后都行，只要在 effect tick 之前）
+        TOTAL_DURATION.put(target.getUUID(), duration);
 
         target.addEffect(new MobEffectInstance(
                 ModEffects.QIANS,
@@ -158,16 +192,17 @@ public class BYeffect extends MobEffect {
                 target.getName().getString(), duration / 20);
     }
 
-    public static void applyInfection(LivingEntity target, ServerLevel serverLevel, int durationTicks, UUID sourceUUID) {
+    public static void applyInfection(LivingEntity target, ServerLevel serverLevel,
+                                      int durationTicks, UUID sourceUUID) {
         if (target == null || serverLevel == null) return;
-
-        if (target.hasEffect(ModEffects.QIANS)) {
-            return;
-        }
+        if (target.hasEffect(ModEffects.QIANS)) return;
 
         if (sourceUUID != null) {
             infectionSource.put(target.getUUID(), sourceUUID);
         }
+
+        // ✅ 记录总时长
+        TOTAL_DURATION.put(target.getUUID(), durationTicks);
 
         target.addEffect(new MobEffectInstance(
                 ModEffects.QIANS,
@@ -183,7 +218,6 @@ public class BYeffect extends MobEffect {
         if (target instanceof Villager) {
             return true;
         }
-        // ✅ 玩家可以被感染（非尸族玩家）
         if (target instanceof ServerPlayer player) {
             return !PlayerCorpseComponent.isCorpse(player);
         }
@@ -196,5 +230,10 @@ public class BYeffect extends MobEffect {
 
     public static void clearInfectionSource(UUID targetUUID) {
         infectionSource.remove(targetUUID);
+    }
+
+    /** ✅ 外部清理（玩家退出/effect 被强制移除时调用） */
+    public static void clearTotalDuration(UUID targetUUID) {
+        TOTAL_DURATION.remove(targetUUID);
     }
 }

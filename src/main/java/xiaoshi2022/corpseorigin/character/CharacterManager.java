@@ -4,6 +4,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.skill.ISkill;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,6 +87,13 @@ public class CharacterManager {
         data.setCharacterId(player.getUUID(), character.getId());
         character.onAcquire(player);
 
+        // ✅ 自动学习该角色的全部技能（技能树未启用，故直接授予）
+        data.clearLearnedSkills(player.getUUID());
+        //注释一下就不自动学习
+//        for (ISkill skill : character.getSkills()) {
+//            data.learnSkill(player.getUUID(), skill.getId().getPath());
+//        }
+
         CorpseOrigin.LOGGER.info("Player '{}' selected character: {}",
                 player.getName().getString(), character.getId());
         syncToClient(serverPlayer);
@@ -135,6 +143,7 @@ public class CharacterManager {
     public void syncToClient(ServerPlayer player) {
         String characterId = getPlayerCharacterId(player);
         CorpseNetwork.sendCharacterSync(player, characterId);
-        // TODO: 后续恢复技能和感染同步
+        // ✅ 同步进化状态 + 已学技能
+        CorpseNetwork.sendEvolutionSync(player);
     }
 }

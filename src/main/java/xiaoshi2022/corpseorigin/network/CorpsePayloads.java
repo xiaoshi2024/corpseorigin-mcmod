@@ -47,6 +47,21 @@ public final class CorpsePayloads {
         }
     }
 
+    public record InfectionSyncS2C(int infection) implements CustomPacketPayload {
+        public static final Type<InfectionSyncS2C> TYPE = new Type<>(id("infection_sync"));
+
+        public static final StreamCodec<ByteBuf, InfectionSyncS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT,
+                InfectionSyncS2C::infection,
+                InfectionSyncS2C::new
+        );
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
     // ==================== ✅ 玩家尸兄数据同步（用 UUID） ====================
 
     public record PlayerCorpseSyncS2C(
@@ -68,6 +83,80 @@ public final class CorpsePayloads {
                 PlayerCorpseSyncS2C::corpseData,
                 (uuidStr, isCorpse, corpseType, corpseData) ->
                         new PlayerCorpseSyncS2C(UUID.fromString(uuidStr), isCorpse, corpseType, corpseData)
+        );
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    // ==================== ✅ 学习技能（C2S） ====================
+
+    public record LearnSkillC2S(String skillPath) implements CustomPacketPayload {
+        public static final Type<LearnSkillC2S> TYPE = new Type<>(id("learn_skill"));
+
+        public static final StreamCodec<ByteBuf, LearnSkillC2S> CODEC =
+                CustomPacketPayload.codec(
+                        (payload, buf) -> ByteBufCodecs.STRING_UTF8.encode(buf, payload.skillPath()),
+                        buf -> new LearnSkillC2S(ByteBufCodecs.STRING_UTF8.decode(buf)));
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    // ==================== ✅ 技能激活（C2S） ====================
+
+    public record ActivateSkillC2S(String skillPath) implements CustomPacketPayload {
+        public static final Type<ActivateSkillC2S> TYPE = new Type<>(id("activate_skill"));
+
+        public static final StreamCodec<ByteBuf, ActivateSkillC2S> CODEC =
+                CustomPacketPayload.codec(
+                        (payload, buf) -> ByteBufCodecs.STRING_UTF8.encode(buf, payload.skillPath()),
+                        buf -> new ActivateSkillC2S(ByteBufCodecs.STRING_UTF8.decode(buf)));
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    // ==================== ✅ 进化/技能同步（S2C） ====================
+
+    public record EvolutionSyncS2C(int earnedPoints, int availablePoints, int kills, byte[] learnedSkills) implements CustomPacketPayload {
+        public static final Type<EvolutionSyncS2C> TYPE = new Type<>(id("evolution_sync"));
+
+        public static final StreamCodec<ByteBuf, EvolutionSyncS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT,
+                EvolutionSyncS2C::earnedPoints,
+                ByteBufCodecs.INT,
+                EvolutionSyncS2C::availablePoints,
+                ByteBufCodecs.INT,
+                EvolutionSyncS2C::kills,
+                ByteBufCodecs.BYTE_ARRAY,
+                EvolutionSyncS2C::learnedSkills,
+                EvolutionSyncS2C::new
+        );
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    // ==================== ✅ 技能冷却同步（S2C） ====================
+
+    public record CooldownSyncS2C(String skillPath, int ticks) implements CustomPacketPayload {
+        public static final Type<CooldownSyncS2C> TYPE = new Type<>(id("cooldown_sync"));
+
+        public static final StreamCodec<ByteBuf, CooldownSyncS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8,
+                CooldownSyncS2C::skillPath,
+                ByteBufCodecs.INT,
+                CooldownSyncS2C::ticks,
+                CooldownSyncS2C::new
         );
 
         @Override

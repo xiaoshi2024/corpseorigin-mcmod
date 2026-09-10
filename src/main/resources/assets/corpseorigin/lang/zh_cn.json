@@ -7,35 +7,71 @@
   "block.corpseorigin.infected_water_block": "尸水",
 
   "fluid.corpseorigin.infected_water": "尸水",
-  "fluid.corpseorigin.flowing_infected_water": "流动尸水",
+  "fluid.corpseorigin.flowing_infected_water": "流动的尸水",
 
   "entity.corpseorigin.lower_level_zb": "低级尸兄",
 
-  "effect.corpseorigin.by": "尸化感染",
+  "effect.corpseorigin.by": "尸毒感染",
 
   "command.corpseorigin.character.list_header": "角色列表",
-  "command.corpseorigin.character.selected": "已选择角色: %s",
-  "command.corpseorigin.character.not_found": "未找到角色: %s",
+  "command.corpseorigin.character.selected": "已选择角色：%s",
+  "command.corpseorigin.character.not_found": "未找到角色：%s",
   "command.corpseorigin.character.cleared": "已清除当前角色",
 
   "character.corpseorigin.mortal": "凡人",
-  "character.corpseorigin.mortal.desc": "普通凡人，没有任何特殊能力。感染速率正常。",
+  "character.corpseorigin.mortal.desc": "普通凡人，没有特殊能力。感染率正常。",
   "character.corpseorigin.mortal.trait1": "无特殊能力",
-  "character.corpseorigin.mortal.trait2": "基础感染速率",
+  "character.corpseorigin.mortal.trait2": "基础感染率",
 
   "character.corpseorigin.baixiaofei": "白小飞",
-  "character.corpseorigin.baixiaofei.desc": "被感染但保留人类意识的普通人，故事的主角。",
-  "character.corpseorigin.baixiaofei.trait1": "感染后保留人类意识",
-  "character.corpseorigin.baixiaofei.trait2": "感染速率降低",
+  "character.corpseorigin.baixiaofei.desc": "《尸兄》主角。为救小薇踏入尸潮，最终成为炎黄守护者。",
+  "character.corpseorigin.baixiaofei.trait1": "杀戮血脉：觉醒后战力远超常人",
+  "character.corpseorigin.baixiaofei.trait2": "主角光环：感染后更易保留意识",
 
   "character.corpseorigin.longyou": "龙右",
-  "character.corpseorigin.longyou.desc": "强大的尸王，完全免疫感染。",
-  "character.corpseorigin.longyou.trait1": "免疫感染",
-  "character.corpseorigin.longyou.trait2": "尸王之力",
-  "character.corpseorigin.longyou.trait3": "不惧尸水",
+  "character.corpseorigin.longyou.desc": "《尸兄》尸王。尸潮的制造者，意图统治世界。",
+  "character.corpseorigin.longyou.trait1": "不死骨身：断头也不死，真身为本源体",
+  "character.corpseorigin.longyou.trait2": "尸王之威：以次声波号令尸兄",
+  "character.corpseorigin.longyou.trait3": "尸水之源：完全免疫尸水",
 
   "character.corpseorigin.xiaolu": "小鹿",
-  "character.corpseorigin.xiaolu.desc": "灵鹿的化身，擅长辅助与净化。但更易受感染。",
-  "character.corpseorigin.xiaolu.trait1": "净化能力",
-  "character.corpseorigin.xiaolu.trait2": "感染速率较高"
+  "character.corpseorigin.xiaolu.desc": "《尸兄》角色。吞噬美杜莎蛇眼后获得生命元素重组能力。",
+  "character.corpseorigin.xiaolu.trait1": "生命元素重组：锇金化与锇冰梭，但消耗巨大体力",
+  "character.corpseorigin.xiaolu.trait2": "孩童体质：感染率略低于常人",
+
+  "skill.corpseorigin.slaughter_awakening": "杀戮觉醒",
+  "skill.corpseorigin.slaughter_awakening.desc": "短暂觉醒杀戮血脉，获得力量 II，持续 10 秒。",
+  "skill.corpseorigin.corpse_king_infrasound": "尸王次声波",
+  "skill.corpseorigin.corpse_king_infrasound.desc": "释放尸王次声波，在附近召唤 2 只低级尸兄。",
+  "skill.corpseorigin.osmium_gold": "锇金化",
+  "skill.corpseorigin.osmium_gold.desc": "将身体化为锇金，获得抗性 II，持续 10 秒。",
+  "skill.corpseorigin.osmium_ice_spike": "锇冰梭",
+  "skill.corpseorigin.osmium_ice_spike.desc": "射出锇冰梭，对视线命中的目标造成 8 点伤害。",
+
+  "skilltype.corpseorigin.combat": "战斗",
+  "skilltype.corpseorigin.utility": "辅助",
+  "skilltype.corpseorigin.defense": "防御",
+  "skilltype.corpseorigin.ultimate": "终极",
+
+  "gui.corpseorigin.skill_wheel": "技能轮盘",
+  "gui.corpseorigin.skill_wheel.points": "可用点数：%s",
+
+  "gui.corpseorigin.skill_tree": "技能进化树",
+  "gui.corpseorigin.skill_tree.points": "可用：%s  |  累计：%s",
+  "gui.corpseorigin.skill_tree.row_info": "消耗：%s  |  需求等级：%s  |  %s",
+  "gui.corpseorigin.skill_tree.learned": "已学习",
+  "gui.corpseorigin.skill_tree.click_learn": "点击学习",
+  "gui.corpseorigin.skill_tree.locked": "未解锁",
+
+  "hud.corpseorigin.infection": "感染度：%s%%",
+  "hud.corpseorigin.evolution": "进化等级 %s  |  点数：%s",
+
+  "key.categories.corpseorigin.main": "尸源",
+  "key.corpseorigin.open_skill_wheel": "打开技能轮盘",
+  "key.corpseorigin.open_skill_tree": "打开技能进化树",
+
+  "hud.corpseorigin.toggle.on": "HUD：开",
+  "hud.corpseorigin.toggle.off": "HUD：关",
+
+  "key.corpseorigin.toggle_hud": "切换 HUD"
 }

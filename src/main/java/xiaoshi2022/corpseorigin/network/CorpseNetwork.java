@@ -11,10 +11,14 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinState;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
+import xiaoshi2022.corpseorigin.effect.BYeffect;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
+import xiaoshi2022.corpseorigin.skill.SkillManager;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -33,12 +37,35 @@ public final class CorpseNetwork {
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.CharacterSyncS2C.TYPE, CorpsePayloads.CharacterSyncS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.PlayerCorpseSyncS2C.TYPE, CorpsePayloads.PlayerCorpseSyncS2C.CODEC);
 
+        // ✅ 技能系统：激活（C2S）+ 进化/冷却同步（S2C）
+        PayloadTypeRegistry.serverboundPlay().register(CorpsePayloads.ActivateSkillC2S.TYPE, CorpsePayloads.ActivateSkillC2S.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.EvolutionSyncS2C.TYPE, CorpsePayloads.EvolutionSyncS2C.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.CooldownSyncS2C.TYPE, CorpsePayloads.CooldownSyncS2C.CODEC);
+
         ServerPlayNetworking.registerGlobalReceiver(CorpsePayloads.SelectCharacterC2S.TYPE, (payload, context) -> {
             ServerPlayer player = context.player();
             context.server().execute(() -> {
                 xiaoshi2022.corpseorigin.character.CharacterManager.getInstance()
                         .setPlayerCharacter(player, payload.characterId());
             });
+        });
+
+        // ✅ 学习技能（C2S）
+        PayloadTypeRegistry.serverboundPlay().register(
+                CorpsePayloads.LearnSkillC2S.TYPE,
+                CorpsePayloads.LearnSkillC2S.CODEC);
+
+        ServerPlayNetworking.registerGlobalReceiver(CorpsePayloads.LearnSkillC2S.TYPE, (payload, context) -> {
+            ServerPlayer player = context.player();
+            context.server().execute(() ->
+                    SkillManager.learn(player, payload.skillPath()));
+        });
+
+        // ✅ 技能激活（服务端校验 + 效果 + 冷却同步）
+        ServerPlayNetworking.registerGlobalReceiver(CorpsePayloads.ActivateSkillC2S.TYPE, (payload, context) -> {
+            ServerPlayer player = context.player();
+            context.server().execute(() ->
+                    SkillManager.activate(player, payload.skillPath()));
         });
 
         // ==================== 皮肤更新系统 ====================
@@ -71,6 +98,10 @@ public final class CorpseNetwork {
             });
         });
 
+        PayloadTypeRegistry.clientboundPlay().register(
+                CorpsePayloads.InfectionSyncS2C.TYPE,
+                CorpsePayloads.InfectionSyncS2C.CODEC);
+
         // ==================== ✅ 玩家加入时加入待同步队列 ====================
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayer joiningPlayer = handler.getPlayer();
@@ -81,7 +112,11 @@ public final class CorpseNetwork {
 
         // ✅ 玩家退出时移除
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            PENDING_SYNC.remove(handler.getPlayer().getUUID());
+            UUID uuid = handler.getPlayer().getUUID();  // ✅ 先取出来
+            PENDING_SYNC.remove(uuid);
+            SkillManager.cleanupDisconnect(uuid);
+            BYeffect.clearTotalDuration(uuid);      // ✅ 清感染计时
+            BYeffect.clearInfectionSource(uuid);    // ✅ 清感染源
         });
 
         // ✅ 每 tick 检查待同步队列（延迟 20 tick 后同步）
@@ -109,6 +144,11 @@ public final class CorpseNetwork {
         });
 
         CorpseOrigin.LOGGER.info("CorpseOrigin network registered (Fabric 26.2)");
+    }
+
+    public static void sendInfectionSync(ServerPlayer player) {
+        int infection = PlayerCorpseComponent.get(player).getInfection();
+        ServerPlayNetworking.send(player, new CorpsePayloads.InfectionSyncS2C(infection));
     }
 
     /**
@@ -153,6 +193,12 @@ public final class CorpseNetwork {
         if (selfComp.isCorpse()) {
             broadcastPlayerCorpseSync(joiningPlayer);
         }
+
+        // ✅ 4. 同步角色进化/技能数据
+        sendEvolutionSync(joiningPlayer);
+
+        // ✅ 5. 同步感染度
+        sendInfectionSync(joiningPlayer);
 
         CorpseOrigin.LOGGER.info("✅ 已向玩家 {} 同步 {} 个其他尸兄玩家的数据",
                 joiningPlayer.getName().getString(), count);
@@ -201,5 +247,31 @@ public final class CorpseNetwork {
 
     public static void sendCharacterSync(ServerPlayer player, String characterId) {
         ServerPlayNetworking.send(player, new CorpsePayloads.CharacterSyncS2C(characterId));
+    }
+
+    // ==================== ✅ 技能/进化数据同步 ====================
+
+    /**
+     * 同步进化状态 + 已学技能给指定玩家（S2C）。
+     */
+    public static void sendEvolutionSync(ServerPlayer player) {
+        PlayerCharacterData data = PlayerCharacterData.get(player);
+        Set<String> learned = data.getLearnedSkills(player.getUUID());
+        String joined = String.join("\n", learned);
+        byte[] bytes = joined.getBytes(StandardCharsets.UTF_8);
+
+        int kills = PlayerCorpseComponent.get(player).getKills();
+        int earned = data.getEarnedPoints(player.getUUID());
+        int available = data.getAvailablePoints(player.getUUID());
+
+        ServerPlayNetworking.send(player,
+                new CorpsePayloads.EvolutionSyncS2C(earned, available, kills, bytes));
+    }
+
+    /**
+     * 同步某技能冷却给指定玩家（S2C）。
+     */
+    public static void sendCooldownSync(ServerPlayer player, String skillPath, int ticks) {
+        ServerPlayNetworking.send(player, new CorpsePayloads.CooldownSyncS2C(skillPath, ticks));
     }
 }

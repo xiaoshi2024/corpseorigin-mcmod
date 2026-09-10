@@ -25,10 +25,33 @@ public class PlayerCorpseComponent {
 
     public static final float CONSCIOUSNESS_RETAIN_CHANCE = 0.05f;
 
+    private static final String KEY_INFECTION = "infection";
+
+    // ==================== 尸兄类型常量 ====================
+    /** 普通尸兄 */
+    public static final int TYPE_NORMAL = 0;
+    /** 精英尸兄 */
+    public static final int TYPE_ELITE = 1;
+    /** 尸王（龙右） */
+    public static final int TYPE_KING = 2;
+
+    /** 进化等级上限 */
+    public static final int MAX_EVOLUTION_LEVEL = 5;
+
     private final Player player;
 
     public PlayerCorpseComponent(Player player) {
         this.player = player;
+    }
+
+    public int getInfection() {
+        return getData().getInt(KEY_INFECTION).orElse(0);
+    }
+
+    public void setInfection(int value) {
+        CompoundTag tag = getData();
+        tag.putInt(KEY_INFECTION, Math.max(0, Math.min(100, value)));
+        setData(tag);
     }
 
     // ==================== ✅ 数据读写（每次都返回副本） ====================

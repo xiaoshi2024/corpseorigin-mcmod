@@ -18,6 +18,8 @@ public final class ClientState {
     public static String characterId = "mortal";
     /** 累计进化点 */
     public static int earnedPoints = 0;
+    /** HUD 是否显示 */
+    public static boolean hudVisible = true;  // 默认显示
     /** 可用进化点 */
     public static int availablePoints = 0;
     /** 击杀数 */

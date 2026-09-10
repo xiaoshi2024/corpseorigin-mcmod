@@ -2,15 +2,25 @@ package xiaoshi2022.corpseorigin.character;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
+import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.skill.longyou.CorpseKingInfrasoundSkill;
+import xiaoshi2022.corpseorigin.skill.ISkill;
 
 import java.util.List;
 
 /**
  * 龙右 - 尸王
+ * <p>
+ * 成为龙右即直接变为满级尸兄（尸王类型），并保留意识。
  */
 public class LongYou implements ICharacter {
 
     public static final String ID = "longyou";
+
+    private static final List<ISkill> SKILLS = List.of(new CorpseKingInfrasoundSkill());
 
     @Override
     public String getId() {
@@ -47,7 +57,32 @@ public class LongYou implements ICharacter {
     }
 
     @Override
+    public List<ISkill> getSkills() {
+        return SKILLS;
+    }
+
+    @Override
     public float getInfectionMultiplier() {
         return 0.0f;
+    }
+
+    @Override
+    public void onAcquire(Player player) {
+        // ✅ 成为龙右 → 直接变为尸王（满级 + 有意识）
+        PlayerCorpseComponent.setPlayerAsCorpse(player, PlayerCorpseComponent.TYPE_KING);
+        PlayerCorpseComponent comp = PlayerCorpseComponent.get(player);
+        comp.setEvolutionLevel(PlayerCorpseComponent.MAX_EVOLUTION_LEVEL);
+        comp.restoreConsciousness();
+
+        // ⚠️ setEvolutionLevel/restoreConsciousness 不会触发同步，需显式补一次
+        if (player instanceof ServerPlayer serverPlayer) {
+            CorpseNetwork.sendPlayerCorpseSync(serverPlayer);
+        }
+    }
+
+    @Override
+    public void onLose(Player player) {
+        // 失去龙右身份 → 清除尸兄状态（removeCorpseState 内部已同步）
+        PlayerCorpseComponent.removeCorpseState(player);
     }
 }

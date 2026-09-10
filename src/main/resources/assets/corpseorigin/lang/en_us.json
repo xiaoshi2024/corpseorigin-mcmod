@@ -24,18 +24,54 @@
   "character.corpseorigin.mortal.trait2": "Base infection rate",
 
   "character.corpseorigin.baixiaofei": "Bai Xiaofei",
-  "character.corpseorigin.baixiaofei.desc": "An ordinary person infected but retaining human consciousness, the protagonist of the story.",
-  "character.corpseorigin.baixiaofei.trait1": "Retains human consciousness after infection",
-  "character.corpseorigin.baixiaofei.trait2": "Reduced infection rate",
+  "character.corpseorigin.baixiaofei.desc": "Protagonist of Zombie Brother. He enters the zombie plague to save Xiao Wei and eventually becomes a guardian of Yanhuang.",
+  "character.corpseorigin.baixiaofei.trait1": "Killing Bloodline: Awakened combat power far beyond ordinary",
+  "character.corpseorigin.baixiaofei.trait2": "Protagonist's Luck: More likely to retain consciousness after infection",
 
   "character.corpseorigin.longyou": "Long You",
-  "character.corpseorigin.longyou.desc": "The powerful Zombie King, completely immune to infection.",
-  "character.corpseorigin.longyou.trait1": "Immune to infection",
-  "character.corpseorigin.longyou.trait2": "Zombie King's power",
-  "character.corpseorigin.longyou.trait3": "Unaffected by infected water",
+  "character.corpseorigin.longyou.desc": "The Zombie King of Zombie Brother. He created the zombie plague and seeks to rule the world.",
+  "character.corpseorigin.longyou.trait1": "Undying Skeleton Body: Cannot die even if beheaded; true body is the Origin Body",
+  "character.corpseorigin.longyou.trait2": "Zombie King's Power: Controls Zombie brothers with infrasound",
+  "character.corpseorigin.longyou.trait3": "Source of Infected Water: Fully immune to infected water",
 
   "character.corpseorigin.xiaolu": "Xiao Lu",
-  "character.corpseorigin.xiaolu.desc": "Incarnation of the Spirit Deer, skilled in support and purification. More susceptible to infection.",
-  "character.corpseorigin.xiaolu.trait1": "Purification ability",
-  "character.corpseorigin.xiaolu.trait2": "Higher infection rate"
+  "character.corpseorigin.xiaolu.desc": "A character from Zombie Brother. After swallowing Medusa's Snake Eye, she gained the power of life element recombination.",
+  "character.corpseorigin.xiaolu.trait1": "Life Element Recombination: Osmium metallization and Osmium Ice Shuttle, but costs great stamina",
+  "character.corpseorigin.xiaolu.trait2": "Child's Constitution: Slightly lower infection rate than normal",
+
+  "skill.corpseorigin.slaughter_awakening": "Slaughter Awakening",
+  "skill.corpseorigin.slaughter_awakening.desc": "Briefly awaken the Killing Bloodline, gaining Strength II for 10 seconds.",
+  "skill.corpseorigin.corpse_king_infrasound": "Zombie King's Infrasound",
+  "skill.corpseorigin.corpse_king_infrasound.desc": "Release the Zombie King's infrasound, summoning 2 Lower-level Corpse Brothers nearby.",
+  "skill.corpseorigin.osmium_gold": "Osmium Goldization",
+  "skill.corpseorigin.osmium_gold.desc": "Turn your body into osmium gold, gaining Resistance II for 10 seconds.",
+  "skill.corpseorigin.osmium_ice_spike": "Osmium Ice Shuttle",
+  "skill.corpseorigin.osmium_ice_spike.desc": "Fire an osmium ice shuttle, dealing 8 damage to the target hit by your line of sight.",
+
+  "skilltype.corpseorigin.combat": "Combat",
+  "skilltype.corpseorigin.utility": "Utility",
+  "skilltype.corpseorigin.defense": "Defense",
+  "skilltype.corpseorigin.ultimate": "Ultimate",
+
+  "gui.corpseorigin.skill_wheel": "Skill Wheel",
+  "gui.corpseorigin.skill_wheel.points": "Available Points: %s",
+
+  "gui.corpseorigin.skill_tree": "Skill Evolution Tree",
+  "gui.corpseorigin.skill_tree.points": "Available: %s  |  Total: %s",
+  "gui.corpseorigin.skill_tree.row_info": "Cost: %s  |  Req.Lv: %s  |  %s",
+  "gui.corpseorigin.skill_tree.learned": "Learned",
+  "gui.corpseorigin.skill_tree.click_learn": "Click to Learn",
+  "gui.corpseorigin.skill_tree.locked": "Locked",
+
+  "hud.corpseorigin.infection": "Infection: %s%%",
+  "hud.corpseorigin.evolution": "Evolution Lv.%s  |  Points: %s",
+
+  "key.categories.corpseorigin.main": "Corpse Origin",
+  "key.corpseorigin.open_skill_wheel": "Open Skill Wheel",
+  "key.corpseorigin.open_skill_tree": "Open Skill Evolution Tree",
+
+  "hud.corpseorigin.toggle.on": "HUD: ON",
+  "hud.corpseorigin.toggle.off": "HUD: OFF",
+
+  "key.corpseorigin.toggle_hud": "Toggle HUD"
 }

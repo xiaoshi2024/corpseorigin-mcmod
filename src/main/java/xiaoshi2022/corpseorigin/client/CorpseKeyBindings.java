@@ -23,6 +23,8 @@ public final class CorpseKeyBindings {
     public static KeyMapping openSkillWheel;
     /** 打开技能进化树 */
     public static KeyMapping openSkillTree;
+    /** 切换 HUD 显示 */
+    public static KeyMapping toggleHud;
 
     public static void register() {
         openSkillWheel = KeyMappingHelper.registerKeyMapping(new KeyMapping(
@@ -34,6 +36,11 @@ public final class CorpseKeyBindings {
                 "key.corpseorigin.open_skill_tree",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_B,
+                CATEGORY));
+        toggleHud = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                "key.corpseorigin.toggle_hud",
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_H,
                 CATEGORY));
     }
 }

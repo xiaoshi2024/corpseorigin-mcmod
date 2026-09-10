@@ -101,7 +101,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         this(entityType, level);
         if (player != null) {
             this.entityData.set(DATA_PLAYER_NAME, player.getName().getString());
-            LOGGER.info("尸兄感染玩家: {}", player.getName().getString());
+            LOGGER.debug("尸兄感染玩家: {}", player.getName().getString());
         }
     }
 
@@ -120,31 +120,27 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>("controller", 5, this::controlAnimation));
+        controllers.add(new AnimationController<>("movement", 5, this::movementController));
+        controllers.add(new AnimationController<>("attack", 2, this::attackController));
+    }
+
+    private PlayState movementController(AnimationTest<LowerLevelZbEntity> test) {
+        if (test.isMoving()) {
+            return test.setAndContinue(WALK_ANIM);
+        }
+        return test.setAndContinue(IDLE_ANIM);
+    }
+
+    private PlayState attackController(AnimationTest<LowerLevelZbEntity> test) {
+        if (this.swinging) {
+            return test.setAndContinue(ATTACK_ANIM);
+        }
+        return PlayState.STOP;
     }
 
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return this.cache;
-    }
-
-    private PlayState controlAnimation(AnimationTest<LowerLevelZbEntity> test) {
-        // 攻击动画优先
-        if (this.swinging) {
-            return test.setAndContinue(ATTACK_ANIM);
-        }
-
-        // 移动动画
-        if (test.isMoving()) {
-            // 检测是否在跑步（速度 > 走路速度）
-            boolean isSprinting = this.isSprinting() || this.getSpeed() > 0.3F;
-            if (isSprinting) {
-                return test.setAndContinue(WALK_ANIM);
-            }
-            return test.setAndContinue(WALK_ANIM);
-        }
-
-        return test.setAndContinue(IDLE_ANIM);
     }
 
     // ==================== 攻击 ====================
@@ -166,7 +162,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
                 if (ZombieKin.isZombieKin(target)) {
                     // 同类相食：回复少一点
                     hungerGain = 10;
-                    LOGGER.info("尸兄 {} 吞噬同类，回复 {} 饥饿值", this.getId(), hungerGain);
+                    LOGGER.debug("尸兄 {} 吞噬同类，回复 {} 饥饿值", this.getId(), hungerGain);
                 } else {
                     // 正常食物（人类/动物）
                     hungerGain = 20;

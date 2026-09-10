@@ -6,6 +6,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
+import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
 
 /**
@@ -17,14 +18,16 @@ public class ZombieKinEventHandler {
         // ==================== 1. 阻止尸族之间互相伤害（不饥饿时） ====================
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
             Entity attacker = source.getEntity();
-
             if (attacker == null) return true;
 
-            if (attacker instanceof LivingEntity livingAttacker) {
-                // 目标是尸族 + 攻击者不能攻击 → 禁止伤害
-                if (ZombieKin.isZombieKin(entity) && !ZombieKin.canAttack(livingAttacker, entity)) {
-                    return false;
-                }
+            // ✅ 只处理"攻击者是尸族 NPC"的情况
+            if (!(attacker instanceof LowerLevelZbEntity)) {
+                return true;  // 玩家/其他生物的攻击，正常放行
+            }
+
+            // 攻击者是尸族 NPC：目标是尸族且不该打 → 阻止
+            if (ZombieKin.isZombieKin(entity) && !ZombieKin.canAttack((LivingEntity) attacker, entity)) {
+                return false;
             }
 
             return true;

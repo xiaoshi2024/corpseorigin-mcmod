@@ -32,6 +32,13 @@ public final class CharacterCommands {
                 }))
                 .then(Commands.literal("select")
                         .then(Commands.argument("id", StringArgumentType.word())
+                                // ✅ 关键：注册 Tab 补全建议
+                                .suggests((ctx, builder) -> {
+                                    for (ICharacter character : CharacterManager.getInstance().getRegisteredCharacters()) {
+                                        builder.suggest(character.getId());
+                                    }
+                                    return builder.buildFuture();
+                                })
                                 .executes(ctx -> {
                                     String id = StringArgumentType.getString(ctx, "id");
                                     ServerPlayer player = ctx.getSource().getPlayerOrException();

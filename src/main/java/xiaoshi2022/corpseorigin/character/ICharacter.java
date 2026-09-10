@@ -4,6 +4,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.skill.ISkill;
 
 import java.util.List;
 
@@ -29,6 +30,11 @@ public interface ICharacter {
 
     /** 角色特性描述 */
     List<Component> getTraits();
+
+    /** 角色拥有的技能（进化树用，默认无） */
+    default List<ISkill> getSkills() {
+        return List.of();
+    }
 
     /**
      * 尸水感染累积倍率（1.0 = 正常，0.4 = 高抗性，0.0 = 免疫）

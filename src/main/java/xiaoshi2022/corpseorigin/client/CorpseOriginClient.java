@@ -1,16 +1,20 @@
 package xiaoshi2022.corpseorigin.client;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderingRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockTintSources;
 import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.client.hud.InfectionHudOverlay;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.renderer.entity.LowerLevelZbRenderer;
 import xiaoshi2022.corpseorigin.event.client.AttackAnimationHandler;
@@ -50,6 +54,9 @@ public class CorpseOriginClient implements ClientModInitializer {
         // ✅ 注册客户端实体事件
         ClientEntityEventHandler.register();
 
+        // ✅ 注册 HUD
+        InfectionHudOverlay.register();
+
         // 6. 网络接收
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.CharacterSyncS2C.TYPE, (payload, context) -> {
             context.client().execute(() ->
@@ -70,7 +77,46 @@ public class CorpseOriginClient implements ClientModInitializer {
             });
         });
 
-        CorpseOrigin.LOGGER.info("CorpseOrigin client initialized");
+        // ✅ 接收进化/已学技能同步
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.EvolutionSyncS2C.TYPE, (payload, context) ->
+                context.client().execute(() ->
+                        ClientState.applyEvolution(
+                                payload.earnedPoints(),
+                                payload.availablePoints(),
+                                payload.kills(),
+                                payload.learnedSkills())));
+
+        // ✅ 接收技能冷却同步
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.CooldownSyncS2C.TYPE, (payload, context) ->
+                context.client().execute(() ->
+                        ClientState.applyCooldown(payload.skillPath(), payload.ticks())));
+
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.InfectionSyncS2C.TYPE, (payload, context) ->
+                context.client().execute(() ->
+                        ClientState.infection = payload.infection()));
+
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            while (CorpseKeyBindings.openSkillWheel.consumeClick()) {
+                Minecraft.getInstance().gui.setScreen(new SkillWheelScreen());
+            }
+            while (CorpseKeyBindings.openSkillTree.consumeClick()) {
+                Minecraft.getInstance().gui.setScreen(new SkillTreeScreen());
+            }
+            // ✅ 切换 HUD
+            while (CorpseKeyBindings.toggleHud.consumeClick()) {
+                ClientState.hudVisible = !ClientState.hudVisible;
+                // 可选：给玩家一条提示
+                if (Minecraft.getInstance().player != null) {
+                    Minecraft.getInstance().player.sendSystemMessage(
+                            Component.translatable(ClientState.hudVisible
+                                    ? "hud.corpseorigin.toggle.on"
+                                    : "hud.corpseorigin.toggle.off")
+                    );
+                }
+            }
+        });
+
+        CorpseOrigin.LOGGER.debug("CorpseOrigin client initialized");
     }
 
     // ==================== 客户端数据类 ====================
@@ -127,6 +173,6 @@ public class CorpseOriginClient implements ClientModInitializer {
                 )
         );
 
-        CorpseOrigin.LOGGER.info("✅ 尸水纹理已注册");
+        CorpseOrigin.LOGGER.debug("✅ 尸水纹理已注册");
     }
 }

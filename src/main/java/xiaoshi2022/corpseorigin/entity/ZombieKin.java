@@ -72,25 +72,18 @@ public interface ZombieKin {
 
         // ✅ 1. 玩家主动攻击 → 永远允许
         if (attacker instanceof Player player) {
-            if (PlayerCorpseComponent.isCorpse(player)) {
-                return true;  // 尸兄玩家有自主意识，可以随时攻击同类
-            }
-            // 非尸兄玩家：正常攻击逻辑
             return true;
         }
 
         // ✅ 2. 尸兄生物攻击
         if (attacker instanceof ZombieKin kin) {
-            // 2.1 反击（被目标攻击过）→ 允许
-            if (isRetaliating(attacker, target)) {
-                return true;
-            }
-
-            // 2.2 主动攻击 → 只有饥饿时
+            if (isRetaliating(attacker, target)) return true;
             return kin.isHungry();
         }
 
-        return false;
+        // ✅ 3. 其他攻击者（原版怪物、铁傀儡、其他模组生物）
+        //      → 默认允许，不参与尸族互伤规则
+        return true;
     }
 
     /**

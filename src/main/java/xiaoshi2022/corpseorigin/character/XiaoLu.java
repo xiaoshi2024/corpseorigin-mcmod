@@ -2,6 +2,9 @@ package xiaoshi2022.corpseorigin.character;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import xiaoshi2022.corpseorigin.skill.ISkill;
+import xiaoshi2022.corpseorigin.skill.xiaolu.OsmiumGoldSkill;
+import xiaoshi2022.corpseorigin.skill.xiaolu.OsmiumIceSpikeSkill;
 
 import java.util.List;
 
@@ -11,6 +14,11 @@ import java.util.List;
 public class XiaoLu implements ICharacter {
 
     public static final String ID = "xiaolu";
+
+    private static final List<ISkill> SKILLS = List.of(
+            new OsmiumGoldSkill(),
+            new OsmiumIceSpikeSkill()
+    );
 
     @Override
     public String getId() {
@@ -43,6 +51,11 @@ public class XiaoLu implements ICharacter {
                 Component.translatable("character.corpseorigin.xiaolu.trait1"),
                 Component.translatable("character.corpseorigin.xiaolu.trait2")
         );
+    }
+
+    @Override
+    public List<ISkill> getSkills() {
+        return SKILLS;
     }
 
     @Override
