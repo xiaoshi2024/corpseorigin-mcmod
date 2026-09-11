@@ -52,6 +52,15 @@ public class AncientPoetrySwordSkill implements ISkill {
     public void onActivate(ServerPlayer player) {
         ServerLevel level = player.level();
 
+        if (APSTerrainManager.hasActiveAPS(player)) {
+            boolean started = APSTerrainManager.forceRestore(player, level);
+            if (started) {
+                player.sendSystemMessage(Component.translatable(
+                        "skill.corpseorigin.ancient_poetry_sword.restoring"));
+            }
+            return;
+        }
+
         CompoundTag state = player.getAttachedOrCreate(ModDataAttachments.APS_STATE).copy();
         boolean active = state.getBoolean(ACTIVE_KEY).orElse(false);
 
