@@ -4,6 +4,8 @@ import net.fabricmc.api.ModInitializer;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
@@ -15,6 +17,7 @@ import xiaoshi2022.corpseorigin.event.ServerEvents;
 import xiaoshi2022.corpseorigin.event.ZombieKinEventHandler;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.*;
+import xiaoshi2022.corpseorigin.skill.baixiaofei.APSComboHandler;
 
 public class CorpseOrigin implements ModInitializer {
 	public static final String MOD_ID = "corpseorigin";
@@ -64,6 +67,7 @@ public class CorpseOrigin implements ModInitializer {
 		ServerEvents.register();
 		ZombieKinEventHandler.register();
 		EvolutionEventHandler.register();
+		APSComboHandler.register();
 
 		// ✅ 11. 命令
 		net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback.EVENT.register(
@@ -72,6 +76,24 @@ public class CorpseOrigin implements ModInitializer {
 					SummonZbCommand.register(dispatcher);
 				}
 		);
+
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
+			for (ServerLevel level : server.getAllLevels()) {
+				xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager.tick(level);
+			}
+		});
+
+		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+			ServerPlayer player = handler.getPlayer();
+			xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager.onPlayerLogin(player, player.level());
+		});
+
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPING.register(server -> {
+			for (ServerLevel level : server.getAllLevels()) {
+				xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager.saveAllSnapshots(level);
+			}
+			xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager.waitForAllSaves();
+		});
 
 		LOGGER.debug("CorpseOrigin (Fabric 26.2) initialized");
 	}

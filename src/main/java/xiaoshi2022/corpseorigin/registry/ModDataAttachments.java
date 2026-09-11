@@ -11,11 +11,20 @@ public class ModDataAttachments {
     // ✅ 玩家尸兄数据（持久化）
     public static final AttachmentType<CompoundTag> PLAYER_CORPSE =
             AttachmentRegistry.<CompoundTag>builder()
-                    .persistent(CompoundTag.CODEC)   // 自动保存到玩家 NBT
+                    .persistent(CompoundTag.CODEC)
                     .initializer(() -> new CompoundTag())
-                    .copyOnDeath()  // 死亡后保留
+                    .copyOnDeath()
                     .buildAndRegister(Identifier.fromNamespaceAndPath(
                             CorpseOrigin.MOD_ID, "player_corpse"));
+
+    // ✅ APS 技能状态（持久化）
+    public static final AttachmentType<CompoundTag> APS_STATE =
+            AttachmentRegistry.<CompoundTag>builder()
+                    .persistent(CompoundTag.CODEC)
+                    .initializer(() -> new CompoundTag())
+                    .copyOnDeath()
+                    .buildAndRegister(Identifier.fromNamespaceAndPath(
+                            CorpseOrigin.MOD_ID, "aps_state"));
 
     public static void init() {
         CorpseOrigin.LOGGER.info("CorpseOrigin data attachments registered");

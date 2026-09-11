@@ -63,6 +63,16 @@
   "skill.corpseorigin.blood_lotus": "血莲金瓣",
   "skill.corpseorigin.blood_lotus.desc": "施展血莲大法，以自身为中心释放莲瓣攻击，造成大量伤害并击退。",
 
+  "skill.corpseorigin.ancient_poetry_sword": "古仙剑·早发白帝城",
+  "skill.corpseorigin.ancient_poetry_sword.desc": "朝辞白帝彩云间，千里江陵一日还。两岸猿声啼不住，轻舟已过万重山。四段连招，依次释放。",
+  "skill.corpseorigin.ancient_poetry_sword.stage1": "朝辞白帝彩云间",
+  "skill.corpseorigin.ancient_poetry_sword.stage2": "千里江陵一日还",
+  "skill.corpseorigin.ancient_poetry_sword.stage3": "两岸猿声啼不住 · 命中 %s 个目标",
+  "skill.corpseorigin.ancient_poetry_sword.stage4": "轻舟已过万重山",
+
+  "skill.corpseorigin.ancient_poetry_sword.on": "古仙剑·连招模式已开启，左键攻击推进诗句",
+  "skill.corpseorigin.ancient_poetry_sword.off": "古仙剑·连招模式已关闭",
+  "skill.corpseorigin.ancient_poetry_sword.timeout": "古仙剑·连招超时，已退出",
 
   "skilltype.corpseorigin.combat": "战斗",
   "skilltype.corpseorigin.utility": "辅助",

@@ -3,6 +3,7 @@ package xiaoshi2022.corpseorigin.character;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import xiaoshi2022.corpseorigin.skill.ISkill;
+import xiaoshi2022.corpseorigin.skill.baixiaofei.AncientPoetrySwordSkill;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.SlaughterAwakeningSkill;
 
 import java.util.List;
@@ -14,7 +15,10 @@ public class BaiXiaoFei implements ICharacter {
 
     public static final String ID = "baixiaofei";
 
-    private static final List<ISkill> SKILLS = List.of(new SlaughterAwakeningSkill());
+    private static final List<ISkill> SKILLS = List.of(
+            new SlaughterAwakeningSkill(),
+            new AncientPoetrySwordSkill()
+    );
 
     @Override
     public String getId() {

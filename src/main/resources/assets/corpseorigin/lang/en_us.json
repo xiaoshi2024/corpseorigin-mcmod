@@ -63,6 +63,17 @@
   "skill.corpseorigin.osmium_ice_spike": "Osmium Ice Shuttle",
   "skill.corpseorigin.osmium_ice_spike.desc": "Fire an osmium ice shuttle, dealing 8 damage to the target hit by your line of sight.",
 
+  "skill.corpseorigin.ancient_poetry_sword": "Ancient Poetry Sword · Departing Baidi City at Dawn",
+  "skill.corpseorigin.ancient_poetry_sword.desc": "Departing Baidi in the morning amidst colorful clouds, back to Jiangling a thousand miles in a day. Monkeys on both banks cry without cease, while my light boat has already passed ten thousand mountains. A four-stage combo.",
+  "skill.corpseorigin.ancient_poetry_sword.stage1": "Departing Baidi in the Morning",
+  "skill.corpseorigin.ancient_poetry_sword.stage2": "A Thousand Miles to Jiangling in a Day",
+  "skill.corpseorigin.ancient_poetry_sword.stage3": "Monkeys Cry on Both Banks · Hit %s targets",
+  "skill.corpseorigin.ancient_poetry_sword.stage4": "Light Boat Past Ten Thousand Mountains",
+
+  "skill.corpseorigin.ancient_poetry_sword.on": "Ancient Poetry Sword combo mode ON. Left-click to advance verses.",
+  "skill.corpseorigin.ancient_poetry_sword.off": "Ancient Poetry Sword combo mode OFF.",
+  "skill.corpseorigin.ancient_poetry_sword.timeout": "Ancient Poetry Sword combo timed out.",
+
   "skilltype.corpseorigin.combat": "Combat",
   "skilltype.corpseorigin.utility": "Utility",
   "skilltype.corpseorigin.defense": "Defense",

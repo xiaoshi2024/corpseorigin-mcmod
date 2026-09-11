@@ -65,17 +65,31 @@ public class JuQue extends Item implements GeoItem {
     // ✅ 返回类型改为 void
     @Override
     public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+        // ① 残血斩杀
         if (target.isAlive() && target.getHealth() / target.getMaxHealth() <= THRESHOLD) {
-            target.setHealth(0.0F);
+            if (attacker instanceof Player player) {
+                target.hurt(attacker.damageSources().playerAttack(player), Float.MAX_VALUE);
+            } else {
+                target.hurt(attacker.damageSources().genericKill(), Float.MAX_VALUE);
+            }
+            return;
         }
+
+        // ② 减速
         if (Math.random() <= SLOW_CHANCE) {
             target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS,
                     SLOW_DURATION, SLOW_AMPLIFIER));
         }
+
+        // ③ 额外伤害
         if (Math.random() <= DAMAGE_CHANCE) {
             float currentDamage = (float) Objects.requireNonNull(
                     attacker.getAttribute(Attributes.ATTACK_DAMAGE)).getValue();
-            target.hurt(attacker.damageSources().generic(), currentDamage * MULTIPLIER);
+            if (attacker instanceof Player player) {
+                target.hurt(attacker.damageSources().playerAttack(player), currentDamage * MULTIPLIER);
+            } else {
+                target.hurt(attacker.damageSources().generic(), currentDamage * MULTIPLIER);
+            }
         }
     }
 

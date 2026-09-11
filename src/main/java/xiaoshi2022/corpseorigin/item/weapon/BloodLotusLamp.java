@@ -127,14 +127,14 @@ public class BloodLotusLamp extends Item implements GeoItem {
         );
 
         if (!targets.isEmpty()) {
-            // ✅ 选最近的目标作为锁链对象
             LivingEntity closest = targets.stream()
                     .min((a, b) -> Double.compare(a.distanceToSqr(player), b.distanceToSqr(player)))
                     .orElse(null);
 
             float totalHeal = 0.0F;
             for (LivingEntity target : targets) {
-                target.hurt(level.damageSources().magic(), DRAIN_DAMAGE);
+                // ✅ 改用间接魔法，携带玩家作为施法者
+                target.hurt(player.damageSources().indirectMagic(player, player), DRAIN_DAMAGE);
                 totalHeal += DRAIN_DAMAGE * HEAL_RATIO;
             }
             player.heal(totalHeal);
