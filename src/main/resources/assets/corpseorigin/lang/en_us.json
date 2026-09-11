@@ -96,6 +96,7 @@
   "hud.corpseorigin.evolution": "Evolution Lv.%s  |  Points: %s",
 
   "key.categories.corpseorigin.main": "Corpse Origin",
+  "key.category.corpseorigin.main": "Corpse Origin",
   "key.corpseorigin.open_skill_wheel": "Open Skill Wheel",
   "key.corpseorigin.open_skill_tree": "Open Skill Evolution Tree",
 

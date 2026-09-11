@@ -63,16 +63,16 @@
   "skill.corpseorigin.blood_lotus": "血莲金瓣",
   "skill.corpseorigin.blood_lotus.desc": "施展血莲大法，以自身为中心释放莲瓣攻击，造成大量伤害并击退。",
 
-  "skill.corpseorigin.ancient_poetry_sword": "古仙剑·早发白帝城",
+  "skill.corpseorigin.ancient_poetry_sword": "诗仙剑·早发白帝城",
   "skill.corpseorigin.ancient_poetry_sword.desc": "朝辞白帝彩云间，千里江陵一日还。两岸猿声啼不住，轻舟已过万重山。四段连招，依次释放。",
   "skill.corpseorigin.ancient_poetry_sword.stage1": "朝辞白帝彩云间",
   "skill.corpseorigin.ancient_poetry_sword.stage2": "千里江陵一日还",
   "skill.corpseorigin.ancient_poetry_sword.stage3": "两岸猿声啼不住 · 命中 %s 个目标",
   "skill.corpseorigin.ancient_poetry_sword.stage4": "轻舟已过万重山",
 
-  "skill.corpseorigin.ancient_poetry_sword.on": "古仙剑·连招模式已开启，左键攻击推进诗句",
-  "skill.corpseorigin.ancient_poetry_sword.off": "古仙剑·连招模式已关闭",
-  "skill.corpseorigin.ancient_poetry_sword.timeout": "古仙剑·连招超时，已退出",
+  "skill.corpseorigin.ancient_poetry_sword.on": "诗仙剑·连招模式已开启，左键攻击推进诗句",
+  "skill.corpseorigin.ancient_poetry_sword.off": "诗仙剑·连招模式已关闭",
+  "skill.corpseorigin.ancient_poetry_sword.timeout": "诗仙剑·连招超时，已退出",
 
   "skill.corpseorigin.ancient_poetry_sword.no_terrain": "当前没有可回收的诗仙剑意境",
   "skill.corpseorigin.ancient_poetry_sword.restoring": "剑意正在回收中，请稍候",
@@ -96,6 +96,7 @@
   "hud.corpseorigin.evolution": "进化等级 %s  |  点数：%s",
 
   "key.categories.corpseorigin.main": "尸源",
+  "key.category.corpseorigin.main": "尸源",
   "key.corpseorigin.open_skill_wheel": "打开技能轮盘",
   "key.corpseorigin.open_skill_tree": "打开技能进化树",
 

@@ -12,7 +12,7 @@ import xiaoshi2022.corpseorigin.registry.ModDataAttachments;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager;
 
 /**
- * 古仙剑·连招模式：左键攻击推进段数
+ * 诗仙剑·连招模式：左键攻击推进段数
  */
 public class APSComboHandler {
 
