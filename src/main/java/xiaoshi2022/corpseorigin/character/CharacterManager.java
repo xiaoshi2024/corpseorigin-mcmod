@@ -39,6 +39,7 @@ public class CharacterManager {
         registerCharacter(new BaiXiaoFei());
         registerCharacter(new LongYou());
         registerCharacter(new XiaoLu());
+        registerCharacter(new WeiXin());
     }
 
     public void registerCharacter(ICharacter character) {

@@ -12,6 +12,7 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.item.ByWaterBottleItem;
 import xiaoshi2022.corpseorigin.item.ByWaterBucketItem;
 import xiaoshi2022.corpseorigin.item.sword.JuQue;
+import xiaoshi2022.corpseorigin.item.weapon.BloodLotusLamp;
 
 public final class ModItems {
 
@@ -41,6 +42,11 @@ public final class ModItems {
             JuQue.create(itemKey("juque_tw"))
     );
 
+    public static final Item BLOOD_LOTUS_LAMP = register(
+            "blood_lotus_lantern",
+            BloodLotusLamp.create(itemKey("blood_lotus_lantern"))
+    );
+
     // ==================== 创造物品栏 ====================
     public static final CreativeModeTab CORPSE_ORIGIN_TAB = CreativeModeTab.builder(
                     CreativeModeTab.Row.TOP, 8)
@@ -50,6 +56,7 @@ public final class ModItems {
                 output.accept(BYWATER_BUCKET);
                 output.accept(BYWATER_BOTTLE);
                 output.accept(JUQUE_TW);
+                output.accept(BLOOD_LOTUS_LAMP);
             })
             .build();
 

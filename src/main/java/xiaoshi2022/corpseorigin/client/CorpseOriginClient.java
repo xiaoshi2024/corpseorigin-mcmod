@@ -1,12 +1,15 @@
 package xiaoshi2022.corpseorigin.client;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderingRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockTintSources;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.client.resources.model.sprite.Material;
 import net.minecraft.nbt.CompoundTag;
@@ -16,10 +19,12 @@ import net.minecraft.util.ARGB;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.client.hud.InfectionHudOverlay;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
+import xiaoshi2022.corpseorigin.client.render.laser.BloodLotusLaserManager;
 import xiaoshi2022.corpseorigin.client.renderer.entity.JuQueBeamRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.LowerLevelZbRenderer;
 import xiaoshi2022.corpseorigin.event.client.AttackAnimationHandler;
 import xiaoshi2022.corpseorigin.event.client.ClientEntityEventHandler;
+import xiaoshi2022.corpseorigin.network.BloodLotusLaserPayload;
 import xiaoshi2022.corpseorigin.network.CorpsePayloads;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.registry.ModFluids;
@@ -128,6 +133,30 @@ public class CorpseOriginClient implements ClientModInitializer {
                 tempRedEyeTicks.replaceAll((k, v) -> v - 1);
                 tempRedEyeTicks.entrySet().removeIf(e -> e.getValue() <= 0);
             }
+        });
+
+
+        // 注册激光渲染
+        LevelRenderEvents.COLLECT_SUBMITS.register(context -> {
+            PoseStack poseStack = context.poseStack();
+            SubmitNodeCollector collector = context.submitNodeCollector();
+            BloodLotusLaserManager.getInstance().render(poseStack, collector);
+        });
+
+// 注册网络接收
+        ClientPlayNetworking.registerGlobalReceiver(BloodLotusLaserPayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> {
+                BloodLotusLaserManager.getInstance().addChain(
+                        payload.getStart(),
+                        payload.targetUuid(),
+                        payload.durationTicks()
+                );
+            });
+        });
+
+// 每 tick 更新
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            BloodLotusLaserManager.getInstance().tick();
         });
 
         CorpseOrigin.LOGGER.debug("CorpseOrigin client initialized");

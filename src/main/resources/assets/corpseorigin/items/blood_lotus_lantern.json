@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "corpseorigin:item/blood_lotus_lantern",
+    "model": {
+      "type": "geckolib:geckolib"
+    }
+  }
+}

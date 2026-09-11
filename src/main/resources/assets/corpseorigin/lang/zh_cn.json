@@ -5,6 +5,9 @@
   "item.corpseorigin.bywater_bottle": "尸水瓶",
   "item.corpseorigin.juque_tw": "巨阙II阶",
 
+  "item.corpseorigin.blood_lotus_lantern": "血莲宝灯",
+  "item.corpseorigin.blood_lotus_lantern.desc": "天外神陨 血梅·宝莲灯。血莲教镇教宝灯，可吸收周围敌人的气血之力。",
+
   "block.corpseorigin.infected_water_block": "尸水",
 
   "fluid.corpseorigin.infected_water": "尸水",
@@ -48,6 +51,18 @@
   "skill.corpseorigin.osmium_gold.desc": "将身体化为锇金，获得抗性 II，持续 10 秒。",
   "skill.corpseorigin.osmium_ice_spike": "锇冰梭",
   "skill.corpseorigin.osmium_ice_spike.desc": "射出锇冰梭，对视线命中的目标造成 8 点伤害。",
+
+  "character.corpseorigin.weixin": "唯欣",
+  "character.corpseorigin.weixin.desc": "《尸兄》角色，昵称小萌。原血莲教圣女，体内有妹妹与姐姐两个人格，拥有近六十年功力。",
+  "character.corpseorigin.weixin.trait1": "双人格：妹妹纯洁脆弱，姐姐残忍好战",
+  "character.corpseorigin.weixin.trait2": "血莲大法：内力化形与血莲金瓣",
+  "character.corpseorigin.weixin.trait3": "六十年功力：感染率低于常人",
+
+  "skill.corpseorigin.blood_cloud": "血云",
+  "skill.corpseorigin.blood_cloud.desc": "将内力化成血红色云冲向对手，对前方扇形范围造成伤害并击退。",
+  "skill.corpseorigin.blood_lotus": "血莲金瓣",
+  "skill.corpseorigin.blood_lotus.desc": "施展血莲大法，以自身为中心释放莲瓣攻击，造成大量伤害并击退。",
+
 
   "skilltype.corpseorigin.combat": "战斗",
   "skilltype.corpseorigin.utility": "辅助",

@@ -5,6 +5,9 @@
   "item.corpseorigin.bywater_bottle": "Infected Water Bottle",
   "item.corpseorigin.juque_tw": "Juque II",
 
+  "item.corpseorigin.blood_lotus_lantern": "Blood Lotus Lamp",
+  "item.corpseorigin.blood_lotus_lantern.desc": "Sky-Fallen Divine Meteor · Blood Plum · Precious Lotus Lamp. The Blood Lotus Cult's treasured lamp, capable of absorbing the blood and qi of nearby enemies.",
+
   "block.corpseorigin.infected_water_block": "Infected Water",
 
   "fluid.corpseorigin.infected_water": "Infected Water",
@@ -39,6 +42,17 @@
   "character.corpseorigin.xiaolu.desc": "A character from Zombie Brother. After swallowing Medusa's Snake Eye, she gained the power of life element recombination.",
   "character.corpseorigin.xiaolu.trait1": "Life Element Recombination: Osmium metallization and Osmium Ice Shuttle, but costs great stamina",
   "character.corpseorigin.xiaolu.trait2": "Child's Constitution: Slightly lower infection rate than normal",
+
+  "character.corpseorigin.weixin": "Wei Xin",
+  "character.corpseorigin.weixin.desc": "A character from Zombie Brother, nicknamed Xiaomeng. Former Holy Maiden of the Blood Lotus Cult, with two personalities and nearly 60 years of cultivation.",
+  "character.corpseorigin.weixin.trait1": "Dual Personalities: The younger sister is fragile and pure; the elder sister is cruel and warlike",
+  "character.corpseorigin.weixin.trait2": "Blood Lotus Art: Internal energy manifestation and Blood Lotus Golden Petals",
+  "character.corpseorigin.weixin.trait3": "60 Years of Cultivation: Lower infection rate than normal",
+
+  "skill.corpseorigin.blood_cloud": "Blood Cloud",
+  "skill.corpseorigin.blood_cloud.desc": "Manifest internal energy into a blood-red cloud that rushes at enemies, damaging and knocking back those in a frontal cone.",
+  "skill.corpseorigin.blood_lotus": "Blood Lotus Golden Petals",
+  "skill.corpseorigin.blood_lotus.desc": "Unleash the Blood Lotus Art, releasing petal attacks centered on yourself that deal heavy damage and knockback.",
 
   "skill.corpseorigin.slaughter_awakening": "Slaughter Awakening",
   "skill.corpseorigin.slaughter_awakening.desc": "Briefly awaken the Killing Bloodline, gaining Strength II for 10 seconds.",

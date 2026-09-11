@@ -168,6 +168,11 @@ public final class CorpseNetwork {
             });
         });
 
+        // ==================== ✅ 血莲宝灯激光（S2C） ====================
+        PayloadTypeRegistry.clientboundPlay().register(
+                BloodLotusLaserPayload.TYPE,
+                BloodLotusLaserPayload.CODEC);
+
         CorpseOrigin.LOGGER.info("CorpseOrigin network registered (Fabric 26.2)");
     }
 
