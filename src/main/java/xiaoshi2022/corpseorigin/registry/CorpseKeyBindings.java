@@ -1,4 +1,4 @@
-package xiaoshi2022.corpseorigin.client;
+package xiaoshi2022.corpseorigin.registry;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;

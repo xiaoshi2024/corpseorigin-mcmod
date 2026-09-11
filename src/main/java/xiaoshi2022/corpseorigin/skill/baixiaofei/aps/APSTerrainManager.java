@@ -5,6 +5,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -93,10 +94,6 @@ public class APSTerrainManager {
 
         TransformationTask task = new TransformationTask(pid, level, center, snap, false, seed, triggerItem, player);
         activeTasks.put(pid, task);
-
-        if (player instanceof ServerPlayer sp) {
-            sp.getCooldowns().addCooldown(triggerItem, 999999);
-        }
     }
 
     // ==================== 还原 ====================
@@ -196,15 +193,14 @@ public class APSTerrainManager {
         playerBladeItems.put(pid,
                 blade != null && !blade.isEmpty() ? blade.copy() : new ItemStack(Items.IRON_SWORD));
 
-        if (data.isRestoring(pid)) {
-            BlockPos rc = new BlockPos(
-                    player.blockPosition().getX(),
-                    snap.getCenter().getY(),
-                    player.blockPosition().getZ());
-            activeTasks.put(pid, new TransformationTask(pid, level, rc, snap, true, 0L, blade, player));
-        } else if (data.isTransforming(pid)) {
-            activeTasks.put(pid, new TransformationTask(pid, level, snap.getCenter(), snap, false, seed, blade, player));
-        }
+        // ✅ 不管快照是什么状态，一律启动还原
+        BlockPos rc = new BlockPos(
+                player.blockPosition().getX(),
+                snap.getCenter().getY(),
+                player.blockPosition().getZ());
+        activeTasks.put(pid, new TransformationTask(pid, level, rc, snap, true, 0L, blade, player));
+
+        CorpseOrigin.LOGGER.info("APS: 玩家 {} 重进，自动回收剑意", player.getName().getString());
     }
 
     // ==================== 保存 ====================
@@ -233,6 +229,42 @@ public class APSTerrainManager {
         playerBaseY.remove(pid);
         playerSeeds.remove(pid);
         playerBladeItems.remove(pid);
+    }
+
+    /**
+     * 玩家是否有正在进行的展开/还原任务
+     */
+    public static boolean isBusy(Player player) {
+        return activeTasks.containsKey(player.getUUID());
+    }
+
+    /**
+     * 玩家退出时强制回收剑意（不管当前有没有任务在跑）
+     */
+    public static void forceRestoreOnDisconnect(Player player, ServerLevel level) {
+        UUID pid = player.getUUID();
+
+        // 取消正在跑的任务
+        activeTasks.remove(pid);
+
+        TerrainSnapshot snap = playerSnapshots.get(pid);
+        if (snap == null) {
+            APSSavedData data = APSSavedData.get(level);
+            if (data.hasSnapshot(pid)) {
+                snap = loadSnapshotFromDisk(pid, level, data);
+                if (snap != null) {
+                    playerSnapshots.put(pid, snap);
+                    playerPresetNames.put(pid, data.getPresetName(pid));
+                }
+            }
+        }
+
+        if (snap == null || !snap.isTransformed()) {
+            cleanupPlayerData(pid, level);
+            return;
+        }
+
+        startRestore(player, level);
     }
 
     // ==================== 任务 ====================
@@ -532,5 +564,37 @@ public class APSTerrainManager {
                 return saved != null ? saved : chunk.getNoiseBiome(x, y, z);
             };
         }
+    }
+
+    /**
+     * 直接回收剑意（不用走四段连招）
+     */
+    public static boolean forceRestore(Player player, ServerLevel level) {
+        UUID pid = player.getUUID();
+
+        // ✅ 正在展开/还原中 → 直接返回，不发消息
+        if (activeTasks.containsKey(pid)) {
+            return false;
+        }
+
+        TerrainSnapshot snap = playerSnapshots.get(pid);
+        if (snap == null) {
+            APSSavedData data = APSSavedData.get(level);
+            if (data.hasSnapshot(pid)) {
+                snap = loadSnapshotFromDisk(pid, level, data);
+                if (snap != null) {
+                    playerSnapshots.put(pid, snap);
+                    playerPresetNames.put(pid, data.getPresetName(pid));
+                }
+            }
+        }
+
+        if (snap == null || !snap.isTransformed()) {
+            // ✅ 没剑意时不发消息（避免刷屏）
+            return false;
+        }
+
+        startRestore(player, level);
+        return true;
     }
 }

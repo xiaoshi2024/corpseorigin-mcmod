@@ -74,6 +74,9 @@
   "skill.corpseorigin.ancient_poetry_sword.off": "古仙剑·连招模式已关闭",
   "skill.corpseorigin.ancient_poetry_sword.timeout": "古仙剑·连招超时，已退出",
 
+  "skill.corpseorigin.ancient_poetry_sword.no_terrain": "当前没有可回收的诗仙剑意境",
+  "skill.corpseorigin.ancient_poetry_sword.restoring": "剑意正在回收中，请稍候",
+
   "skilltype.corpseorigin.combat": "战斗",
   "skilltype.corpseorigin.utility": "辅助",
   "skilltype.corpseorigin.defense": "防御",

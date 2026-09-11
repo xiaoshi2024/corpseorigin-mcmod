@@ -1,13 +1,13 @@
 package xiaoshi2022.corpseorigin.client;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import xiaoshi2022.corpseorigin.network.CorpsePayloads;
+import xiaoshi2022.corpseorigin.registry.CorpseKeyBindings;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 
 import java.util.List;

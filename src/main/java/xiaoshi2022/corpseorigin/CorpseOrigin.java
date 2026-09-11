@@ -68,6 +68,7 @@ public class CorpseOrigin implements ModInitializer {
 		ZombieKinEventHandler.register();
 		EvolutionEventHandler.register();
 		APSComboHandler.register();
+		xiaoshi2022.corpseorigin.skill.baixiaofei.APSComboHandler.register();
 
 		// ✅ 11. 命令
 		net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback.EVENT.register(

@@ -26,6 +26,7 @@ import xiaoshi2022.corpseorigin.event.client.AttackAnimationHandler;
 import xiaoshi2022.corpseorigin.event.client.ClientEntityEventHandler;
 import xiaoshi2022.corpseorigin.network.BloodLotusLaserPayload;
 import xiaoshi2022.corpseorigin.network.CorpsePayloads;
+import xiaoshi2022.corpseorigin.registry.CorpseKeyBindings;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.registry.ModFluids;
 import xiaoshi2022.corpseorigin.registry.ModModelLayers;

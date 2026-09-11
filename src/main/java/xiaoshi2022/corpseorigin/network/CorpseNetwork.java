@@ -123,13 +123,20 @@ public final class CorpseNetwork {
                     joiningPlayer.getName().getString());
         });
 
-        // ✅ 玩家退出时移除
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            UUID uuid = handler.getPlayer().getUUID();  // ✅ 先取出来
+            ServerPlayer player = handler.getPlayer();
+            UUID uuid = player.getUUID();
+
             PENDING_SYNC.remove(uuid);
             SkillManager.cleanupDisconnect(uuid);
-            BYeffect.clearTotalDuration(uuid);      // ✅ 清感染计时
-            BYeffect.clearInfectionSource(uuid);    // ✅ 清感染源
+            BYeffect.clearTotalDuration(uuid);
+            BYeffect.clearInfectionSource(uuid);
+
+            // ✅ 退出时回收剑意
+            if (player.level() instanceof ServerLevel level) {
+                xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager
+                        .forceRestoreOnDisconnect(player, level);
+            }
         });
 
         // ✅ 每 tick 检查待同步队列（延迟 20 tick 后同步）

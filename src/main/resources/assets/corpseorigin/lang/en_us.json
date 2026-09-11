@@ -74,6 +74,9 @@
   "skill.corpseorigin.ancient_poetry_sword.off": "Ancient Poetry Sword combo mode OFF.",
   "skill.corpseorigin.ancient_poetry_sword.timeout": "Ancient Poetry Sword combo timed out.",
 
+  "skill.corpseorigin.ancient_poetry_sword.no_terrain": "No Ancient Poetry Sword realm to restore.",
+  "skill.corpseorigin.ancient_poetry_sword.restoring": "Restoring the realm, please wait...",
+
   "skilltype.corpseorigin.combat": "Combat",
   "skilltype.corpseorigin.utility": "Utility",
   "skilltype.corpseorigin.defense": "Defense",

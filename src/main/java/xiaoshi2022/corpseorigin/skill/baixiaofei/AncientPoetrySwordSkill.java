@@ -9,6 +9,7 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.registry.ModDataAttachments;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager;
 
 public class AncientPoetrySwordSkill implements ISkill {
 
@@ -50,19 +51,17 @@ public class AncientPoetrySwordSkill implements ISkill {
     @Override
     public void onActivate(ServerPlayer player) {
         ServerLevel level = player.level();
-        CompoundTag state = player.getAttachedOrCreate(ModDataAttachments.APS_STATE).copy();
 
+        CompoundTag state = player.getAttachedOrCreate(ModDataAttachments.APS_STATE).copy();
         boolean active = state.getBoolean(ACTIVE_KEY).orElse(false);
 
         if (active) {
-            // 再按一次 → 关闭连招模式
             state.putBoolean(ACTIVE_KEY, false);
             state.putInt(STAGE_KEY, 0);
             player.setAttached(ModDataAttachments.APS_STATE, state);
             player.sendSystemMessage(Component.translatable(
                     "skill.corpseorigin.ancient_poetry_sword.off"));
         } else {
-            // 开启连招模式
             state.putBoolean(ACTIVE_KEY, true);
             state.putInt(STAGE_KEY, 0);
             state.putLong(CD_KEY, level.getGameTime());
