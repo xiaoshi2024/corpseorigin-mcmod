@@ -44,6 +44,10 @@
   "character.corpseorigin.xiaolu.trait1": "生命元素重组：锇金化与锇冰梭，但消耗巨大体力",
   "character.corpseorigin.xiaolu.trait2": "孩童体质：感染率略低于常人",
 
+  "skill.corpseorigin.ancient_poetry_sword.deployed": "山河已展开，再按技能键可收回剑意",
+  "skill.corpseorigin.ancient_poetry_sword.restored": "山河已收回",
+  "skill.corpseorigin.ancient_poetry_sword.auto_restore": "剑意消散，山河归位",
+
   "skill.corpseorigin.slaughter_awakening": "杀戮觉醒",
   "skill.corpseorigin.slaughter_awakening.desc": "短暂觉醒杀戮血脉，获得力量 II，持续 10 秒。",
   "skill.corpseorigin.corpse_king_infrasound": "尸王次声波",
@@ -68,7 +72,7 @@
   "skill.corpseorigin.ancient_poetry_sword.desc": "朝辞白帝彩云间，千里江陵一日还。两岸猿声啼不住，轻舟已过万重山。四段连招，依次释放。",
   "skill.corpseorigin.ancient_poetry_sword.stage1": "朝辞白帝彩云间",
   "skill.corpseorigin.ancient_poetry_sword.stage2": "千里江陵一日还",
-  "skill.corpseorigin.ancient_poetry_sword.stage3": "两岸猿声啼不住 · 命中 %s 个目标",
+  "skill.corpseorigin.ancient_poetry_sword.stage3": "两岸猿声啼不住 ·",
   "skill.corpseorigin.ancient_poetry_sword.stage4": "轻舟已过万重山",
 
   "skill.corpseorigin.ancient_poetry_sword.on": "诗仙剑·连招模式已开启，左键攻击推进诗句",

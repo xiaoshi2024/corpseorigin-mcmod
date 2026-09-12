@@ -26,6 +26,27 @@ public class APSSubSkills {
 
     // ==================== 第一段：朝辞白帝彩云间 ====================
     public static void castZhaoCiBaiDi(ServerPlayer player, ServerLevel level) {
+        BlockPos center = player.blockPosition();
+        double[] dir = APSTerrainManager.getRiverDir(player);
+
+        // ✅ 先移除领域内所有生物（在展开前）
+        APSTerrainManager.removeMobsInRealm(player, level, center, dir[0], dir[1]);
+
+        // ✅ 碎片聚合：山河上空落下碎片
+        for (int i = 0; i < 300; i++) {
+            double along = (Math.random() - 0.5) * APSTerrainGenerator.LENGTH;
+            double perp = (Math.random() - 0.5) * (APSTerrainGenerator.MOUNTAIN_RUN * 2);
+            double x = center.getX() + dir[0] * along + (-dir[1]) * perp;
+            double z = center.getZ() + dir[1] * along + dir[0] * perp;
+            double y = center.getY() + 40 + Math.random() * 30;
+
+            level.sendParticles(ParticleTypes.END_ROD,
+                    x, y, z, 1, 0, -0.8, 0, 0.4);
+            level.sendParticles(ParticleTypes.CLOUD,
+                    x, y - 10, z, 1, 0.3, 0.3, 0.3, 0.05);
+        }
+
+        // ✅ 开启意境
         APSTerrainManager.toggleTransformation(player, player.getMainHandItem(), level);
 
         Vec3 look = player.getLookAngle();
@@ -36,17 +57,17 @@ public class APSSubSkills {
         player.addEffect(new MobEffectInstance(
                 MobEffects.SPEED, 100, 1, false, true, true));
 
-        BlockPos c = player.blockPosition();
+        // 彩云粒子
         for (int i = 0; i < 80; i++) {
             double a = Math.random() * Math.PI * 2;
             double r = 5 + Math.random() * 20;
-            double x = c.getX() + Math.cos(a) * r;
-            double z = c.getZ() + Math.sin(a) * r;
+            double x = center.getX() + Math.cos(a) * r;
+            double z = center.getZ() + Math.sin(a) * r;
             level.sendParticles(ParticleTypes.CLOUD,
-                    x, c.getY() + 2 + Math.random() * 6, z,
+                    x, center.getY() + 2 + Math.random() * 6, z,
                     1, 0.2, 0.2, 0.2, 0.02);
             level.sendParticles(ParticleTypes.END_ROD,
-                    x, c.getY() + 3, z, 1, 0.1, 0.1, 0.1, 0.01);
+                    x, center.getY() + 3, z, 1, 0.1, 0.1, 0.1, 0.01);
         }
 
         player.sendSystemMessage(Component.translatable(
@@ -66,8 +87,12 @@ public class APSSubSkills {
         state.putInt("aps_dash_ticks", 10);
         player.setAttached(ModDataAttachments.APS_STATE, state);
 
+        // 沿河道飞散剑气
+        double[] dir = APSTerrainManager.getRiverDir(player);
+        Vec3 river = new Vec3(dir[0], 0, dir[1]).normalize();
+
         for (int i = 0; i < 24; i++) {
-            Vec3 p = player.position().add(look.scale(i * 0.4));
+            Vec3 p = player.position().add(river.scale(i * 0.4));
             level.sendParticles(ParticleTypes.SWEEP_ATTACK,
                     p.x, p.y + 0.5, p.z, 1, 0, 0, 0, 0);
             level.sendParticles(ParticleTypes.CRIT,
@@ -81,7 +106,6 @@ public class APSSubSkills {
     }
 
     // ==================== 第三段：两岸猿声啼不住 ====================
-    // ✅ 把生物搬到两岸山上，不击杀；还原时搬回去
     public static void castLiangAnYuanSheng(ServerPlayer player, ServerLevel level) {
         BlockPos center = player.blockPosition();
         double[] dir = APSTerrainManager.getRiverDir(player);
@@ -90,62 +114,9 @@ public class APSSubSkills {
         double perpDirX = -riverDirZ;
         double perpDirZ = riverDirX;
 
-        double searchRadius = APSTerrainGenerator.RIVER_HALF_WIDTH
-                + APSTerrainGenerator.BANK_WIDTH
-                + APSTerrainGenerator.MOUNTAIN_RUN + 20;
-        AABB box = player.getBoundingBox().inflate(searchRadius);
-        List<LivingEntity> targets = level.getEntitiesOfClass(LivingEntity.class, box,
-                e -> e != player && e.isAlive()
-                        && !(e instanceof ServerPlayer)   // 不搬其他玩家
-                        && e.onGround()
-                        && !e.isInWater());
+        // ✅ 不再移除生物（第一段已移除）
 
-        // ✅ 最多搬 8 个
-        int maxMove = 8;
-        if (targets.size() > maxMove) {
-            targets = targets.subList(0, maxMove);
-        }
-
-        double targetPerpBase = APSTerrainGenerator.RIVER_HALF_WIDTH
-                + APSTerrainGenerator.BANK_WIDTH + 4;
-
-        int hit = 0;
-        for (LivingEntity t : targets) {
-            // ✅ 记录原位置
-            APSTerrainManager.recordMobOrigin(player, t);
-
-            double dx = t.getX() - center.getX();
-            double dz = t.getZ() - center.getZ();
-            double perp = dx * perpDirX + dz * perpDirZ;
-            double along = dx * riverDirX + dz * riverDirZ;
-
-            double sign;
-            if (Math.abs(perp) < 0.5) {
-                sign = Math.random() < 0.5 ? -1 : 1;
-            } else {
-                sign = perp >= 0 ? 1 : -1;
-            }
-
-            double targetPerp = sign * (targetPerpBase + Math.random() * 6);
-            double tx = center.getX() + riverDirX * along + perpDirX * targetPerp;
-            double tz = center.getZ() + riverDirZ * along + perpDirZ * targetPerp;
-
-            int ty = APSTerrainGenerator.calculateSwordLandHeight(
-                    (int) tx, (int) tz, center, level.getGameTime(),
-                    riverDirX, riverDirZ) + 1;
-
-            // ✅ 直接 teleport 到两岸山上，不伤害
-            t.teleportTo(tx, ty, tz);
-            t.setDeltaMovement(Vec3.ZERO);
-            t.hurtMarked = true;
-
-            // 轻微减速（可选）
-            t.addEffect(new MobEffectInstance(
-                    MobEffects.SLOWNESS, 100, 0, false, false, false));
-            hit++;
-        }
-
-        // 多股剑气：从两岸山体朝河道中心飞
+        // 多股剑气（视觉）
         int perpMax = APSTerrainGenerator.RIVER_HALF_WIDTH
                 + APSTerrainGenerator.BANK_WIDTH
                 + APSTerrainGenerator.MOUNTAIN_RUN;
@@ -171,7 +142,7 @@ public class APSSubSkills {
             }
         }
 
-        // 猿声：音符粒子
+        // 猿声
         for (int i = 0; i < 60; i++) {
             double sign = Math.random() < 0.5 ? -1 : 1;
             double perp = sign * (APSTerrainGenerator.RIVER_HALF_WIDTH
@@ -185,7 +156,7 @@ public class APSSubSkills {
         }
 
         player.sendSystemMessage(Component.translatable(
-                "skill.corpseorigin.ancient_poetry_sword.stage3", hit));
+                "skill.corpseorigin.ancient_poetry_sword.stage3", 8));
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.8F, 1.5F);
     }

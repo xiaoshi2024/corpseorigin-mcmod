@@ -16,7 +16,8 @@ import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager;
  */
 public class APSComboHandler {
 
-    private static final long IDLE_TIMEOUT_TICKS = 600L;  // 30 秒
+    private static final long IDLE_TIMEOUT_TICKS = 600L;      // 30 秒：连招超时
+    private static final long REALM_AUTO_RESTORE_TICKS = 1200L; // 60 秒：剑意自动消散
 
     public static void register() {
         // 左键攻击实体
@@ -37,7 +38,7 @@ public class APSComboHandler {
             return InteractionResult.PASS;
         });
 
-        // ✅ 每 tick 检查超时
+        // 每 tick 检查超时 + 剑意自动消散
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 checkTimeout(player);
@@ -50,34 +51,32 @@ public class APSComboHandler {
         boolean active = state.getBoolean(AncientPoetrySwordSkill.ACTIVE_KEY).orElse(false);
         boolean hasRealm = APSTerrainManager.hasActiveAPS(player);
 
-        // ✅ 没开连招，也没剑意 → 不检查
-        if (!active && !hasRealm) {
-            return;
-        }
-
-        // ✅ 正在展开/还原中 → 不检查
-        if (APSTerrainManager.isBusy(player)) {
-            return;
-        }
+        if (!active && !hasRealm) return;
+        if (APSTerrainManager.isBusy(player)) return;
 
         long lastCast = state.getLong(AncientPoetrySwordSkill.CD_KEY).orElse(0L);
         long now = player.level().getGameTime();
 
-        if (now - lastCast <= IDLE_TIMEOUT_TICKS) {
-            return;
-        }
-
-        // 关连招模式
+        // ✅ 情况 1：连招开启 → 30 秒超时
         if (active) {
+            if (now - lastCast <= IDLE_TIMEOUT_TICKS) return;
+
             state.putBoolean(AncientPoetrySwordSkill.ACTIVE_KEY, false);
             state.putInt(AncientPoetrySwordSkill.STAGE_KEY, 0);
             player.setAttached(ModDataAttachments.APS_STATE, state);
             player.sendSystemMessage(Component.translatable(
                     "skill.corpseorigin.ancient_poetry_sword.timeout"));
+
+            if (hasRealm) {
+                APSTerrainManager.forceRestore(player, player.level());
+            }
+            return;
         }
 
-        // 回收剑意
-        if (hasRealm) {
+        // ✅ 情况 2：剑意存在但连招关（第 4 段后）→ 60 秒自动消散
+        if (hasRealm && now - lastCast > REALM_AUTO_RESTORE_TICKS) {
+            player.sendSystemMessage(Component.translatable(
+                    "skill.corpseorigin.ancient_poetry_sword.auto_restore"));
             APSTerrainManager.forceRestore(player, player.level());
         }
     }
@@ -94,7 +93,7 @@ public class APSComboHandler {
 
         long lastCast = state.getLong(AncientPoetrySwordSkill.CD_KEY).orElse(0L);
 
-        // ✅ 30 秒没左键 → 自动回收剑意
+        // 30 秒没左键 → 自动回收剑意
         if (now - lastCast > IDLE_TIMEOUT_TICKS) {
             state.putBoolean(AncientPoetrySwordSkill.ACTIVE_KEY, false);
             state.putInt(AncientPoetrySwordSkill.STAGE_KEY, 0);

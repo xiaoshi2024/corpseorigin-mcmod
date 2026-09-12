@@ -3,11 +3,16 @@ package xiaoshi2022.corpseorigin.skill.baixiaofei.aps;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -21,6 +26,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.util.ProblemReporter.ScopedCollector;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 
@@ -40,13 +46,19 @@ public class APSTerrainManager {
     private static final Map<UUID, ItemStack> playerBladeItems = new HashMap<>();
     private static final Map<UUID, double[]> playerRiverDir = new HashMap<>();
 
-    /** 玩家 UUID → (生物 UUID → 搬移前的原位置) */
-    private static final Map<UUID, Map<UUID, BlockPos>> playerMovedMobs = new HashMap<>();
+    /** 玩家 UUID → 领域内被移除的生物（NBT + 原位置） */
+    private static final Map<UUID, List<RemovedMob>> playerRemovedMobs = new HashMap<>();
 
     public static final String APS_PICKED_TAG = "aps_blade_pickup";
 
     private static final int UPDATE_FLAGS = 306;
     private static final int SILENT_FLAGS = 2 | 16;
+
+    /** ✅ 用蓝冰代替水（不流动，不会残留） */
+    private static final BlockState FAKE_WATER = Blocks.BLUE_ICE.defaultBlockState();
+
+    /** 被移除的生物：NBT + 原位置 */
+    public record RemovedMob(CompoundTag nbt, BlockPos origin) {}
 
     // ==================== 对外入口 ====================
 
@@ -82,32 +94,102 @@ public class APSTerrainManager {
         return playerRiverDir.getOrDefault(player.getUUID(), new double[]{1.0, 0.0});
     }
 
-    /** 记录生物被搬移前的原位置（只记第一次） */
-    public static void recordMobOrigin(Player player, LivingEntity mob) {
+    // ==================== 生物处理 ====================
+
+    /**
+     * 展开时：把领域内所有生物（除玩家和河道上的）移除，保存 NBT + 原位置。
+     */
+    public static void removeMobsInRealm(Player player, ServerLevel level, BlockPos center,
+                                         double riverDirX, double riverDirZ) {
         UUID pid = player.getUUID();
-        playerMovedMobs
-                .computeIfAbsent(pid, k -> new HashMap<>())
-                .putIfAbsent(mob.getUUID(), mob.blockPosition().immutable());
+        List<RemovedMob> removed = new ArrayList<>();
+
+        double searchRadius = APSTerrainGenerator.RIVER_HALF_WIDTH
+                + APSTerrainGenerator.BANK_WIDTH
+                + APSTerrainGenerator.MOUNTAIN_RUN + 30;
+        AABB box = new AABB(
+                center.getX() - searchRadius, level.getMinY(), center.getZ() - searchRadius,
+                center.getX() + searchRadius, level.getMaxY(), center.getZ() + searchRadius);
+
+        // ✅ 排除玩家和河道上的生物
+        List<LivingEntity> targets = level.getEntitiesOfClass(LivingEntity.class, box,
+                e -> e != player && e.isAlive() && !(e instanceof ServerPlayer)
+                        && !isOnRiver(e, center, riverDirX, riverDirZ));
+
+        // ✅ 遍历 targets，保存 NBT，discard 生物
+        for (LivingEntity t : targets) {
+            CompoundTag nbt;
+            net.minecraft.world.level.storage.TagValueOutput output =
+                    net.minecraft.world.level.storage.TagValueOutput.createWithContext(
+                            net.minecraft.util.ProblemReporter.DISCARDING,
+                            level.registryAccess());
+            t.save(output);   // ✅ 用 save，保存完整数据（含 id、UUID、Brain）
+            nbt = output.buildResult();
+
+            removed.add(new RemovedMob(nbt, t.blockPosition().immutable()));
+            t.discard();
+        }
+
+        playerRemovedMobs.put(pid, removed);
+
+        CorpseOrigin.LOGGER.info("APS: removeMobsInRealm 移除 {} 个生物，playerRemovedMobs size={}",
+                removed.size(), playerRemovedMobs.get(pid) == null ? "null" : playerRemovedMobs.get(pid).size());
     }
 
-    /** 还原：把之前搬移的生物 teleport 回原位置 */
-    public static void restoreMovedMobs(Player player, ServerLevel level) {
-        UUID pid = player.getUUID();
-        Map<UUID, BlockPos> map = playerMovedMobs.remove(pid);
-        if (map == null || map.isEmpty()) return;
+    /**
+     * ✅ 判断生物是否在河道上（zone == 0）
+     */
+    private static boolean isOnRiver(LivingEntity entity, BlockPos center,
+                                     double riverDirX, double riverDirZ) {
+        int x = entity.blockPosition().getX();
+        int z = entity.blockPosition().getZ();
+        return APSTerrainGenerator.getZone(x, z, center, riverDirX, riverDirZ) == 0;
+    }
 
-        for (Map.Entry<UUID, BlockPos> e : map.entrySet()) {
-            Entity entity = level.getEntity(e.getKey());
-            if (entity instanceof LivingEntity living && living.isAlive()) {
-                BlockPos origin = e.getValue();
-                living.teleportTo(
-                        origin.getX() + 0.5,
-                        origin.getY() + 1.0,
-                        origin.getZ() + 0.5);
-                living.setDeltaMovement(Vec3.ZERO);
-                living.hurtMarked = true;
-            }
+    /**
+     * 还原时：用 NBT 恢复所有被移除的生物。
+     */
+    public static void restoreRemovedMobs(Player player, ServerLevel level) {
+        UUID pid = player.getUUID();
+
+        CorpseOrigin.LOGGER.info("APS: restoreRemovedMobs 进入，playerRemovedMobs size={}",
+                playerRemovedMobs.get(pid) == null ? "null" : playerRemovedMobs.get(pid).size());
+
+        List<RemovedMob> removed = playerRemovedMobs.remove(pid);
+
+        CorpseOrigin.LOGGER.info("APS: restoreRemovedMobs removed={}",
+                removed == null ? "null" : removed.size());
+
+        if (removed == null || removed.isEmpty()) return;
+
+        int restored = 0;
+        for (RemovedMob rm : removed) {
+            String idStr = rm.nbt().getString("id").orElse("");
+            Identifier id = Identifier.tryParse(idStr);
+            if (id == null) continue;
+
+            var ref = BuiltInRegistries.ENTITY_TYPE.get(id).orElse(null);
+            if (ref == null) continue;
+            EntityType<?> type = ref.value();
+
+            Entity newEntity = type.create(level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
+            if (newEntity == null) continue;
+
+            newEntity.load(net.minecraft.world.level.storage.TagValueInput.create(
+                    net.minecraft.util.ProblemReporter.DISCARDING,
+                    level.registryAccess(),
+                    rm.nbt()));
+
+            newEntity.setPos(
+                    rm.origin().getX() + 0.5,
+                    rm.origin().getY() + 1.0,
+                    rm.origin().getZ() + 0.5);
+            newEntity.setDeltaMovement(Vec3.ZERO);
+            level.addFreshEntity(newEntity);
+            restored++;
         }
+
+        CorpseOrigin.LOGGER.info("APS: 恢复 {} / {} 个生物", restored, removed.size());
     }
 
     // ==================== 展开 ====================
@@ -129,7 +211,7 @@ public class APSTerrainManager {
         playerBaseY.put(pid, center.getY());
         playerSeeds.put(pid, seed);
         playerBladeItems.put(pid, triggerItem.copy());
-        playerMovedMobs.put(pid, new HashMap<>());   // ✅ 初始化生物位置记录
+        // ✅ 不再 put 空列表，避免覆盖已有数据
 
         Vec3 look = player.getLookAngle();
         double len = Math.sqrt(look.x * look.x + look.z * look.z);
@@ -179,10 +261,11 @@ public class APSTerrainManager {
                 it.remove();
                 UUID pid = e.getKey();
                 if (t.isRestore) {
-                    // ✅ 先还原生物位置
                     ServerPlayer sp = level.getServer().getPlayerList().getPlayer(pid);
                     if (sp != null) {
-                        restoreMovedMobs(sp, level);
+                        restoreRemovedMobs(sp, level);
+                        sp.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                                "skill.corpseorigin.ancient_poetry_sword.restored"));
                     }
                     cleanupPlayerData(pid, level);
                 } else {
@@ -192,6 +275,12 @@ public class APSTerrainManager {
                     APSSavedData.get(level).saveSnapshot(pid, t.snapshot,
                             preset != null ? preset : "aps_default", blade);
                     t.snapshot.saveAsync();
+
+                    ServerPlayer sp = level.getServer().getPlayerList().getPlayer(pid);
+                    if (sp != null) {
+                        sp.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                                "skill.corpseorigin.ancient_poetry_sword.deployed"));
+                    }
                 }
             }
         }
@@ -200,13 +289,16 @@ public class APSTerrainManager {
     // ==================== 清理 ====================
 
     private static void cleanupPlayerData(UUID pid, ServerLevel level) {
+        CorpseOrigin.LOGGER.info("APS: cleanupPlayerData 进入，playerRemovedMobs size={}",
+                playerRemovedMobs.get(pid) == null ? "null" : playerRemovedMobs.get(pid).size());
+
         TerrainSnapshot snap = playerSnapshots.remove(pid);
         playerPresetNames.remove(pid);
         playerBaseY.remove(pid);
         playerSeeds.remove(pid);
         playerBladeItems.remove(pid);
         playerRiverDir.remove(pid);
-        playerMovedMobs.remove(pid);
+        playerRemovedMobs.remove(pid);
         APSSavedData.get(level).removeSnapshot(pid);
         if (snap != null) snap.getChunkStorage().deleteAllAsync();
     }
@@ -250,7 +342,7 @@ public class APSTerrainManager {
         ItemStack blade = data.getBladeItem(pid);
         playerBladeItems.put(pid,
                 blade != null && !blade.isEmpty() ? blade.copy() : new ItemStack(Items.IRON_SWORD));
-        playerMovedMobs.put(pid, new HashMap<>());
+        // ✅ 不再 put 空列表，避免覆盖已有数据
 
         BlockPos rc = new BlockPos(
                 player.blockPosition().getX(),
@@ -279,7 +371,7 @@ public class APSTerrainManager {
         playerSeeds.clear();
         playerBladeItems.clear();
         playerRiverDir.clear();
-        playerMovedMobs.clear();
+        playerRemovedMobs.clear();
     }
 
     public static void clearPlayerData(UUID pid) {
@@ -290,7 +382,7 @@ public class APSTerrainManager {
         playerSeeds.remove(pid);
         playerBladeItems.remove(pid);
         playerRiverDir.remove(pid);
-        playerMovedMobs.remove(pid);
+        playerRemovedMobs.remove(pid);
     }
 
     public static boolean isBusy(Player player) {
@@ -352,6 +444,10 @@ public class APSTerrainManager {
         int surfaceRestoreIndex = 0;
         int undergroundRestoreIndex = 0;
         final Random bladeRandom;
+
+        float expandProgress = 0f;
+        boolean resentChunks = false;
+        int lastParticleTick = 0;
 
         TransformationTask(UUID pid, ServerLevel level, BlockPos center,
                            TerrainSnapshot snap, boolean isRestore, long seed,
@@ -419,6 +515,10 @@ public class APSTerrainManager {
             }
 
             if (currentIndex >= currentRadiusPositions.size()) {
+                if (!resentChunks) {
+                    resentChunks = true;
+                    resendAffectedChunks();
+                }
                 return true;
             }
 
@@ -444,7 +544,42 @@ public class APSTerrainManager {
 
             currentIndex = i;
             if (currentIndex % 2000 == 0) snapshot.saveAsync();
+
+            expandProgress = (float) currentIndex / currentRadiusPositions.size();
+
+            if (level.getGameTime() - lastParticleTick >= 2) {
+                lastParticleTick = (int) level.getGameTime();
+                ServerPlayer sp = level.getServer().getPlayerList().getPlayer(playerId);
+                if (sp != null && sp.level() == level) {
+                    int from = Math.max(0, currentIndex - 20);
+                    for (int k = from; k < currentIndex; k++) {
+                        BlockPos p = currentRadiusPositions.get(k);
+                        level.sendParticles(ParticleTypes.END_ROD,
+                                p.getX() + 0.5, baseY + 8, p.getZ() + 0.5,
+                                1, 0, -0.4, 0, 0.1);
+                    }
+                }
+            }
+
             return false;
+        }
+
+        void resendAffectedChunks() {
+            Set<Long> chunkKeys = new HashSet<>();
+            for (BlockPos p : currentRadiusPositions) {
+                chunkKeys.add((long)(p.getX() >> 4) << 32 | (p.getZ() >> 4) & 0xFFFFFFFFL);
+            }
+
+            for (long k : chunkKeys) {
+                int cx = (int)(k >> 32);
+                int cz = (int) k;
+                ChunkAccess chunk = level.getChunk(cx, cz, ChunkStatus.FULL, false);
+                if (chunk != null) {
+                    chunk.markUnsaved();
+                }
+            }
+
+            CorpseOrigin.LOGGER.info("APS: 标记 {} 个区块为脏", chunkKeys.size());
         }
 
         void saveOriginal(int x, int z, int bottom, int top) {
@@ -476,6 +611,7 @@ public class APSTerrainManager {
                     if (y < level.getMinY() || y > level.getMaxY()) continue;
                     BlockPos p = new BlockPos(x, y, z);
                     if (!level.getBlockState(p).isAir()) {
+                        clearContainerBeforeRemove(p);
                         level.setBlock(p, Blocks.AIR.defaultBlockState(), SILENT_FLAGS);
                         count++;
                     }
@@ -491,6 +627,7 @@ public class APSTerrainManager {
                 if (y < level.getMinY() || y > level.getMaxY()) continue;
                 BlockPos p = new BlockPos(x, y, z);
                 if (!level.getBlockState(p).isAir()) {
+                    clearContainerBeforeRemove(p);
                     level.setBlock(p, Blocks.AIR.defaultBlockState(), SILENT_FLAGS);
                     count++;
                 }
@@ -527,8 +664,8 @@ public class APSTerrainManager {
                 for (int y = landY + 1; y <= baseY - 1; y++) {
                     if (y < level.getMinY() || y > level.getMaxY()) continue;
                     BlockPos p = new BlockPos(x, y, z);
-                    if (!level.getBlockState(p).is(Blocks.WATER)) {
-                        level.setBlock(p, Blocks.WATER.defaultBlockState(), SILENT_FLAGS);
+                    if (!level.getBlockState(p).is(FAKE_WATER.getBlock())) {
+                        level.setBlock(p, FAKE_WATER, SILENT_FLAGS);
                         count++;
                     }
                 }
@@ -565,6 +702,16 @@ public class APSTerrainManager {
             }
 
             return count;
+        }
+
+        void clearContainerBeforeRemove(BlockPos pos) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof Container container) {
+                for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                    container.setItem(slot, ItemStack.EMPTY);
+                }
+                container.setChanged();
+            }
         }
 
         void tryPlaceOakTree(ServerLevel level, int x, int y, int z) {
@@ -622,9 +769,18 @@ public class APSTerrainManager {
                 biomeRestoreComplete = true;
             }
             if (blockRestoreComplete && biomeRestoreComplete) {
-                clearResidualWater();   // ✅ 加这一步
+                ServerPlayer sp = level.getServer().getPlayerList().getPlayer(playerId);
+                if (sp != null && sp.level() == level) {
+                    for (int k = 0; k < Math.min(50, allRestorePositions.size()); k++) {
+                        BlockPos p = allRestorePositions.get(level.getRandom().nextInt(allRestorePositions.size()));
+                        level.sendParticles(ParticleTypes.CLOUD,
+                                p.getX() + 0.5, baseY + 3, p.getZ() + 0.5,
+                                1, 0.5, 1.0, 0.5, 0.1);
+                    }
+                }
                 return true;
             }
+
             int used = 0;
             Set<Long> chunksThisTick = new HashSet<>();
 
@@ -654,29 +810,6 @@ public class APSTerrainManager {
                 if (undergroundRestoreIndex >= allRestorePositions.size()) blockRestoreComplete = true;
             }
             return false;
-        }
-
-        void clearResidualWater() {
-            int baseY = center.getY();
-            for (BlockPos xz : allRestorePositions) {
-                int zone = APSTerrainGenerator.getZone(
-                        xz.getX(), xz.getZ(), center, riverDirX, riverDirZ);
-                if (zone != 0 && zone != 1) continue;
-
-                for (int y = baseY - 10; y <= baseY + 2; y++) {
-                    if (y < level.getMinY() || y > level.getMaxY()) continue;
-                    BlockPos p = new BlockPos(xz.getX(), y, xz.getZ());
-                    BlockState cur = level.getBlockState(p);
-                    if (cur.is(Blocks.WATER)) {
-                        BlockState orig = snapshot.getBlock(p);
-                        if (orig != null && !orig.is(Blocks.WATER)) {
-                            level.setBlock(p, orig, UPDATE_FLAGS);
-                        } else if (orig == null) {
-                            level.setBlock(p, Blocks.AIR.defaultBlockState(), UPDATE_FLAGS);
-                        }
-                    }
-                }
-            }
         }
 
         List<BlockPos> collectRestorePositions() {
@@ -713,10 +846,7 @@ public class APSTerrainManager {
                 if (orig != null) {
                     BlockState cur = level.getBlockState(p);
                     if (!cur.equals(orig)) {
-                        // ✅ 涉及水的还原用 UPDATE_FLAGS，触发流体更新
-                        int flags = (cur.is(Blocks.WATER) || orig.is(Blocks.WATER))
-                                ? UPDATE_FLAGS : SILENT_FLAGS;
-                        level.setBlock(p, orig, flags);
+                        level.setBlock(p, orig, SILENT_FLAGS);
                         count++;
                     }
                     CompoundTag nbt = snapshot.getBlockEntity(p);

@@ -50,6 +50,10 @@
   "character.corpseorigin.weixin.trait2": "Blood Lotus Art: Internal energy manifestation and Blood Lotus Golden Petals",
   "character.corpseorigin.weixin.trait3": "60 Years of Cultivation: Lower infection rate than normal",
 
+  "skill.corpseorigin.ancient_poetry_sword.deployed": "The landscape has unfolded; press the skill key again to retract the sword intent.",
+  "skill.corpseorigin.ancient_poetry_sword.restored": "The landscape has been retracted.",
+  "skill.corpseorigin.ancient_poetry_sword.auto_restore": "The sword intent dissipates, and the landscape returns to its place.",
+
   "skill.corpseorigin.blood_cloud": "Blood Cloud",
   "skill.corpseorigin.blood_cloud.desc": "Manifest internal energy into a blood-red cloud that rushes at enemies, damaging and knocking back those in a frontal cone.",
   "skill.corpseorigin.blood_lotus": "Blood Lotus Golden Petals",
@@ -68,7 +72,7 @@
   "skill.corpseorigin.ancient_poetry_sword.desc": "Departing Baidi in the morning amidst colorful clouds, back to Jiangling a thousand miles in a day. Monkeys on both banks cry without cease, while my light boat has already passed ten thousand mountains. A four-stage combo.",
   "skill.corpseorigin.ancient_poetry_sword.stage1": "Departing Baidi in the Morning",
   "skill.corpseorigin.ancient_poetry_sword.stage2": "A Thousand Miles to Jiangling in a Day",
-  "skill.corpseorigin.ancient_poetry_sword.stage3": "Monkeys Cry on Both Banks · Hit %s targets",
+  "skill.corpseorigin.ancient_poetry_sword.stage3": "Monkeys Cry on Both Banks ·",
   "skill.corpseorigin.ancient_poetry_sword.stage4": "Light Boat Past Ten Thousand Mountains",
 
   "skill.corpseorigin.ancient_poetry_sword.on": "Ancient Poetry Sword combo mode ON. Left-click to advance verses.",
