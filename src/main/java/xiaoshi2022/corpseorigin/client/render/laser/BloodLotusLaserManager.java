@@ -12,14 +12,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * 血莲宝灯雷电链条管理器（Fabric 26.2）
- */
 public class BloodLotusLaserManager {
 
     private static BloodLotusLaserManager instance;
 
     private final List<ActiveChain> chains = new ArrayList<>();
+    private final List<ActiveAura> auras = new ArrayList<>();
 
     private BloodLotusLaserManager() {
     }
@@ -31,24 +29,51 @@ public class BloodLotusLaserManager {
         return instance;
     }
 
-    public void addChain(Vec3 start, UUID targetUuid, int durationTicks) {
-        chains.add(new ActiveChain(start, targetUuid, durationTicks));
+    // ==================== 添加 ====================
+
+    public void addChains(Vec3 start, List<UUID> targetUuids, int durationTicks) {
+        for (UUID uuid : targetUuids) {
+            Vec3 offsetStart = start.add(
+                    (Math.random() - 0.5) * 0.2,
+                    (Math.random() - 0.5) * 0.2,
+                    (Math.random() - 0.5) * 0.2
+            );
+            chains.add(new ActiveChain(offsetStart, uuid, durationTicks));
+        }
     }
 
+    public void addAura(UUID playerUuid, int durationTicks) {
+        auras.add(new ActiveAura(playerUuid, durationTicks));
+    }
+
+    // ==================== tick ====================
+
     public void tick() {
-        Iterator<ActiveChain> it = chains.iterator();
-        while (it.hasNext()) {
-            ActiveChain chain = it.next();
+        Iterator<ActiveChain> chainIt = chains.iterator();
+        while (chainIt.hasNext()) {
+            ActiveChain chain = chainIt.next();
             chain.lifetime--;
-            chain.seed = System.nanoTime();  // ✅ 每 tick 换 seed，让雷电抖动
+            chain.seed = System.nanoTime();
             if (chain.lifetime <= 0) {
-                it.remove();
+                chainIt.remove();
+            }
+        }
+
+        Iterator<ActiveAura> auraIt = auras.iterator();
+        while (auraIt.hasNext()) {
+            ActiveAura aura = auraIt.next();
+            aura.lifetime--;
+            aura.seed = System.nanoTime();
+            if (aura.lifetime <= 0) {
+                auraIt.remove();
             }
         }
     }
 
+    // ==================== render ====================
+
     public void render(PoseStack poseStack, SubmitNodeCollector collector) {
-        if (chains.isEmpty()) {
+        if (chains.isEmpty() && auras.isEmpty()) {
             return;
         }
 
@@ -60,24 +85,22 @@ public class BloodLotusLaserManager {
         poseStack.pushPose();
         poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
 
+        // ✅ 链条渲染
         for (ActiveChain chain : chains) {
             Entity target = mc.level.getEntity(chain.targetUuid);
             if (!(target instanceof LivingEntity living)) continue;
 
-            // ✅ 目标当前位置（胸口高度）
             Vec3 targetPos = living.position().add(0, living.getBbHeight() * 0.5, 0);
 
             float progress = 1.0F - (float) chain.lifetime / chain.maxLifetime;
             float alpha = Math.max(0.1F, 1.0F - progress);
 
-            // ✅ 画从宝莲灯到目标的雷电链条
             BloodLotusLaserRenderer.submitLaser(
                     poseStack, collector,
                     chain.start, targetPos,
                     0.13F, alpha, chain.seed
             );
 
-            // ✅ 在目标身上画缠绕环
             BloodLotusLaserRenderer.submitCoil(
                     poseStack, collector,
                     living.position(),
@@ -86,12 +109,41 @@ public class BloodLotusLaserManager {
             );
         }
 
+        // ✅ 自身环绕渲染
+        for (ActiveAura aura : auras) {
+            Entity entity = mc.level.getEntity(aura.playerUuid);
+            if (!(entity instanceof LivingEntity living)) continue;
+
+            float progress = 1.0F - (float) aura.lifetime / aura.maxLifetime;
+            float alpha = Math.max(0.1F, 1.0F - progress);
+
+            // ✅ 用身体中心作为环绕中心
+            Vec3 center = living.position().add(0, living.getBbHeight() * 0.5, 0);
+            double radius = living.getBbWidth() * 0.8 + 0.4;
+
+            BloodLotusLaserRenderer.submitCoil(
+                    poseStack, collector,
+                    center.add(0, -0.3, 0), radius, alpha, aura.seed
+            );
+            BloodLotusLaserRenderer.submitCoil(
+                    poseStack, collector,
+                    center.add(0, 0.2, 0), radius * 0.9, alpha * 0.9F, aura.seed + 1
+            );
+            BloodLotusLaserRenderer.submitCoil(
+                    poseStack, collector,
+                    center.add(0, 0.7, 0), radius * 0.7, alpha * 0.7F, aura.seed + 2
+            );
+        }
+
         poseStack.popPose();
     }
 
     public void clear() {
         chains.clear();
+        auras.clear();
     }
+
+    // ==================== 内部类 ====================
 
     private static class ActiveChain {
         final Vec3 start;
@@ -103,6 +155,20 @@ public class BloodLotusLaserManager {
         ActiveChain(Vec3 start, UUID targetUuid, int lifetime) {
             this.start = start;
             this.targetUuid = targetUuid;
+            this.lifetime = lifetime;
+            this.maxLifetime = lifetime;
+            this.seed = System.nanoTime();
+        }
+    }
+
+    private static class ActiveAura {
+        final UUID playerUuid;
+        int lifetime;
+        final int maxLifetime;
+        long seed;
+
+        ActiveAura(UUID playerUuid, int lifetime) {
+            this.playerUuid = playerUuid;
             this.lifetime = lifetime;
             this.maxLifetime = lifetime;
             this.seed = System.nanoTime();

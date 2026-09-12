@@ -175,10 +175,14 @@ public final class CorpseNetwork {
             });
         });
 
-        // ==================== ✅ 血莲宝灯激光（S2C） ====================
+        // ==================== ✅ 血莲宝灯激光（S2C，多目标合并包） ====================
         PayloadTypeRegistry.clientboundPlay().register(
-                BloodLotusLaserPayload.TYPE,
-                BloodLotusLaserPayload.CODEC);
+                BloodLotusLaserMultiPayload.TYPE,
+                BloodLotusLaserMultiPayload.CODEC);
+
+        PayloadTypeRegistry.clientboundPlay().register(
+                BloodLotusAuraPayload.TYPE,
+                BloodLotusAuraPayload.CODEC);
 
         CorpseOrigin.LOGGER.info("CorpseOrigin network registered (Fabric 26.2)");
     }

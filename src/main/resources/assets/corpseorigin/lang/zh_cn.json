@@ -6,7 +6,8 @@
   "item.corpseorigin.juque_tw": "巨阙II阶",
 
   "item.corpseorigin.blood_lotus_lantern": "血莲宝灯",
-  "item.corpseorigin.blood_lotus_lantern.desc": "天外神陨 血梅·宝莲灯。血莲教镇教宝灯，可吸收周围敌人的气血之力。",
+  "item.corpseorigin.blood_lotus_lantern.desc": "血莲教镇教宝灯，可吸收周围敌人的气血之力。",
+  "item.corpseorigin.blood_lotus_lantern.blood_qi": "血气: %s / %s",
 
   "block.corpseorigin.infected_water_block": "尸水",
 

@@ -24,7 +24,8 @@ import xiaoshi2022.corpseorigin.client.renderer.entity.JuQueBeamRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.LowerLevelZbRenderer;
 import xiaoshi2022.corpseorigin.event.client.AttackAnimationHandler;
 import xiaoshi2022.corpseorigin.event.client.ClientEntityEventHandler;
-import xiaoshi2022.corpseorigin.network.BloodLotusLaserPayload;
+import xiaoshi2022.corpseorigin.network.BloodLotusAuraPayload;
+import xiaoshi2022.corpseorigin.network.BloodLotusLaserMultiPayload;
 import xiaoshi2022.corpseorigin.network.CorpsePayloads;
 import xiaoshi2022.corpseorigin.registry.CorpseKeyBindings;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
@@ -144,12 +145,21 @@ public class CorpseOriginClient implements ClientModInitializer {
             BloodLotusLaserManager.getInstance().render(poseStack, collector);
         });
 
-// 注册网络接收
-        ClientPlayNetworking.registerGlobalReceiver(BloodLotusLaserPayload.TYPE, (payload, context) -> {
+// ✅ 接收多目标链条包
+        ClientPlayNetworking.registerGlobalReceiver(BloodLotusLaserMultiPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
-                BloodLotusLaserManager.getInstance().addChain(
+                BloodLotusLaserManager.getInstance().addChains(
                         payload.getStart(),
-                        payload.targetUuid(),
+                        payload.targetUuids(),
+                        payload.durationTicks()
+                );
+            });
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(BloodLotusAuraPayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> {
+                BloodLotusLaserManager.getInstance().addAura(
+                        payload.playerUuid(),
                         payload.durationTicks()
                 );
             });

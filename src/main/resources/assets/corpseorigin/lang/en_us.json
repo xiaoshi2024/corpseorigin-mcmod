@@ -6,7 +6,8 @@
   "item.corpseorigin.juque_tw": "Juque II",
 
   "item.corpseorigin.blood_lotus_lantern": "Blood Lotus Lamp",
-  "item.corpseorigin.blood_lotus_lantern.desc": "Sky-Fallen Divine Meteor · Blood Plum · Precious Lotus Lamp. The Blood Lotus Cult's treasured lamp, capable of absorbing the blood and qi of nearby enemies.",
+  "item.corpseorigin.blood_lotus_lantern.desc": "Precious Lotus Lamp. The Blood Lotus Cult's treasured lamp, capable of absorbing the blood and qi of nearby enemies.",
+  "item.corpseorigin.blood_lotus_lantern.blood_qi": "BloodHeld: %s / %s",
 
   "block.corpseorigin.infected_water_block": "Infected Water",
 
