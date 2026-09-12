@@ -184,7 +184,23 @@ public final class CorpseNetwork {
                 BloodLotusAuraPayload.TYPE,
                 BloodLotusAuraPayload.CODEC);
 
+        // ✅ 水墨意境开关（S2C）
+        PayloadTypeRegistry.clientboundPlay().register(
+                APSInkScenePayload.TYPE,
+                APSInkScenePayload.CODEC);
+
+        PayloadTypeRegistry.clientboundPlay().register(
+                APSInkPoemPayload.TYPE,
+                APSInkPoemPayload.CODEC);
+
         CorpseOrigin.LOGGER.info("CorpseOrigin network registered (Fabric 26.2)");
+    }
+
+    public static void broadcastInkPoem(ServerPlayer caster, int lineIndex) {
+        APSInkPoemPayload payload = new APSInkPoemPayload(caster.getUUID(), lineIndex);
+        for (ServerPlayer p : caster.level().players()) {
+            ServerPlayNetworking.send(p, payload);
+        }
     }
 
     private static void handleJuQueBeam(ServerPlayer player) {

@@ -1,11 +1,13 @@
 package xiaoshi2022.corpseorigin.skill.baixiaofei.aps;
 
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -29,6 +31,8 @@ import net.minecraft.util.ProblemReporter.ScopedCollector;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.network.APSInkScenePayload;
+import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -264,7 +268,9 @@ public class APSTerrainManager {
                     ServerPlayer sp = level.getServer().getPlayerList().getPlayer(pid);
                     if (sp != null) {
                         restoreRemovedMobs(sp, level);
-                        sp.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                        // ✅ 广播"意境关"
+                        broadcastInkSceneClose(level, sp, t.center);
+                        sp.sendSystemMessage(Component.translatable(
                                 "skill.corpseorigin.ancient_poetry_sword.restored"));
                     }
                     cleanupPlayerData(pid, level);
@@ -278,11 +284,38 @@ public class APSTerrainManager {
 
                     ServerPlayer sp = level.getServer().getPlayerList().getPlayer(pid);
                     if (sp != null) {
-                        sp.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                        broadcastInkSceneOpen(level, sp, t.center);
+                        // ✅ 落第 1 句诗（朝辞白帝彩云间）
+                        CorpseNetwork.broadcastInkPoem(sp, 0);
+                        sp.sendSystemMessage(Component.translatable(
                                 "skill.corpseorigin.ancient_poetry_sword.deployed"));
                     }
                 }
             }
+        }
+    }
+
+    private static void broadcastInkSceneOpen(ServerLevel level, ServerPlayer caster, BlockPos center) {
+        double[] dir = playerRiverDir.getOrDefault(caster.getUUID(), new double[]{1.0, 0.0});
+        APSInkScenePayload payload = new APSInkScenePayload(
+                caster.getUUID(),
+                center.getX(), center.getY(), center.getZ(),
+                dir[0], dir[1],
+                true);
+        for (ServerPlayer player : level.players()) {
+            ServerPlayNetworking.send(player, payload);
+        }
+    }
+
+    private static void broadcastInkSceneClose(ServerLevel level, ServerPlayer caster, BlockPos center) {
+        double[] dir = playerRiverDir.getOrDefault(caster.getUUID(), new double[]{1.0, 0.0});
+        APSInkScenePayload payload = new APSInkScenePayload(
+                caster.getUUID(),
+                center.getX(), center.getY(), center.getZ(),
+                dir[0], dir[1],
+                false);
+        for (ServerPlayer player : level.players()) {
+            ServerPlayNetworking.send(player, payload);
         }
     }
 

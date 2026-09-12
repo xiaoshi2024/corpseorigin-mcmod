@@ -13,6 +13,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModDataAttachments;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainGenerator;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager;
@@ -21,6 +22,12 @@ import java.util.List;
 
 /**
  * 古仙剑·四段子技能实现 —— 一剑山河
+ *
+ * 诗牌节奏：
+ *   第 1 段 → 广播第 0 句（由 APSTerrainManager 在领域展开完成时广播）
+ *   第 2 段 → 广播第 1 句
+ *   第 3 段 → 广播第 2 句
+ *   第 4 段 → 广播第 3 句
  */
 public class APSSubSkills {
 
@@ -46,7 +53,7 @@ public class APSSubSkills {
                     x, y - 10, z, 1, 0.3, 0.3, 0.3, 0.05);
         }
 
-        // ✅ 开启意境
+        // ✅ 开启意境（领域展开完成后，APSTerrainManager 会广播第 0 句诗）
         APSTerrainManager.toggleTransformation(player, player.getMainHandItem(), level);
 
         Vec3 look = player.getLookAngle();
@@ -98,6 +105,9 @@ public class APSSubSkills {
             level.sendParticles(ParticleTypes.CRIT,
                     p.x, p.y + 0.5, p.z, 2, 0.2, 0.2, 0.2, 0.05);
         }
+
+        // ✅ 第 2 句诗：千里江陵一日还
+        CorpseNetwork.broadcastInkPoem(player, 1);
 
         player.sendSystemMessage(Component.translatable(
                 "skill.corpseorigin.ancient_poetry_sword.stage2"));
@@ -155,6 +165,9 @@ public class APSSubSkills {
                     x, center.getY() + 3, z, 1, 0, 0, 0, 0.1);
         }
 
+        // ✅ 第 3 句诗：两岸猿声啼不住
+        CorpseNetwork.broadcastInkPoem(player, 2);
+
         player.sendSystemMessage(Component.translatable(
                 "skill.corpseorigin.ancient_poetry_sword.stage3", 8));
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
@@ -187,6 +200,9 @@ public class APSSubSkills {
         }
 
         spawnGreatSword(player, level, center);
+
+        // ✅ 第 4 句诗：轻舟已过万重山
+        CorpseNetwork.broadcastInkPoem(player, 3);
 
         player.sendSystemMessage(Component.translatable(
                 "skill.corpseorigin.ancient_poetry_sword.stage4"));

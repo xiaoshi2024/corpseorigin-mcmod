@@ -16,7 +16,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
+import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.client.aps.APSInkSceneManager;
+import xiaoshi2022.corpseorigin.client.aps.APSInkSceneRenderer;
 import xiaoshi2022.corpseorigin.client.hud.InfectionHudOverlay;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.render.laser.BloodLotusLaserManager;
@@ -24,9 +27,7 @@ import xiaoshi2022.corpseorigin.client.renderer.entity.JuQueBeamRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.LowerLevelZbRenderer;
 import xiaoshi2022.corpseorigin.event.client.AttackAnimationHandler;
 import xiaoshi2022.corpseorigin.event.client.ClientEntityEventHandler;
-import xiaoshi2022.corpseorigin.network.BloodLotusAuraPayload;
-import xiaoshi2022.corpseorigin.network.BloodLotusLaserMultiPayload;
-import xiaoshi2022.corpseorigin.network.CorpsePayloads;
+import xiaoshi2022.corpseorigin.network.*;
 import xiaoshi2022.corpseorigin.registry.CorpseKeyBindings;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.registry.ModFluids;
@@ -138,11 +139,18 @@ public class CorpseOriginClient implements ClientModInitializer {
         });
 
 
-        // 注册激光渲染
+        // 注册激光 + 水墨渲染
         LevelRenderEvents.COLLECT_SUBMITS.register(context -> {
             PoseStack poseStack = context.poseStack();
             SubmitNodeCollector collector = context.submitNodeCollector();
             BloodLotusLaserManager.getInstance().render(poseStack, collector);
+
+            // ✅ 水墨意境
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.gameRenderer != null && mc.gameRenderer.mainCamera() != null) {
+                Vec3 cameraPos = mc.gameRenderer.mainCamera().position();
+                APSInkSceneRenderer.render(poseStack, collector, cameraPos);
+            }
         });
 
 // ✅ 接收多目标链条包
@@ -163,6 +171,24 @@ public class CorpseOriginClient implements ClientModInitializer {
                         payload.durationTicks()
                 );
             });
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(APSInkScenePayload.TYPE, (payload, context) -> {
+            context.client().execute(() -> {
+                if (payload.open()) {
+                    APSInkSceneManager.open(
+                            payload.casterId(),
+                            payload.x(), payload.y(), payload.z(),
+                            payload.riverDirX(), payload.riverDirZ());
+                } else {
+                    APSInkSceneManager.close();
+                }
+            });
+        });
+        // ✅ 新增：接收诗牌落下
+        ClientPlayNetworking.registerGlobalReceiver(APSInkPoemPayload.TYPE, (payload, context) -> {
+            context.client().execute(() ->
+                    APSInkSceneManager.dropPoem(payload.lineIndex()));
         });
 
 // 每 tick 更新
