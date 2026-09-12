@@ -1,6 +1,7 @@
 package xiaoshi2022.corpseorigin.client.renderer.entity;
 
 import com.geckolib.renderer.GeoEntityRenderer;
+import com.geckolib.renderer.layer.builtin.ItemInHandGeoLayer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
@@ -39,6 +40,8 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
     public LowerLevelZbRenderer(EntityRendererProvider.Context context) {
         super(context, new LowerLevelZbModel());
         this.shadowRadius = 0.5f;
+        // ✅ 添加手持物品渲染层
+        this.withRenderLayer(new ItemInHandGeoLayer<>(context, this));
     }
 
     @Override

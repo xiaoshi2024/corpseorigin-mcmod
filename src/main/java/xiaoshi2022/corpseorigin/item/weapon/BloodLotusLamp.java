@@ -43,32 +43,22 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-/**
- * 血莲宝灯（天外神陨 血梅·宝莲灯）
- * <p>
- * 血莲教镇教宝灯，由天外神陨制作，可以吸收敌人的气血之力。
- * <p>
- * 长按持续吸血，持续消耗耐久，并向视线方向发射红色激光。
- */
 public class BloodLotusLamp extends Item implements GeoItem {
 
     private static final RawAnimation IDLE = RawAnimation.begin().thenPlay("idle");
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    /** 吸血范围 */
     private static final double DRAIN_RANGE = 16.0;
-    /** 每次吸血伤害 */
     private static final float DRAIN_DAMAGE = 20.0F;
-    /** 血气储存上限 */
     private static final int MAX_STORED_BLOOD_QI = 200;
-    /** 每 tick 回血消耗的血气 */
     private static final int HEAL_COST_PER_TICK = 1;
-    /** 每 tick 回血量 */
     private static final float HEAL_PER_TICK = 1.0F;
-    /** 每隔多少 tick 触发一次吸血 */
     private static final int DRAIN_INTERVAL = 10;
-    /** 最长长按时间 */
     private static final int MAX_USE_DURATION = 300;
+
+    /** 攻击触发的小范围吸血 */
+    private static final double MELEE_DRAIN_RANGE = 4.0;
+    private static final float MELEE_DRAIN_DAMAGE = 5.0F;
 
     public BloodLotusLamp(Properties properties) {
         super(properties);
@@ -81,31 +71,27 @@ public class BloodLotusLamp extends Item implements GeoItem {
                 .setId(id));
     }
 
-    // ==================== 长按机制 ====================
+    // ==================== 长按机制（仅玩家） ====================
 
     @Override
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        // ✅ 潜行 + 右键 = 释放血气（自身环绕）
+        // 潜行 + 右键 = 释放血气
         if (player.isShiftKeyDown()) {
             int stored = stack.getOrDefault(ModDataComponents.STORED_BLOOD_QI, 0);
             if (stored > 0 && !level.isClientSide()) {
-                // 回血
                 player.heal(stored);
                 stack.set(ModDataComponents.STORED_BLOOD_QI, 0);
 
-                // ✅ 延长 buff：抗性提升 + 力量 + 速度 + 生命恢复
                 player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 200, 1, false, true, true));
                 player.addEffect(new MobEffectInstance(MobEffects.STRENGTH,   200, 1, false, true, true));
                 player.addEffect(new MobEffectInstance(MobEffects.SPEED,      200, 1, false, true, true));
                 player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 1, false, true, true));
 
-                // ✅ 广播「血气包裹自身」特效
                 if (player instanceof ServerPlayer serverPlayer) {
                     BloodLotusAuraPayload payload = new BloodLotusAuraPayload(
-                            serverPlayer.getUUID(), 100);  // 持续 5 秒
-
+                            serverPlayer.getUUID(), 100);
                     serverPlayer.level().getPlayers(p -> p.distanceTo(player) < 64)
                             .forEach(p -> ServerPlayNetworking.send(p, payload));
                 }
@@ -113,7 +99,6 @@ public class BloodLotusLamp extends Item implements GeoItem {
             return InteractionResult.SUCCESS;
         }
 
-        // 长按吸血
         player.startUsingItem(hand);
         return InteractionResult.CONSUME;
     }
@@ -130,12 +115,9 @@ public class BloodLotusLamp extends Item implements GeoItem {
 
     @Override
     public void onUseTick(Level level, LivingEntity livingEntity, ItemStack stack, int remainingUseDuration) {
-        if (!(livingEntity instanceof Player player)) {
-            return;
-        }
+        if (!(livingEntity instanceof Player player)) return;
 
         int usedTicks = MAX_USE_DURATION - remainingUseDuration;
-
         if (usedTicks > 0 && usedTicks % DRAIN_INTERVAL == 0) {
             if (!level.isClientSide()) {
                 drainLife(player, stack);
@@ -149,8 +131,66 @@ public class BloodLotusLamp extends Item implements GeoItem {
         return false;
     }
 
+    // ==================== 攻击触发吸血（玩家+生物） ====================
+
+    @Override
+    public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
+        Level level = attacker.level();
+        if (level.isClientSide()) return;
+
+        // ✅ 只打「被攻击的目标」，不扫范围
+        if (attacker instanceof Player player) {
+            target.hurt(player.damageSources().playerAttack(player), MELEE_DRAIN_DAMAGE);
+        } else {
+            target.hurt(attacker.damageSources().mobAttack(attacker), MELEE_DRAIN_DAMAGE);
+        }
+
+        int bloodGained = (int) MELEE_DRAIN_DAMAGE;
+
+        // 吸血归属
+        if (attacker instanceof Player player) {
+            int current = stack.getOrDefault(ModDataComponents.STORED_BLOOD_QI, 0);
+            stack.set(ModDataComponents.STORED_BLOOD_QI,
+                    Math.min(current + bloodGained, MAX_STORED_BLOOD_QI));
+        } else {
+            attacker.heal(bloodGained * 0.5F);
+        }
+
+        // ✅ 只对攻击目标发射激光
+        List<LivingEntity> singleTarget = List.of(target);
+        broadcastLaser(attacker, singleTarget);
+    }
+
+    // ==================== 消耗储存回血（玩家+生物） ====================
+
+    @Override
+    public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, @Nullable EquipmentSlot slot) {
+        super.inventoryTick(stack, level, entity, slot);
+
+        if (!(entity instanceof LivingEntity living)) return;
+        if (slot != EquipmentSlot.MAINHAND && slot != EquipmentSlot.OFFHAND) return;
+
+        int stored = stack.getOrDefault(ModDataComponents.STORED_BLOOD_QI, 0);
+        if (stored <= 0) return;
+        if (living.getHealth() >= living.getMaxHealth()) return;
+
+        int cost = Math.min(HEAL_COST_PER_TICK, stored);
+        stack.set(ModDataComponents.STORED_BLOOD_QI, stored - cost);
+        living.heal(cost * HEAL_PER_TICK);
+
+        if (living instanceof Player && level.getGameTime() % 10 == 0) {
+            level.sendParticles(
+                    ParticleTypes.HEART,
+                    living.getX(), living.getY() + 1.5, living.getZ(),
+                    1, 0.3, 0.3, 0.3, 0.0
+            );
+        }
+    }
+
+    // ==================== 核心逻辑 ====================
+
     /**
-     * 吸收周围敌人的气血之力，并发射红色激光
+     * 长按群吸（只给玩家用）
      */
     private void drainLife(Player player, ItemStack stack) {
         Level level = player.level();
@@ -180,10 +220,7 @@ public class BloodLotusLamp extends Item implements GeoItem {
 
             float healthAfter = target.getHealth();
             float actualDamage = Math.max(0, healthBefore - healthAfter);
-
-            if (actualDamage > 0) {
-                bloodGained += (int) actualDamage;
-            }
+            if (actualDamage > 0) bloodGained += (int) actualDamage;
 
             target.addEffect(new MobEffectInstance(
                     MobEffects.SLOWNESS, 20, 4, false, false, false));
@@ -191,14 +228,14 @@ public class BloodLotusLamp extends Item implements GeoItem {
             if (!target.isAlive()) killed++;
         }
 
-        // ✅ 存进 DataComponent（有上限）
+        // 存血气
         if (bloodGained > 0) {
             int current = stack.getOrDefault(ModDataComponents.STORED_BLOOD_QI, 0);
             int newValue = Math.min(current + bloodGained, MAX_STORED_BLOOD_QI);
             stack.set(ModDataComponents.STORED_BLOOD_QI, newValue);
         }
 
-        // ✅ 视觉
+        // 视觉
         if (level instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(
                     ParticleTypes.DAMAGE_INDICATOR,
@@ -214,65 +251,52 @@ public class BloodLotusLamp extends Item implements GeoItem {
             }
         }
 
-        // ✅ 激光
-        LivingEntity closest = targets.get(0);
-        // ✅ 合并成一个包，携带所有目标 UUID
-        if (player instanceof ServerPlayer serverPlayer) {
-            InteractionHand hand = player.getUsedItemHand();
-            Vec3 start = getLampPosition(player, hand);
+        // 发射激光
+        broadcastLaser(player, targets);
 
-            List<UUID> targetUuids = targets.stream()
-                    .map(LivingEntity::getUUID)
-                    .toList();
-
-            BloodLotusLaserMultiPayload payload = BloodLotusLaserMultiPayload.create(
-                    start, targetUuids, 20);
-
-            serverPlayer.level().getPlayers(p -> p.distanceTo(player) < 64)
-                    .forEach(p -> ServerPlayNetworking.send(p, payload));
-        }
-
-        // ✅ 耐久消耗
+        // 耐久消耗
         int durabilityCost = 1 + killed;
         stack.hurtAndBreak(durabilityCost, player,
                 player.getUsedItemHand() == InteractionHand.MAIN_HAND
                         ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
     }
 
-    @Override
-    public void inventoryTick(ItemStack stack, ServerLevel level, Entity entity, @Nullable EquipmentSlot slot) {
-        super.inventoryTick(stack, level, entity, slot);
+    /**
+     * ✅ 广播激光链条（玩家和生物共用）
+     */
+    private void broadcastLaser(LivingEntity attacker, List<LivingEntity> targets) {
+        Level level = attacker.level();
+        if (!(level instanceof ServerLevel serverLevel)) return;
 
-        if (!(entity instanceof ServerPlayer player)) return;
-
-        // ✅ 只在主手/副手持有的时候回血
-        if (slot != EquipmentSlot.MAINHAND && slot != EquipmentSlot.OFFHAND) return;
-
-        int stored = stack.getOrDefault(ModDataComponents.STORED_BLOOD_QI, 0);
-        if (stored <= 0) return;
-
-        // ✅ 玩家血量不满才回
-        if (player.getHealth() >= player.getMaxHealth()) return;
-
-        // ✅ 消耗储存，回血
-        int cost = Math.min(HEAL_COST_PER_TICK, stored);
-        stack.set(ModDataComponents.STORED_BLOOD_QI, stored - cost);
-
-        float healAmount = cost * HEAL_PER_TICK;
-        player.heal(healAmount);
-
-        // ✅ 可选：回血时冒红光
-        if (level.getGameTime() % 10 == 0) {
-            level.sendParticles(
-                    ParticleTypes.HEART,
-                    player.getX(), player.getY() + 1.5, player.getZ(),
-                    1, 0.3, 0.3, 0.3, 0.0
+        // 计算起点
+        Vec3 start;
+        if (attacker instanceof Player player) {
+            // 玩家用精确手部位置
+            InteractionHand hand = player.getUsedItemHand();
+            start = getLampPosition(player, hand);
+        } else {
+            // 生物用眼睛高度
+            start = new Vec3(
+                    attacker.getX(),
+                    attacker.getY() + attacker.getEyeHeight() - 0.4,
+                    attacker.getZ()
             );
         }
+
+        List<UUID> targetUuids = targets.stream()
+                .map(LivingEntity::getUUID)
+                .toList();
+
+        BloodLotusLaserMultiPayload payload = BloodLotusLaserMultiPayload.create(
+                start, targetUuids, 20);
+
+        // ✅ 广播给附近所有玩家（包括生物附近的玩家）
+        serverLevel.getPlayers(p -> p.distanceTo(attacker) < 64)
+                .forEach(p -> ServerPlayNetworking.send(p, payload));
     }
 
     /**
-     * 获取宝莲灯在世界中的位置（用于激光起点）
+     * 获取玩家宝莲灯位置（用于激光起点）
      */
     private Vec3 getLampPosition(Player player, InteractionHand hand) {
         double y = player.getY() + player.getEyeHeight() - 0.4;

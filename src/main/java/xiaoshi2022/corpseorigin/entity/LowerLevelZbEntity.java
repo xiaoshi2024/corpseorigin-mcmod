@@ -28,12 +28,14 @@ import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.slf4j.Logger;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinLoader;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinState;
+import xiaoshi2022.corpseorigin.item.weapon.BloodLotusLamp;
 
 import java.util.Optional;
 
@@ -95,6 +97,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     public LowerLevelZbEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
         this.xpReward = 5;
+        this.setCanPickUpLoot(true);   // ✅ 开启捡东西
     }
 
     public LowerLevelZbEntity(EntityType<? extends PathfinderMob> entityType, Level level, Player player) {
