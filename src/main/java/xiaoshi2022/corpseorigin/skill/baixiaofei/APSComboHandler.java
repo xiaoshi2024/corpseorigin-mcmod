@@ -81,6 +81,8 @@ public class APSComboHandler {
         }
     }
 
+    private static final long MIN_STAGE_INTERVAL = 10L;  // 两段之间最少 10 tick
+
     private static void tryAdvance(ServerPlayer player) {
         ServerLevel level = player.level();
         long now = level.getGameTime();
@@ -92,6 +94,11 @@ public class APSComboHandler {
         }
 
         long lastCast = state.getLong(AncientPoetrySwordSkill.CD_KEY).orElse(0L);
+
+        // ✅ 防抖：两段之间最少间隔 10 tick
+        if (now - lastCast < MIN_STAGE_INTERVAL) {
+            return;
+        }
 
         // 30 秒没左键 → 自动回收剑意
         if (now - lastCast > IDLE_TIMEOUT_TICKS) {
@@ -117,7 +124,6 @@ public class APSComboHandler {
             case 3 -> APSSubSkills.castLiangAnYuanSheng(player, level);
             case 4 -> {
                 APSSubSkills.castQingZhouYiGuo(player, level);
-                // 第 4 段后关闭连招模式，但保留剑意
                 CompoundTag s = player.getAttachedOrCreate(ModDataAttachments.APS_STATE).copy();
                 s.putBoolean(AncientPoetrySwordSkill.ACTIVE_KEY, false);
                 s.putInt(AncientPoetrySwordSkill.STAGE_KEY, 0);

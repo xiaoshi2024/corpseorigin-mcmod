@@ -8,13 +8,16 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import xiaoshi2022.corpseorigin.entity.FlyingGreatSwordEntity;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModDataAttachments;
+import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainGenerator;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager;
 
@@ -179,6 +182,7 @@ public class APSSubSkills {
         BlockPos center = player.blockPosition();
         double fieldRadius = 24.0;
 
+        // 1. 围压场域：除自己外所有实体缓慢 I + 虚弱 I，120 tick
         AABB field = player.getBoundingBox().inflate(fieldRadius);
         List<LivingEntity> inField = level.getEntitiesOfClass(LivingEntity.class, field,
                 e -> e != player && e.isAlive());
@@ -189,6 +193,7 @@ public class APSSubSkills {
                     MobEffects.WEAKNESS, 120, 0, false, true, true));
         }
 
+        // 2. 围压粒子
         for (int i = 0; i < 120; i++) {
             double a = Math.random() * Math.PI * 2;
             double r = Math.random() * fieldRadius;
@@ -199,9 +204,15 @@ public class APSSubSkills {
                     1, 0, 0, 0, 0.05);
         }
 
-        spawnGreatSword(player, level, center);
+        // 3. 玩家挥刀 + 发射大剑实体
+        player.swing(InteractionHand.MAIN_HAND, true);
 
-        // ✅ 第 4 句诗：轻舟已过万重山
+        FlyingGreatSwordEntity sword = new FlyingGreatSwordEntity(
+                ModEntities.FLYING_GREAT_SWORD, level);
+        sword.launch(player, player.getMainHandItem());
+        level.addFreshEntity(sword);
+
+        // 4. 第 4 句诗：轻舟已过万重山
         CorpseNetwork.broadcastInkPoem(player, 3);
 
         player.sendSystemMessage(Component.translatable(
@@ -211,7 +222,12 @@ public class APSSubSkills {
     }
 
     // ==================== 大剑飞行 ====================
+    // ==================== 大剑飞行 + 终结挥斩 ====================
     private static void spawnGreatSword(ServerPlayer player, ServerLevel level, BlockPos center) {
+
+        // 玩家挥刀动作（"玩家挥斩"观感的关键）
+        player.swing(InteractionHand.MAIN_HAND, true);
+
         Vec3 look = player.getLookAngle().normalize();
         Vec3 start = player.position().add(0, player.getEyeHeight() - 0.2, 0)
                 .add(look.scale(1.5));
@@ -219,10 +235,13 @@ public class APSSubSkills {
         double maxDist = 40.0;
         double step = 0.6;
         LivingEntity hitTarget = null;
+        Vec3 hitPos = null;
 
+        // ---------- 大剑飞行 + 滑轨粒子 ----------
         for (double d = 0; d < maxDist; d += step) {
             Vec3 p = start.add(look.scale(d));
 
+            // 滑轨粒子（三层叠加）
             level.sendParticles(ParticleTypes.SWEEP_ATTACK,
                     p.x, p.y, p.z, 3, 0.3, 0.3, 0.3, 0.0);
             level.sendParticles(ParticleTypes.CRIT,
@@ -230,12 +249,14 @@ public class APSSubSkills {
             level.sendParticles(ParticleTypes.END_ROD,
                     p.x, p.y, p.z, 2, 0.1, 0.1, 0.1, 0.02);
 
+            // 命中判定
             AABB hitBox = new AABB(p.x - 1.5, p.y - 1.5, p.z - 1.5,
                     p.x + 1.5, p.y + 1.5, p.z + 1.5);
             List<LivingEntity> hitList = level.getEntitiesOfClass(LivingEntity.class, hitBox,
                     e -> e != player && e.isAlive());
             if (!hitList.isEmpty()) {
                 hitTarget = hitList.get(0);
+                hitPos = hitTarget.position();
                 hitTarget.hurt(player.damageSources().playerAttack(player), 666.0F);
                 level.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
                         hitTarget.getX(), hitTarget.getY() + 1, hitTarget.getZ(),
@@ -246,9 +267,15 @@ public class APSSubSkills {
             }
         }
 
+        // ---------- 大剑落点 ----------
         Vec3 slashCenter = (hitTarget != null)
-                ? hitTarget.position()
+                ? hitPos
                 : start.add(look.scale(maxDist));
+
+        // ---------- 终结挥斩：12 格 AABB、20 伤害、SWEEP 粒子环 ----------
+        // ✅ 由"大剑命中/寿命终点"触发，且补上玩家挥刀动作
+        player.swing(InteractionHand.MAIN_HAND, true);
+
         double slashRadius = 12.0;
         AABB slashBox = new AABB(
                 slashCenter.x - slashRadius, slashCenter.y - slashRadius, slashCenter.z - slashRadius,
@@ -259,6 +286,7 @@ public class APSSubSkills {
             t.hurt(player.damageSources().playerAttack(player), 20.0F);
         }
 
+        // SWEEP 粒子环
         for (int i = 0; i < 180; i++) {
             double a = Math.random() * Math.PI * 2;
             double r = Math.random() * slashRadius;
