@@ -25,6 +25,7 @@ import xiaoshi2022.corpseorigin.entity.JuQueBeamEntity;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 import xiaoshi2022.corpseorigin.item.sword.JuQue;
 import xiaoshi2022.corpseorigin.skill.SkillManager;
+import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
@@ -169,9 +170,17 @@ public final class CorpseNetwork {
                 JuQueBeamPacket.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(JuQueBeamPacket.TYPE, (payload, context) -> {
-            ServerPlayer player = context.player();
             context.server().execute(() -> {
-                handleJuQueBeam(player);
+                ServerPlayer player = context.player();
+                ItemStack stack = player.getMainHandItem();
+
+                // ✅ 和 use() 保持一致的判断
+                if (APSTerrainManager.hasActiveAPS(player)) {
+                    // 需要把 releaseGreatSword 改成 public static 或从外部调用
+                    JuQue.releaseGreatSwordStatic(player, stack, InteractionHand.MAIN_HAND);
+                } else {
+                    JuQue.releaseBeamStatic(player, stack);
+                }
             });
         });
 

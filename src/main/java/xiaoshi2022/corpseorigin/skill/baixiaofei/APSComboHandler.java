@@ -16,8 +16,9 @@ import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager;
  */
 public class APSComboHandler {
 
-    private static final long IDLE_TIMEOUT_TICKS = 600L;      // 30 秒：连招超时
-    private static final long REALM_AUTO_RESTORE_TICKS = 1200L; // 60 秒：剑意自动消散
+    // ✅ 5 分钟 = 5 * 60 * 20 = 6000 tick
+    private static final long IDLE_TIMEOUT_TICKS = 6000L;        // 连招超时
+    private static final long REALM_AUTO_RESTORE_TICKS = 6000L;  // 剑意自动消散
 
     public static void register() {
         // 左键攻击实体

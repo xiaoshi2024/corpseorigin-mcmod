@@ -9,7 +9,6 @@ import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import xiaoshi2022.corpseorigin.entity.FlyingGreatSwordEntity;
@@ -38,8 +37,11 @@ public class FlyingGreatSwordRenderer
         state.itemStack = entity.getItemStack();
         state.syncedYaw = entity.getSyncedYaw();
         state.syncedPitch = entity.getSyncedPitch();
+        state.roll = entity.getRenderRoll();
+        state.modelYawOffset = entity.getModelYawOffset();
+        state.modelPitchOffset = entity.getModelPitchOffset();
         state.renderScale = entity.getRenderScale();
-        state.sourceEntity = entity;   // ✅ 关键：updateForNonLiving 需要非 null
+        state.sourceEntity = entity;
     }
 
     @Override
@@ -56,20 +58,24 @@ public class FlyingGreatSwordRenderer
 
         poseStack.pushPose();
 
+        // 1. 飞行方向（由 syncRotationFromDir 每 tick lerp 同步）
         poseStack.mulPose(Axis.YP.rotationDegrees(state.syncedYaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(state.syncedPitch));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(90));
-        poseStack.mulPose(Axis.YP.rotationDegrees(180));
 
+        // 2. 模型修正（默认全 0，剑尖指向飞行方向）
+        poseStack.mulPose(Axis.XP.rotationDegrees(state.modelPitchOffset));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(state.roll));
+        poseStack.mulPose(Axis.YP.rotationDegrees(state.modelYawOffset));
+
+        // 3. 缩放
         poseStack.scale(state.renderScale, state.renderScale, state.renderScale);
 
+        // 4. 物品渲染
         ItemStackRenderState renderState = new ItemStackRenderState();
         this.itemModelResolver.updateForNonLiving(
                 renderState, stack, ItemDisplayContext.FIXED, state.sourceEntity);
-
         renderState.submit(poseStack, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
 
         poseStack.popPose();
     }
-
 }

@@ -20,26 +20,26 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import xiaoshi2022.corpseorigin.registry.ModEntities;
 
 import java.util.List;
 import java.util.UUID;
 
 /**
- * 诗仙剑·第四段：剑意核心实体
+ * 诗仙剑·剑意核心实体
  *
- * 生命周期：
- *   1. CHARGE（凝聚）   —— 悬浮在玩家身前 N tick，从 0 放大到 fullScale
- *   2. FLY（飞行）      —— 沿视线飞出，速度 ramp 从 0 到 maxSpeed
- *   3. RESOLVE（终结）  —— 命中或寿命终点，触发 12 格 AABB 挥斩后消散
+ * 飞行行为完全照抄箭矢（AbstractArrow）：
+ *   - launch() 用 owner 视线初始化 yRot/xRot
+ *   - 每 tick 根据 flyDir 算目标角度，再 lerpRotation 平滑靠拢 20%
+ *   - 位移沿 flyDir 直线，不落地
  */
 public class FlyingGreatSwordEntity extends Entity {
 
     // ==================== 阶段 ====================
-    private static final int CHARGE_TICKS = 8;      // 凝聚时长
-    private static final int FLY_MAX_LIFE = 60;     // 飞行阶段最长寿命
-    private static final double MAX_DIST = 48.0;    // 最大飞行距离
-    private static final double MAX_SPEED = 1.4;    // 最大速度 格/tick
-    private static final double ACCEL = 0.08;       // 每 tick 加速度
+    private static final int CHARGE_TICKS = 2;
+    private static final int FLY_MAX_LIFE = 60;
+    private static final double MAX_DIST = 48.0;
+    private static final double MAX_SPEED = 1.4;
 
     // ==================== 挥斩 ====================
     private static final double HIT_BOX_SIZE = 1.5;
@@ -54,25 +54,42 @@ public class FlyingGreatSwordEntity extends Entity {
             SynchedEntityData.defineId(FlyingGreatSwordEntity.class, EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> DATA_PITCH =
             SynchedEntityData.defineId(FlyingGreatSwordEntity.class, EntityDataSerializers.FLOAT);
-    /** 当前缩放（用于渲染，从 0 → fullScale → 飞行时微缩） */
     private static final EntityDataAccessor<Float> DATA_SCALE =
             SynchedEntityData.defineId(FlyingGreatSwordEntity.class, EntityDataSerializers.FLOAT);
-    /** 阶段：0=CHARGE, 1=FLY, 2=RESOLVED */
     private static final EntityDataAccessor<Byte> DATA_PHASE =
             SynchedEntityData.defineId(FlyingGreatSwordEntity.class, EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Float> DATA_ROLL =
+            SynchedEntityData.defineId(FlyingGreatSwordEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_MODEL_YAW_OFFSET =
+            SynchedEntityData.defineId(FlyingGreatSwordEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> DATA_MODEL_PITCH_OFFSET =
+            SynchedEntityData.defineId(FlyingGreatSwordEntity.class, EntityDataSerializers.FLOAT);
 
     // ==================== 运行时字段 ====================
     private UUID ownerUUID;
-    private int chargeTicks = 0;     // 凝聚已过 tick
-    private int flyTicks = 0;        // 飞行已过 tick
+    private int chargeTicks = 0;
+    private int flyTicks = 0;
     private double travelled = 0.0;
     private Vec3 flyDir = Vec3.ZERO;
     private double currentSpeed = 0.0;
     private boolean resolved = false;
 
-    // ==================== 可配置 ====================
-    /** 凝聚完成后剑的最终大小（渲染器以这个为 1.0 基准） */
     private float fullScale = 3.0f;
+    private float spinDegPerTick = 0f;
+
+    private DirectionMode directionMode = DirectionMode.FIXED;
+    private LivingEntity homingTarget;
+    private Vec3 targetPoint;
+    private double turnSpeedDeg = 6.0;
+    private boolean steerDuringCharge = false;
+    private boolean steerDuringFly = false;
+
+    public enum DirectionMode {
+        FIXED,
+        FOLLOW_OWNER,
+        HOME_TARGET,
+        TO_POINT
+    }
 
     public FlyingGreatSwordEntity(EntityType<? extends FlyingGreatSwordEntity> type, Level level) {
         super(type, level);
@@ -81,41 +98,127 @@ public class FlyingGreatSwordEntity extends Entity {
         this.setNoGravity(true);
     }
 
-    /** 发射：进入凝聚阶段 */
+    // ==================== ✅ 统一发射入口 ====================
+
+    /**
+     * 创建一把"剑尖朝向飞行方向（= 玩家视线方向）"的大剑实体，并加入世界。
+     * 所有发射大剑的地方都调用这个方法。
+     *
+     * @param level 服务端世界
+     * @param owner 发射者
+     * @param stack 用于渲染的物品
+     * @param scale 整体缩放
+     * @param spin  自旋角度/tick（0 = 不自旋）
+     */
+    public static FlyingGreatSwordEntity spawnDirected(ServerLevel level, Player owner,
+                                                       ItemStack stack, float scale, float spin) {
+        FlyingGreatSwordEntity sword = new FlyingGreatSwordEntity(
+                ModEntities.FLYING_GREAT_SWORD, level);
+        sword.setFullScale(scale)
+                .setSpin(spin)
+                // ✅ 剑尖指向飞行方向：三个修正值全为 0
+                //    模型朝向不对时只改这里：
+                //      roll        0 = 剑身立起沿飞行方向，90 = 横躺
+                //      yawOffset   0 = 剑尖朝 +Z，180 = 剑尖朝 -Z，±90 = 侧面
+                //      pitchOffset 剑面俯仰修正
+                .setRenderRotation(0f, 0f, 0f);
+        sword.launch(owner, stack);
+        level.addFreshEntity(sword);
+        return sword;
+    }
+
+    // ==================== launch ====================
+
     public void launch(Player owner, ItemStack stack) {
         this.ownerUUID = owner.getUUID();
         this.entityData.set(DATA_ITEM, stack.copy());
 
+        // ✅ 发射瞬间锁定方向
         Vec3 look = owner.getLookAngle().normalize();
-        float yaw = (float) Math.toDegrees(Math.atan2(-look.x, look.z));
-        float pitch = (float) Math.toDegrees(-Math.asin(look.y));
-        this.entityData.set(DATA_YAW, yaw);
-        this.entityData.set(DATA_PITCH, pitch);
-        this.entityData.set(DATA_PHASE, (byte) 0);   // CHARGE
-        this.entityData.set(DATA_SCALE, 0.0f);
-
         this.flyDir = look;
+
+        // ✅ 用 owner 的视线初始化，避免开局 lerp 的"扭一下"
+        float initYaw = owner.getYRot();
+        float initPitch = owner.getXRot();
+        this.setYRot(initYaw);
+        this.setXRot(initPitch);
+        this.entityData.set(DATA_YAW, initYaw);
+        this.entityData.set(DATA_PITCH, initPitch);
+
+        this.entityData.set(DATA_PHASE, (byte) 0);
+        this.entityData.set(DATA_SCALE, 0.0f);
 
         Vec3 start = owner.position()
                 .add(0, owner.getEyeHeight() - 0.2, 0)
                 .add(look.scale(1.5));
         this.setPos(start.x, start.y, start.z);
-        this.setDeltaMovement(Vec3.ZERO);            // 凝聚阶段不移动
-        this.setYRot(yaw);
-        this.setXRot(pitch);
+        this.setDeltaMovement(Vec3.ZERO);
+
+        this.currentSpeed = MAX_SPEED;
     }
 
-    /** 外部可调最终缩放（比如武器越强越大） */
-    public void setFullScale(float scale) {
+    // ==================== Setter ====================
+
+    public FlyingGreatSwordEntity setFullScale(float scale) {
         this.fullScale = scale;
+        return this;
     }
 
-    public ItemStack getItemStack() { return this.entityData.get(DATA_ITEM); }
-    public float getSyncedYaw()     { return this.entityData.get(DATA_YAW); }
-    public float getSyncedPitch()   { return this.entityData.get(DATA_PITCH); }
-    public float getRenderScale()   { return this.entityData.get(DATA_SCALE); }
-    public byte  getPhase()         { return this.entityData.get(DATA_PHASE); }
-    public UUID  getOwnerUUID()     { return this.ownerUUID; }
+    public FlyingGreatSwordEntity setSpin(float degPerTick) {
+        this.spinDegPerTick = degPerTick;
+        return this;
+    }
+
+    public FlyingGreatSwordEntity setRenderRotation(float roll, float yawOffset, float pitchOffset) {
+        this.entityData.set(DATA_ROLL, roll);
+        this.entityData.set(DATA_MODEL_YAW_OFFSET, yawOffset);
+        this.entityData.set(DATA_MODEL_PITCH_OFFSET, pitchOffset);
+        return this;
+    }
+
+    public FlyingGreatSwordEntity setDirectionMode(DirectionMode mode) {
+        this.directionMode = mode;
+        return this;
+    }
+
+    public FlyingGreatSwordEntity setTurnSpeed(double degPerTick) {
+        this.turnSpeedDeg = degPerTick;
+        return this;
+    }
+
+    public FlyingGreatSwordEntity setSteerDuringCharge(boolean v) {
+        this.steerDuringCharge = v;
+        return this;
+    }
+
+    public FlyingGreatSwordEntity setSteerDuringFly(boolean v) {
+        this.steerDuringFly = v;
+        return this;
+    }
+
+    public FlyingGreatSwordEntity setTargetPoint(Vec3 point) {
+        this.targetPoint = point;
+        this.directionMode = DirectionMode.TO_POINT;
+        return this;
+    }
+
+    public FlyingGreatSwordEntity setHomingTarget(LivingEntity target) {
+        this.homingTarget = target;
+        this.directionMode = DirectionMode.HOME_TARGET;
+        return this;
+    }
+
+    // ==================== Getter ====================
+
+    public ItemStack getItemStack()        { return this.entityData.get(DATA_ITEM); }
+    public float getSyncedYaw()            { return this.entityData.get(DATA_YAW); }
+    public float getSyncedPitch()          { return this.entityData.get(DATA_PITCH); }
+    public float getRenderScale()          { return this.entityData.get(DATA_SCALE); }
+    public byte  getPhase()                { return this.entityData.get(DATA_PHASE); }
+    public UUID  getOwnerUUID()            { return this.ownerUUID; }
+    public float getRenderRoll()           { return this.entityData.get(DATA_ROLL); }
+    public float getModelYawOffset()       { return this.entityData.get(DATA_MODEL_YAW_OFFSET); }
+    public float getModelPitchOffset()     { return this.entityData.get(DATA_MODEL_PITCH_OFFSET); }
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
@@ -124,6 +227,9 @@ public class FlyingGreatSwordEntity extends Entity {
         builder.define(DATA_PITCH, 0f);
         builder.define(DATA_SCALE, 0f);
         builder.define(DATA_PHASE, (byte) 0);
+        builder.define(DATA_ROLL, 0f);
+        builder.define(DATA_MODEL_YAW_OFFSET, 0f);
+        builder.define(DATA_MODEL_PITCH_OFFSET, 0f);
     }
 
     private Player resolveOwner() {
@@ -131,49 +237,46 @@ public class FlyingGreatSwordEntity extends Entity {
         return sl.getPlayerByUUID(ownerUUID);
     }
 
+    // ==================== ✅ 照抄 AbstractArrow.lerpRotation ====================
+
+    /**
+     * 每次只向目标角度靠拢 20%，避免突然转向造成的抖动。
+     * 与 AbstractArrow.lerpRotation 完全一致。
+     */
+    protected static float lerpRotation(float current, float target) {
+        while (target - current < -180.0F) target += 360.0F;
+        while (target - current >= 180.0F) target -= 360.0F;
+        return current + (target - current) * 0.2F;
+    }
+
+    // ==================== tick ====================
+
     @Override
     public void tick() {
         super.tick();
 
-        if (level().isClientSide()) {
-            return;
-        }
+        if (level().isClientSide()) return;
         if (resolved) return;
 
         byte phase = this.entityData.get(DATA_PHASE);
-        if (phase == 0) {
-            tickCharge();
-        } else if (phase == 1) {
-            tickFly();
-        }
+        if (phase == 0) tickCharge();
+        else if (phase == 1) tickFly();
     }
 
-    // ==================== 阶段 1：凝聚 ====================
     private void tickCharge() {
         chargeTicks++;
 
-        // 缩放 0 → fullScale
-        float t = (float) chargeTicks / CHARGE_TICKS;
-        t = Math.min(1.0f, t);
+        float t = Math.min(1.0f, (float) chargeTicks / CHARGE_TICKS);
         this.entityData.set(DATA_SCALE, fullScale * t);
 
-        // 缓慢跟随玩家视线（让剑"指向"玩家视线方向）
-        Player owner = resolveOwner();
-        if (owner != null) {
-            Vec3 look = owner.getLookAngle().normalize();
-            this.flyDir = look;
-            float yaw = (float) Math.toDegrees(Math.atan2(-look.x, look.z));
-            float pitch = (float) Math.toDegrees(-Math.asin(look.y));
-            this.entityData.set(DATA_YAW, yaw);
-            this.entityData.set(DATA_PITCH, pitch);
-            this.setYRot(yaw);
-            this.setXRot(pitch);
+        if (steerDuringCharge) {
+            updateFlyDirection();
         }
+        // ✅ lerp 版本，加回来
+        syncRotationFromDir();
 
-        // 凝聚粒子：向内收缩的 END_ROD + ENCHANT
         if (level() instanceof ServerLevel sl) {
-            int count = 4;
-            for (int i = 0; i < count; i++) {
+            for (int i = 0; i < 4; i++) {
                 double a = Math.random() * Math.PI * 2;
                 double r = 1.5 * (1.0 - t);
                 double px = getX() + Math.cos(a) * r;
@@ -184,11 +287,8 @@ public class FlyingGreatSwordEntity extends Entity {
             }
         }
 
-        // 凝聚完成 → 进入飞行
         if (chargeTicks >= CHARGE_TICKS) {
             this.entityData.set(DATA_PHASE, (byte) 1);
-            this.currentSpeed = 0.0;
-
             if (level() instanceof ServerLevel sl) {
                 sl.playSound(null, getX(), getY(), getZ(),
                         SoundEvents.TRIDENT_RIPTIDE_1, SoundSource.PLAYERS, 1.0F, 1.4F);
@@ -196,26 +296,30 @@ public class FlyingGreatSwordEntity extends Entity {
         }
     }
 
-    // ==================== 阶段 2：飞行 ====================
     private void tickFly() {
         flyTicks++;
 
-        // 速度 ramp
-        currentSpeed = Math.min(MAX_SPEED, currentSpeed + ACCEL);
+        if (steerDuringFly) {
+            updateFlyDirection();
+        }
 
-        // 移动
+        if (spinDegPerTick != 0f) {
+            float currentRoll = this.entityData.get(DATA_ROLL);
+            this.entityData.set(DATA_ROLL, currentRoll + spinDegPerTick);
+        }
+
         Vec3 step = flyDir.scale(currentSpeed);
         setPos(getX() + step.x, getY() + step.y, getZ() + step.z);
         travelled += step.length();
 
-        // 渲染缩放：飞行中略缩，体现"远去"
+        // ✅ lerp 版本，加回来
+        syncRotationFromDir();
+
         float shrink = 1.0f - 0.3f * Math.min(1.0f, (float) flyTicks / FLY_MAX_LIFE);
         this.entityData.set(DATA_SCALE, fullScale * shrink);
 
-        // 轨迹粒子
         spawnTrailParticles();
 
-        // 命中判定
         AABB hitBox = new AABB(
                 getX() - HIT_BOX_SIZE, getY() - HIT_BOX_SIZE, getZ() - HIT_BOX_SIZE,
                 getX() + HIT_BOX_SIZE, getY() + HIT_BOX_SIZE, getZ() + HIT_BOX_SIZE);
@@ -247,6 +351,87 @@ public class FlyingGreatSwordEntity extends Entity {
         }
     }
 
+    // ==================== 方向更新 ====================
+
+    private void updateFlyDirection() {
+        Player owner = resolveOwner();
+        Vec3 desired = null;
+
+        switch (directionMode) {
+            case FIXED -> { return; }
+            case FOLLOW_OWNER -> {
+                if (owner != null) desired = owner.getLookAngle().normalize();
+            }
+            case HOME_TARGET -> {
+                if (homingTarget != null && homingTarget.isAlive()) {
+                    Vec3 toTarget = homingTarget.getEyePosition().subtract(this.getEyePosition());
+                    if (toTarget.lengthSqr() > 1.0E-6) desired = toTarget.normalize();
+                } else if (owner != null) {
+                    desired = owner.getLookAngle().normalize();
+                }
+            }
+            case TO_POINT -> {
+                if (targetPoint != null) {
+                    Vec3 toPoint = targetPoint.subtract(this.position());
+                    if (toPoint.lengthSqr() > 1.0E-6) desired = toPoint.normalize();
+                }
+            }
+        }
+
+        if (desired == null) return;
+
+        double maxRad = Math.toRadians(turnSpeedDeg);
+        double dot = Math.max(-1.0, Math.min(1.0, flyDir.dot(desired)));
+        double angle = Math.acos(dot);
+
+        if (angle <= maxRad || angle < 1.0E-6) {
+            flyDir = desired;
+        } else {
+            Vec3 axis = flyDir.cross(desired);
+            if (axis.lengthSqr() < 1.0E-8) {
+                axis = flyDir.cross(new Vec3(0, 1, 0));
+                if (axis.lengthSqr() < 1.0E-8) axis = flyDir.cross(new Vec3(1, 0, 0));
+            }
+            axis = axis.normalize();
+            double t = maxRad / angle;
+            flyDir = rotateAroundAxis(flyDir, axis, angle * t).normalize();
+        }
+
+        // 转向模式下，朝向也走 lerp（syncRotationFromDir 内部就是 lerp）
+        syncRotationFromDir();
+    }
+
+    /**
+     * ✅ 照抄 AbstractArrow.tick 里的朝向逻辑：
+     *    根据 flyDir 算出目标 yaw/pitch，再 lerpRotation 平滑靠拢 20%。
+     */
+    private void syncRotationFromDir() {
+        float targetYaw   = (float) Math.toDegrees(Math.atan2(-flyDir.x, flyDir.z));
+        float targetPitch = (float) Math.toDegrees(-Math.asin(flyDir.y));
+
+        float newYaw   = lerpRotation(this.getYRot(),   targetYaw);
+        float newPitch = lerpRotation(this.getXRot(), targetPitch);
+
+        this.setYRot(newYaw);
+        this.setXRot(newPitch);
+        this.entityData.set(DATA_YAW, newYaw);
+        this.entityData.set(DATA_PITCH, newPitch);
+    }
+
+    private static Vec3 rotateAroundAxis(Vec3 v, Vec3 axis, double angle) {
+        double cos = Math.cos(angle);
+        double sin = Math.sin(angle);
+        double dot = v.dot(axis);
+        Vec3 cross = axis.cross(v);
+        return new Vec3(
+                v.x * cos + cross.x * sin + axis.x * dot * (1 - cos),
+                v.y * cos + cross.y * sin + axis.y * dot * (1 - cos),
+                v.z * cos + cross.z * sin + axis.z * dot * (1 - cos)
+        );
+    }
+
+    // ==================== 伤害 / NBT ====================
+
     @Override
     public boolean hurtServer(ServerLevel level, DamageSource source, float damage) {
         return false;
@@ -259,22 +444,36 @@ public class FlyingGreatSwordEntity extends Entity {
         this.flyTicks = input.getIntOr("FlyTicks", 0);
         this.travelled = input.getDoubleOr("Travelled", 0.0);
         this.currentSpeed = input.getDoubleOr("Speed", 0.0);
+        this.fullScale = input.getFloatOr("FullScale", 3.0f);
+        this.spinDegPerTick = input.getFloatOr("Spin", 0f);
         input.read("Item", ItemStack.CODEC).ifPresent(s ->
                 this.entityData.set(DATA_ITEM, s));
-        // 不保存 phase，加载后重新从 charge 走（可接受）
+
+        input.getString("DirMode").ifPresent(s -> {
+            try { this.directionMode = DirectionMode.valueOf(s); } catch (Exception ignored) {}
+        });
+        this.turnSpeedDeg = input.getDoubleOr("TurnSpeed", 6.0);
+        this.steerDuringCharge = input.getBooleanOr("SteerCharge", false);
+        this.steerDuringFly = input.getBooleanOr("SteerFly", false);
     }
 
     @Override
     protected void addAdditionalSaveData(ValueOutput output) {
-        if (ownerUUID != null) {
-            output.store("Owner", UUIDUtil.CODEC, ownerUUID);
-        }
+        if (ownerUUID != null) output.store("Owner", UUIDUtil.CODEC, ownerUUID);
         output.putInt("ChargeTicks", chargeTicks);
         output.putInt("FlyTicks", flyTicks);
         output.putDouble("Travelled", travelled);
         output.putDouble("Speed", currentSpeed);
+        output.putFloat("FullScale", fullScale);
+        output.putFloat("Spin", spinDegPerTick);
         output.store("Item", ItemStack.CODEC, getItemStack());
+        output.putString("DirMode", directionMode.name());
+        output.putDouble("TurnSpeed", turnSpeedDeg);
+        output.putBoolean("SteerCharge", steerDuringCharge);
+        output.putBoolean("SteerFly", steerDuringFly);
     }
+
+    // ==================== 粒子 & 终结 ====================
 
     private void spawnTrailParticles() {
         if (!(level() instanceof ServerLevel sl)) return;
@@ -290,13 +489,9 @@ public class FlyingGreatSwordEntity extends Entity {
 
         if (level() instanceof ServerLevel sl) {
             Player owner = resolveOwner();
-
-            if (owner != null) {
-                owner.swing(InteractionHand.MAIN_HAND, true);
-            }
+            if (owner != null) owner.swing(InteractionHand.MAIN_HAND, true);
 
             Vec3 center = position();
-
             AABB slashBox = new AABB(
                     center.x - SLASH_RADIUS, center.y - SLASH_RADIUS, center.z - SLASH_RADIUS,
                     center.x + SLASH_RADIUS, center.y + SLASH_RADIUS, center.z + SLASH_RADIUS);
@@ -319,8 +514,7 @@ public class FlyingGreatSwordEntity extends Entity {
                 double x = center.x + Math.cos(a) * r;
                 double z = center.z + Math.sin(a) * r;
                 sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
-                        x, center.y + Math.random() * 2, z,
-                        1, 0, 0, 0, 0);
+                        x, center.y + Math.random() * 2, z, 1, 0, 0, 0, 0);
             }
 
             sl.playSound(null, center.x, center.y, center.z,
