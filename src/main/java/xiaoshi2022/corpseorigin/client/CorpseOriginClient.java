@@ -117,10 +117,18 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (CorpseKeyBindings.openSkillWheel.consumeClick()) {
-                Minecraft.getInstance().gui.setScreen(new SkillWheelScreen());
+                if (client.gui.screen() instanceof SkillWheelScreen) {
+                    // 已经开着 → 关
+                    client.gui.setScreen(null);
+                } else if (client.gui.screen() == null) {
+                    // 没开 GUI → 打开
+                    client.gui.setScreen(new SkillWheelScreen());
+                }
             }
+
+            // 技能树保持"按一下打开"
             while (CorpseKeyBindings.openSkillTree.consumeClick()) {
-                Minecraft.getInstance().gui.setScreen(new SkillTreeScreen());
+                client.gui.setScreen(new SkillTreeScreen());
             }
             while (CorpseKeyBindings.toggleHud.consumeClick()) {
                 ClientState.hudVisible = !ClientState.hudVisible;
@@ -139,7 +147,6 @@ public class CorpseOriginClient implements ClientModInitializer {
                 tempRedEyeTicks.entrySet().removeIf(e -> e.getValue() <= 0);
             }
         });
-
 
         // 注册激光 + 水墨渲染
         LevelRenderEvents.COLLECT_SUBMITS.register(context -> {

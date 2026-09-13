@@ -97,6 +97,9 @@
   "gui.corpseorigin.skill_tree.click_learn": "点击学习",
   "gui.corpseorigin.skill_tree.locked": "未解锁",
 
+  "gui.corpseorigin.skill_wheel.cooldown": "冷却 %s 秒",
+  "gui.corpseorigin.skill_wheel.ready": "就绪",
+
   "hud.corpseorigin.infection": "感染度：%s%%",
   "hud.corpseorigin.evolution": "进化等级 %s  |  点数：%s",
 

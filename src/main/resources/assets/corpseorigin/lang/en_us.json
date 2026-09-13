@@ -97,6 +97,9 @@
   "gui.corpseorigin.skill_tree.click_learn": "Click to Learn",
   "gui.corpseorigin.skill_tree.locked": "Locked",
 
+  "gui.corpseorigin.skill_wheel.cooldown": "Cooldown %ss",
+  "gui.corpseorigin.skill_wheel.ready": "Ready",
+
   "hud.corpseorigin.infection": "Infection: %s%%",
   "hud.corpseorigin.evolution": "Evolution Lv.%s  |  Points: %s",
 
