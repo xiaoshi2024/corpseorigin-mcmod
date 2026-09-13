@@ -114,17 +114,36 @@ public class FlyingGreatSwordEntity extends Entity {
                                                        ItemStack stack, float scale, float spin) {
         FlyingGreatSwordEntity sword = new FlyingGreatSwordEntity(
                 ModEntities.FLYING_GREAT_SWORD, level);
+
+        // 按物品类型取模型修正偏移
+        float[] fix = modelFixFor(stack);   // {roll, yawOffset, pitchOffset}
+
         sword.setFullScale(scale)
                 .setSpin(spin)
-                // ✅ 剑尖指向飞行方向：三个修正值全为 0
-                //    模型朝向不对时只改这里：
-                //      roll        0 = 剑身立起沿飞行方向，90 = 横躺
-                //      yawOffset   0 = 剑尖朝 +Z，180 = 剑尖朝 -Z，±90 = 侧面
-                //      pitchOffset 剑面俯仰修正
-                .setRenderRotation(0f, 0f, 0f);
+                .setDirectionMode(DirectionMode.FIXED)
+                .setSteerDuringCharge(false)
+                .setSteerDuringFly(false)
+                .setRenderRotation(fix[0], fix[1], fix[2]);
         sword.launch(owner, stack);
         level.addFreshEntity(sword);
         return sword;
+    }
+
+    /**
+     * 返回模型修正 {roll, yawOffset, pitchOffset}。
+     * 默认（普通剑类）：{0, 0, 0} —— 渲染器里的 -90° X 已把剑尖掰向前方。
+     * 巨阙走 Geo item 渲染，朝向不同，单独给偏移。
+     */
+    private static float[] modelFixFor(ItemStack stack) {
+        // 巨阙：Geo 模型剑尖朝 +Y，根骨骼自带 [0,-90,0]，需要额外 yaw 抵消
+        if (stack.getItem() instanceof xiaoshi2022.corpseorigin.item.sword.JuQue) {
+            return new float[]{ 0f, 90f, 0f };
+        }
+        // 未来其他特殊物品在这里加分支
+        // if (stack.getItem() instanceof Xxx) return new float[]{ ... };
+
+        // 普通物品（铁剑/钻石剑等，模型剑尖朝 +Y）
+        return new float[]{ 0f, 0f, 0f };
     }
 
     // ==================== launch ====================
@@ -133,15 +152,18 @@ public class FlyingGreatSwordEntity extends Entity {
         this.ownerUUID = owner.getUUID();
         this.entityData.set(DATA_ITEM, stack.copy());
 
-        // ✅ 发射瞬间锁定方向
+        // ✅ 发射瞬间锁定方向 = 玩家视线方向（之后不再改变，像箭矢一样直射）
         Vec3 look = owner.getLookAngle().normalize();
         this.flyDir = look;
 
-        // ✅ 用 owner 的视线初始化，避免开局 lerp 的"扭一下"
-        float initYaw = owner.getYRot();
-        float initPitch = owner.getXRot();
+        // ✅ 像箭矢一样：从飞行方向直接计算 yaw/pitch，确保剑尖朝向 = 飞行方向
+        //    （不能用 owner.getYRot()，那是身体朝向，可能和视线方向有偏差，导致开局"扭一下"）
+        float initYaw   = (float) Math.toDegrees(Math.atan2(-look.x, look.z));
+        float initPitch = (float) Math.toDegrees(-Math.asin(look.y));
         this.setYRot(initYaw);
         this.setXRot(initPitch);
+        this.yRotO = initYaw;
+        this.xRotO = initPitch;
         this.entityData.set(DATA_YAW, initYaw);
         this.entityData.set(DATA_PITCH, initPitch);
 

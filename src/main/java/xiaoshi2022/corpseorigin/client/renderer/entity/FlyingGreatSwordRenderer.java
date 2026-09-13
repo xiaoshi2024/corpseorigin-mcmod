@@ -58,19 +58,21 @@ public class FlyingGreatSwordRenderer
 
         poseStack.pushPose();
 
-        // 1. 飞行方向（由 syncRotationFromDir 每 tick lerp 同步）
+        // ① 实体朝向（世界方向，飞行方向）
         poseStack.mulPose(Axis.YP.rotationDegrees(state.syncedYaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(state.syncedPitch));
 
-        // 2. 模型修正（默认全 0，剑尖指向飞行方向）
-        poseStack.mulPose(Axis.XP.rotationDegrees(state.modelPitchOffset));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(state.roll));
+        // ② 模型修正
+        poseStack.mulPose(Axis.XP.rotationDegrees(270f));    // 保持躺平
+        poseStack.mulPose(Axis.ZP.rotationDegrees(225f));    // 45°抵斜置 + 180°翻前后 = 225°
         poseStack.mulPose(Axis.YP.rotationDegrees(state.modelYawOffset));
+        poseStack.mulPose(Axis.ZP.rotationDegrees(state.roll));
+        poseStack.mulPose(Axis.XP.rotationDegrees(state.modelPitchOffset));
 
-        // 3. 缩放
+        // ③ 缩放
         poseStack.scale(state.renderScale, state.renderScale, state.renderScale);
 
-        // 4. 物品渲染
+        // ④ 渲染
         ItemStackRenderState renderState = new ItemStackRenderState();
         this.itemModelResolver.updateForNonLiving(
                 renderState, stack, ItemDisplayContext.FIXED, state.sourceEntity);
