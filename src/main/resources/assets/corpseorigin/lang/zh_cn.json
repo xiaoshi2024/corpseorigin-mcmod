@@ -25,6 +25,9 @@
   "fluid.corpseorigin.flowing_infected_water": "流动的尸水",
 
   "entity.corpseorigin.lower_level_zb": "低级尸兄",
+  "entity.corpseorigin.juque_beam": "巨阙剑气",
+  "entity.corpseorigin.flying_great_sword": "飞行巨剑",
+  "entity.corpseorigin.clone_avatar": "克隆分身",
 
   "effect.corpseorigin.by": "尸毒感染",
 
@@ -120,6 +123,9 @@
 
   "hud.corpseorigin.toggle.on": "HUD：开",
   "hud.corpseorigin.toggle.off": "HUD：关",
+
+  "message.corpseorigin.clone_chamber.avatar_activated": "分身已激活",
+  "message.corpseorigin.clone_chamber.avatar_active": "分身已存在",
 
   "key.corpseorigin.toggle_hud": "切换 HUD"
 }

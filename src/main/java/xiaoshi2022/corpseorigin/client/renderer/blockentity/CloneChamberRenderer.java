@@ -90,6 +90,7 @@ public class CloneChamberRenderer
         state.cloneProgress = chamber.getCloneProgress();
         state.hasClone = chamber.hasClone();
         state.ownerUuid = chamber.getOwnerUuid();
+        state.avatarActive = chamber.isAvatarActive();
     }
 
     @Override
@@ -111,6 +112,11 @@ public class CloneChamberRenderer
 
         // ===== 2. 门 =====
         float angle = state.doorOpen * 90.0F;
+
+        // ===== 3. 克隆人（只在下半格 + 未激活分身时渲染） =====
+        if (state.lowerHalf && state.hasClone && !state.avatarActive) {
+            renderClone(pose, collector, state);
+        }
 
         // 右门：铰链 origin [15.5, 16, 1]
         pose.pushPose();
@@ -134,10 +140,8 @@ public class CloneChamberRenderer
         leftDoorRenderState.submit(pose, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
         pose.popPose();
 
-        // ===== 3. 克隆人（只在下半格渲染一次） =====
-        if (state.lowerHalf && state.hasClone) {
-            renderClone(pose, collector, state);
-        }
+        // ★ 原先这里还有第二次 renderClone 调用，条件缺少 !state.avatarActive，
+        //   导致分身激活后假人仍然渲染。已删除。
 
         pose.popPose();
     }

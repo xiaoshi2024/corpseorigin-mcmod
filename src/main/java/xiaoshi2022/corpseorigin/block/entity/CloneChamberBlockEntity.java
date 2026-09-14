@@ -30,21 +30,23 @@ import org.jetbrains.annotations.Nullable;
 import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
 import xiaoshi2022.corpseorigin.clone.CloneState;
 import xiaoshi2022.corpseorigin.clone.DoorAnimator;
+import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.registry.ModBlockEntities;
+import xiaoshi2022.corpseorigin.registry.ModEntities;
 
 import java.util.UUID;
 
-/**
- * 黑色火线克隆仓方块实体 —— 三大系统的核心。
- */
 public class CloneChamberBlockEntity extends BlockEntity {
-    /** 培育耗时：6000 tick = 5 分钟 */
     public static final int GROW_TICKS = 6000;
 
     @Nullable
     private CloneState clone;
     private DoorAnimator doorAnimator;
     private int tickCount;
+
+    /** 分身实体 UUID；不为 null 表示分身已激活 */
+    @Nullable
+    private UUID avatarEntityUuid;
 
     public CloneChamberBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CLONE_CHAMBER, pos, state);
@@ -53,6 +55,15 @@ public class CloneChamberBlockEntity extends BlockEntity {
 
     public UUID getOwnerUuid() {
         return this.clone != null ? this.clone.getOwner() : null;
+    }
+
+    public boolean isAvatarActive() {
+        return this.avatarEntityUuid != null;
+    }
+
+    public void setAvatarEntityUuid(@Nullable UUID uuid) {
+        this.avatarEntityUuid = uuid;
+        this.setChanged();
     }
 
     // ==================== Tick ====================
@@ -100,7 +111,6 @@ public class CloneChamberBlockEntity extends BlockEntity {
         }
     }
 
-    /** 黑小飞式提前苏醒：音效 + 通知供体玩家 */
     private void onCloneReady(ServerLevel level) {
         level.playSound(null, this.worldPosition, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 0.7F, 0.8F);
         if (this.clone != null) {
@@ -147,24 +157,64 @@ public class CloneChamberBlockEntity extends BlockEntity {
             return InteractionResult.CONSUME;
         }
 
-        // 潜行右键：意识转换
+        // 潜行右键：意识转换（原来的"完全转移"，先保留）
         if (player.isSecondaryUseActive() && this.clone.isReady()) {
             this.transferConsciousness(level, state, serverPlayer);
             return InteractionResult.SUCCESS;
         }
 
-        // 普通右键：查看培育进度
-        int percent = Mth.clamp((int) (this.clone.getProgress() / CloneState.COMPLETE_PROGRESS * 100.0F), 0, 96);
-        if (this.clone.isReady()) {
-            this.actionbar(serverPlayer, Component.translatable("message.corpseorigin.clone_chamber.ready"));
-        } else {
-            this.actionbar(serverPlayer, Component.translatable(
-                    "message.corpseorigin.clone_chamber.growing", percent));
+        // 普通右键 + 已培育完成 + 未激活分身 → 激活分身
+        if (this.clone.isReady() && !this.isAvatarActive()) {
+            return this.activateAvatar(level, state, serverPlayer);
         }
+
+        // 其余情况：显示进度/提示
+        if (this.isAvatarActive()) {
+            this.actionbar(serverPlayer, Component.translatable("message.corpseorigin.clone_chamber.avatar_active"));
+            return InteractionResult.CONSUME;
+        }
+
+        int percent = Mth.clamp((int) (this.clone.getProgress() / CloneState.COMPLETE_PROGRESS * 100.0F), 0, 96);
+        this.actionbar(serverPlayer, Component.translatable(
+                "message.corpseorigin.clone_chamber.growing", percent));
         return InteractionResult.CONSUME;
     }
 
-    /** 克隆基础系统：采血提取基因，开始培育 */
+    /** 激活分身：生成 CloneAvatarEntity，隐藏 BER 里的假人 */
+    private InteractionResult activateAvatar(Level level, BlockState state, ServerPlayer player) {
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return InteractionResult.PASS;
+        }
+
+        Direction facing = state.getValue(CloneChamberBlock.FACING);
+
+        // 1. 生成分身实体
+        CloneAvatarEntity avatar = new CloneAvatarEntity(ModEntities.CLONE_AVATAR, serverLevel);
+        avatar.setOwnerUuid(player.getUUID());
+
+        double x = this.worldPosition.getX() + 0.5 + facing.getStepX() * 1.5;
+        double y = this.worldPosition.getY();
+        double z = this.worldPosition.getZ() + 0.5 + facing.getStepZ() * 1.5;
+
+        avatar.setPos(x, y, z);
+        avatar.setYRot(facing.toYRot());
+        avatar.setXRot(0.0F);
+        avatar.setYHeadRot(facing.toYRot());
+
+        serverLevel.addFreshEntity(avatar);
+
+        // 2. 记录 UUID → BER 不再渲染假人
+        this.setAvatarEntityUuid(avatar.getUUID());
+        this.setChanged();
+        if (level instanceof ServerLevel sl) {
+            sl.getChunkSource().blockChanged(this.worldPosition);   // ★ 强制重发 BE 数据
+        }
+
+        // 3. 通知玩家
+        this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.avatar_activated"));
+        return InteractionResult.SUCCESS;
+    }
+
     private InteractionResult startConstruction(Level level, ServerPlayer player) {
         if (player.getHealth() + player.getAbsorptionAmount() <= 1.0F && !player.isCreative()) {
             this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.low_health"));
@@ -185,9 +235,6 @@ public class CloneChamberBlockEntity extends BlockEntity {
         return InteractionResult.SUCCESS;
     }
 
-    /**
-     * 意识转换系统：当前身体存入仓中，克隆体的身体快照应用到玩家，玩家被传送到仓门前。
-     */
     private void transferConsciousness(Level level, BlockState state, ServerPlayer player) {
         CompoundTag oldBody = this.snapshotPlayer(player);
         CompoundTag newBody = this.clone.getBody();
@@ -266,7 +313,7 @@ public class CloneChamberBlockEntity extends BlockEntity {
         return Mth.clamp(output, this.clone.isReady() ? 1 : 0, 15);
     }
 
-    // ==================== NBT 持久化 ====================
+    // ==================== NBT ====================
 
     @Override
     protected void saveAdditional(ValueOutput out) {
@@ -274,12 +321,17 @@ public class CloneChamberBlockEntity extends BlockEntity {
         if (this.clone != null) {
             this.clone.writeTo(out.child("Clone"));
         }
+        if (this.avatarEntityUuid != null) {
+            out.putString("AvatarEntity", this.avatarEntityUuid.toString());
+        }
     }
 
     @Override
     protected void loadAdditional(ValueInput in) {
         super.loadAdditional(in);
         this.clone = in.child("Clone").map(CloneState::read).orElse(null);
+        String avatarUuid = in.getStringOr("AvatarEntity", "");
+        this.avatarEntityUuid = avatarUuid.isEmpty() ? null : UUID.fromString(avatarUuid);
     }
 
     @Override
@@ -293,6 +345,9 @@ public class CloneChamberBlockEntity extends BlockEntity {
             }
             cloneTag.putFloat("Progress", this.clone.getProgress());
             tag.put("Clone", cloneTag);
+        }
+        if (this.avatarEntityUuid != null) {
+            tag.putString("AvatarEntity", this.avatarEntityUuid.toString());
         }
         return tag;
     }

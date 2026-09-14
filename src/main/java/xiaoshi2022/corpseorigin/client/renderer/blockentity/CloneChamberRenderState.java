@@ -11,6 +11,7 @@ public class CloneChamberRenderState extends BlockEntityRenderState {
     public float cloneProgress;
     public boolean hasClone;
     public Direction facing = Direction.NORTH;
-    /** 供体玩家 UUID，用于查皮肤 */
     public UUID ownerUuid;
+    /** 分身已激活：BER 不再渲染假人 */
+    public boolean avatarActive;
 }

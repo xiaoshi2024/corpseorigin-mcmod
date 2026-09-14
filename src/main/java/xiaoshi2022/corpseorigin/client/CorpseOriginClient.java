@@ -24,6 +24,7 @@ import xiaoshi2022.corpseorigin.client.aps.APSInkSceneRenderer;
 import xiaoshi2022.corpseorigin.client.hud.InfectionHudOverlay;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.render.laser.BloodLotusLaserManager;
+import xiaoshi2022.corpseorigin.client.renderer.entity.CloneAvatarRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.FlyingGreatSwordRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.JuQueBeamRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.LowerLevelZbRenderer;
@@ -56,6 +57,8 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.LOWER_LEVEL_ZB, LowerLevelZbRenderer::new);
         EntityRendererRegistry.register(ModEntities.JUQUE_BEAM, JuQueBeamRenderer::new);
         EntityRendererRegistry.register(ModEntities.FLYING_GREAT_SWORD, FlyingGreatSwordRenderer::new);
+        EntityRendererRegistry.register(ModEntities.CLONE_AVATAR,
+                context -> new CloneAvatarRenderer(context, false));
         // 黑色火线克隆仓方块实体渲染器
         BlockEntityRendererRegistry.register(
                 xiaoshi2022.corpseorigin.registry.ModBlockEntities.CLONE_CHAMBER,

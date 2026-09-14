@@ -25,6 +25,9 @@
   "fluid.corpseorigin.flowing_infected_water": "Flowing Infected Water",
 
   "entity.corpseorigin.lower_level_zb": "Lower-level Corpse Brother",
+  "entity.corpseorigin.juque_beam": "Juque Beam",
+  "entity.corpseorigin.flying_great_sword": "Flying Great Sword",
+  "entity.corpseorigin.clone_avatar": "Clone Avatar",
 
   "effect.corpseorigin.by": "Corpse Infection",
 
@@ -120,6 +123,9 @@
 
   "hud.corpseorigin.toggle.on": "HUD: ON",
   "hud.corpseorigin.toggle.off": "HUD: OFF",
+
+  "message.corpseorigin.clone_chamber.avatar_activated": "Avatar activated",
+  "message.corpseorigin.clone_chamber.avatar_active": "Avatar already active",
 
   "key.corpseorigin.toggle_hud": "Toggle HUD"
 }

@@ -2,6 +2,7 @@ package xiaoshi2022.corpseorigin.registry;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 
 /**
@@ -25,6 +26,8 @@ public final class ModAttributes {
                 ModEntities.LOWER_LEVEL_ZB,
                 LowerLevelZbEntity.createAttributes()
         );
+
+        FabricDefaultAttributeRegistry.register(ModEntities.CLONE_AVATAR, CloneAvatarEntity.createAttributes());
 
         // TODO: 添加其他实体的属性注册
         // 例如：

@@ -8,6 +8,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.entity.FlyingGreatSwordEntity;
 import xiaoshi2022.corpseorigin.entity.JuQueBeamEntity;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
@@ -35,6 +36,14 @@ public final class ModEntities {
             EntityType.Builder.<FlyingGreatSwordEntity>of(FlyingGreatSwordEntity::new, MobCategory.MISC)
                     .sized(1.0f, 1.0f)
                     .clientTrackingRange(8)
+                    .updateInterval(1)
+    );
+
+    public static final EntityType<CloneAvatarEntity> CLONE_AVATAR = register(
+            "clone_avatar",
+            EntityType.Builder.<CloneAvatarEntity>of(CloneAvatarEntity::new, MobCategory.MISC)
+                    .sized(0.6f, 1.8f)
+                    .clientTrackingRange(10)
                     .updateInterval(1)
     );
 
