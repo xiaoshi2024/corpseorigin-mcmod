@@ -11,6 +11,16 @@
 
   "block.corpseorigin.infected_water_block": "Infected Water",
 
+  "block.corpseorigin.clone_chamber": "Black Fire Clone Pod",
+  "message.corpseorigin.clone_chamber.occupied": "The clone pod is already in use.",
+  "message.corpseorigin.clone_chamber.low_health": "Not enough health to collect a genetic sample.",
+  "message.corpseorigin.clone_chamber.started": "Genetic sample collected. A clone is growing in the green culture fluid...",
+  "message.corpseorigin.clone_chamber.growing": "Clone maturation: %s%%",
+  "message.corpseorigin.clone_chamber.ready": "The clone has awakened at 96%% maturation! The pod door opens automatically.",
+  "message.corpseorigin.clone_chamber.not_ready": "The clone has not fully matured yet: %s%%",
+  "message.corpseorigin.clone_chamber.swapped": "Consciousness transferred into the clone.",
+  "message.corpseorigin.clone_chamber.wrong_owner": "Only %s can use this clone pod.",
+
   "fluid.corpseorigin.infected_water": "Infected Water",
   "fluid.corpseorigin.flowing_infected_water": "Flowing Infected Water",
 

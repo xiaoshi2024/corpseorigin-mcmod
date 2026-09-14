@@ -1,0 +1,27 @@
+package xiaoshi2022.corpseorigin.registry;
+
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
+
+import java.util.Set;
+
+public final class ModBlockEntities {
+
+    // 26.2 已移除 BlockEntityType.Builder，直接 new：参数为 构造器引用 + 关联方块集合
+    public static final BlockEntityType<CloneChamberBlockEntity> CLONE_CHAMBER =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    CorpseOrigin.id("clone_chamber"),
+                    new BlockEntityType<>(CloneChamberBlockEntity::new, Set.of(ModBlocks.CLONE_CHAMBER))
+            );
+
+    private ModBlockEntities() {
+    }
+
+    public static void init() {
+        CorpseOrigin.LOGGER.info("CorpseOrigin block entities registered");
+    }
+}

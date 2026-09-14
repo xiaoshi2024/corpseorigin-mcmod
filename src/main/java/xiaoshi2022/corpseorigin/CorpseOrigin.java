@@ -34,6 +34,9 @@ public class CorpseOrigin implements ModInitializer {
 		// ✅ 3. 注册方块
 		ModBlocks.init();
 
+		// ✅ 3.5 注册方块实体（必须在方块之后、物品之前）
+		ModBlockEntities.init();
+
 		// ✅ 4. 注册物品
 		ModItems.init();
 

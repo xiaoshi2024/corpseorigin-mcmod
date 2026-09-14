@@ -5,6 +5,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -47,6 +48,14 @@ public final class ModItems {
             BloodLotusLamp.create(itemKey("blood_lotus_lantern"))
     );
 
+    /** 黑色火线克隆仓方块物品（名称沿用方块的翻译键） */
+    public static final Item CLONE_CHAMBER = register(
+            "clone_chamber",
+            new BlockItem(ModBlocks.CLONE_CHAMBER, new Item.Properties()
+                    .useBlockDescriptionPrefix()
+                    .setId(itemKey("clone_chamber")))
+    );
+
     // ==================== 创造物品栏 ====================
     public static final CreativeModeTab CORPSE_ORIGIN_TAB = CreativeModeTab.builder(
                     CreativeModeTab.Row.TOP, 8)
@@ -57,6 +66,7 @@ public final class ModItems {
                 output.accept(BYWATER_BOTTLE);
                 output.accept(JUQUE_TW);
                 output.accept(BLOOD_LOTUS_LAMP);
+                output.accept(CLONE_CHAMBER);
             })
             .build();
 

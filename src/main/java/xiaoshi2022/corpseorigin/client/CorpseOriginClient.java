@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderingRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockTintSources;
@@ -55,6 +56,11 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.LOWER_LEVEL_ZB, LowerLevelZbRenderer::new);
         EntityRendererRegistry.register(ModEntities.JUQUE_BEAM, JuQueBeamRenderer::new);
         EntityRendererRegistry.register(ModEntities.FLYING_GREAT_SWORD, FlyingGreatSwordRenderer::new);
+        // 黑色火线克隆仓方块实体渲染器
+        BlockEntityRendererRegistry.register(
+                xiaoshi2022.corpseorigin.registry.ModBlockEntities.CLONE_CHAMBER,
+                xiaoshi2022.corpseorigin.client.renderer.blockentity.CloneChamberRenderer::new
+        );
 
         // 3. 模型层注册
         ModModelLayers.register();
