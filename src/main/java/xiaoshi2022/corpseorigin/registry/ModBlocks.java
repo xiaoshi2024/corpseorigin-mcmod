@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
+import xiaoshi2022.corpseorigin.block.ShellStorageBlock;
 
 public final class ModBlocks {
 
@@ -22,6 +23,15 @@ public final class ModBlocks {
                     .strength(3.5F, 6.0F)
                     .requiresCorrectToolForDrops()
                     .setId(blockKey("clone_chamber")))
+    );
+
+    public static final Block SHELL_STORAGE = register(
+            "shell_storage",
+            new ShellStorageBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .noOcclusion()
+                    .strength(3.5F, 6.0F)
+                    .requiresCorrectToolForDrops()
+                    .setId(blockKey("shell_storage")))
     );
 
     private static Block register(String name, Block block) {

@@ -11,7 +11,6 @@ import xiaoshi2022.corpseorigin.client.renderer.entity.LowerLevelZbRenderer;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinCache;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 
-import static xiaoshi2022.corpseorigin.client.CorpseOriginClient.tempRedEyeTicks;
 
 @Environment(EnvType.CLIENT)
 public class ClientEntityEventHandler {
@@ -26,12 +25,18 @@ public class ClientEntityEventHandler {
 
         // ✅ 玩家退出世界时清空所有缓存
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
-            LowerLevelZbRenderer.clearCache();
-            ZbSkinCache.clearAll();
-            CorpseOriginClient.tempRedEyeTicks.clear();
-            ExoskeletonRenderLayer.clearCache();
-            CorpseOriginClient.corpseDataCache.clear();
-            CorpseOrigin.LOGGER.info("🧹 玩家退出世界，清空所有缓存");
+            client.execute(() -> {   // ★ 切到客户端主线程
+                // ★ 兜底：确保 HUD 不会被卡在隐藏状态
+                if (client.gui.hud.isHidden()) {
+                    client.gui.hud.toggle();
+                }
+                LowerLevelZbRenderer.clearCache();
+                ZbSkinCache.clearAll();
+                CorpseOriginClient.tempRedEyeTicks.clear();
+                ExoskeletonRenderLayer.clearCache();
+                CorpseOriginClient.corpseDataCache.clear();
+                CorpseOrigin.LOGGER.info("🧹 玩家退出世界，清空所有缓存");
+            });
         });
     }
 }

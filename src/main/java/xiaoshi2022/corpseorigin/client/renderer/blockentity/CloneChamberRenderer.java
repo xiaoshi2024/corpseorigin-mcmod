@@ -16,8 +16,6 @@ import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.resources.DefaultPlayerSkin;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
@@ -25,10 +23,9 @@ import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
 import xiaoshi2022.corpseorigin.client.model.clone.VoxelModel;
+import xiaoshi2022.corpseorigin.client.skin.clone.ClientSkinCache;
 import xiaoshi2022.corpseorigin.registry.ModBlocks;
 import xiaoshi2022.corpseorigin.registry.ModModelLayers;
-
-import java.util.UUID;
 
 public class CloneChamberRenderer
         implements BlockEntityRenderer<CloneChamberBlockEntity, CloneChamberRenderState> {
@@ -150,7 +147,7 @@ public class CloneChamberRenderer
 
     private void renderClone(PoseStack pose, SubmitNodeCollector collector, CloneChamberRenderState state) {
         float progress = state.cloneProgress;
-        PlayerSkin skin = resolveSkin(state.ownerUuid);
+        PlayerSkin skin = ClientSkinCache.resolve(state.ownerUuid);   // ★ 改这里
 
         pose.pushPose();
         pose.translate(0.5F, 0.0F, 0.5F);
@@ -197,16 +194,4 @@ public class CloneChamberRenderer
         pose.popPose();
     }
 
-    private static PlayerSkin resolveSkin(UUID ownerUuid) {
-        if (ownerUuid != null) {
-            var conn = Minecraft.getInstance().getConnection();
-            if (conn != null) {
-                var info = conn.getPlayerInfo(ownerUuid);
-                if (info != null) {
-                    return info.getSkin();
-                }
-            }
-        }
-        return DefaultPlayerSkin.getDefaultSkin();
-    }
 }

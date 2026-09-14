@@ -284,6 +284,14 @@ public class PlayerCorpseComponent {
         setData(tag);
     }
 
+    public void readNbt(CompoundTag tag) {
+        if (tag == null) tag = new CompoundTag();
+        player.setAttached(ModDataAttachments.PLAYER_CORPSE, tag.copy());
+        if (player instanceof ServerPlayer sp) {
+            CorpseNetwork.sendPlayerCorpseSync(sp);
+        }
+    }
+
     public boolean isMindless() {
         return isCorpse() && !hasConsciousness();
     }

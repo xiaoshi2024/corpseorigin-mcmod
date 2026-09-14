@@ -2,6 +2,10 @@ package xiaoshi2022.corpseorigin.character;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -10,12 +14,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class PlayerCharacterData extends SavedData {
 
@@ -162,6 +161,39 @@ public class PlayerCharacterData extends SavedData {
         PlayerEntry entry = getEntry(uuid);
         entry.earnedPoints = earned;
         entry.availablePoints = available;
+        setDirty();
+    }
+
+    /** ★ 导出某个玩家 UUID 的条目为 NBT */
+    public CompoundTag writeNbt(UUID uuid) {
+        PlayerEntry entry = getEntry(uuid);
+        CompoundTag tag = new CompoundTag();
+        tag.putString("CharacterId", entry.characterId == null ? MortalCharacter.ID : entry.characterId);
+
+        ListTag skills = new ListTag();
+        for (String s : entry.learnedSkills) skills.add(StringTag.valueOf(s));
+        tag.put("LearnedSkills", skills);
+
+        tag.putInt("Earned", entry.earnedPoints);
+        tag.putInt("Available", entry.availablePoints);
+        return tag;
+    }
+
+    /** ★ 从 NBT 恢复某个玩家 UUID 的条目 */
+    public void readNbt(UUID uuid, CompoundTag tag) {
+        PlayerEntry entry = getEntry(uuid);
+        entry.characterId = tag.getStringOr("CharacterId", MortalCharacter.ID);
+
+        entry.learnedSkills.clear();
+        tag.getList("LearnedSkills").ifPresent(list -> {
+            for (Tag t : list) {
+                if (t instanceof StringTag s) entry.learnedSkills.add(String.valueOf(s.asString()));
+            }
+        });
+
+        entry.earnedPoints = tag.getIntOr("Earned", 0);
+        entry.availablePoints = tag.getIntOr("Available", 0);
+
         setDirty();
     }
 

@@ -5,7 +5,8 @@
   "mixins": [
     "CorpseMixin",
     "MobPeacefulMixin",
-    "MobPickupMixin"
+    "MobPickupMixin",
+    "ServerPlayerShellMixin"
   ],
   "injectors": {
     "defaultRequire": 1
@@ -15,6 +16,9 @@
   },
   "client": [
     "AvatarRendererMixin",
+    "ClientPlayerInteractionManagerMixin",
+    "ClientPlayerShellMixin",
+    "EntityMixin",
     "LivingEntityRendererMixin"
-	]
+  ]
 }

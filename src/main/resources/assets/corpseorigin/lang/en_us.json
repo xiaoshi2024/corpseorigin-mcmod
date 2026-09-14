@@ -21,6 +21,12 @@
   "message.corpseorigin.clone_chamber.swapped": "Consciousness transferred into the clone.",
   "message.corpseorigin.clone_chamber.wrong_owner": "Only %s can use this clone pod.",
 
+  "block.corpseorigin.shell_storage": "Shell Storage",
+  "message.corpseorigin.shell_storage.stored": "Body stored in shell storage.",
+  "message.corpseorigin.shell_storage.occupied": "Shell storage already contains a body. Sneak-right-click to transfer into it.",
+  "message.corpseorigin.shell_storage.transferred": "Consciousness transferred into the stored body.",
+  "message.corpseorigin.shell_storage.transferred_dropped": "Consciousness transferred. Old body discarded.",
+
   "fluid.corpseorigin.infected_water": "Infected Water",
   "fluid.corpseorigin.flowing_infected_water": "Flowing Infected Water",
 
@@ -99,6 +105,11 @@
   "skilltype.corpseorigin.utility": "Utility",
   "skilltype.corpseorigin.defense": "Defense",
   "skilltype.corpseorigin.ultimate": "Ultimate",
+
+  "gui.corpseorigin.shell_storage": "Shell Storage",
+  "gui.corpseorigin.shell_storage.store": "Store Current Body",
+  "gui.corpseorigin.shell_storage.transfer": "Transfer Into Stored Body",
+  "gui.corpseorigin.close": "Close",
 
   "gui.corpseorigin.skill_wheel": "Skill Wheel",
   "gui.corpseorigin.skill_wheel.points": "Available Points: %s",

@@ -1,6 +1,8 @@
 package xiaoshi2022.corpseorigin;
 
+import com.mojang.datafixers.util.Either;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -13,7 +15,9 @@ import xiaoshi2022.corpseorigin.command.CharacterCommands;
 import xiaoshi2022.corpseorigin.command.SummonZbCommand;
 import xiaoshi2022.corpseorigin.event.*;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.network.SynchronizationResponsePacket;
 import xiaoshi2022.corpseorigin.registry.*;
+import xiaoshi2022.corpseorigin.shell.*;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.APSComboHandler;
 
 public class CorpseOrigin implements ModInitializer {
@@ -59,6 +63,15 @@ public class CorpseOrigin implements ModInitializer {
 		// ✅ 注册 DataAttachment（必须在网络之前）
 		ModDataAttachments.init();
 
+		ShellStateComponentRegistry.getInstance().register(
+				CorpseShellStateComponent::new,
+				CorpseShellStateComponent::new
+		);
+		ShellStateComponentRegistry.getInstance().register(
+				CharacterShellStateComponent::new,
+				CharacterShellStateComponent::new
+		);
+
 		// ✅ 9. 网络
 		CorpseNetwork.register();
 
@@ -78,10 +91,42 @@ public class CorpseOrigin implements ModInitializer {
 				}
 		);
 
+		net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DEATH.register(
+				(entity, source, amount) -> {
+					if (!(entity instanceof ServerPlayer player)) {
+						return true;
+					}
+
+					// 找备用身体
+					ServerShell shell = ServerShell.of(player);
+					TransferredBody nearest = shell.findNearestBody();
+					if (nearest == null) {
+						return true;   // 没有备用身体，正常死亡
+					}
+
+					Either<ShellState, String> result = shell.sync(nearest);
+					if (result.right().isPresent()) {
+						return true;   // 夺舍失败，正常死亡
+					}
+
+					player.clearFire();
+					player.removeAllEffects();
+					player.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+					CorpseNetwork.refreshShellStates(player);
+					ServerPlayNetworking.send(player,
+							SynchronizationResponsePacket.message(true, "意识已转移至最近的克隆体"));
+					return false;   // 拦截死亡
+				});
+
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
 			for (ServerLevel level : server.getAllLevels()) {
 				xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager.tick(level);
 			}
+		});
+
+		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+			xiaoshi2022.corpseorigin.block.entity.ShellStorageBlockEntity.REGISTRY.clear();
+			xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity.REGISTRY.clear();
 		});
 
 		net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {

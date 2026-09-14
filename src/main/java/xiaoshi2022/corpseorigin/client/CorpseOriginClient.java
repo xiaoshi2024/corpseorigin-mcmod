@@ -5,36 +5,42 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderingRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockTintSources;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.client.resources.model.sprite.Material;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.block.entity.ShellStorageBlockEntity;
 import xiaoshi2022.corpseorigin.client.aps.APSInkSceneManager;
 import xiaoshi2022.corpseorigin.client.aps.APSInkSceneRenderer;
+import xiaoshi2022.corpseorigin.client.camera.PersistentCameraEntity;
+import xiaoshi2022.corpseorigin.client.camera.PersistentCameraEntityGoal;
+import xiaoshi2022.corpseorigin.client.gui.ShellStorageScreen;
 import xiaoshi2022.corpseorigin.client.hud.InfectionHudOverlay;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.render.laser.BloodLotusLaserManager;
+import xiaoshi2022.corpseorigin.client.renderer.blockentity.CloneChamberRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.blockentity.ShellStorageRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.CloneAvatarRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.FlyingGreatSwordRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.JuQueBeamRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.LowerLevelZbRenderer;
+import xiaoshi2022.corpseorigin.client.skin.clone.ClientSkinCache;
 import xiaoshi2022.corpseorigin.event.client.AttackAnimationHandler;
 import xiaoshi2022.corpseorigin.event.client.ClientEntityEventHandler;
 import xiaoshi2022.corpseorigin.network.*;
-import xiaoshi2022.corpseorigin.registry.CorpseKeyBindings;
-import xiaoshi2022.corpseorigin.registry.ModEntities;
-import xiaoshi2022.corpseorigin.registry.ModFluids;
-import xiaoshi2022.corpseorigin.registry.ModModelLayers;
+import xiaoshi2022.corpseorigin.registry.*;
 
 import java.util.Map;
 import java.util.UUID;
@@ -42,11 +48,26 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CorpseOriginClient implements ClientModInitializer {
 
+    /** 客户端可转移身体列表（UI 显示用，只含轻量信息） */
+    public static final java.util.List<ClientShellEntry> clientShellEntries =
+            new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    /** 客户端轻量身体条目 */
+    public record ClientShellEntry(
+            java.util.UUID uuid,
+            java.util.UUID ownerUuid,
+            String world,
+            int x, int y, int z,
+            float progress
+    ) {
+    }
+
     // ✅ 客户端尸兄数据缓存（用 UUID 作为键）
     public static final java.util.Map<UUID, ClientCorpseData> corpseDataCache = new ConcurrentHashMap<>();
 
     /** ✅ 临时红眼状态：UUID → 剩余 tick */
     public static final Map<UUID, Integer> tempRedEyeTicks = new ConcurrentHashMap<>();
+
 
     @Override
     public void onInitializeClient() {
@@ -61,10 +82,14 @@ public class CorpseOriginClient implements ClientModInitializer {
                 context -> new CloneAvatarRenderer(context, false));
         // 黑色火线克隆仓方块实体渲染器
         BlockEntityRendererRegistry.register(
-                xiaoshi2022.corpseorigin.registry.ModBlockEntities.CLONE_CHAMBER,
-                xiaoshi2022.corpseorigin.client.renderer.blockentity.CloneChamberRenderer::new
+                ModBlockEntities.CLONE_CHAMBER,
+                CloneChamberRenderer::new
         );
-
+        BlockEntityRendererRegistry.register(
+                ModBlockEntities.SHELL_STORAGE,
+                ShellStorageRenderer::new
+        );
+        
         // 3. 模型层注册
         ModModelLayers.register();
 
@@ -88,9 +113,51 @@ public class CorpseOriginClient implements ClientModInitializer {
                     CharacterManagerBridge.setCharacter(payload.characterId()));
         });
 
+        ClientPlayNetworking.registerGlobalReceiver(ShellStateSyncS2C.TYPE, (payload, context) ->
+                context.client().execute(() -> {
+                    CorpseOriginClient.clientShellEntries.clear();
+                    for (ShellStateSyncS2C.Entry e : payload.entries()) {
+                        CorpseOriginClient.clientShellEntries.add(new ClientShellEntry(
+                                e.uuid(), e.ownerUuid(), e.world(),
+                                e.x(), e.y(), e.z(), e.progress()));
+                    }
+                }));
+
+        ClientPlayNetworking.registerGlobalReceiver(SynchronizationResponsePacket.TYPE, (payload, context) ->
+                context.client().execute(() -> {
+                    if (!payload.success()) {
+                        if (context.client().player != null) {
+                            context.client().player.sendSystemMessage(
+                                    Component.literal(payload.message()));
+                        }
+                        return;
+                    }
+
+                    var player = context.client().player;
+                    if (player == null) return;
+
+                    BlockPos startPos = payload.fromPos();
+                    Direction startFacing = payload.fromFacing();
+                    BlockPos targetPos = payload.toPos();
+                    Direction targetFacing = payload.toFacing();
+
+                    boolean sameWorld = payload.fromWorld().equals(payload.toWorld());
+
+                    PersistentCameraEntityGoal cameraGoal = player.isDeadOrDying()
+                            ? PersistentCameraEntityGoal.limbo(startPos, startFacing, targetPos,
+                            __ -> finishCamera(payload.targetStateUuid()))
+                            : PersistentCameraEntityGoal.stairwayToHeaven(startPos, startFacing, targetPos,
+                            __ -> finishCamera(payload.targetStateUuid()));
+
+                    PersistentCameraEntity.setup(context.client(), cameraGoal);
+                }));
+        
         // ✅ 接收玩家尸兄数据同步（用 UUID）
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.PlayerCorpseSyncS2C.TYPE, (payload, context) -> {
             context.client().execute(() -> {
+                // ★ 顺便刷新一次皮肤缓存
+                ClientSkinCache.resolve(payload.playerUuid());
+
                 ClientCorpseData data = new ClientCorpseData(
                         payload.isCorpse(),
                         payload.corpseType(),
@@ -126,11 +193,17 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (CorpseKeyBindings.openSkillWheel.consumeClick()) {
+                // 1. 周围有存储仓 → 打开存储仓 UI
+                ShellStorageBlockEntity nearby = findNearbyStorage();
+                if (nearby != null) {
+                    client.gui.setScreen(new ShellStorageScreen(nearby.getBlockPos()));
+                    continue;
+                }
+
+                // 2. 否则走技能轮盘
                 if (client.gui.screen() instanceof SkillWheelScreen) {
-                    // 已经开着 → 关
                     client.gui.setScreen(null);
                 } else if (client.gui.screen() == null) {
-                    // 没开 GUI → 打开
                     client.gui.setScreen(new SkillWheelScreen());
                 }
             }
@@ -215,6 +288,37 @@ public class CorpseOriginClient implements ClientModInitializer {
         });
 
         CorpseOrigin.LOGGER.debug("CorpseOrigin client initialized");
+    }
+
+    private static void finishCamera(java.util.UUID targetUuid) {
+        Minecraft mc = Minecraft.getInstance();
+        PersistentCameraEntity.unset(mc);
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                new CameraDonePacket(targetUuid));
+    }
+
+    /** 找玩家周围 3 格内最近的存储仓方块实体 */
+    public static ShellStorageBlockEntity findNearbyStorage() {
+        var player = Minecraft.getInstance().player;
+        if (player == null || player.level() == null) {
+            return null;
+        }
+
+        BlockPos origin = player.blockPosition();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+
+        for (int dx = -3; dx <= 3; dx++) {
+            for (int dy = -3; dy <= 3; dy++) {
+                for (int dz = -3; dz <= 3; dz++) {
+                    pos.set(origin.getX() + dx, origin.getY() + dy, origin.getZ() + dz);
+                    if (player.level().getBlockEntity(pos)
+                            instanceof ShellStorageBlockEntity storage) {
+                        return storage;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     // ==================== 客户端数据类 ====================

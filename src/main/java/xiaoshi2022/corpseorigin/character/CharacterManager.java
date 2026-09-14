@@ -4,7 +4,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
-import xiaoshi2022.corpseorigin.skill.ISkill;
 
 import java.util.ArrayList;
 import java.util.HashMap;

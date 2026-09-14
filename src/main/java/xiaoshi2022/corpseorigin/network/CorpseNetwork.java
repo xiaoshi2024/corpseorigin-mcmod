@@ -1,9 +1,12 @@
 package xiaoshi2022.corpseorigin.network;
 
+import com.mojang.datafixers.util.Either;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
@@ -24,18 +27,25 @@ import xiaoshi2022.corpseorigin.effect.BYeffect;
 import xiaoshi2022.corpseorigin.entity.JuQueBeamEntity;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 import xiaoshi2022.corpseorigin.item.sword.JuQue;
+import xiaoshi2022.corpseorigin.shell.ServerShell;
+import xiaoshi2022.corpseorigin.shell.ShellState;
+import xiaoshi2022.corpseorigin.shell.TransferredBody;
 import xiaoshi2022.corpseorigin.skill.SkillManager;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class CorpseNetwork {
 
     // ✅ 待同步队列
     private static final Set<UUID> PENDING_SYNC = new HashSet<>();
+
+    // 待执行的 sync（相机动画结束后再 apply）
+    public record PendingSync(ShellState targetState, TransferredBody target) {}
+
+    private static final Map<UUID, PendingSync> PENDING_SYNCS = new ConcurrentHashMap<>();
 
     private CorpseNetwork() {
     }
@@ -129,6 +139,7 @@ public final class CorpseNetwork {
             UUID uuid = player.getUUID();
 
             PENDING_SYNC.remove(uuid);
+            PENDING_SYNCS.remove(uuid);
             SkillManager.cleanupDisconnect(uuid);
             BYeffect.clearTotalDuration(uuid);
             BYeffect.clearInfectionSource(uuid);
@@ -202,7 +213,93 @@ public final class CorpseNetwork {
                 APSInkPoemPayload.TYPE,
                 APSInkPoemPayload.CODEC);
 
+        // ==================== ✅ 同步/相机系统 ====================
+        PayloadTypeRegistry.serverboundPlay().register(
+                SynchronizationRequestPacket.TYPE, SynchronizationRequestPacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(
+                SynchronizationResponsePacket.TYPE, SynchronizationResponsePacket.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(
+                ShellStateSyncS2C.TYPE, ShellStateSyncS2C.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(
+                CameraDonePacket.TYPE, CameraDonePacket.CODEC);
+
+        // ---- 客户端请求转移 ----
+        ServerPlayNetworking.registerGlobalReceiver(SynchronizationRequestPacket.TYPE, (payload, context) -> {
+            context.server().execute(() -> {
+                ServerPlayer player = context.player();
+                ServerShell shell = ServerShell.of(player);
+
+                TransferredBody target = shell.getAvailableBodies()
+                        .filter(b -> {
+                            ShellState s = b.snapshot();
+                            return s != null && s.getUuid().equals(payload.targetStateUuid());
+                        })
+                        .findFirst().orElse(null);
+
+                if (target == null) {
+                    ServerPlayNetworking.send(player,
+                            SynchronizationResponsePacket.failure("找不到目标身体"));
+                    return;
+                }
+
+                ShellState targetState = target.snapshot();
+                if (targetState == null) {
+                    ServerPlayNetworking.send(player,
+                            SynchronizationResponsePacket.failure("目标身体没有快照"));
+                    return;
+                }
+
+                BlockPos fromPos = player.blockPosition();
+                BlockPos toPos = targetState.getPos() == null ? fromPos : targetState.getPos();
+                Identifier fromWorld = player.level().dimension().registry();
+                Identifier toWorld = targetState.getWorld() != null
+                        ? targetState.getWorld()
+                        : fromWorld;
+
+                PENDING_SYNCS.put(player.getUUID(), new PendingSync(targetState, target));
+
+                ServerPlayNetworking.send(player, new SynchronizationResponsePacket(
+                        true, "转移中",
+                        payload.targetStateUuid(),
+                        fromWorld, fromPos, player.getDirection(),
+                        toWorld, toPos, Direction.NORTH));
+            });
+        });
+
+        // ---- 客户端相机动画结束，服务端执行 sync ----
+        ServerPlayNetworking.registerGlobalReceiver(CameraDonePacket.TYPE, (payload, context) -> {
+            context.server().execute(() -> {
+                ServerPlayer player = context.player();
+                PendingSync pending = PENDING_SYNCS.remove(player.getUUID());
+                if (pending == null || pending.target() == null) return;
+
+                Either<ShellState, String> result = ServerShell.of(player).sync(pending.target());
+                if (result.right().isPresent()) {
+                    ServerPlayNetworking.send(player,
+                            SynchronizationResponsePacket.failure(result.right().get()));
+                }
+
+                syncShellStates(player);
+            });
+        });
+
         CorpseOrigin.LOGGER.info("CorpseOrigin network registered (Fabric 26.2)");
+    }
+
+    private static void syncShellStates(ServerPlayer player) {
+        ServerShell shell = ServerShell.of(player);
+        List<ShellStateSyncS2C.Entry> entries = shell.getAvailableBodies()
+                .map(TransferredBody::snapshot)
+                .filter(Objects::nonNull)
+                .map(s -> new ShellStateSyncS2C.Entry(
+                        s.getUuid(), s.getOwnerUuid(),
+                        s.getWorld() == null ? "" : s.getWorld().toString(),
+                        s.getPos() == null ? 0 : s.getPos().getX(),
+                        s.getPos() == null ? 0 : s.getPos().getY(),
+                        s.getPos() == null ? 0 : s.getPos().getZ(),
+                        s.getProgress()))
+                .toList();
+        ServerPlayNetworking.send(player, new ShellStateSyncS2C(entries));
     }
 
     public static void broadcastInkPoem(ServerPlayer caster, int lineIndex) {
@@ -210,6 +307,10 @@ public final class CorpseNetwork {
         for (ServerPlayer p : caster.level().players()) {
             ServerPlayNetworking.send(p, payload);
         }
+    }
+
+    public static void refreshShellStates(ServerPlayer player) {
+        syncShellStates(player); // 现有 private 方法
     }
 
     private static void handleJuQueBeam(ServerPlayer player) {
@@ -312,6 +413,9 @@ public final class CorpseNetwork {
 
         // ✅ 5. 同步感染度
         sendInfectionSync(joiningPlayer);
+
+        // ✅ 6. 刷新可转移身体列表
+        syncShellStates(joiningPlayer);
 
         CorpseOrigin.LOGGER.info("✅ 已向玩家 {} 同步 {} 个其他尸兄玩家的数据",
                 joiningPlayer.getName().getString(), count);

@@ -6,8 +6,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
-import xiaoshi2022.corpseorigin.skill.longyou.CorpseKingInfrasoundSkill;
 import xiaoshi2022.corpseorigin.skill.ISkill;
+import xiaoshi2022.corpseorigin.skill.longyou.CorpseKingInfrasoundSkill;
 
 import java.util.List;
 

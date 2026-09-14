@@ -5,6 +5,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
+import xiaoshi2022.corpseorigin.block.entity.ShellStorageBlockEntity;
 
 import java.util.Set;
 
@@ -16,6 +17,13 @@ public final class ModBlockEntities {
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,
                     CorpseOrigin.id("clone_chamber"),
                     new BlockEntityType<>(CloneChamberBlockEntity::new, Set.of(ModBlocks.CLONE_CHAMBER))
+            );
+
+    public static final BlockEntityType<ShellStorageBlockEntity> SHELL_STORAGE =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    CorpseOrigin.id("shell_storage"),
+                    new BlockEntityType<>(ShellStorageBlockEntity::new, Set.of(ModBlocks.SHELL_STORAGE))
             );
 
     private ModBlockEntities() {
