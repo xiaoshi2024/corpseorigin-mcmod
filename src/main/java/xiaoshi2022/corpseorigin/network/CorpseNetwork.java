@@ -489,6 +489,24 @@ public final class CorpseNetwork {
         CorpseOrigin.LOGGER.debug("同步玩家尸兄数据: {}", player.getName().getString());
     }
 
+    /**
+     * 按"身体 uuid"同步一份尸兄状态。
+     * <p>
+     * 克隆分身的实体 uuid、克隆仓里身体的推导 uuid 都走这里，
+     * 这样每具身体的外观（外骨骼/多眼/红眼）各按自己那份状态渲染，而不是共用账号那份。
+     */
+    public static void sendBodyCorpseSync(ServerPlayer receiver, java.util.UUID bodyUuid,
+                                          CompoundTag corpseTag) {
+        if (receiver == null || bodyUuid == null || corpseTag == null || corpseTag.isEmpty()) {
+            return;
+        }
+        ServerPlayNetworking.send(receiver, new CorpsePayloads.PlayerCorpseSyncS2C(
+                bodyUuid,
+                corpseTag.getBoolean("is_corpse").orElse(false),
+                corpseTag.getInt("corpse_type").orElse(0),
+                corpseTag.copy()));
+    }
+
     public static void broadcastPlayerCorpseSync(ServerPlayer player) {
         PlayerCorpseComponent comp = PlayerCorpseComponent.get(player);
         CompoundTag data = comp.getDataPublic();

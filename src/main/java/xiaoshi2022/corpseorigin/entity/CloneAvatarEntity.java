@@ -47,6 +47,16 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     private static final EntityDataAccessor<Float> DATA_PROGRESS =
             SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.FLOAT);
 
+    /** 同步：这具身体穿的盔甲（头/胸/腿/脚），客户端渲染要用 */
+    private static final EntityDataAccessor<net.minecraft.world.item.ItemStack> DATA_HEAD_EQUIPMENT =
+            SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.ITEM_STACK);
+    private static final EntityDataAccessor<net.minecraft.world.item.ItemStack> DATA_CHEST_EQUIPMENT =
+            SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.ITEM_STACK);
+    private static final EntityDataAccessor<net.minecraft.world.item.ItemStack> DATA_LEGS_EQUIPMENT =
+            SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.ITEM_STACK);
+    private static final EntityDataAccessor<net.minecraft.world.item.ItemStack> DATA_FEET_EQUIPMENT =
+            SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.ITEM_STACK);
+
     /** 服务端持有的完整身体快照，不参与实体同步（走自定义包或 BE 数据） */
     @Nullable
     private ShellState bodyState;
@@ -65,6 +75,10 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         builder.define(DATA_OWNER_UUID, "");
         builder.define(DATA_ACTIVE, false);
         builder.define(DATA_PROGRESS, 0.0F);
+        builder.define(DATA_HEAD_EQUIPMENT, net.minecraft.world.item.ItemStack.EMPTY);
+        builder.define(DATA_CHEST_EQUIPMENT, net.minecraft.world.item.ItemStack.EMPTY);
+        builder.define(DATA_LEGS_EQUIPMENT, net.minecraft.world.item.ItemStack.EMPTY);
+        builder.define(DATA_FEET_EQUIPMENT, net.minecraft.world.item.ItemStack.EMPTY);
     }
 
     // ==================== 同步数据访问 ====================
@@ -109,6 +123,50 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
 
     public void setBodyState(@Nullable ShellState bodyState) {
         this.bodyState = bodyState;
+        this.syncEquipment(bodyState);
+        this.syncBodyCorpseData();
+    }
+
+    /**
+     * 把这具身体自己的尸兄状态发给 owner。
+     * <p>
+     * 客户端按分身 uuid 缓存，于是分身的外骨骼/多眼按它自己那份状态渲染，
+     * 而不是沿用账号当前那份。
+     */
+    private void syncBodyCorpseData() {
+        if (this.level().isClientSide() || this.bodyState == null) {
+            return;
+        }
+        ServerPlayer owner = this.ownerPlayer();
+        if (owner == null) {
+            return;
+        }
+        CorpseNetwork.sendBodyCorpseSync(owner, this.getUUID(),
+                xiaoshi2022.corpseorigin.shell.ShellState.corpseTagOf(this.bodyState.getComponent()));
+    }
+
+    /** 把身体自带的盔甲同步给客户端（渲染克隆人时用） */
+    private void syncEquipment(@Nullable ShellState bodyState) {
+        java.util.List<net.minecraft.world.item.ItemStack> equipment =
+                bodyState == null ? java.util.List.of() : bodyState.getEquipment();
+        this.entityData.set(DATA_HEAD_EQUIPMENT, equipmentAt(equipment, 0));
+        this.entityData.set(DATA_CHEST_EQUIPMENT, equipmentAt(equipment, 1));
+        this.entityData.set(DATA_LEGS_EQUIPMENT, equipmentAt(equipment, 2));
+        this.entityData.set(DATA_FEET_EQUIPMENT, equipmentAt(equipment, 3));
+    }
+
+    private static net.minecraft.world.item.ItemStack equipmentAt(
+            java.util.List<net.minecraft.world.item.ItemStack> equipment, int index) {
+        return index < equipment.size() ? equipment.get(index) : net.minecraft.world.item.ItemStack.EMPTY;
+    }
+
+    /** 客户端：取出这具身体穿的盔甲（顺序：头/胸/腿/脚） */
+    public java.util.List<net.minecraft.world.item.ItemStack> clientEquipment() {
+        return java.util.List.of(
+                this.entityData.get(DATA_HEAD_EQUIPMENT),
+                this.entityData.get(DATA_CHEST_EQUIPMENT),
+                this.entityData.get(DATA_LEGS_EQUIPMENT),
+                this.entityData.get(DATA_FEET_EQUIPMENT));
     }
 
     public void setSourceChamber(@Nullable BlockPos pos) {
@@ -216,6 +274,11 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         super.tick();
         if (this.level().isClientSide() || !this.isActive()) {
             return;
+        }
+
+        // 每 5 秒补发一次尸兄状态（客户端重连后自愈）
+        if (this.tickCount % 100 == 0) {
+            this.syncBodyCorpseData();
         }
 
         BlockPos pos = this.blockPosition();

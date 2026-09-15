@@ -38,6 +38,7 @@
   "effect.corpseorigin.by": "尸毒感染",
 
   "command.corpseorigin.character.list_header": "角色列表",
+  "command.corpseorigin.character.current": "当前角色：%s（ID：%s）",
   "command.corpseorigin.character.selected": "已选择角色：%s",
   "command.corpseorigin.character.not_found": "未找到角色：%s",
   "command.corpseorigin.character.cleared": "已清除当前角色",

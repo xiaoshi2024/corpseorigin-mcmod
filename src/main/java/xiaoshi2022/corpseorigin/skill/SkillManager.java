@@ -146,6 +146,41 @@ public final class SkillManager {
         return map == null ? 0L : map.getOrDefault(skillPath, 0L);
     }
 
+    // ==================== 冷却随身体保存 ====================
+
+    /** 导出当前剩余冷却（技能路径 → 剩余 tick），用于跟着身体一起保存 */
+    public static Map<String, Integer> snapshotRemaining(ServerPlayer player) {
+        Map<String, Long> map = COOLDOWNS.get(player.getUUID());
+        if (map == null || map.isEmpty()) {
+            return Map.of();
+        }
+        long now = System.currentTimeMillis();
+        Map<String, Integer> result = new HashMap<>();
+        map.forEach((skillPath, endTime) -> {
+            long remainingMs = endTime - now;
+            if (remainingMs > 0) {
+                result.put(skillPath, (int) Math.max(1L, (remainingMs + 49L) / 50L));
+            }
+        });
+        return result;
+    }
+
+    /** 用给定剩余冷却覆盖玩家当前冷却（换身体时用）；空表即清空 */
+    public static void restoreRemaining(ServerPlayer player, Map<String, Integer> remaining) {
+        long now = System.currentTimeMillis();
+        Map<String, Long> map = new HashMap<>();
+        remaining.forEach((skillPath, ticks) -> {
+            if (ticks > 0) {
+                map.put(skillPath, now + ticks * 50L);
+            }
+        });
+        if (map.isEmpty()) {
+            COOLDOWNS.remove(player.getUUID());
+        } else {
+            COOLDOWNS.put(player.getUUID(), map);
+        }
+    }
+
     /** 玩家断开连接时清理其冷却缓存 */
     public static void cleanupDisconnect(UUID uuid) {
         COOLDOWNS.remove(uuid);

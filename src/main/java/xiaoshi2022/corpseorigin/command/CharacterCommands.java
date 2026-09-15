@@ -2,6 +2,7 @@ package xiaoshi2022.corpseorigin.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -10,7 +11,7 @@ import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.ICharacter;
 
 /**
- * 角色命令 /character list|select|clear
+ * 角色命令 /character current|list|select|clear
  */
 public final class CharacterCommands {
 
@@ -19,6 +20,9 @@ public final class CharacterCommands {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("character")
+                // 直接 /character 等同于查看当前角色
+                .executes(ctx -> showCurrent(ctx.getSource()))
+                .then(Commands.literal("current").executes(ctx -> showCurrent(ctx.getSource())))
                 .then(Commands.literal("list").executes(ctx -> {
                     StringBuilder list = new StringBuilder("===== ");
                     list.append(Component.translatable("command.corpseorigin.character.list_header").getString())
@@ -60,5 +64,15 @@ public final class CharacterCommands {
                             Component.translatable("command.corpseorigin.character.cleared"), false);
                     return 1;
                 })));
+    }
+
+    /** 查看当前角色（没有显式选择时就是默认的凡人） */
+    private static int showCurrent(CommandSourceStack source) throws CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        ICharacter character = CharacterManager.getInstance().getPlayerCharacter(player);
+        source.sendSuccess(() -> Component.translatable(
+                "command.corpseorigin.character.current",
+                character.getName(), character.getId()), false);
+        return 1;
     }
 }

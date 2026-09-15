@@ -46,10 +46,14 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
         UUID uuid = getEntityUuid(state.id);
         if (uuid == null) return;
 
+        Entity entity = Minecraft.getInstance().level == null
+                ? null : Minecraft.getInstance().level.getEntity(state.id);
+
         var parentModel = this.getParentModel();
         if (parentModel == null) return;
 
         // ==================== 1. 尸兄器官渲染（原有逻辑） ====================
+        // 分身的尸兄状态已按它自己的 uuid 同步过来，所以这里直接用实体 uuid
         CorpseOriginClient.ClientCorpseData corpseData = CorpseOriginClient.corpseDataCache.get(uuid);
         if (corpseData != null && corpseData.isCorpse && !corpseData.isDisguised()) {
             model.copyFromHead(parentModel.head);
@@ -68,7 +72,13 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
         }
 
         // ==================== 2. 红眼特效渲染（杀戮觉醒） ====================
-        int remain = CorpseOriginClient.tempRedEyeTicks.getOrDefault(uuid, 0);
+        // 红眼是玩家自己的战斗状态（按玩家 uuid 记），分身跟着主人一起亮
+        UUID redEyeUuid = uuid;
+        if (entity instanceof xiaoshi2022.corpseorigin.entity.CloneAvatarEntity avatar
+                && avatar.getOwnerUuid() != null) {
+            redEyeUuid = avatar.getOwnerUuid();
+        }
+        int remain = CorpseOriginClient.tempRedEyeTicks.getOrDefault(redEyeUuid, 0);
         if (remain > 0) {
             poseStack.pushPose();
 

@@ -16,6 +16,14 @@ public class ShellState {
     public static final float PROGRESS_DONE = 1.0F;
     public static final float PROGRESS_PRINTING = 0.75F;
 
+    /** 盔甲槽顺序：头 / 胸 / 腿 / 脚 */
+    public static final net.minecraft.world.entity.EquipmentSlot[] EQUIPMENT_SLOTS = {
+            net.minecraft.world.entity.EquipmentSlot.HEAD,
+            net.minecraft.world.entity.EquipmentSlot.CHEST,
+            net.minecraft.world.entity.EquipmentSlot.LEGS,
+            net.minecraft.world.entity.EquipmentSlot.FEET
+    };
+
     private UUID uuid;
     private UUID ownerUuid;
     private String ownerName;
@@ -27,6 +35,9 @@ public class ShellState {
 
     private PlayerBodySnapshot body;
     private ShellStateComponent component;
+
+    /** 这具身体穿的四件盔甲（头/胸/腿/脚），用于克隆人渲染 */
+    private final java.util.List<net.minecraft.world.item.ItemStack> equipment = new java.util.ArrayList<>();
 
     private ShellState() {
     }
@@ -43,7 +54,7 @@ public class ShellState {
         state.pos = pos;
         state.body = PlayerBodySnapshot.blank(player);
         state.component = ShellStateComponent.empty();
-        return state;
+        return state;   // 空壳身体：不继承盔甲
     }
 
     /** ★ 培育用空壳：供 BE 调用（不依赖 ServerPlayer） */
@@ -80,6 +91,9 @@ public class ShellState {
         }
 
         state.component = ShellStateComponent.of(player);
+        for (net.minecraft.world.entity.EquipmentSlot slot : EQUIPMENT_SLOTS) {
+            state.equipment.add(player.getItemBySlot(slot).copy());
+        }
         return state;
     }
 
@@ -105,6 +119,9 @@ public class ShellState {
             this.component.writeNbt(compTag);
             out.store("Component", CompoundTag.CODEC, compTag);
         }
+        if (!this.equipment.isEmpty()) {
+            out.store("Equipment", net.minecraft.world.item.ItemStack.OPTIONAL_CODEC.listOf(), this.equipment);
+        }
     }
 
     public static ShellState read(ValueInput in) {
@@ -119,7 +136,35 @@ public class ShellState {
         state.body = in.child("Body").map(PlayerBodySnapshot::read).orElse(null);
         state.component = ShellStateComponent.empty();
         in.read("Component", CompoundTag.CODEC).ifPresent(tag -> state.component.readNbt(tag));
+        state.equipment.addAll(in.read("Equipment", net.minecraft.world.item.ItemStack.OPTIONAL_CODEC.listOf())
+                .orElse(java.util.List.of()));
         return state;
+    }
+
+    /** 这具身体穿的四件盔甲（顺序：头/胸/腿/脚），用于克隆人渲染 */
+    public java.util.List<net.minecraft.world.item.ItemStack> getEquipment() {
+        return this.equipment;
+    }
+
+    /**
+     * 从一组组件里取出尸兄状态原始 NBT；没有就返回 null。
+     * <p>
+     * 每具身体各有一份尸兄状态，客户端渲染时按身体 uuid 取用，所以这里要能拿到原始标签。
+     */
+    @Nullable
+    public static CompoundTag corpseTagOf(@Nullable ShellStateComponent component) {
+        if (component == null) {
+            return null;
+        }
+        CorpseShellStateComponent corpse = component.as(CorpseShellStateComponent.class);
+        return corpse == null ? null : corpse.getData();
+    }
+
+    public void setEquipment(java.util.List<net.minecraft.world.item.ItemStack> equipment) {
+        this.equipment.clear();
+        if (equipment != null) {
+            this.equipment.addAll(equipment);
+        }
     }
 
     public UUID getUuid() { return this.uuid; }

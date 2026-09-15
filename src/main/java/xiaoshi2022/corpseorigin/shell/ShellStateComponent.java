@@ -21,6 +21,15 @@ public abstract class ShellStateComponent {
     /** 从另一个组件复制状态到当前组件 */
     public abstract void clone(ShellStateComponent component);
 
+    /**
+     * 把这具身体自带的状态应用回玩家实体（默认无操作）。
+     * <p>
+     * 需要写回实体的组件（尸兄状态、角色数据、技能状态……）覆盖这个方法，
+     * 这样夺舍时只需统一调一次 {@code state.getComponent().applyTo(player)}。
+     */
+    public void applyTo(net.minecraft.server.level.ServerPlayer player) {
+    }
+
     /** 把当前组件状态写进 NBT */
     public abstract void writeNbt(CompoundTag tag);
 
@@ -75,6 +84,11 @@ public abstract class ShellStateComponent {
         }
 
         @Override public String getId() { return "corpseorigin:combined"; }
+
+        @Override
+        public void applyTo(net.minecraft.server.level.ServerPlayer player) {
+            for (ShellStateComponent inner : this.components) inner.applyTo(player);
+        }
 
         @Override
         public void clone(ShellStateComponent c) {

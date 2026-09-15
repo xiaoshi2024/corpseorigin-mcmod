@@ -32,6 +32,7 @@ import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.shell.PlayerBodySnapshot;
 import xiaoshi2022.corpseorigin.shell.ShellBodyIndex;
 import xiaoshi2022.corpseorigin.shell.ShellState;
+import xiaoshi2022.corpseorigin.shell.ShellStateComponent;
 import xiaoshi2022.corpseorigin.shell.TransferredBody;
 
 import java.nio.charset.StandardCharsets;
@@ -86,11 +87,15 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         state.setUuid(bodyUuid());
         state.setBody(PlayerBodySnapshot.fromCompoundTag(this.clone.getBody()));
         state.setProgress(this.clone.getProgress());
+        // ★ 身体自带的尸兄状态 / 角色数据跟着身体走，不沿用玩家当前的
+        state.setComponent(this.clone.getComponent());
+        // ★ 盔甲也随身体（客户端渲染克隆人要用）
+        state.setEquipment(this.clone.getEquipment());
         return state;
     }
 
     /** 由维度 + 坐标推导的身体标识：UI 上同一个仓内的身体始终是同一个目标 */
-    private UUID bodyUuid() {
+    public UUID bodyUuid() {
         String key = (this.level == null ? "" : this.level.dimension().identifier().toString())
                 + "@" + this.worldPosition.asLong();
         return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
@@ -121,11 +126,14 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
                 oldState.getOwnerUuid(),
                 oldState.getOwnerName(),
                 CloneState.COMPLETE_PROGRESS,
-                oldState.getBody().asCompoundTag());
+                oldState.getBody().asCompoundTag(),
+                oldState.getComponent());
+        this.clone.setEquipment(oldState.getEquipment());
         this.registerToRegistry();
         this.setChanged();
         chamberLevel.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
         this.indexBody(chamberLevel);
+        this.syncBodyCorpseData(chamberLevel);
         refreshOwnerShellStates(chamberLevel, this.ownerUuid());
     }
 
@@ -217,6 +225,11 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
     private void serverTick(ServerLevel level, BlockState state) {
         this.tickCount++;
         boolean changed = false;
+
+        // 每 5 秒补发一次这具身体的尸兄状态：客户端重连、服务器重启后能自愈
+        if (this.clone != null && this.tickCount % 100 == 0) {
+            this.syncBodyCorpseData(level);
+        }
 
         // ★ 只在服务端登记进注册表（客户端 BE 混进去会让夺舍拿到 ClientLevel 而崩溃）
         if (this.clone != null && !this.registered) {
@@ -362,6 +375,9 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         ShellState bodyState = ShellState.blank(player, BlockPos.containing(x, y, z));
         bodyState.setBody(PlayerBodySnapshot.fromCompoundTag(this.clone.getBody()));
         bodyState.setProgress(ShellState.PROGRESS_DONE);
+        // ★ 分身带走的也是这具身体自己的尸兄状态 / 角色数据
+        bodyState.setComponent(this.clone.getComponent());
+        bodyState.setEquipment(this.clone.getEquipment());
 
         // ★ 2. 生成分身，把身体交给它（记住出生仓，好让旧身体还得回来）
         CloneAvatarEntity avatar = new CloneAvatarEntity(ModEntities.CLONE_AVATAR, serverLevel);
@@ -408,14 +424,16 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
             player.hurt(level.damageSources().sweetBerryBush(), 1.0F);
         }
 
-        // ★ 空白身体
+        // ★ 空白身体 + 供体当前的尸兄状态 / 角色数据（克隆体从培育者身上复制一份，之后各自独立）
         ShellState blankBody = ShellState.blank(player, this.worldPosition);
         CompoundTag body = blankBody.getBody().asCompoundTag();
         float startProgress = player.isCreative() ? CloneState.COMPLETE_PROGRESS : 0.0F;
-        this.clone = new CloneState(player.getUUID(), player.getScoreboardName(), startProgress, body);
+        this.clone = new CloneState(player.getUUID(), player.getScoreboardName(), startProgress, body,
+                ShellStateComponent.of(player));
         this.registerToRegistry();
         if (level instanceof ServerLevel serverLevel) {
             this.indexBody(serverLevel);
+            this.syncBodyCorpseData(serverLevel);
             if (startProgress >= CloneState.COMPLETE_PROGRESS) {
                 // 创造模式一上来就是培育完成，培养液同样要被消耗掉
                 CloneChamberBlock.setFluid(this.getBlockState(), serverLevel, this.worldPosition, FluidKind.NONE);
@@ -494,8 +512,42 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
                 cloneTag.putString("OwnerName", this.clone.getOwnerName());
             }
             cloneTag.putFloat("Progress", this.clone.getProgress());
+            // ★ 盔甲也要下发，否则客户端画的仓内克隆人光着
+            if (!this.clone.getEquipment().isEmpty()) {
+                var out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(
+                        net.minecraft.util.ProblemReporter.DISCARDING, registries);
+                out.store("Equipment", net.minecraft.world.item.ItemStack.OPTIONAL_CODEC.listOf(),
+                        this.clone.getEquipment());
+                CompoundTag extra = out.buildResult();
+                for (String key : extra.keySet()) {
+                    cloneTag.put(key, extra.get(key));
+                }
+            }
             tag.put("Clone", cloneTag);
         }
         return tag;
+    }
+
+    /** 供渲染取用的盔甲（顺序：头/胸/腿/脚） */
+    public List<net.minecraft.world.item.ItemStack> getEquipment() {
+        return this.clone == null ? List.of() : this.clone.getEquipment();
+    }
+
+    /**
+     * 把这具身体自己的尸兄状态发给 owner。
+     * <p>
+     * 客户端按"身体 uuid"缓存，于是仓内克隆人的外骨骼/多眼按这具身体的状态渲染，
+     * 而不是沿用账号当前那份。
+     */
+    private void syncBodyCorpseData(ServerLevel level) {
+        if (this.clone == null) {
+            return;
+        }
+        ServerPlayer owner = ownerPlayer(level, this.ownerUuid());
+        if (owner == null) {
+            return;
+        }
+        CorpseNetwork.sendBodyCorpseSync(owner, this.bodyUuid(),
+                ShellState.corpseTagOf(this.clone.getComponent()));
     }
 }

@@ -38,6 +38,7 @@
   "effect.corpseorigin.by": "Corpse Infection",
 
   "command.corpseorigin.character.list_header": "Character List",
+  "command.corpseorigin.character.current": "Current character: %s (ID: %s)",
   "command.corpseorigin.character.selected": "Selected character: %s",
   "command.corpseorigin.character.not_found": "Character not found: %s",
   "command.corpseorigin.character.cleared": "Current character cleared",

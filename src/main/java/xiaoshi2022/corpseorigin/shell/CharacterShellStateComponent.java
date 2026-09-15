@@ -47,6 +47,7 @@ public class CharacterShellStateComponent extends ShellStateComponent {
     }
 
     /** ★ 应用回玩家 */
+    @Override
     public void applyTo(ServerPlayer player) {
         if (this.playerUuid == null) this.playerUuid = player.getUUID();
         PlayerCharacterData.get(player).readNbt(this.playerUuid, this.data);

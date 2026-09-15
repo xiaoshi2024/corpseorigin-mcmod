@@ -3,7 +3,9 @@
   "package": "xiaoshi2022.corpseorigin.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "CooldownInstanceAccessor",
     "CorpseMixin",
+    "ItemCooldownsAccessor",
     "MobPeacefulMixin",
     "MobPickupMixin",
     "ServerPlayerShellMixin"
@@ -19,6 +21,7 @@
     "ClientPlayerInteractionManagerMixin",
     "ClientPlayerShellMixin",
     "EntityMixin",
+    "LivingEntityRendererLayersAccessor",
     "LivingEntityRendererMixin"
   ]
 }

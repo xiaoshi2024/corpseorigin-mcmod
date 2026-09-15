@@ -71,6 +71,14 @@ public class CorpseOrigin implements ModInitializer {
 				CharacterShellStateComponent::new,
 				CharacterShellStateComponent::new
 		);
+		ShellStateComponentRegistry.getInstance().register(
+				ApsShellStateComponent::new,
+				ApsShellStateComponent::new
+		);
+		ShellStateComponentRegistry.getInstance().register(
+				SkillCooldownShellStateComponent::new,
+				SkillCooldownShellStateComponent::new
+		);
 
 		// ✅ 9. 网络
 		CorpseNetwork.register();

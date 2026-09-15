@@ -24,10 +24,14 @@ public class CorpseShellStateComponent extends ShellStateComponent {
 
     @Override public void writeNbt(CompoundTag tag) { tag.put("Data", this.data.copy()); }
 
+    /** 这具身体的尸兄状态原始 NBT（渲染克隆人时用） */
+    public CompoundTag getData() { return this.data; }
+
     @Override public void readNbt(CompoundTag tag) {
         this.data = tag.getCompound("Data").orElse(new CompoundTag());
     }
 
+    @Override
     public void applyTo(ServerPlayer player) {
         PlayerCorpseComponent.get(player).readNbt(this.data);
     }

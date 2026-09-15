@@ -19,7 +19,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.jetbrains.annotations.Nullable;
 import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
+import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
+import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.shell.*;
 
 import java.util.ArrayList;
@@ -201,16 +203,11 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
         self.removeAllEffects();
         self.setDeltaMovement(Vec3.ZERO);
 
-        // 组件先抓当前实体的，然后 clone 目标身体的
-        ShellStateComponent currentComponent = ShellStateComponent.of(self);
-        currentComponent.clone(state.getComponent());
-
-        // 如果目标组件是 CorpseShellStateComponent，显式 apply 到实体
-        CorpseShellStateComponent corpseComp = state.getComponent().as(CorpseShellStateComponent.class);
-        if (corpseComp != null) corpseComp.applyTo(self);
-
-        CharacterShellStateComponent charComp = state.getComponent().as(CharacterShellStateComponent.class);
-        if (charComp != null) charComp.applyTo(self);
+        // ★ 组件：把这具身体自带的尸兄状态 / 角色数据 / 技能状态覆盖到玩家身上
+        state.getComponent().applyTo(self);
+        // 角色变了要重新同步给客户端，否则客户端的角色与技能树还是旧的
+        CorpseNetwork.sendCharacterSync(self,
+                PlayerCharacterData.get(self).getCharacterId(self.getUUID()));
 
         // 传送
         if (state.getPos() != null) {

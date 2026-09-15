@@ -12,20 +12,32 @@ import net.minecraft.client.renderer.block.model.BlockDisplayContext;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.entity.RenderLayerParent;
+import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.PlayerSkin;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
+import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
+import xiaoshi2022.corpseorigin.client.CorpseOriginClient;
+import xiaoshi2022.corpseorigin.client.model.ExoskeletonModel;
 import xiaoshi2022.corpseorigin.client.model.clone.VoxelModel;
+import xiaoshi2022.corpseorigin.client.renderer.CloneArmorSupport;
+import xiaoshi2022.corpseorigin.client.render.layer.ExoskeletonRenderLayer;
 import xiaoshi2022.corpseorigin.client.skin.clone.ClientSkinCache;
 import xiaoshi2022.corpseorigin.registry.ModBlocks;
 import xiaoshi2022.corpseorigin.registry.ModModelLayers;
+
+import java.util.List;
 
 public class CloneChamberRenderer
         implements BlockEntityRenderer<CloneChamberBlockEntity, CloneChamberRenderState> {
@@ -61,6 +73,10 @@ public class CloneChamberRenderer
     private final BlockModelResolver modelResolver;
     private final PlayerModel cloneModel;
     private final VoxelModel voxelModel;
+    @Nullable
+    private final ExoskeletonModel exoskeletonModel;
+    @Nullable
+    private HumanoidArmorLayer<AvatarRenderState, PlayerModel, PlayerModel> armorLayer;
 
     public CloneChamberRenderer(BlockEntityRendererProvider.Context context) {
         this.modelResolver = context.blockModelResolver();
@@ -69,6 +85,14 @@ public class CloneChamberRenderer
         this.cloneModel = new PlayerModel(
                 entityModels.bakeLayer(ModModelLayers.CLONE_DUMMY), false);
         this.voxelModel = new VoxelModel(this.cloneModel);
+
+        ExoskeletonModel baked = null;
+        try {
+            baked = new ExoskeletonModel(entityModels.bakeLayer(ModModelLayers.EXOSKELETON));
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.warn("仓内克隆人外骨骼模型烘焙失败，将不渲染外骨骼: {}", e.getMessage());
+        }
+        this.exoskeletonModel = baked;
     }
 
     @Override
@@ -87,6 +111,8 @@ public class CloneChamberRenderer
         state.cloneProgress = chamber.getCloneProgress();
         state.hasClone = chamber.hasClone();
         state.ownerUuid = chamber.getOwnerUuid();
+        state.bodyUuid = chamber.bodyUuid();
+        state.equipment = chamber.getEquipment();
     }
 
     @Override
@@ -206,6 +232,12 @@ public class CloneChamberRenderer
             avatar.showRightSleeve = true;
             avatar.showCape = false;
 
+            // ★ 盔甲：取这具身体自己穿的那套
+            avatar.headEquipment = equipmentAt(state.equipment, 0);
+            avatar.chestEquipment = equipmentAt(state.equipment, 1);
+            avatar.legsEquipment = equipmentAt(state.equipment, 2);
+            avatar.feetEquipment = equipmentAt(state.equipment, 3);
+
             collector.submitModel(
                     this.cloneModel,
                     avatar,
@@ -215,9 +247,83 @@ public class CloneChamberRenderer
                     OverlayTexture.NO_OVERLAY,
                     -1,
                     null);
+
+            // ★ 层：先盔甲，再尸兄外骨骼/红眼（放在 submitModel 之后，模型姿势已摆好）
+            HumanoidArmorLayer<AvatarRenderState, PlayerModel, PlayerModel> armor =
+                    this.armorLayer();
+            if (armor != null) {
+                armor.submit(pose, collector, state.lightCoords, avatar, 0.0F, 0.0F);
+            }
+            renderCorpseParts(pose, collector, state, avatar);
         }
 
         pose.popPose();
+    }
+
+    private static ItemStack equipmentAt(List<ItemStack> equipment, int index) {
+        return index < equipment.size() ? equipment.get(index) : ItemStack.EMPTY;
+    }
+
+    // ==================== 盔甲 / 尸兄外骨骼 ====================
+
+    @Nullable
+    private HumanoidArmorLayer<AvatarRenderState, PlayerModel, PlayerModel> armorLayer() {
+        if (this.armorLayer == null) {
+            this.armorLayer = CloneArmorSupport.armorLayer(new ChamberLayerParent(this.cloneModel));
+        }
+        return this.armorLayer;
+    }
+
+    /** 盔甲层要求一个 RenderLayerParent，这里把它指向仓内这套模型 */
+    private record ChamberLayerParent(PlayerModel model)
+            implements RenderLayerParent<AvatarRenderState, PlayerModel> {
+
+        @Override
+        public PlayerModel getModel() { return this.model; }
+    }
+
+    /**
+     * 仓内克隆人的尸兄外骨骼与红眼。
+     * <p>
+     * 和真玩家用的是同一套数据（客户端缓存的尸兄数据按 owner uuid 记）与同一张贴图，
+     * 但贝雕渲染器没有实体渲染层的管道，所以这里手动提交模型部件。
+     */
+    private void renderCorpseParts(PoseStack pose, SubmitNodeCollector collector,
+                                   CloneChamberRenderState state, AvatarRenderState avatar) {
+        if (state.ownerUuid == null) {
+            return;
+        }
+        // 尸兄状态按"这具身体"取（服务端按身体 uuid 单独同步过）
+        CorpseOriginClient.ClientCorpseData corpseData =
+                state.bodyUuid == null ? null : CorpseOriginClient.corpseDataCache.get(state.bodyUuid);
+        boolean corpse = corpseData != null && corpseData.isCorpse && !corpseData.isDisguised();
+        // 红眼是玩家自己的战斗状态，跟着账号走
+        int redEye = CorpseOriginClient.tempRedEyeTicks.getOrDefault(state.ownerUuid, 0);
+        if (!corpse && redEye <= 0) {
+            return;
+        }
+
+        if (corpse && this.exoskeletonModel != null) {
+            this.exoskeletonModel.copyFromHead(this.cloneModel.head);
+            this.exoskeletonModel.setupAnim(avatar);
+            collector.order(0).submitModelPart(
+                    this.exoskeletonModel.getShieye(),
+                    pose,
+                    RenderTypes.entityTranslucent(ExoskeletonRenderLayer.EXOSKELETON_TEXTURE),
+                    state.lightCoords,
+                    OverlayTexture.NO_OVERLAY,
+                    null);
+        }
+
+        if (redEye > 0) {
+            collector.order(1).submitModelPart(
+                    this.cloneModel.head,
+                    pose,
+                    RenderTypes.eyes(ExoskeletonRenderLayer.RED_EYE_OVERLAY),
+                    state.lightCoords,
+                    OverlayTexture.NO_OVERLAY,
+                    null);
+        }
     }
 
 }
