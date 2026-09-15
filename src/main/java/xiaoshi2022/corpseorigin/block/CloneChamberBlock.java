@@ -251,15 +251,37 @@ public class CloneChamberBlock extends BaseEntityBlock implements BucketPickup, 
 
     /** 液体状态上下两半同步（和 {@link #setOpen} 同样的做法） */
     public static void setFluid(BlockState state, LevelAccessor level, BlockPos pos, FluidKind kind) {
-        if (state.getValue(FLUID) == kind) {
-            return;
+        setFluid(state, level, pos, kind, null);
+    }
+
+    /**
+     * 液体状态上下两半同步，并记下"具体是哪种液体"。
+     * <p>
+     * 方块状态的取值表定死在本模组注册方块那一刻，注册顺序更晚的模组，它的流体存不进方块状态
+     * （只能记 {@link FluidKind#OTHER}），所以具体流体交给方块实体存——桶、加速、是否尸水都靠它。
+     */
+    public static void setFluid(BlockState state, LevelAccessor level, BlockPos pos, FluidKind kind,
+                               @Nullable Fluid fluid) {
+        if (state.getValue(FLUID) != kind) {
+            level.setBlock(pos, state.setValue(FLUID, kind), Block.UPDATE_ALL);
+            BlockPos otherPos = isLower(state) ? pos.above() : pos.below();
+            BlockState otherState = level.getBlockState(otherPos);
+            if (otherState.is(state.getBlock())) {
+                level.setBlock(otherPos, otherState.setValue(FLUID, kind), Block.UPDATE_ALL);
+            }
         }
-        level.setBlock(pos, state.setValue(FLUID, kind), Block.UPDATE_ALL);
-        BlockPos otherPos = isLower(state) ? pos.above() : pos.below();
-        BlockState otherState = level.getBlockState(otherPos);
-        if (otherState.is(state.getBlock())) {
-            level.setBlock(otherPos, otherState.setValue(FLUID, kind), Block.UPDATE_ALL);
+
+        CloneChamberBlockEntity chamber = chamberAt(level, pos, state);
+        if (chamber != null) {
+            chamber.setStoredFluid(kind.isUnknown() ? fluid : null);
         }
+    }
+
+    /** 该位置（上/下半格）对应的方块实体（在下半格那个） */
+    @Nullable
+    private static CloneChamberBlockEntity chamberAt(LevelAccessor level, BlockPos pos, BlockState state) {
+        BlockPos lowerPos = isLower(state) ? pos : pos.below();
+        return level.getBlockEntity(lowerPos) instanceof CloneChamberBlockEntity chamber ? chamber : null;
     }
 
     // ==================== 方块实体 ====================
@@ -304,6 +326,13 @@ public class CloneChamberBlock extends BaseEntityBlock implements BucketPickup, 
         BlockPos upperPos = pos.above();
         level.setBlock(upperPos, state.setValue(HALF, DoubleBlockHalf.UPPER)
                 .setValue(FLUID, FluidKind.of(level.getFluidState(upperPos).getType())), Block.UPDATE_ALL);
+
+        // 直接放在模组液体里时，具体液体同样要记进方块实体（方块状态存不下）
+        Fluid lowerFluid = level.getFluidState(pos).getType();
+        CloneChamberBlockEntity chamber = chamberAt(level, pos, state);
+        if (chamber != null) {
+            chamber.setStoredFluid(FluidKind.of(lowerFluid).isUnknown() ? lowerFluid : null);
+        }
     }
 
     @Override

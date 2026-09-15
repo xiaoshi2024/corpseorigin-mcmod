@@ -3,9 +3,11 @@ package xiaoshi2022.corpseorigin.block.entity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -17,6 +19,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
@@ -62,6 +65,16 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
     private boolean indexed;
     /** 当前这具身体是否已进 owner 的注册表（只在服务端登记，客户端 BE 不许进来） */
     private boolean registered;
+
+    /**
+     * 仓内液体的"具体是哪种"。
+     * <p>
+     * 方块状态的取值表是本模组注册方块那一刻定死的，注册顺序排在本模组之后的模组，它的流体
+     * 存不进方块状态（只能记成 {@link xiaoshi2022.corpseorigin.block.FluidKind#OTHER}），
+     * 于是把具体流体记在这里——桶、加速倍率、是否尸水都靠它。
+     */
+    @Nullable
+    private Identifier storedFluidId;
 
     public CloneChamberBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CLONE_CHAMBER, pos, state);
@@ -295,7 +308,28 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
 
     /** 仓内液体对培育速度的加成（尸水/血水会加速） */
     private float liquidGrowthMultiplier() {
-        return this.getBlockState().getValue(CloneChamberBlock.FLUID).growthMultiplier();
+        Fluid stored = this.storedFluid();
+        return stored != null
+                ? FluidKind.growthMultiplier(stored)
+                : this.getBlockState().getValue(CloneChamberBlock.FLUID).growthMultiplier();
+    }
+
+    /** 记下仓内液体的具体种类（方块状态存不下的那些用；传 null 表示清空） */
+    public void setStoredFluid(@Nullable Fluid fluid) {
+        Identifier id = fluid == null || fluid == net.minecraft.world.level.material.Fluids.EMPTY
+                ? null
+                : BuiltInRegistries.FLUID.getKey(fluid);
+        if (java.util.Objects.equals(this.storedFluidId, id)) {
+            return;
+        }
+        this.storedFluidId = id;
+        this.setChanged();
+    }
+
+    /** 仓内液体的具体种类（方块状态能表达的那种就没记，返回 null 表示"看方块状态"） */
+    @Nullable
+    public Fluid storedFluid() {
+        return this.storedFluidId == null ? null : BuiltInRegistries.FLUID.getValue(this.storedFluidId);
     }
 
     private void onCloneReady(ServerLevel level) {
@@ -491,7 +525,10 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         // ★ 培育液决定配方：只有本模组的尸水会把克隆体养成尸兄（继承本体的尸兄特征），
         //   其他模组的血水只加速培育、不改性质；清水养出干净人形
         FluidKind fluid = this.getBlockState().getValue(CloneChamberBlock.FLUID);
-        boolean corpseClone = fluid.isCorpseWater();
+        Fluid storedFluid = this.storedFluid();
+        boolean corpseClone = storedFluid != null
+                ? FluidKind.isCorpseWater(storedFluid)
+                : fluid.isCorpseWater();
         net.minecraft.util.RandomSource random = level.getRandom();
         // 尸水长得快但更容易长歪；清水慢但更完整。完成度同时就是"继承度"
         float completion = corpseClone
@@ -589,12 +626,18 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         if (this.clone != null) {
             this.clone.writeTo(out.child("Clone"));
         }
+        if (this.storedFluidId != null) {
+            out.putString("StoredFluid", this.storedFluidId.toString());
+        }
     }
 
     @Override
     protected void loadAdditional(ValueInput in) {
         super.loadAdditional(in);
         this.clone = in.child("Clone").map(CloneState::read).orElse(null);
+        this.storedFluidId = in.getString("StoredFluid")
+                .map(Identifier::tryParse)
+                .orElse(null);
         // ★ 这里不要在服务端之外登记：客户端读同一份 NBT 会把 ClientLevel 上的仓塞进 REGISTRY，
         //   夺舍时强转 ServerLevel 就会崩。登记统一放到服务端 tick 里做。
     }
