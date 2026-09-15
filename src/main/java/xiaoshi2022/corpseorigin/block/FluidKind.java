@@ -2,13 +2,16 @@ package xiaoshi2022.corpseorigin.block;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.registry.ModFluidTags;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -108,7 +111,12 @@ public final class FluidKind implements Comparable<FluidKind> {
                 && this.fluid.builtInRegistryHolder().key().identifier().equals(CorpseOrigin.id("infected_water"));
     }
 
-    /** 血水类液体（本模组的尸水 + 其他模组名字里带 blood / ichor 的）：培育更快 */
+    /**
+     * 是不是血水类培养液（培育提速）。
+     * <p>
+     * 判定顺序：本模组尸水 → {@link ModFluidTags#BLOOD_CULTURE_FLUID} 标签（其它模组/数据包显式声明，
+     * 源与流动形态都算）→ 按流体 id 里的 blood / ichor 兜底（没打标签的模组也能吃到加速）。
+     */
     public boolean isBloodLike() {
         if (this.isCorpseWater()) {
             return true;
@@ -116,8 +124,22 @@ public final class FluidKind implements Comparable<FluidKind> {
         if (this.isEmpty()) {
             return false;
         }
+        if (this.isIn(ModFluidTags.BLOOD_CULTURE_FLUID)) {
+            return true;
+        }
         String path = this.fluid.builtInRegistryHolder().key().identifier().getPath();
         return path.contains("blood") || path.contains("ichor");
+    }
+
+    /** 该流体是否在给定标签里（源与流动形态都查一遍，标签里可能只写了其中一种） */
+    private boolean isIn(TagKey<Fluid> tag) {
+        if (this.isEmpty()) {
+            return false;
+        }
+        if (this.fluid.is(tag)) {
+            return true;
+        }
+        return this.fluid instanceof FlowingFluid flowing && flowing.getFlowing().is(tag);
     }
 
     /** 舀走时返还的桶（没桶就是空手） */
