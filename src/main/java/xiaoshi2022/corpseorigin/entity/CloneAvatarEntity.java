@@ -115,10 +115,10 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         this.sourceChamberPos = pos;
     }
 
-    /** 取出生它的克隆仓（区块没加载就按需拉一下；仓没了返回 null） */
+    /** 取出生它的克隆仓（在分身自己所在维度里按需加载；仓没了返回 null） */
     @Nullable
-    public CloneChamberBlockEntity sourceChamber(ServerLevel level) {
-        if (this.sourceChamberPos == null) {
+    public CloneChamberBlockEntity sourceChamber() {
+        if (this.sourceChamberPos == null || !(this.level() instanceof ServerLevel level)) {
             return null;
         }
         level.getChunkAt(this.sourceChamberPos);

@@ -97,10 +97,11 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
         ShellState oldBody = ShellState.of(self, currentPos);
 
         // 取身体之前先记下"这具身体原本放在哪"，好把旧身体还回同一座仓
+        // （分身可能在世界另一头甚至别的维度，交给它自己按所在维度去找出生仓）
         CloneChamberBlockEntity sourceChamber =
                 target instanceof CloneChamberBlockEntity chamber ? chamber : null;
         CloneChamberBlockEntity avatarChamber =
-                target instanceof CloneAvatarEntity avatar ? avatar.sourceChamber(level) : null;
+                target instanceof CloneAvatarEntity avatar ? avatar.sourceChamber() : null;
 
         // ★ 取出目标身体（方块容器会被清空，分身实体被移除）
         target.consume(level);

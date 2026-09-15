@@ -3,22 +3,31 @@ package xiaoshi2022.corpseorigin.block;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.BucketPickup;
+import net.minecraft.world.level.block.LiquidBlockContainer;
 import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -28,8 +37,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -40,14 +49,15 @@ import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
 import xiaoshi2022.corpseorigin.registry.ModBlockEntities;
 
 import java.util.Map;
+import java.util.Optional;
 
-public class CloneChamberBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
+public class CloneChamberBlock extends BaseEntityBlock implements BucketPickup, LiquidBlockContainer {
 
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
-    /** 可含水：仓内将来可以注入营养液体 */
-    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+    /** 仓内液体：取值来自注册表里所有"有桶"的流体，因此任意液体桶都能装进来 */
+    public static final FluidKindProperty FLUID = new FluidKindProperty("fluid", FluidKind.all());
     public static final EnumProperty<Part> PART = EnumProperty.create("part", Part.class);
 
     public enum Part implements StringRepresentable {
@@ -127,7 +137,7 @@ public class CloneChamberBlock extends BaseEntityBlock implements SimpleWaterlog
                 .setValue(HALF, DoubleBlockHalf.LOWER)
                 .setValue(FACING, Direction.NORTH)
                 .setValue(OPEN, false)
-                .setValue(WATERLOGGED, false)
+                .setValue(FLUID, FluidKind.NONE)
                 .setValue(PART, Part.BODY_LOWER));
     }
 
@@ -138,7 +148,7 @@ public class CloneChamberBlock extends BaseEntityBlock implements SimpleWaterlog
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(HALF, FACING, OPEN, WATERLOGGED, PART);
+        builder.add(HALF, FACING, OPEN, FLUID, PART);
     }
 
     @Override
@@ -150,7 +160,9 @@ public class CloneChamberBlock extends BaseEntityBlock implements SimpleWaterlog
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return getShapeFor(state);
+        // 轮廓/流体裁剪用整格：原版流体是按方块形状裁的，用空心框架会让水贴在仓壁里几乎看不见。
+        // 碰撞形状仍然是空心（见 getCollisionShape），人能站进仓里。
+        return Shapes.block();
     }
 
     @Override
@@ -164,11 +176,90 @@ public class CloneChamberBlock extends BaseEntityBlock implements SimpleWaterlog
         return Shapes.empty();
     }
 
-    // ==================== 含水 ====================
+    // ==================== 液体 / 液体桶交互 ====================
 
     @Override
     protected FluidState getFluidState(BlockState state) {
-        return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
+        return state.getValue(FLUID).fluidState();
+    }
+
+    /** 空仓才能注入；能被装的流体必须是注册表里"有桶"的那种 */
+    @Override
+    public boolean canPlaceLiquid(@Nullable LivingEntity entity, BlockGetter level, BlockPos pos,
+                                  BlockState state, Fluid fluid) {
+        return state.getValue(FLUID).isEmpty() && !FluidKind.of(fluid).isEmpty();
+    }
+
+    /**
+     * 手持液体桶右键注液（任意流体，判断走 {@link #canPlaceLiquid}）。
+     * <p>
+     * 原版桶不会给"已放置好的方块"含水，所以这里补上。
+     */
+    @Override
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+                                          Player player, InteractionHand hand, BlockHitResult hitResult) {
+        if (stack.getItem() instanceof BucketItem bucket) {
+            if (this.canPlaceLiquid(player, level, pos, state, bucket.getContent())) {
+                if (!level.isClientSide()) {
+                    setFluid(state, level, pos, FluidKind.of(bucket.getContent()));
+                    level.playSound(null, pos, SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 1.0F, 1.0F);
+                    player.setItemInHand(hand, BucketItem.getEmptySuccessItem(stack, player));
+                }
+                return InteractionResult.SUCCESS;
+            }
+            // 装不进去：明确告诉玩家，别让右键看起来"没反应"
+            if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.sendSystemMessage(Component.translatable(state.getValue(FLUID).isEmpty()
+                        ? "message.corpseorigin.clone_chamber.liquid_rejected"
+                        : "message.corpseorigin.clone_chamber.already_filled"));
+            }
+            return InteractionResult.CONSUME;
+        }
+        return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+    }
+
+    /** 上下两半要一起换液体，避免只剩半截 */
+    @Override
+    public boolean placeLiquid(LevelAccessor level, BlockPos pos, BlockState state, FluidState fluidState) {
+        FluidKind kind = FluidKind.of(fluidState.getType());
+        if (!state.getValue(FLUID).isEmpty() || kind.isEmpty()) {
+            return false;
+        }
+        if (!level.isClientSide()) {
+            setFluid(state, level, pos, kind);
+        }
+        return true;
+    }
+
+    /** 空桶取液：返还对应的桶 */
+    @Override
+    public ItemStack pickupBlock(@Nullable LivingEntity entity, LevelAccessor level, BlockPos pos, BlockState state) {
+        FluidKind kind = state.getValue(FLUID);
+        if (kind.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        if (!level.isClientSide()) {
+            setFluid(state, level, pos, FluidKind.NONE);
+        }
+        return kind.bucketStack();
+    }
+
+    @Override
+    public Optional<SoundEvent> getPickupSound() {
+        return Optional.of(SoundEvents.BUCKET_FILL);
+    }
+
+    /** 液体状态上下两半同步（和 {@link #setOpen} 同样的做法） */
+    public static void setFluid(BlockState state, LevelAccessor level, BlockPos pos, FluidKind kind) {
+        if (state.getValue(FLUID) == kind) {
+            return;
+        }
+        level.setBlock(pos, state.setValue(FLUID, kind), Block.UPDATE_ALL);
+        BlockPos otherPos = isLower(state) ? pos.above() : pos.below();
+        BlockState otherState = level.getBlockState(otherPos);
+        if (otherState.is(state.getBlock())) {
+            level.setBlock(otherPos, otherState.setValue(FLUID, kind), Block.UPDATE_ALL);
+        }
     }
 
     // ==================== 方块实体 ====================
@@ -203,7 +294,7 @@ public class CloneChamberBlock extends BaseEntityBlock implements SimpleWaterlog
             return this.defaultBlockState()
                     .setValue(FACING, context.getHorizontalDirection().getOpposite())
                     .setValue(HALF, DoubleBlockHalf.LOWER)
-                    .setValue(WATERLOGGED, level.getFluidState(pos).getType() == Fluids.WATER);
+                    .setValue(FLUID, FluidKind.of(level.getFluidState(pos).getType()));
         }
         return null;
     }
@@ -212,16 +303,13 @@ public class CloneChamberBlock extends BaseEntityBlock implements SimpleWaterlog
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         BlockPos upperPos = pos.above();
         level.setBlock(upperPos, state.setValue(HALF, DoubleBlockHalf.UPPER)
-                .setValue(WATERLOGGED, level.getFluidState(upperPos).getType() == Fluids.WATER), Block.UPDATE_ALL);
+                .setValue(FLUID, FluidKind.of(level.getFluidState(upperPos).getType())), Block.UPDATE_ALL);
     }
 
     @Override
     protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess tickAccess,
                                      BlockPos pos, Direction direction, BlockPos neighborPos,
                                      BlockState neighborState, RandomSource random) {
-        if (state.getValue(WATERLOGGED)) {
-            tickAccess.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
-        }
         DoubleBlockHalf half = state.getValue(HALF);
         if (direction.getAxis() == Direction.Axis.Y
                 && (half == DoubleBlockHalf.LOWER) == (direction == Direction.UP)) {

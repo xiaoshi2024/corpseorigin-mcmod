@@ -14,6 +14,8 @@
   "block.corpseorigin.clone_chamber": "黑色火线克隆仓",
   "message.corpseorigin.clone_chamber.occupied": "克隆仓已被占用",
   "message.corpseorigin.clone_chamber.low_health": "生命值不足，无法提取基因样本",
+  "message.corpseorigin.clone_chamber.need_liquid": "仓内没有培养液，先用液体桶注入",
+  "message.corpseorigin.clone_chamber.liquid_boost": "血水类培养液正在加速培育",
   "message.corpseorigin.clone_chamber.started": "已提取基因样本，克隆体正在绿色培养液中培育……",
   "message.corpseorigin.clone_chamber.growing": "克隆体培育中，完成度 %s%%",
   "message.corpseorigin.clone_chamber.ready": "克隆体完成度达到96%%，提前苏醒！舱门自动打开",
@@ -22,6 +24,8 @@
   "message.corpseorigin.clone_chamber.wrong_owner": "只有 %s 能使用这个克隆仓",
   "message.corpseorigin.clone_chamber.body_stored": "身体已存入克隆仓，随时可以换回来",
   "message.corpseorigin.clone_chamber.body_dropped": "附近没有空的克隆仓，旧身体已丢弃",
+  "message.corpseorigin.clone_chamber.already_filled": "克隆仓里已经有液体了",
+  "message.corpseorigin.clone_chamber.liquid_rejected": "克隆仓装不下这种液体",
 
   "fluid.corpseorigin.infected_water": "尸水",
   "fluid.corpseorigin.flowing_infected_water": "流动的尸水",

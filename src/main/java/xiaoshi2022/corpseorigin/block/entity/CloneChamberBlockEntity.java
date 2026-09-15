@@ -22,6 +22,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
+import xiaoshi2022.corpseorigin.block.FluidKind;
 import xiaoshi2022.corpseorigin.clone.CloneState;
 import xiaoshi2022.corpseorigin.clone.DoorAnimator;
 import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
@@ -228,7 +229,8 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         }
 
         if (this.clone != null && !this.clone.isReady()) {
-            float progress = this.clone.getProgress() + CloneState.COMPLETE_PROGRESS / GROW_TICKS;
+            float progress = this.clone.getProgress()
+                    + CloneState.COMPLETE_PROGRESS / GROW_TICKS * this.liquidGrowthMultiplier();
             boolean justReady = progress >= CloneState.COMPLETE_PROGRESS;
             if (justReady) {
                 progress = CloneState.COMPLETE_PROGRESS;
@@ -239,6 +241,8 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
             // ★ 必须先把进度写满再通知，否则快照里 isReady() 仍为 false，列表不会包含这具身体
             if (justReady) {
                 this.onCloneReady(level);
+                // 培育完成会消耗仓内液体，重新读一次状态，别让后面的门逻辑拿旧状态写回去
+                state = this.getBlockState();
             }
         }
 
@@ -256,9 +260,16 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         }
     }
 
+    /** 仓内液体对培育速度的加成（尸水/血水会加速） */
+    private float liquidGrowthMultiplier() {
+        return this.getBlockState().getValue(CloneChamberBlock.FLUID).growthMultiplier();
+    }
+
     private void onCloneReady(ServerLevel level) {
         level.playSound(null, this.worldPosition, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 0.7F, 0.8F);
         this.indexBody(level);
+        // ★ 培育完成：仓内液体被这具身体消耗掉
+        CloneChamberBlock.setFluid(this.getBlockState(), level, this.worldPosition, FluidKind.NONE);
         if (this.clone != null) {
             ServerPlayer owner = level.getServer().getPlayerList().getPlayer(this.clone.getOwner());
             if (owner != null) {
@@ -382,6 +393,12 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
     }
 
     private InteractionResult startConstruction(Level level, ServerPlayer player) {
+        // ★ 生存模式培育需要仓内有培养液（任意液体，液体桶右键注入）
+        if (!player.isCreative() && this.getBlockState().getValue(CloneChamberBlock.FLUID).isEmpty()) {
+            this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.need_liquid"));
+            return InteractionResult.CONSUME;
+        }
+
         if (player.getHealth() + player.getAbsorptionAmount() <= 1.0F && !player.isCreative()) {
             this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.low_health"));
             return InteractionResult.CONSUME;
@@ -399,9 +416,16 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         this.registerToRegistry();
         if (level instanceof ServerLevel serverLevel) {
             this.indexBody(serverLevel);
+            if (startProgress >= CloneState.COMPLETE_PROGRESS) {
+                // 创造模式一上来就是培育完成，培养液同样要被消耗掉
+                CloneChamberBlock.setFluid(this.getBlockState(), serverLevel, this.worldPosition, FluidKind.NONE);
+            }
         }
 
         this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.started"));
+        if (this.liquidGrowthMultiplier() > 1.0F) {
+            player.sendSystemMessage(Component.translatable("message.corpseorigin.clone_chamber.liquid_boost"));
+        }
         this.setChanged();
         level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), Block.UPDATE_ALL);
         CorpseNetwork.refreshShellStates(player);
