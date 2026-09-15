@@ -107,7 +107,7 @@
   "skilltype.corpseorigin.ultimate": "终极",
 
   "gui.corpseorigin.clone_chamber": "黑色火线克隆仓",
-  "gui.corpseorigin.clone_chamber.transfer": "转移进仓内的身体",
+  "gui.corpseorigin.clone_chamber.no_bodies": "你还没有可转移的身体",
   "gui.corpseorigin.close": "关闭",
 
   "gui.corpseorigin.skill_wheel": "技能轮盘",

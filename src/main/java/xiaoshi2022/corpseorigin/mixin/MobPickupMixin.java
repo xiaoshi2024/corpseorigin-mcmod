@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import xiaoshi2022.corpseorigin.item.weapon.BloodLotusLamp;
+import xiaoshi2022.corpseorigin.registry.ModItems;
 
 @Mixin(Mob.class)
 public class MobPickupMixin {
@@ -21,13 +22,22 @@ public class MobPickupMixin {
         }
     }
 
-    /** ✅ 宝莲灯 = 额外「想要」，其他物品走原版 */
+    /** ✅ 宝莲灯 = 额外「想要」；克隆仓 = 不捡；其他物品走原版 */
     @Inject(method = "wantsToPickUp", at = @At("HEAD"), cancellable = true)
     private void corpseorigin$wantsToPickUp(ServerLevel level, ItemStack itemStack,
                                             CallbackInfoReturnable<Boolean> cir) {
+        // ❌ 克隆仓物品 → 不捡
+        if (itemStack.is(ModItems.CLONE_CHAMBER)) {
+            cir.setReturnValue(false);
+            return;
+        }
+
+        // ✅ 宝莲灯 → 捡
         if (itemStack.getItem() instanceof BloodLotusLamp) {
             cir.setReturnValue(true);
+            return;
         }
-        // ✅ 不是宝莲灯 → 不 setReturnValue，走原版逻辑
+
+        // 其他物品 → 走原版逻辑
     }
 }

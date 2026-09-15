@@ -107,7 +107,7 @@
   "skilltype.corpseorigin.ultimate": "Ultimate",
 
   "gui.corpseorigin.clone_chamber": "Black Fire Clone Pod",
-  "gui.corpseorigin.clone_chamber.transfer": "Transfer Into Body in Pod",
+  "gui.corpseorigin.clone_chamber.no_bodies": "You have no transferable bodies yet.",
   "gui.corpseorigin.close": "Close",
 
   "gui.corpseorigin.skill_wheel": "Skill Wheel",

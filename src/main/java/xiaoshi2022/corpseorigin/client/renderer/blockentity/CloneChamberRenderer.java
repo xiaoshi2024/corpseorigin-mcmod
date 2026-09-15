@@ -141,16 +141,46 @@ public class CloneChamberRenderer
 
     // ==================== 克隆人渲染 ====================
 
+    /**
+     * 仓内空间在方块内的中心。
+     * <p>
+     * 对齐 {@code CloneChamberBlock} 的碰撞形状：内部 x 0.0625~0.94375、z 0.00625~0.94375，
+     * 地面板顶面在 y 0.0625。直接用方块中心(0.5)会让克隆人偏向后壁。
+     */
+    private static final float INTERIOR_CENTER_X = (0.0625F + 0.94375F) / 2.0F;
+    private static final float INTERIOR_CENTER_Z = (0.00625F + 0.94375F) / 2.0F;
+    /** 仓内地板顶面高度 */
+    private static final float INTERIOR_FLOOR_Y = 0.0625F;
+    /** 模型抬升量：在 Y 翻转之后的坐标系里把模型脚底抬到落点上（负值 = 世界里的向上） */
+    private static final float MODEL_LIFT = -1.40F;
+
+    // ===== 两套形态各自独立的落点，改一边不影响另一边 =====
+
+    /** 培育中（体素形态）：自定义几何直接按模型方块坐标重建，单独定位 */
+    private static final float VOXEL_X = 0.6F;
+    private static final float VOXEL_Y = INTERIOR_FLOOR_Y;
+    private static final float VOXEL_Z = INTERIOR_CENTER_Z;
+
+    /** 成熟后（完整模型，走 submitModel 管线） */
+    private static final float BODY_X = INTERIOR_CENTER_X;
+    private static final float BODY_Y = INTERIOR_FLOOR_Y;
+    private static final float BODY_Z = INTERIOR_CENTER_Z;
+
     private void renderClone(PoseStack pose, SubmitNodeCollector collector, CloneChamberRenderState state) {
         float progress = state.cloneProgress;
-        PlayerSkin skin = ClientSkinCache.resolve(state.ownerUuid);   // ★ 改这里
+        PlayerSkin skin = ClientSkinCache.resolve(state.ownerUuid);
+        boolean grown = progress >= COMPLETE_PROGRESS;
 
         pose.pushPose();
-        pose.translate(0.5F, 0.0F, 0.5F);
+        if (grown) {
+            pose.translate(BODY_X, BODY_Y, BODY_Z);
+        } else {
+            pose.translate(VOXEL_X, VOXEL_Y, VOXEL_Z);
+        }
         pose.scale(-1.0F, -1.0F, 1.0F);
-        pose.translate(0.0F, -1.501F, 0.0F);   // ★ 翻正后往上推 1.5 格
+        pose.translate(0.0F, MODEL_LIFT, 0.0F);
 
-        if (progress < COMPLETE_PROGRESS) {
+        if (!grown) {
             this.voxelModel.completeness = progress / COMPLETE_PROGRESS;
 
             collector.submitCustomGeometry(

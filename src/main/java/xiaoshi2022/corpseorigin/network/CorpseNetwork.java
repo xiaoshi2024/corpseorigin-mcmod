@@ -324,7 +324,10 @@ public final class CorpseNetwork {
     private static String noTargetReason(ServerPlayer player, BlockPos pos) {
         if (pos != null && player.level().getBlockEntity(pos) instanceof CloneChamberBlockEntity chamber) {
             if (!chamber.hasClone()) {
-                return "这座克隆仓里没有可转移的身体";
+                String hint = otherBodyHint(player);
+                return hint == null
+                        ? "这座克隆仓里没有可转移的身体"
+                        : "这座克隆仓里没有可转移的身体（你还有身体在" + hint + "）";
             }
             if (!chamber.ready()) {
                 int percent = Math.min(99, (int) (chamber.getCloneProgress() * 100.0F));
@@ -332,6 +335,33 @@ public final class CorpseNetwork {
             }
         }
         return "找不到目标身体";
+    }
+
+    /**
+     * 提示 owner 其他可转移身体的位置。
+     * <p>
+     * "仓里没有身体"最常见的原因是那具身体已经被取走、留在了别的仓里（或死亡时被丢弃），
+     * 直接告诉玩家它现在在哪，免得误以为是功能坏了。
+     */
+    private static String otherBodyHint(ServerPlayer player) {
+        String selfWorld = player.level().dimension().identifier().toString();
+        return ServerShell.of(player).getAvailableBodies()
+                .map(TransferredBody::snapshot)
+                .filter(Objects::nonNull)
+                .filter(state -> state.getPos() != null)
+                .min(Comparator.comparingDouble(state -> {
+                    boolean sameWorld = selfWorld.equals(state.getWorld());
+                    return sameWorld
+                            ? player.blockPosition().distSqr(state.getPos())
+                            : Double.MAX_VALUE;
+                }))
+                .map(state -> {
+                    boolean sameWorld = selfWorld.equals(state.getWorld());
+                    String world = sameWorld ? "" : (state.getWorld() == null ? "其他维度" : state.getWorld()) + " ";
+                    BlockPos bodyPos = state.getPos();
+                    return world + "(" + bodyPos.getX() + ", " + bodyPos.getY() + ", " + bodyPos.getZ() + ")";
+                })
+                .orElse(null);
     }
 
     private static void handleJuQueBeam(ServerPlayer player) {
