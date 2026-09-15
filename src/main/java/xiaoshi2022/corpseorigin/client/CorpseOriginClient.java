@@ -121,31 +121,58 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         ClientPlayNetworking.registerGlobalReceiver(SynchronizationResponsePacket.TYPE, (payload, context) ->
                 context.client().execute(() -> {
+                    Minecraft client = context.client();
+
+                    // 文字提示（失败原因、死亡自动夺舍的提示之类）
+                    if (!payload.message().isEmpty() && client.player != null) {
+                        client.player.sendSystemMessage(Component.literal(payload.message()));
+                    }
+
                     if (!payload.success()) {
-                        if (context.client().player != null) {
-                            context.client().player.sendSystemMessage(
-                                    Component.literal(payload.message()));
-                        }
+                        // 换身体失败：别再等落位了，把镜头交还给玩家
+                        PersistentCameraEntity.unset(client);
                         return;
                     }
 
-                    var player = context.client().player;
+                    // 只提示不过场的包（没有目标身体数据），到此为止
+                    if (!payload.cameraCutscene()) {
+                        return;
+                    }
+
+                    var player = client.player;
                     if (player == null) return;
+
+                    // ★ Flashback 兼容：回放会把录制到的包原样重放一遍（包括这个同步响应包），
+                    //   回放中绝不能抢相机，否则视角会被拽进意识转移动画
+                    if (PersistentCameraEntity.isReplayPlaying()) {
+                        CorpseOrigin.LOGGER.debug("回放中，跳过意识转移相机过场");
+                        return;
+                    }
 
                     BlockPos startPos = payload.fromPos();
                     Direction startFacing = payload.fromFacing();
                     BlockPos targetPos = payload.toPos();
                     Direction targetFacing = payload.toFacing();
 
+                    // ★ 过场只针对「当前玩家自己的第一人称视角」：相机被别人接管（旁观/切视角）或第三人称时
+                    //   不播过场，但仍然立刻回包，否则服务端会一直等 CameraDonePacket，身体永远换不过来
+                    if (!PersistentCameraEntity.isLocalPlayerFirstPersonView(client)) {
+                        finishCamera(payload.targetStateUuid(), startPos, startFacing, targetPos, targetFacing,
+                                payload.toWorld());
+                        return;
+                    }
+
                     boolean sameWorld = payload.fromWorld().equals(payload.toWorld());
 
                     PersistentCameraEntityGoal cameraGoal = player.isDeadOrDying()
                             ? PersistentCameraEntityGoal.limbo(startPos, startFacing, targetPos,
-                            __ -> finishCamera(payload.targetStateUuid()))
+                            __ -> finishCamera(payload.targetStateUuid(), startPos, startFacing, targetPos,
+                                    targetFacing, payload.toWorld()))
                             : PersistentCameraEntityGoal.stairwayToHeaven(startPos, startFacing, targetPos,
-                            __ -> finishCamera(payload.targetStateUuid()));
+                            __ -> finishCamera(payload.targetStateUuid(), startPos, startFacing, targetPos,
+                                    targetFacing, payload.toWorld()));
 
-                    PersistentCameraEntity.setup(context.client(), cameraGoal);
+                    PersistentCameraEntity.setup(client, cameraGoal);
                 }));
         
         // ✅ 接收玩家尸兄数据同步（用 UUID）
@@ -286,11 +313,13 @@ public class CorpseOriginClient implements ClientModInitializer {
         CorpseOrigin.LOGGER.debug("CorpseOrigin client initialized");
     }
 
-    private static void finishCamera(java.util.UUID targetUuid) {
-        Minecraft mc = Minecraft.getInstance();
-        PersistentCameraEntity.unset(mc);
+    private static void finishCamera(java.util.UUID targetUuid, BlockPos startPos, Direction startFacing,
+                                     BlockPos targetPos, Direction targetFacing, Identifier targetWorld) {
+        // 第一段（灵魂上天）放完：通知服务端开始换身体，镜头先留在天上，
+        // 等玩家真正落到新身体后再播第二段「下落附身」（见 beginHandoff）
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
                 new CameraDonePacket(targetUuid));
+        PersistentCameraEntity.beginHandoff(startPos, startFacing, targetPos, targetFacing, targetWorld);
     }
 
     /** 找玩家周围 3 格内最近的克隆仓（只认下半格），返回其方块坐标 */

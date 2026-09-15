@@ -267,7 +267,7 @@ public final class CorpseNetwork {
                 PENDING_SYNCS.put(player.getUUID(), new PendingSync(targetState, target));
 
                 ServerPlayNetworking.send(player, new SynchronizationResponsePacket(
-                        true, "转移中",
+                        true, true, "",
                         payload.targetStateUuid(),
                         fromWorld, fromPos, player.getDirection(),
                         toWorld, toPos, Direction.NORTH));

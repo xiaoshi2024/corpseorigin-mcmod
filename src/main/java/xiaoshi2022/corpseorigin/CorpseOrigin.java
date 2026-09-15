@@ -120,6 +120,10 @@ public class CorpseOrigin implements ModInitializer {
 						return true;   // 没有备用身体，正常死亡
 					}
 
+					// ★ 先取一次快照：下面的夺舍会把目标身体消耗掉（分身被移除、快照清空），
+					//   而过场动画要用它来算出"从哪里飞到哪里"
+					ShellState deathTarget = nearest.snapshot();
+
 					Either<ShellState, String> result = shell.syncFromDeath(nearest);
 					if (result.right().isPresent()) {
 						return true;   // 夺舍失败，正常死亡
@@ -129,8 +133,23 @@ public class CorpseOrigin implements ModInitializer {
 					player.removeAllEffects();
 					player.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
 					CorpseNetwork.refreshShellStates(player);
-					ServerPlayNetworking.send(player,
-							SynchronizationResponsePacket.message(true, "意识已转移至最近的克隆体"));
+
+					// ★ 灵魂出窍过场：这里服务端已经换完身体了，动画纯粹是给玩家看的
+					if (deathTarget != null && deathTarget.getPos() != null) {
+						Identifier toWorld = deathTarget.getWorld() != null
+								? deathTarget.getWorld()
+								: player.level().dimension().identifier();
+						ServerPlayNetworking.send(player, new SynchronizationResponsePacket(
+								true, true, "意识已转移至最近的克隆体",
+								deathTarget.getUuid(),
+								player.level().dimension().identifier(), player.blockPosition(),
+								player.getDirection(),
+								toWorld, deathTarget.getPos(),
+								net.minecraft.core.Direction.NORTH));
+					} else {
+						ServerPlayNetworking.send(player,
+								SynchronizationResponsePacket.message(true, "意识已转移至最近的克隆体"));
+					}
 					return false;   // 拦截死亡
 				});
 
