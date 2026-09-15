@@ -1,6 +1,7 @@
 package xiaoshi2022.corpseorigin.client.renderer.blockentity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.EntityModelSet;
@@ -9,7 +10,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockModelRenderState;
 import net.minecraft.client.renderer.block.BlockModelResolver;
-import net.minecraft.client.renderer.block.FluidRenderer;
+import net.minecraft.client.renderer.block.FluidModel;
 import net.minecraft.client.renderer.block.FluidStateModelSet;
 import net.minecraft.client.renderer.block.model.BlockDisplayContext;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -23,19 +24,24 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
+import xiaoshi2022.corpseorigin.block.FluidKind;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
 import xiaoshi2022.corpseorigin.client.CorpseOriginClient;
 import xiaoshi2022.corpseorigin.client.model.ExoskeletonModel;
@@ -124,11 +130,52 @@ public class CloneChamberRenderer
         state.bodyUuid = chamber.bodyUuid();
         state.equipment = chamber.getEquipment();
 
-        // ★ "别的模组的液体"在方块状态里只能记成 OTHER，外观改由渲染器按方块实体里记的真实流体画
+        // ★ "别的模组的液体"在方块状态里只能记成 OTHER，外观改由渲染器自绘：
+        //   贴图用原版水/熔岩的，颜色取流体自己烘焙模型上的染色
         Fluid storedFluid = chamber.getBlockState().getValue(CloneChamberBlock.FLUID).isUnknown()
                 ? chamber.storedFluid()
                 : null;
         state.customFluid = storedFluid == null ? null : storedFluid.defaultFluidState();
+        if (state.customFluid != null) {
+            state.customLavaLike = state.customFluid.is(FluidTags.LAVA);
+            state.customTint = fluidTint(chamber, state.customFluid);
+            state.fluidConnected = otherHalfHasFluid(chamber);
+        }
+    }
+
+    /**
+     * 流体染色：取流体自己烘焙模型上的 tint 源。
+     * <p>
+     * 26.2 的流体模型自带 tint 定义（常量色/生物群系色等），
+     * 语义对应 NeoForge {@code IClientFluidTypeExtensions.getTintColor}。
+     */
+    private static int fluidTint(CloneChamberBlockEntity chamber, FluidState fluidState) {
+        FluidModel model = Minecraft.getInstance().getModelManager().getFluidStateModelSet().get(fluidState);
+        int tint;
+        if (chamber.getLevel() instanceof ClientLevel clientLevel) {
+            tint = model.tintSource().colorInWorld(chamber.getBlockState(), clientLevel, chamber.getBlockPos());
+        } else {
+            tint = model.tintSource().color(chamber.getBlockState());
+        }
+        // 常量色通常按 RGB 记，alpha 位为 0；补成不透明，不然整片液体会被 alpha=0 画没
+        if ((tint & 0xFF000000) == 0) {
+            tint |= 0xFF000000;
+        }
+        return tint;
+    }
+
+    /** 另一半仓格有没有液体（决定要不要剔除两半之间的接触面） */
+    private static boolean otherHalfHasFluid(CloneChamberBlockEntity chamber) {
+        Level level = chamber.getLevel();
+        if (level == null) {
+            return false;
+        }
+        BlockPos otherPos = chamber.getBlockState().getValue(CloneChamberBlock.HALF) == DoubleBlockHalf.LOWER
+                ? chamber.getBlockPos().above()
+                : chamber.getBlockPos().below();
+        BlockState otherState = level.getBlockState(otherPos);
+        return otherState.hasProperty(CloneChamberBlock.FLUID)
+                && otherState.getValue(CloneChamberBlock.FLUID) != FluidKind.NONE;
     }
 
     @Override
@@ -187,42 +234,107 @@ public class CloneChamberRenderer
     }
 
     /**
-     * 照真实流体画仓内液面。
+     * 仓内液体的自绘。
      * <p>
-     * 直接借用原版 {@link FluidRenderer#tesselate}：流体的贴图、颜色、液面高度都由它算好，
-     * 所以别的模组的液体看起来和它本来的样子一致。
+     * 不走原版 {@code FluidRenderer}（它输出的是区块分区局部坐标，且按方块状态剔除邻面，
+     * 用在贝雕渲染器里位置和剔除都对不上），改为直接用原版水/熔岩的贴图画满格液体盒：
+     * 贴图与渲染层照原版水/熔岩模板选，颜色取流体自己模型上的染色。
      */
     private void renderCustomFluid(CloneChamberRenderState state, PoseStack pose, SubmitNodeCollector collector) {
         Minecraft minecraft = Minecraft.getInstance();
-        ClientLevel level = minecraft.level;
-        if (level == null || state.customFluid == null) {
+        if (state.customFluid == null) {
             return;
         }
 
         FluidStateModelSet modelSet = minecraft.getModelManager().getFluidStateModelSet();
-        FluidRenderer renderer = new FluidRenderer(modelSet);
+        // 贴图/渲染层用原版水或熔岩的模板
+        FluidModel template = modelSet.get(state.customLavaLike
+                ? Fluids.LAVA.defaultFluidState()
+                : Fluids.WATER.defaultFluidState());
+        TextureAtlasSprite sprite = template.stillMaterial().sprite();
 
-        RenderType renderType = switch (modelSet.get(state.customFluid).layer()) {
+        RenderType renderType = switch (template.layer()) {
             case SOLID -> RenderTypes.solidMovingBlock();
             case CUTOUT -> RenderTypes.cutoutMovingBlock();
             case TRANSLUCENT -> RenderTypes.translucentMovingBlock();
         };
 
-        BlockPos pos = state.blockPos;
-        // FluidRenderer 输出的是"区块分区局部坐标"（pos & 15，原版拼区块网格时 pose 已平移到分区原点），
-        // 我们是在方块原点的 pose 上画，所以先反向平移抵消，不然液体会整体偏移到分区局部坐标处
-        float offsetX = pos.getX() & 15;
-        float offsetY = pos.getY() & 15;
-        float offsetZ = pos.getZ() & 15;
         collector.submitCustomGeometry(pose, renderType, (poseEntry, consumer) -> {
-            PoseStack local = new PoseStack();
-            local.last().pose().set(poseEntry.pose());
-            local.last().normal().set(poseEntry.normal());
-            local.translate(-offsetX, -offsetY, -offsetZ);
-            // 方块状态传空气：让原版把液面照常画全，不拿仓自己的模型去剔除面
-            renderer.tesselate(level, pos, requestedLayer -> consumer,
-                    Blocks.AIR.defaultBlockState(), state.customFluid);
+            drawFluidBox(poseEntry, consumer, sprite, state.customTint, state.lightCoords,
+                    state.lowerHalf, state.fluidConnected);
         });
+    }
+
+    /**
+     * 画一个 0..1 的满格液体盒。
+     * <p>
+     * 上下两半各自画半段，两半之间的接触面剔除掉，整柱液体中间就不会多出一条液面。
+     */
+    private static void drawFluidBox(PoseStack.Pose pose, VertexConsumer consumer, TextureAtlasSprite sprite,
+                                     int tint, int light, boolean lowerHalf, boolean connected) {
+        if (!(lowerHalf && connected)) {
+            face(pose, consumer, sprite, tint, light, Direction.DOWN);
+        }
+        if (!(!lowerHalf && connected)) {
+            face(pose, consumer, sprite, tint, light, Direction.UP);
+        }
+        face(pose, consumer, sprite, tint, light, Direction.NORTH);
+        face(pose, consumer, sprite, tint, light, Direction.SOUTH);
+        face(pose, consumer, sprite, tint, light, Direction.WEST);
+        face(pose, consumer, sprite, tint, light, Direction.EAST);
+    }
+
+    /** 画液体的一个面：四个角按面内平面取坐标（侧面 u 沿水平、v 沿高度，顶/底面 u/v 沿两根水平轴） */
+    private static void face(PoseStack.Pose pose, VertexConsumer consumer, TextureAtlasSprite sprite,
+                             int tint, int light, Direction direction) {
+        float[] xs, ys, zs, us, vs;
+        float nx = 0.0F, ny = 0.0F, nz = 0.0F;
+        switch (direction) {
+            case DOWN -> {
+                xs = new float[]{0, 0, 1, 1}; ys = new float[]{0, 0, 0, 0}; zs = new float[]{0, 1, 1, 0};
+                us = new float[]{0, 0, 1, 1}; vs = new float[]{0, 1, 1, 0};
+                ny = -1.0F;
+            }
+            case UP -> {
+                xs = new float[]{0, 0, 1, 1}; ys = new float[]{1, 1, 1, 1}; zs = new float[]{0, 1, 1, 0};
+                us = new float[]{0, 0, 1, 1}; vs = new float[]{0, 1, 1, 0};
+                ny = 1.0F;
+            }
+            case NORTH -> {
+                xs = new float[]{0, 1, 1, 0}; ys = new float[]{0, 0, 1, 1}; zs = new float[]{0, 0, 0, 0};
+                us = new float[]{0, 1, 1, 0}; vs = new float[]{0, 0, 1, 1};
+                nz = -1.0F;
+            }
+            case SOUTH -> {
+                xs = new float[]{0, 1, 1, 0}; ys = new float[]{0, 0, 1, 1}; zs = new float[]{1, 1, 1, 1};
+                us = new float[]{0, 1, 1, 0}; vs = new float[]{0, 0, 1, 1};
+                nz = 1.0F;
+            }
+            case WEST -> {
+                xs = new float[]{0, 0, 0, 0}; ys = new float[]{0, 0, 1, 1}; zs = new float[]{0, 1, 1, 0};
+                us = new float[]{0, 1, 1, 0}; vs = new float[]{0, 0, 1, 1};
+                nx = -1.0F;
+            }
+            default -> { // EAST
+                xs = new float[]{1, 1, 1, 1}; ys = new float[]{0, 0, 1, 1}; zs = new float[]{0, 1, 1, 0};
+                us = new float[]{0, 1, 1, 0}; vs = new float[]{0, 0, 1, 1};
+                nx = 1.0F;
+            }
+        }
+
+        // movingBlock 渲染层开背面剔除，绕序写反整面就没了；
+        // 两种绕序各画一遍，任何视角都有一个通过剔除（共面，另一份被剔，不会叠加混合）
+        for (int pass = 0; pass < 2; pass++) {
+            for (int i = 0; i < 4; i++) {
+                int idx = pass == 0 ? i : 3 - i;
+                consumer.addVertex(pose, xs[idx], ys[idx], zs[idx])
+                        .setColor(tint)
+                        .setUv(sprite.getU(us[idx]), sprite.getV(vs[idx]))
+                        .setOverlay(OverlayTexture.NO_OVERLAY)
+                        .setLight(light)
+                        .setNormal(pose, nx, ny, nz);
+            }
+        }
     }
 
     // ==================== 克隆人渲染 ====================

@@ -26,8 +26,14 @@ public class CloneChamberRenderState extends BlockEntityRenderState {
      * 仓内液体的真实流体状态。
      * <p>
      * 只有"别的模组的液体"（方块状态里只能记成 {@code OTHER} 的那种）会填这个：
-     * 原版那条按 {@code getFluidState()} 画液体的路走不通，改由渲染器照这个流体状态自己画。
+     * 原版那条按 {@code getFluidState()} 画液体的路走不通，改由渲染器自绘液体盒。
      */
     @Nullable
     public FluidState customFluid;
+    /** 自绘液体用原版熔岩（true）还是水（false）的贴图/渲染层模板 */
+    public boolean customLavaLike;
+    /** 自绘液体颜色：取流体自己烘焙模型上的染色（对应 NeoForge IClientFluidTypeExtensions.getTintColor 的语义） */
+    public int customTint = -1;
+    /** 另一半也有液体：剔除两半之间的接触面，避免中间多出一条内部液面 */
+    public boolean fluidConnected;
 }
