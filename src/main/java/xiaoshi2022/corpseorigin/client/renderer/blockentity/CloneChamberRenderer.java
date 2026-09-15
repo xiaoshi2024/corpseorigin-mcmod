@@ -235,20 +235,21 @@ public class CloneChamberRenderer
         leftDoorRenderState.submit(pose, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
         pose.popPose();
 
-        pose.popPose();
-
         // ===== 4. 液体：其它模组的液体自己画（原版画不了方块状态里没记的流体） =====
+        // 放在朝向旋转之内：液体盒对齐的是模型坐标系里的仓内空腔，要跟仓体一起转
         if (state.customFluid != null) {
             renderCustomFluid(state, pose, collector);
         }
+
+        pose.popPose();
     }
 
     /**
      * 仓内液体的自绘。
      * <p>
      * 不走原版 {@code FluidRenderer}（它输出的是区块分区局部坐标，且按方块状态剔除邻面，
-     * 用在贝雕渲染器里位置和剔除都对不上），改为直接用原版水/熔岩的贴图画满格液体盒：
-     * 贴图与渲染层照原版水/熔岩模板选，颜色取流体自己模型上的染色。
+     * 用在贝雕渲染器里位置和剔除都对不上），改为直接用原版水/熔岩的贴图
+     * 画一个贴着仓内空腔的液体盒：贴图与渲染层照原版水/熔岩模板选，颜色取流体自己模型上的染色。
      */
     private void renderCustomFluid(CloneChamberRenderState state, PoseStack pose, SubmitNodeCollector collector) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -276,57 +277,68 @@ public class CloneChamberRenderer
     }
 
     /**
-     * 画一个 0..1 的满格液体盒。
+     * 画一个贴着仓内空腔的液体盒（空心壳，面都在空腔边界上）。
+     * <p>
+     * 空腔对齐 {@code CloneChamberBlock} 的碰撞形状（模型朝北的坐标系，随仓体一起旋转）：
+     * x 0.0625~0.94375、z 0.00625~0.94375；下半从地板顶面 0.0625 起，
+     * 上半到顶盖下沿 0.91875 止。整体再内缩一丝，避免和仓壁表面 z-fighting 穿模。
      * <p>
      * 上下两半各自画半段，两半之间的接触面剔除掉，整柱液体中间就不会多出一条液面。
      */
     private static void drawFluidBox(PoseStack.Pose pose, VertexConsumer consumer, TextureAtlasSprite sprite,
                                      int tint, int light, boolean lowerHalf, boolean connected) {
+        float pad = 0.001F;
+        float x0 = 0.0625F + pad, x1 = 0.94375F - pad;
+        float z0 = 0.00625F + pad, z1 = 0.94375F - pad;
+        float y0 = lowerHalf ? 0.0625F + pad : pad;
+        float y1 = lowerHalf ? 1.0F : 0.91875F - pad;
+
         if (!(lowerHalf && connected)) {
-            face(pose, consumer, sprite, tint, light, Direction.DOWN);
+            face(pose, consumer, sprite, tint, light, Direction.DOWN, x0, x1, y0, y1, z0, z1);
         }
         if (!(!lowerHalf && connected)) {
-            face(pose, consumer, sprite, tint, light, Direction.UP);
+            face(pose, consumer, sprite, tint, light, Direction.UP, x0, x1, y0, y1, z0, z1);
         }
-        face(pose, consumer, sprite, tint, light, Direction.NORTH);
-        face(pose, consumer, sprite, tint, light, Direction.SOUTH);
-        face(pose, consumer, sprite, tint, light, Direction.WEST);
-        face(pose, consumer, sprite, tint, light, Direction.EAST);
+        face(pose, consumer, sprite, tint, light, Direction.NORTH, x0, x1, y0, y1, z0, z1);
+        face(pose, consumer, sprite, tint, light, Direction.SOUTH, x0, x1, y0, y1, z0, z1);
+        face(pose, consumer, sprite, tint, light, Direction.WEST, x0, x1, y0, y1, z0, z1);
+        face(pose, consumer, sprite, tint, light, Direction.EAST, x0, x1, y0, y1, z0, z1);
     }
 
     /** 画液体的一个面：四个角按面内平面取坐标（侧面 u 沿水平、v 沿高度，顶/底面 u/v 沿两根水平轴） */
     private static void face(PoseStack.Pose pose, VertexConsumer consumer, TextureAtlasSprite sprite,
-                             int tint, int light, Direction direction) {
+                             int tint, int light, Direction direction,
+                             float x0, float x1, float y0, float y1, float z0, float z1) {
         float[] xs, ys, zs, us, vs;
         float nx = 0.0F, ny = 0.0F, nz = 0.0F;
         switch (direction) {
             case DOWN -> {
-                xs = new float[]{0, 0, 1, 1}; ys = new float[]{0, 0, 0, 0}; zs = new float[]{0, 1, 1, 0};
+                xs = new float[]{x0, x0, x1, x1}; ys = new float[]{y0, y0, y0, y0}; zs = new float[]{z0, z1, z1, z0};
                 us = new float[]{0, 0, 1, 1}; vs = new float[]{0, 1, 1, 0};
                 ny = -1.0F;
             }
             case UP -> {
-                xs = new float[]{0, 0, 1, 1}; ys = new float[]{1, 1, 1, 1}; zs = new float[]{0, 1, 1, 0};
+                xs = new float[]{x0, x0, x1, x1}; ys = new float[]{y1, y1, y1, y1}; zs = new float[]{z0, z1, z1, z0};
                 us = new float[]{0, 0, 1, 1}; vs = new float[]{0, 1, 1, 0};
                 ny = 1.0F;
             }
             case NORTH -> {
-                xs = new float[]{0, 1, 1, 0}; ys = new float[]{0, 0, 1, 1}; zs = new float[]{0, 0, 0, 0};
+                xs = new float[]{x0, x1, x1, x0}; ys = new float[]{y0, y0, y1, y1}; zs = new float[]{z0, z0, z0, z0};
                 us = new float[]{0, 1, 1, 0}; vs = new float[]{0, 0, 1, 1};
                 nz = -1.0F;
             }
             case SOUTH -> {
-                xs = new float[]{0, 1, 1, 0}; ys = new float[]{0, 0, 1, 1}; zs = new float[]{1, 1, 1, 1};
+                xs = new float[]{x0, x1, x1, x0}; ys = new float[]{y0, y0, y1, y1}; zs = new float[]{z1, z1, z1, z1};
                 us = new float[]{0, 1, 1, 0}; vs = new float[]{0, 0, 1, 1};
                 nz = 1.0F;
             }
             case WEST -> {
-                xs = new float[]{0, 0, 0, 0}; ys = new float[]{0, 0, 1, 1}; zs = new float[]{0, 1, 1, 0};
+                xs = new float[]{x0, x0, x0, x0}; ys = new float[]{y0, y0, y1, y1}; zs = new float[]{z0, z1, z1, z0};
                 us = new float[]{0, 1, 1, 0}; vs = new float[]{0, 0, 1, 1};
                 nx = -1.0F;
             }
             default -> { // EAST
-                xs = new float[]{1, 1, 1, 1}; ys = new float[]{0, 0, 1, 1}; zs = new float[]{0, 1, 1, 0};
+                xs = new float[]{x1, x1, x1, x1}; ys = new float[]{y0, y0, y1, y1}; zs = new float[]{z0, z1, z1, z0};
                 us = new float[]{0, 1, 1, 0}; vs = new float[]{0, 0, 1, 1};
                 nx = 1.0F;
             }
