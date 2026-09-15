@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.model.player.PlayerModel;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -143,6 +144,9 @@ public class CloneChamberRenderer
         }
     }
 
+    /** 没定义染色的水系流体的兜底色：血液红（尸兄模组的培养液就是血） */
+    private static final int BLOOD_TINT = 0xFF8A0303;
+
     /**
      * 流体染色：取流体自己烘焙模型上的 tint 源。
      * <p>
@@ -151,11 +155,17 @@ public class CloneChamberRenderer
      */
     private static int fluidTint(CloneChamberBlockEntity chamber, FluidState fluidState) {
         FluidModel model = Minecraft.getInstance().getModelManager().getFluidStateModelSet().get(fluidState);
+        // 流体没定义染色时 tintSource 为 null（如 BOP 血液）：
+        // 熔岩系按白色（熔岩贴图本身带色），水系兜底成血液红
+        BlockTintSource tintSource = model.tintSource();
+        if (tintSource == null) {
+            return fluidState.is(FluidTags.LAVA) ? -1 : BLOOD_TINT;
+        }
         int tint;
         if (chamber.getLevel() instanceof ClientLevel clientLevel) {
-            tint = model.tintSource().colorInWorld(chamber.getBlockState(), clientLevel, chamber.getBlockPos());
+            tint = tintSource.colorInWorld(chamber.getBlockState(), clientLevel, chamber.getBlockPos());
         } else {
-            tint = model.tintSource().color(chamber.getBlockState());
+            tint = tintSource.color(chamber.getBlockState());
         }
         // 常量色通常按 RGB 记，alpha 位为 0；补成不透明，不然整片液体会被 alpha=0 画没
         if ((tint & 0xFF000000) == 0) {
