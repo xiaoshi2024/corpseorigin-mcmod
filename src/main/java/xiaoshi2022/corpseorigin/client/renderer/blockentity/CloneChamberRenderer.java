@@ -209,10 +209,16 @@ public class CloneChamberRenderer
         };
 
         BlockPos pos = state.blockPos;
+        // FluidRenderer 输出的是"区块分区局部坐标"（pos & 15，原版拼区块网格时 pose 已平移到分区原点），
+        // 我们是在方块原点的 pose 上画，所以先反向平移抵消，不然液体会整体偏移到分区局部坐标处
+        float offsetX = pos.getX() & 15;
+        float offsetY = pos.getY() & 15;
+        float offsetZ = pos.getZ() & 15;
         collector.submitCustomGeometry(pose, renderType, (poseEntry, consumer) -> {
             PoseStack local = new PoseStack();
             local.last().pose().set(poseEntry.pose());
             local.last().normal().set(poseEntry.normal());
+            local.translate(-offsetX, -offsetY, -offsetZ);
             // 方块状态传空气：让原版把液面照常画全，不拿仓自己的模型去剔除面
             renderer.tesselate(level, pos, requestedLayer -> consumer,
                     Blocks.AIR.defaultBlockState(), state.customFluid);
