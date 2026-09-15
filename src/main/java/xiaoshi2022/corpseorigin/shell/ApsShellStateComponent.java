@@ -45,4 +45,11 @@ public class ApsShellStateComponent extends ShellStateComponent {
     public void applyTo(ServerPlayer player) {
         player.setAttached(ModDataAttachments.APS_STATE, this.data.copy());
     }
+
+    /** 招式没记住：完成度不高时整块丢掉 */
+    public void applyCloneFormula(net.minecraft.util.RandomSource random, float ratio) {
+        if (random.nextFloat() > ratio) {
+            this.data = new CompoundTag();
+        }
+    }
 }

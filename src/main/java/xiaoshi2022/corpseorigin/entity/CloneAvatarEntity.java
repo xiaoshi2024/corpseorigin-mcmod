@@ -10,6 +10,14 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
@@ -47,6 +55,10 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     private static final EntityDataAccessor<Float> DATA_PROGRESS =
             SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.FLOAT);
 
+    /** 同步：这具身体是不是尸兄克隆体（尸水培育出来的），决定 AI 是否像低阶尸兄 */
+    private static final EntityDataAccessor<Boolean> DATA_CORPSE_CLONE =
+            SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.BOOLEAN);
+
     /** 同步：这具身体穿的盔甲（头/胸/腿/脚），客户端渲染要用 */
     private static final EntityDataAccessor<net.minecraft.world.item.ItemStack> DATA_HEAD_EQUIPMENT =
             SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.ITEM_STACK);
@@ -75,6 +87,7 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         builder.define(DATA_OWNER_UUID, "");
         builder.define(DATA_ACTIVE, false);
         builder.define(DATA_PROGRESS, 0.0F);
+        builder.define(DATA_CORPSE_CLONE, false);
         builder.define(DATA_HEAD_EQUIPMENT, net.minecraft.world.item.ItemStack.EMPTY);
         builder.define(DATA_CHEST_EQUIPMENT, net.minecraft.world.item.ItemStack.EMPTY);
         builder.define(DATA_LEGS_EQUIPMENT, net.minecraft.world.item.ItemStack.EMPTY);
@@ -137,12 +150,17 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         if (this.level().isClientSide() || this.bodyState == null) {
             return;
         }
+        net.minecraft.nbt.CompoundTag tag =
+                xiaoshi2022.corpseorigin.shell.ShellState.corpseTagOf(this.bodyState.getComponent());
+        // 尸水培育出来的克隆体是尸兄：行为也按低阶尸兄走
+        this.entityData.set(DATA_CORPSE_CLONE,
+                tag != null && tag.getBoolean("is_corpse").orElse(false));
+
         ServerPlayer owner = this.ownerPlayer();
         if (owner == null) {
             return;
         }
-        CorpseNetwork.sendBodyCorpseSync(owner, this.getUUID(),
-                xiaoshi2022.corpseorigin.shell.ShellState.corpseTagOf(this.bodyState.getComponent()));
+        CorpseNetwork.sendBodyCorpseSync(owner, this.getUUID(), tag);
     }
 
     /** 把身体自带的盔甲同步给客户端（渲染克隆人时用） */
@@ -190,6 +208,71 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         this.bodyState = ShellState.of(player, this.blockPosition());
         this.setActive(true);
         this.setProgress(1.0F);
+    }
+
+    // ==================== 基础行为 ====================
+
+    /**
+     * 基础 AI：会浮水、随机漫步（避开水）、看向附近的玩家、原地张望。
+     * <p>
+     * 攻击与索敌目标在这里一并注册，但是用 {@link #isCorpseClone()} 门控：
+     * 清水培育出的干净人形保持被动，尸水培育出的尸兄克隆体才会像低阶尸兄那样主动攻击。
+     */
+    @Override
+    protected void registerGoals() {
+        this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(2, new CorpseMeleeGoal());
+        this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 1.0));
+        this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 8.0F));
+        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+
+        // 索敌同样只在尸兄克隆体上启用
+        this.targetSelector.addGoal(0, new CorpseRetaliateGoal());
+        this.targetSelector.addGoal(1, new CorpseTargetGoal());
+    }
+
+    /** 这具身体是不是尸兄克隆体（尸水培育出来的） */
+    public boolean isCorpseClone() {
+        return this.entityData.get(DATA_CORPSE_CLONE);
+    }
+
+    // ---- 下面三个目标只在尸兄克隆体上生效，干净人形克隆体保持被动 ----
+
+    private final class CorpseMeleeGoal extends MeleeAttackGoal {
+        CorpseMeleeGoal() { super(CloneAvatarEntity.this, 1.2D, true); }
+
+        @Override
+        public boolean canUse() { return isCorpseClone() && super.canUse(); }
+
+        @Override
+        public boolean canContinueToUse() { return isCorpseClone() && super.canContinueToUse(); }
+    }
+
+    private final class CorpseRetaliateGoal extends HurtByTargetGoal {
+        CorpseRetaliateGoal() { super(CloneAvatarEntity.this); }
+
+        @Override
+        public boolean canUse() { return isCorpseClone() && super.canUse(); }
+    }
+
+    private final class CorpseTargetGoal extends NearestAttackableTargetGoal<Player> {
+        CorpseTargetGoal() { super(CloneAvatarEntity.this, Player.class, true); }
+
+        @Override
+        public boolean canUse() { return isCorpseClone() && super.canUse(); }
+
+        @Override
+        public boolean canContinueToUse() { return isCorpseClone() && super.canContinueToUse(); }
+    }
+
+    /**
+     * 备用身体不按距离自然消失。
+     * <p>
+     * 默认的 Mob 会在附近没有玩家时被清理掉，那样玩家走远一次就丢了这具身体。
+     */
+    @Override
+    public boolean removeWhenFarAway(double distanceToClosestPlayer) {
+        return false;
     }
 
     // ==================== 属性 ====================

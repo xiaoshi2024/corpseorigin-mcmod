@@ -11,6 +11,8 @@ public class CloneChamberRenderState extends BlockEntityRenderState {
     public boolean lowerHalf;
     public float doorOpen;
     public float cloneProgress;
+    /** 这具克隆体自己的完成度（0.80~0.99）：达到它就算成熟，改用完整模型渲染 */
+    public float cloneCompletion = 0.96F;
     public boolean hasClone;
     public Direction facing = Direction.NORTH;
     public UUID ownerUuid;

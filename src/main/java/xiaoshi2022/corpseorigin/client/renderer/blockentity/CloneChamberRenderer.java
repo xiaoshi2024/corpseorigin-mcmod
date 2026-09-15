@@ -109,6 +109,7 @@ public class CloneChamberRenderer
         state.facing = chamber.getBlockState().getValue(CloneChamberBlock.FACING);
         state.doorOpen = chamber.getDoorOpenProgress(partialTick);
         state.cloneProgress = chamber.getCloneProgress();
+        state.cloneCompletion = chamber.getCloneCompletion();
         state.hasClone = chamber.hasClone();
         state.ownerUuid = chamber.getOwnerUuid();
         state.bodyUuid = chamber.bodyUuid();
@@ -195,7 +196,7 @@ public class CloneChamberRenderer
     private void renderClone(PoseStack pose, SubmitNodeCollector collector, CloneChamberRenderState state) {
         float progress = state.cloneProgress;
         PlayerSkin skin = ClientSkinCache.resolve(state.ownerUuid);
-        boolean grown = progress >= COMPLETE_PROGRESS;
+        boolean grown = progress >= 1.0F;   // getCloneProgress() 已按这具身体自己的完成度归一化
 
         pose.pushPose();
         if (grown) {
@@ -207,7 +208,7 @@ public class CloneChamberRenderer
         pose.translate(0.0F, MODEL_LIFT, 0.0F);
 
         if (!grown) {
-            this.voxelModel.completeness = progress / COMPLETE_PROGRESS;
+            this.voxelModel.completeness = Math.min(1.0F, progress);
 
             collector.submitCustomGeometry(
                     pose,

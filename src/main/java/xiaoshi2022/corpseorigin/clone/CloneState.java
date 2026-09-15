@@ -23,18 +23,31 @@ import java.util.UUID;
  * </ul>
  */
 public class CloneState {
-    /** 培育完成度：96% —— 致敬黑小飞 96% 完成度即提前苏醒的剧情 */
+    /** 培育完成度：96% —— 致敬黑小飞 96% 完成度即提前苏醒的剧情（这是默认值，每具克隆体可不同） */
     public static final float COMPLETE_PROGRESS = 0.96F;
 
     private UUID owner;
     private String ownerName;
     private float progress;
+    /**
+     * 这具克隆体自己的完成度（0.80~0.99）。
+     * <p>
+     * 培育液越好越高；它同时是"继承度"——完成度越低，苏醒时缺失的本体特征越多。
+     */
+    private float completion = COMPLETE_PROGRESS;
     /** 克隆体的身体快照（玩家 NBT）；培育中为供体本体的快照，转换后变为原身体 */
     private CompoundTag body;
     /** 这具身体独立的尸兄状态 / 角色数据（ShellStateComponent 体系） */
     private ShellStateComponent component = ShellStateComponent.empty();
     /** 这具身体穿的四件盔甲（头/胸/腿/脚），用于克隆人渲染 */
     private java.util.List<net.minecraft.world.item.ItemStack> equipment = java.util.List.of();
+    /**
+     * 培育成熟后是否自己苏醒、走出培养仓。
+     * <p>
+     * 只有"真的从零培育出来"的身体才为 true；创造模式瞬间放出来的、以及夺舍后还回仓里的
+     * 旧身体都是 false —— 它们要留在仓里当"备用身体"等着被夺舍。
+     */
+    private boolean autoAwaken;
 
     public CloneState(UUID owner, String ownerName, float progress, CompoundTag body,
                       ShellStateComponent component) {
@@ -64,7 +77,16 @@ public class CloneState {
     }
 
     public boolean isReady() {
-        return this.progress >= COMPLETE_PROGRESS;
+        return this.progress >= this.completion;
+    }
+
+    /** 这具克隆体自己的完成度（即继承度） */
+    public float getCompletion() {
+        return this.completion;
+    }
+
+    public void setCompletion(float completion) {
+        this.completion = net.minecraft.util.Mth.clamp(completion, 0.5F, 1.0F);
     }
 
     public CompoundTag getBody() {
@@ -95,6 +117,15 @@ public class CloneState {
         this.equipment = equipment == null ? java.util.List.of() : java.util.List.copyOf(equipment);
     }
 
+    /** 成熟后是否自己走出培养仓（只有自然培育出来的身体为 true） */
+    public boolean isAutoAwaken() {
+        return this.autoAwaken;
+    }
+
+    public void setAutoAwaken(boolean autoAwaken) {
+        this.autoAwaken = autoAwaken;
+    }
+
     /** 写入磁盘存档（完整数据，包含可能很大的身体快照） */
     public void writeTo(ValueOutput out) {
         out.putString("Owner", this.owner.toString());
@@ -102,6 +133,8 @@ public class CloneState {
             out.putString("OwnerName", this.ownerName);
         }
         out.putFloat("Progress", this.progress);
+        out.putFloat("Completion", this.completion);
+        out.putBoolean("AutoAwaken", this.autoAwaken);
         if (this.body != null) {
             out.store("Body", CompoundTag.CODEC, this.body);
         }
@@ -124,6 +157,8 @@ public class CloneState {
         ShellStateComponent component = ShellStateComponent.empty();
         in.read("Component", CompoundTag.CODEC).ifPresent(component::readNbt);
         CloneState state = new CloneState(owner, ownerName, progress, body, component);
+        state.setCompletion(in.getFloatOr("Completion", COMPLETE_PROGRESS));
+        state.setAutoAwaken(in.getBooleanOr("AutoAwaken", false));
         state.setEquipment(in.read("Equipment", net.minecraft.world.item.ItemStack.OPTIONAL_CODEC.listOf())
                 .orElse(java.util.List.of()));
         return state;

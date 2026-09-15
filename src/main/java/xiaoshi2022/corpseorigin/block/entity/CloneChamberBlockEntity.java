@@ -29,6 +29,9 @@ import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModBlockEntities;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
+import xiaoshi2022.corpseorigin.shell.ApsShellStateComponent;
+import xiaoshi2022.corpseorigin.shell.CharacterShellStateComponent;
+import xiaoshi2022.corpseorigin.shell.CorpseShellStateComponent;
 import xiaoshi2022.corpseorigin.shell.PlayerBodySnapshot;
 import xiaoshi2022.corpseorigin.shell.ShellBodyIndex;
 import xiaoshi2022.corpseorigin.shell.ShellState;
@@ -50,6 +53,9 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
 
     @Nullable
     private CloneState clone;
+    /** 就绪后等这么久（tick）再自己走出培养仓，给舱门开合留出动画时间 */
+    private static final int AWAKEN_DELAY = 40;
+    private int readyTicks;
     private DoorAnimator doorAnimator;
     private int tickCount;
     /** 当前这具身体是否已经写进持久化索引（owner 离线时留到之后重试） */
@@ -242,11 +248,13 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         }
 
         if (this.clone != null && !this.clone.isReady()) {
+            // 目标就是这具克隆体自己的完成度（0.80~0.99），不是固定 96%
+            float target = this.clone.getCompletion();
             float progress = this.clone.getProgress()
-                    + CloneState.COMPLETE_PROGRESS / GROW_TICKS * this.liquidGrowthMultiplier();
-            boolean justReady = progress >= CloneState.COMPLETE_PROGRESS;
+                    + target / GROW_TICKS * this.liquidGrowthMultiplier();
+            boolean justReady = progress >= target;
             if (justReady) {
-                progress = CloneState.COMPLETE_PROGRESS;
+                progress = target;
             }
             this.clone.setProgress(progress);
             changed = true;
@@ -257,6 +265,18 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
                 // 培育完成会消耗仓内液体，重新读一次状态，别让后面的门逻辑拿旧状态写回去
                 state = this.getBlockState();
             }
+        }
+
+        // ★ 培育完成后，克隆体自己苏醒、走出培养仓（尸兄克隆体与干净克隆体都会）。
+        //   创造模式瞬间放出来的身体、以及夺舍后还回仓里的旧身体不在此列：它们留在仓里等夺舍。
+        if (this.clone != null && this.clone.isAutoAwaken() && this.clone.isReady()) {
+            this.readyTicks++;
+            if (this.readyTicks >= AWAKEN_DELAY) {
+                this.awakenClone(level, state);
+                state = this.getBlockState();
+            }
+        } else {
+            this.readyTicks = 0;
         }
 
         // ★ 舱门：玩家进了仓就关门封仓；玩家在门口（外）或克隆体就绪则向外开门；
@@ -353,35 +373,58 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
             return this.activateAvatar(level, state, serverPlayer);
         }
 
-        int percent = Mth.clamp((int) (this.clone.getProgress() / CloneState.COMPLETE_PROGRESS * 100.0F), 0, 96);
+        int percent = Mth.clamp((int) (this.clone.getProgress() / this.clone.getCompletion() * 100.0F), 0, 99);
         this.actionbar(serverPlayer, Component.translatable(
                 "message.corpseorigin.clone_chamber.growing", percent));
         return InteractionResult.CONSUME;
     }
 
-    /** 激活分身：生成 CloneAvatarEntity，把身体交给分身，仓内清空 */
+    /** 右键激活：立刻让克隆体出仓 */
     private InteractionResult activateAvatar(Level level, BlockState state, ServerPlayer player) {
         if (!(level instanceof ServerLevel serverLevel)) {
             return InteractionResult.PASS;
         }
+        if (this.clone == null) {
+            return InteractionResult.PASS;
+        }
+        this.awakenClone(serverLevel, state);
+        this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.avatar_activated"));
+        return InteractionResult.SUCCESS;
+    }
 
+    /**
+     * 克隆体苏醒并自己走出培养仓。
+     * <p>
+     * 右键激活与"培育完成后自动苏醒"共用这段：生成 CloneAvatarEntity 接管这具身体，
+     * 之后靠它自己的 AI 走动（尸兄克隆体还会主动攻击）。
+     * 这里不能依赖玩家在线，所以只用 owner 的 uuid / 名字。
+     */
+    private void awakenClone(ServerLevel level, BlockState state) {
+        if (this.clone == null) {
+            return;
+        }
+        UUID ownerUuid = this.clone.getOwner();
+        String ownerName = this.clone.getOwnerName();
         Direction facing = state.getValue(CloneChamberBlock.FACING);
 
-        double x = this.worldPosition.getX() + 0.5 + facing.getStepX() * 1.5;
-        double y = this.worldPosition.getY();
-        double z = this.worldPosition.getZ() + 0.5 + facing.getStepZ() * 1.5;
+        // 找一个能站人的位置出仓（正面优先，正面被堵就试其它方向）
+        BlockPos spot = this.findAwakenSpot(level, state);
+        double x = spot.getX() + 0.5;
+        double y = spot.getY();
+        double z = spot.getZ() + 0.5;
 
         // ★ 1. 把仓内身体包成 ShellState（坐标用分身自己的落点，不能借用克隆仓的坐标）
-        ShellState bodyState = ShellState.blank(player, BlockPos.containing(x, y, z));
+        ShellState bodyState = ShellState.blank(ownerUuid, ownerName,
+                level.dimension().identifier(), spot);
         bodyState.setBody(PlayerBodySnapshot.fromCompoundTag(this.clone.getBody()));
         bodyState.setProgress(ShellState.PROGRESS_DONE);
-        // ★ 分身带走的也是这具身体自己的尸兄状态 / 角色数据
+        // ★ 分身带走的也是这具身体自己的尸兄状态 / 角色数据 / 盔甲
         bodyState.setComponent(this.clone.getComponent());
         bodyState.setEquipment(this.clone.getEquipment());
 
         // ★ 2. 生成分身，把身体交给它（记住出生仓，好让旧身体还得回来）
-        CloneAvatarEntity avatar = new CloneAvatarEntity(ModEntities.CLONE_AVATAR, serverLevel);
-        avatar.setOwnerUuid(player.getUUID());
+        CloneAvatarEntity avatar = new CloneAvatarEntity(ModEntities.CLONE_AVATAR, level);
+        avatar.setOwnerUuid(ownerUuid);
         avatar.setBodyState(bodyState);
         avatar.setSourceChamber(this.worldPosition);
         avatar.setActive(true);
@@ -392,20 +435,41 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         avatar.setXRot(0.0F);
         avatar.setYHeadRot(facing.toYRot());
 
-        serverLevel.addFreshEntity(avatar);
+        level.addFreshEntity(avatar);
 
         // ★ 3. 仓内身体清空：分身独立存在，这座仓可以立刻再培育下一具
-        this.unindexBody(serverLevel, player.getUUID());
-        ShellBodyIndex.upsert(player, new ShellBodyIndex.Entry(
-                serverLevel.dimension().identifier(), BlockPos.containing(x, y, z), avatar.getUUID()));
+        this.unindexBody(level, ownerUuid);
+        ServerPlayer owner = ownerPlayer(level, ownerUuid);
+        if (owner != null) {
+            ShellBodyIndex.upsert(owner, new ShellBodyIndex.Entry(
+                    level.dimension().identifier(), spot, avatar.getUUID()));
+        }
         this.unregisterFromRegistry();
         this.clone = null;
+        this.readyTicks = 0;
         this.setChanged();
-        serverLevel.getChunkSource().blockChanged(this.worldPosition);
-        CorpseNetwork.refreshShellStates(player);
+        // ★ 立刻把"仓空了"下发给客户端，否则客户端还会继续渲染已经走出去的那具克隆体
+        level.sendBlockUpdated(this.worldPosition, state, state, Block.UPDATE_ALL);
+        if (owner != null) {
+            CorpseNetwork.refreshShellStates(owner);
+        }
+    }
 
-        this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.avatar_activated"));
-        return InteractionResult.SUCCESS;
+    /** 出仓落点：正面优先，其次左右、背面；都不通就还是正面（交给物理挤出） */
+    private BlockPos findAwakenSpot(ServerLevel level, BlockState state) {
+        Direction facing = state.getValue(CloneChamberBlock.FACING);
+        Direction[] candidates = {
+                facing, facing.getClockWise(), facing.getCounterClockWise(), facing.getOpposite()
+        };
+        for (Direction dir : candidates) {
+            BlockPos feet = this.worldPosition.relative(dir, 2);
+            BlockPos head = feet.above();
+            if (level.getBlockState(feet).getCollisionShape(level, feet).isEmpty()
+                    && level.getBlockState(head).getCollisionShape(level, head).isEmpty()) {
+                return feet;
+            }
+        }
+        return this.worldPosition.relative(facing, 2);
     }
 
     private InteractionResult startConstruction(Level level, ServerPlayer player) {
@@ -424,12 +488,40 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
             player.hurt(level.damageSources().sweetBerryBush(), 1.0F);
         }
 
-        // ★ 空白身体 + 供体当前的尸兄状态 / 角色数据（克隆体从培育者身上复制一份，之后各自独立）
+        // ★ 培育液决定配方：只有本模组的尸水会把克隆体养成尸兄（继承本体的尸兄特征），
+        //   其他模组的血水只加速培育、不改性质；清水养出干净人形
+        FluidKind fluid = this.getBlockState().getValue(CloneChamberBlock.FLUID);
+        boolean corpseClone = fluid.isCorpseWater();
+        net.minecraft.util.RandomSource random = level.getRandom();
+        // 尸水长得快但更容易长歪；清水慢但更完整。完成度同时就是"继承度"
+        float completion = corpseClone
+                ? 0.80F + random.nextFloat() * 0.16F
+                : 0.90F + random.nextFloat() * 0.09F;
+
+        // ★ 从本体复制状态，然后按继承度裁掉一部分（记忆/特征缺失、也可能变异）
+        ShellStateComponent components = ShellStateComponent.of(player);
+        CorpseShellStateComponent corpseComp = components.as(CorpseShellStateComponent.class);
+        if (corpseComp != null) {
+            corpseComp.applyCloneFormula(random, corpseClone, completion);
+        }
+        CharacterShellStateComponent charComp = components.as(CharacterShellStateComponent.class);
+        if (charComp != null) {
+            charComp.applyCloneFormula(random, completion);
+        }
+        ApsShellStateComponent apsComp = components.as(ApsShellStateComponent.class);
+        if (apsComp != null) {
+            apsComp.applyCloneFormula(random, completion);
+        }
+
+        // ★ 空白身体
         ShellState blankBody = ShellState.blank(player, this.worldPosition);
         CompoundTag body = blankBody.getBody().asCompoundTag();
-        float startProgress = player.isCreative() ? CloneState.COMPLETE_PROGRESS : 0.0F;
+        float startProgress = player.isCreative() ? completion : 0.0F;
         this.clone = new CloneState(player.getUUID(), player.getScoreboardName(), startProgress, body,
-                ShellStateComponent.of(player));
+                components);
+        this.clone.setCompletion(completion);
+        // ★ 只有从零培育出来的身体成熟后会自己走出来；创造模式放下的留在仓里等夺舍
+        this.clone.setAutoAwaken(!player.isCreative());
         this.registerToRegistry();
         if (level instanceof ServerLevel serverLevel) {
             this.indexBody(serverLevel);
@@ -471,7 +563,12 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
     }
 
     public float getCloneProgress() {
-        return this.clone == null ? 0.0F : this.clone.getProgress() / CloneState.COMPLETE_PROGRESS;
+        return this.clone == null ? 0.0F : this.clone.getProgress() / this.clone.getCompletion();
+    }
+
+    /** 这具克隆体自己的完成度（渲染用它判断是否已"成熟"） */
+    public float getCloneCompletion() {
+        return this.clone == null ? CloneState.COMPLETE_PROGRESS : this.clone.getCompletion();
     }
 
     public boolean hasClone() {
@@ -512,6 +609,8 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
                 cloneTag.putString("OwnerName", this.clone.getOwnerName());
             }
             cloneTag.putFloat("Progress", this.clone.getProgress());
+            // ★ 这具克隆体自己的完成度：客户端渲染靠它判断是否已"成熟"
+            cloneTag.putFloat("Completion", this.clone.getCompletion());
             // ★ 盔甲也要下发，否则客户端画的仓内克隆人光着
             if (!this.clone.getEquipment().isEmpty()) {
                 var out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(

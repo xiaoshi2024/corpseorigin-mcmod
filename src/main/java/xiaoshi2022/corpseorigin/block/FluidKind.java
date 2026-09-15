@@ -98,16 +98,25 @@ public final class FluidKind implements Comparable<FluidKind> {
         return this.isBloodLike() ? 2.0F : 1.0F;
     }
 
-    /** 尸水 / 血水类液体：本模组的尸水按 id 认，其它模组按名字里的 blood / ichor 认 */
-    private boolean isBloodLike() {
+    /**
+     * 是不是本模组的尸水。
+     * <p>
+     * ★ 只有它会把克隆体养成尸兄（变异）；其他模组的血水只加速培育，不改性质。
+     */
+    public boolean isCorpseWater() {
+        return !this.isEmpty()
+                && this.fluid.builtInRegistryHolder().key().identifier().equals(CorpseOrigin.id("infected_water"));
+    }
+
+    /** 血水类液体（本模组的尸水 + 其他模组名字里带 blood / ichor 的）：培育更快 */
+    public boolean isBloodLike() {
+        if (this.isCorpseWater()) {
+            return true;
+        }
         if (this.isEmpty()) {
             return false;
         }
-        Identifier id = this.fluid.builtInRegistryHolder().key().identifier();
-        if (id.equals(CorpseOrigin.id("infected_water"))) {
-            return true;
-        }
-        String path = id.getPath();
+        String path = this.fluid.builtInRegistryHolder().key().identifier().getPath();
         return path.contains("blood") || path.contains("ichor");
     }
 
