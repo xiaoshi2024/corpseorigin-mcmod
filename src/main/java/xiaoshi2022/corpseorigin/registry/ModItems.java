@@ -52,13 +52,6 @@ public final class ModItems {
                     .setId(itemKey("clone_chamber")))
     );
 
-    public static final Item SHELL_STORAGE = register(
-            "shell_storage",
-            new BlockItem(ModBlocks.SHELL_STORAGE, new Item.Properties()
-                    .useBlockDescriptionPrefix()
-                    .setId(itemKey("shell_storage")))
-    );
-
     // ==================== 创造物品栏 ====================
     public static final CreativeModeTab CORPSE_ORIGIN_TAB = CreativeModeTab.builder(
                     CreativeModeTab.Row.TOP, 8)
@@ -69,7 +62,6 @@ public final class ModItems {
                 output.accept(BYWATER_BOTTLE);
                 output.accept(JUQUE_TW);
                 output.accept(BLOOD_LOTUS_LAMP);
-                output.accept(SHELL_STORAGE);
                 output.accept(CLONE_CHAMBER);
             })
             .build();

@@ -87,7 +87,6 @@ public class CloneChamberRenderer
         state.cloneProgress = chamber.getCloneProgress();
         state.hasClone = chamber.hasClone();
         state.ownerUuid = chamber.getOwnerUuid();
-        state.avatarActive = chamber.isAvatarActive();
     }
 
     @Override
@@ -107,18 +106,18 @@ public class CloneChamberRenderer
         modelResolver.update(bodyRenderState, bodyState, displayContext);
         bodyRenderState.submit(pose, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
 
-        // ===== 2. 门 =====
+        // ===== 2. 门（向外开：门叶绕铰链转到仓外） =====
         float angle = state.doorOpen * 90.0F;
 
-        // ===== 3. 克隆人（只在下半格 + 未激活分身时渲染） =====
-        if (state.lowerHalf && state.hasClone && !state.avatarActive) {
+        // ===== 3. 克隆人（只在下半格渲染） =====
+        if (state.lowerHalf && state.hasClone) {
             renderClone(pose, collector, state);
         }
 
         // 右门：铰链 origin [15.5, 16, 1]
         pose.pushPose();
         pose.translate(15.5F / 16.0F, 0.0F, 1.0F / 16.0F);
-        pose.mulPose(Axis.YP.rotationDegrees(angle));
+        pose.mulPose(Axis.YP.rotationDegrees(-angle));
         pose.translate(-15.5F / 16.0F, 0.0F, -1.0F / 16.0F);
         BlockState rightDoorState = state.lowerHalf ? STATE_DOOR_RIGHT_LOWER : STATE_DOOR_RIGHT_UPPER;
         BlockModelRenderState rightDoorRenderState = new BlockModelRenderState();
@@ -129,16 +128,13 @@ public class CloneChamberRenderer
         // 左门：铰链 origin [1.5, 16, 1]
         pose.pushPose();
         pose.translate(1.5F / 16.0F, 0.0F, 1.0F / 16.0F);
-        pose.mulPose(Axis.YP.rotationDegrees(-angle));
+        pose.mulPose(Axis.YP.rotationDegrees(angle));
         pose.translate(-1.5F / 16.0F, 0.0F, -1.0F / 16.0F);
         BlockState leftDoorState = state.lowerHalf ? STATE_DOOR_LEFT_LOWER : STATE_DOOR_LEFT_UPPER;
         BlockModelRenderState leftDoorRenderState = new BlockModelRenderState();
         modelResolver.update(leftDoorRenderState, leftDoorState, displayContext);
         leftDoorRenderState.submit(pose, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
         pose.popPose();
-
-        // ★ 原先这里还有第二次 renderClone 调用，条件缺少 !state.avatarActive，
-        //   导致分身激活后假人仍然渲染。已删除。
 
         pose.popPose();
     }

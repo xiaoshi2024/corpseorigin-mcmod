@@ -11,12 +11,6 @@
 
   "block.corpseorigin.infected_water_block": "尸水",
 
-  "block.corpseorigin.shell_storage": "意识存储仓",
-  "message.corpseorigin.shell_storage.stored": "身体已存入意识存储仓",
-  "message.corpseorigin.shell_storage.occupied": "意识存储仓已有一具身体，潜行右键可转移进去",
-  "message.corpseorigin.shell_storage.transferred": "意识已转移至存储仓中的身体",
-  "message.corpseorigin.shell_storage.transferred_dropped": "意识已转移，旧身体已丢弃",
-
   "block.corpseorigin.clone_chamber": "黑色火线克隆仓",
   "message.corpseorigin.clone_chamber.occupied": "克隆仓已被占用",
   "message.corpseorigin.clone_chamber.low_health": "生命值不足，无法提取基因样本",
@@ -26,6 +20,8 @@
   "message.corpseorigin.clone_chamber.not_ready": "克隆体尚未培育完成：%s%%",
   "message.corpseorigin.clone_chamber.swapped": "意识已转换至克隆体",
   "message.corpseorigin.clone_chamber.wrong_owner": "只有 %s 能使用这个克隆仓",
+  "message.corpseorigin.clone_chamber.body_stored": "身体已存入克隆仓，随时可以换回来",
+  "message.corpseorigin.clone_chamber.body_dropped": "附近没有空的克隆仓，旧身体已丢弃",
 
   "fluid.corpseorigin.infected_water": "尸水",
   "fluid.corpseorigin.flowing_infected_water": "流动的尸水",
@@ -106,9 +102,8 @@
   "skilltype.corpseorigin.defense": "防御",
   "skilltype.corpseorigin.ultimate": "终极",
 
-  "gui.corpseorigin.shell_storage": "意识存储仓",
-  "gui.corpseorigin.shell_storage.store": "存入当前身体",
-  "gui.corpseorigin.shell_storage.transfer": "转移进存储的身体",
+  "gui.corpseorigin.clone_chamber": "黑色火线克隆仓",
+  "gui.corpseorigin.clone_chamber.transfer": "转移进仓内的身体",
   "gui.corpseorigin.close": "关闭",
 
   "gui.corpseorigin.skill_wheel": "技能轮盘",
@@ -136,7 +131,6 @@
   "hud.corpseorigin.toggle.off": "HUD：关",
 
   "message.corpseorigin.clone_chamber.avatar_activated": "分身已激活",
-  "message.corpseorigin.clone_chamber.avatar_active": "分身已存在",
 
   "key.corpseorigin.toggle_hud": "切换 HUD"
 }

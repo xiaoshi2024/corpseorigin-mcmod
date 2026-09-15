@@ -4,21 +4,26 @@ import com.mojang.datafixers.util.Either;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
+import org.jetbrains.annotations.Nullable;
+import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
-import xiaoshi2022.corpseorigin.block.entity.ShellStorageBlockEntity;
 import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.shell.*;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -47,15 +52,7 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
             }
         }
 
-        // 2. 存储仓
-        for (ShellStorageBlockEntity storage : ShellStorageBlockEntity.REGISTRY
-                .getOrDefault(self.getUUID(), List.of())) {
-            if (storage.ready()) {
-                bodies.add(storage);
-            }
-        }
-
-        // 3. 克隆仓
+        // 2. 克隆仓
         for (CloneChamberBlockEntity chamber : CloneChamberBlockEntity.REGISTRY
                 .getOrDefault(self.getUUID(), List.of())) {
             if (chamber.ready()) {
@@ -68,6 +65,15 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
 
     @Override
     public Either<ShellState, String> sync(TransferredBody target) {
+        return this.sync(target, false);
+    }
+
+    @Override
+    public Either<ShellState, String> syncFromDeath(TransferredBody target) {
+        return this.sync(target, true);
+    }
+
+    private Either<ShellState, String> sync(TransferredBody target, boolean fromDeath) {
         ServerPlayer self = (ServerPlayer) (Object) this;
         if (target == null || !target.ready()) {
             return Either.right("目标身体尚未就绪");
@@ -83,27 +89,89 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
 
         if (target instanceof CloneAvatarEntity avatar) {
             targetState.setPos(avatar.blockPosition());
-            targetState.setWorld(avatar.level().dimension().registry());
+            targetState.setWorld(avatar.level().dimension().identifier());
         }
 
         ServerLevel level = (ServerLevel) self.level();
         BlockPos currentPos = self.blockPosition();
         ShellState oldBody = ShellState.of(self, currentPos);
 
-        if (target instanceof CloneAvatarEntity) {
-            // ★ 目标是分身：旧身体丢弃 + 物品掉落
-            if (!self.isSpectator()) {
-                dropInventory(self);
+        // 取身体之前先记下"这具身体原本放在哪"，好把旧身体还回同一座仓
+        CloneChamberBlockEntity sourceChamber =
+                target instanceof CloneChamberBlockEntity chamber ? chamber : null;
+        CloneChamberBlockEntity avatarChamber =
+                target instanceof CloneAvatarEntity avatar ? avatar.sourceChamber(level) : null;
+
+        // ★ 取出目标身体（方块容器会被清空，分身实体被移除）
+        target.consume(level);
+
+        // ★ 旧身体的去处：
+        //   ① 身边的空仓（手动/死亡都可用）
+        //   ② 手动转移时再兜底到"刚被取走身体的那座仓" / "分身的出生仓"，好来回换
+        //   死亡夺舍不兜底：附近没有仓就直接丢弃（掉落物品），不会把尸体塞到远处的仓里
+        CloneChamberBlockEntity container = nearbyEmptyChamber(self);
+        if (!fromDeath) {
+            if (container == null && sourceChamber != null && !sourceChamber.hasClone()) {
+                container = sourceChamber;
             }
-            target.consume(level);
-        } else {
-            // ★ 目标是方块容器：旧身体进目标容器
-            target.consume(level);
-            target.receiveOldBody(level, oldBody);
+            if (container == null && avatarChamber != null && !avatarChamber.hasClone()) {
+                container = avatarChamber;
+            }
+        }
+
+        if (container != null) {
+            container.receiveOldBody(level, oldBody);
+            self.sendSystemMessage(Component.translatable("message.corpseorigin.clone_chamber.body_stored"));
+        } else if (!self.isSpectator()) {
+            dropInventory(self);
+            self.sendSystemMessage(Component.translatable("message.corpseorigin.clone_chamber.body_dropped"));
         }
 
         this.apply(targetState);
         return Either.left(oldBody);
+    }
+
+    /**
+     * 玩家身边（脚下 + 1.5 格内）的**空**克隆仓，用于回收旧身体。
+     * <p>
+     * 必须扫世界方块：REGISTRY 只登记"有身体"的仓，空仓不在里面，查它永远查不到。
+     */
+    @Nullable
+    private static CloneChamberBlockEntity nearbyEmptyChamber(ServerPlayer player) {
+        ServerLevel level = (ServerLevel) player.level();
+        BlockPos feet = player.blockPosition();
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        CloneChamberBlockEntity best = null;
+        double bestDist = 2.25;   // 1.5 格
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    pos.set(feet.getX() + dx, feet.getY() + dy, feet.getZ() + dz);
+                    CloneChamberBlockEntity chamber = chamberAt(level, pos);
+                    if (chamber == null || chamber.hasClone()) {
+                        continue;
+                    }
+                    double dist = feet.distSqr(chamber.getBlockPos());
+                    if (dist <= bestDist) {
+                        bestDist = dist;
+                        best = chamber;
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    /** 该位置上的克隆仓方块实体（上/下半格都认，返回下半格那个） */
+    @Nullable
+    private static CloneChamberBlockEntity chamberAt(ServerLevel level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (!(state.getBlock() instanceof CloneChamberBlock)) {
+            return null;
+        }
+        BlockPos lowerPos = CloneChamberBlock.isLower(state) ? pos : pos.below();
+        return level.getBlockEntity(lowerPos) instanceof CloneChamberBlockEntity chamber ? chamber : null;
     }
 
     private static void dropInventory(ServerPlayer player) {
@@ -122,6 +190,10 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
     public void apply(ShellState state) {
         ServerPlayer self = (ServerPlayer) (Object) this;
         if (state == null) return;
+
+        // ★ 身体不携带游戏模式：先记住玩家当前模式，载入身体后必须还原。
+        //   身体 NBT 里没有 playerGameType 时，原版 load 会回退到服务器默认模式（如创造）。
+        GameType gameType = self.gameMode();
 
         self.stopRiding();
         self.clearFire();
@@ -175,6 +247,11 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
                 body);
         self.load(input);
 
+        // ★ 还原玩家自己的游戏模式，生存/创造不随身体走
+        if (self.gameMode() != gameType) {
+            self.setGameMode(gameType);
+        }
+
         if (self.getHealth() <= 0.0F) {
             self.setHealth(1.0F);
         }
@@ -192,70 +269,92 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
         if (server == null) return null;
 
         ServerLevel selfLevel = (ServerLevel) self.level();
-        TransferredBody nearest = null;
-        boolean nearestSameDim = false;
-        double bestDist = Double.MAX_VALUE;
 
-        // 1. 分身
+        List<BodyCandidate> sameDim = new ArrayList<>();   // 同维度（按距离优先）
+        List<BodyCandidate> otherDim = new ArrayList<>();  // 其他维度
+
+        // ---- 1. 内存里能直接看到的身体 ----
         for (ServerLevel level : server.getAllLevels()) {
-            boolean sameDim = (level == selfLevel);
             for (var entity : level.getAllEntities()) {
                 if (entity instanceof CloneAvatarEntity avatar
                         && self.getUUID().equals(avatar.getOwnerUuid())
                         && avatar.ready()) {
-
-                    double dist = sameDim ? self.distanceToSqr(avatar) : Double.MAX_VALUE;
-                    if (isBetter(sameDim, dist, nearestSameDim, bestDist)) {
-                        nearestSameDim = sameDim;
-                        bestDist = dist;
-                        nearest = avatar;
-                    }
+                    BodyCandidate candidate = new BodyCandidate(
+                            level, avatar.blockPosition(), avatar, null);
+                    (level == selfLevel ? sameDim : otherDim).add(candidate);
                 }
             }
         }
-
-        // 2. 存储仓
-        for (ShellStorageBlockEntity storage : ShellStorageBlockEntity.REGISTRY
-                .getOrDefault(self.getUUID(), List.of())) {
-            if (!storage.ready()) continue;
-            if (storage.getLevel() == null) continue;
-
-            boolean sameDim = (storage.getLevel() == selfLevel);
-            double dist = sameDim
-                    ? self.blockPosition().distSqr(storage.getBlockPos())
-                    : Double.MAX_VALUE;
-
-            if (isBetter(sameDim, dist, nearestSameDim, bestDist)) {
-                nearestSameDim = sameDim;
-                bestDist = dist;
-                nearest = storage;
-            }
-        }
-
-        // 3. 克隆仓
         for (CloneChamberBlockEntity chamber : CloneChamberBlockEntity.REGISTRY
                 .getOrDefault(self.getUUID(), List.of())) {
-            if (!chamber.ready()) continue;
-            if (chamber.getLevel() == null) continue;
-
-            boolean sameDim = (chamber.getLevel() == selfLevel);
-            double dist = sameDim
-                    ? self.blockPosition().distSqr(chamber.getBlockPos())
-                    : Double.MAX_VALUE;
-
-            if (isBetter(sameDim, dist, nearestSameDim, bestDist)) {
-                nearestSameDim = sameDim;
-                bestDist = dist;
-                nearest = chamber;
-            }
+            if (!chamber.ready() || chamber.getLevel() == null) continue;
+            BodyCandidate candidate = new BodyCandidate(
+                    (ServerLevel) chamber.getLevel(), chamber.getBlockPos(), chamber, null);
+            (chamber.getLevel() == selfLevel ? sameDim : otherDim).add(candidate);
         }
 
-        return nearest;
+        // ---- 2. 持久化索引：区块没加载的身体也要算进来（稍后按需加载） ----
+        List<ShellBodyIndex.Entry> stale = new ArrayList<>();
+        for (ShellBodyIndex.Entry entry : ShellBodyIndex.read(self)) {
+            ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, entry.dim()));
+            if (level == null) {
+                stale.add(entry);
+                continue;
+            }
+            BodyCandidate candidate = new BodyCandidate(level, entry.pos(), null, entry);
+            (level == selfLevel ? sameDim : otherDim).add(candidate);
+        }
+
+        sameDim.sort(Comparator.comparingDouble(c -> self.blockPosition().distSqr(c.pos())));
+
+        // ★ 同维度优先；同维度没有就跨维度
+        TransferredBody found = resolveFirst(sameDim, stale);
+        if (found == null) {
+            found = resolveFirst(otherDim, stale);
+        }
+        ShellBodyIndex.removeAll(self, stale);
+        return found;
     }
 
-    private static boolean isBetter(boolean sameDim, double dist,
-                                    boolean bestSameDim, double bestDist) {
-        if (sameDim != bestSameDim) return sameDim;
-        return dist < bestDist;
+    @Nullable
+    private static TransferredBody resolveFirst(List<BodyCandidate> candidates,
+                                                List<ShellBodyIndex.Entry> stale) {
+        for (BodyCandidate candidate : candidates) {
+            TransferredBody body = candidate.resolve(stale);
+            if (body != null) {
+                return body;
+            }
+        }
+        return null;
+    }
+
+    /** 一具候选身体：内存里已拿到的直接用；索引里的先按需加载区块再解析 */
+    private record BodyCandidate(ServerLevel level, BlockPos pos,
+                                 @Nullable TransferredBody loaded,
+                                 @Nullable ShellBodyIndex.Entry entry) {
+
+        @Nullable
+        TransferredBody resolve(List<ShellBodyIndex.Entry> stale) {
+            if (this.loaded != null) {
+                return this.loaded;
+            }
+            // ★ 按需加载所在区块，远处的/其他维度的身体也能取到
+            this.level.getChunkAt(this.pos);
+
+            if (this.entry.isAvatar()) {
+                if (this.level.getEntity(this.entry.avatarId()) instanceof CloneAvatarEntity avatar
+                        && avatar.ready()) {
+                    return avatar;
+                }
+                stale.add(this.entry);   // 分身已经不在了
+                return null;
+            }
+            if (this.level.getBlockEntity(this.pos) instanceof CloneChamberBlockEntity chamber) {
+                // 仓还在：身体可能还在培育中或已被取走，索引保留
+                return chamber.ready() ? chamber : null;
+            }
+            stale.add(this.entry);       // 仓都不在了
+            return null;
+        }
     }
 }

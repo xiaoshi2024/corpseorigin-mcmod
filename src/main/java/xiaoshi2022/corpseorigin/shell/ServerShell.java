@@ -22,6 +22,14 @@ public interface ServerShell {
      */
     Either<ShellState, String> sync(TransferredBody target);
 
+    /**
+     * 死亡夺舍：旧身体只回收进"身边"的空克隆仓，附近没有就直接丢弃（掉落物品）。
+     * 与手动转移不同——手动转移会把旧身体留在取走身体的那座仓里，以便随时换回来。
+     */
+    default Either<ShellState, String> syncFromDeath(TransferredBody target) {
+        return sync(target);
+    }
+
     /** 把目标身体写到玩家身上 */
     void apply(ShellState state);
 

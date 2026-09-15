@@ -104,7 +104,7 @@ public class CorpseOrigin implements ModInitializer {
 						return true;   // 没有备用身体，正常死亡
 					}
 
-					Either<ShellState, String> result = shell.sync(nearest);
+					Either<ShellState, String> result = shell.syncFromDeath(nearest);
 					if (result.right().isPresent()) {
 						return true;   // 夺舍失败，正常死亡
 					}
@@ -125,7 +125,6 @@ public class CorpseOrigin implements ModInitializer {
 		});
 
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
-			xiaoshi2022.corpseorigin.block.entity.ShellStorageBlockEntity.REGISTRY.clear();
 			xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity.REGISTRY.clear();
 		});
 

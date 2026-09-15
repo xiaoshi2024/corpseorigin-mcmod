@@ -20,6 +20,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinState;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
@@ -229,16 +230,22 @@ public final class CorpseNetwork {
                 ServerPlayer player = context.player();
                 ServerShell shell = ServerShell.of(player);
 
+                // ★ 先按坐标（玩家看到的那具身体），再按 UUID 兜底
+                BlockPos targetPos = payload.targetPos();
                 TransferredBody target = shell.getAvailableBodies()
                         .filter(b -> {
                             ShellState s = b.snapshot();
-                            return s != null && s.getUuid().equals(payload.targetStateUuid());
+                            if (s == null) return false;
+                            return (targetPos != null && targetPos.equals(s.getPos()))
+                                    || s.getUuid().equals(payload.targetStateUuid());
                         })
                         .findFirst().orElse(null);
 
                 if (target == null) {
+                    // ★ 说清楚为什么不行，并顺手刷新过期列表，避免反复报同一个错
                     ServerPlayNetworking.send(player,
-                            SynchronizationResponsePacket.failure("找不到目标身体"));
+                            SynchronizationResponsePacket.failure(noTargetReason(player, targetPos)));
+                    syncShellStates(player);
                     return;
                 }
 
@@ -251,7 +258,7 @@ public final class CorpseNetwork {
 
                 BlockPos fromPos = player.blockPosition();
                 BlockPos toPos = targetState.getPos() == null ? fromPos : targetState.getPos();
-                Identifier fromWorld = player.level().dimension().registry();
+                Identifier fromWorld = player.level().dimension().identifier();
                 Identifier toWorld = targetState.getWorld() != null
                         ? targetState.getWorld()
                         : fromWorld;
@@ -311,6 +318,20 @@ public final class CorpseNetwork {
 
     public static void refreshShellStates(ServerPlayer player) {
         syncShellStates(player); // 现有 private 方法
+    }
+
+    /** 转移目标解析失败时给出具体原因（列表过期 / 身体已被取走 / 还没培育完） */
+    private static String noTargetReason(ServerPlayer player, BlockPos pos) {
+        if (pos != null && player.level().getBlockEntity(pos) instanceof CloneChamberBlockEntity chamber) {
+            if (!chamber.hasClone()) {
+                return "这座克隆仓里没有可转移的身体";
+            }
+            if (!chamber.ready()) {
+                int percent = Math.min(99, (int) (chamber.getCloneProgress() * 100.0F));
+                return "克隆体还在培育中：" + percent + "%";
+            }
+        }
+        return "找不到目标身体";
     }
 
     private static void handleJuQueBeam(ServerPlayer player) {

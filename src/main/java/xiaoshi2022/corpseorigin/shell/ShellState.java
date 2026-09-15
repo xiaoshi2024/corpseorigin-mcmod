@@ -39,7 +39,7 @@ public class ShellState {
         state.ownerName = player.getScoreboardName();
         state.progress = PROGRESS_START;
         state.artificial = true;
-        state.world = player.level().dimension().registry();
+        state.world = player.level().dimension().identifier();
         state.pos = pos;
         state.body = PlayerBodySnapshot.blank(player);
         state.component = ShellStateComponent.empty();
@@ -69,7 +69,7 @@ public class ShellState {
         state.ownerName = player.getScoreboardName();
         state.progress = PROGRESS_DONE;
         state.artificial = true;
-        state.world = player.level().dimension().registry();
+        state.world = player.level().dimension().identifier();
         state.pos = pos;
         state.body = PlayerBodySnapshot.of(player);
 
@@ -123,6 +123,7 @@ public class ShellState {
     }
 
     public UUID getUuid() { return this.uuid; }
+    public void setUuid(UUID uuid) { this.uuid = uuid; }
     public UUID getOwnerUuid() { return this.ownerUuid; }
     public String getOwnerName() { return this.ownerName; }
     public float getProgress() { return this.progress; }

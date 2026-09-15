@@ -15,10 +15,21 @@ import net.minecraft.world.level.storage.ValueOutput;
  */
 public final class PlayerBodySnapshot {
 
+    /**
+     * ★ 不随身体转移的字段：游戏模式与能力。
+     * 否则创造模式下培育的身体被生存状态的玩家夺舍后，会带回飞行/无敌/秒破坏等创造能力。
+     */
+    private static final String[] UNTRANSFERRED_KEYS = {
+            "abilities", "playerGameType", "previousPlayerGameType"
+    };
+
     private CompoundTag tag;
 
     private PlayerBodySnapshot(CompoundTag tag) {
         this.tag = tag == null ? new CompoundTag() : tag;
+        for (String key : UNTRANSFERRED_KEYS) {
+            this.tag.remove(key);
+        }
     }
 
     public static PlayerBodySnapshot of(ServerPlayer player) {

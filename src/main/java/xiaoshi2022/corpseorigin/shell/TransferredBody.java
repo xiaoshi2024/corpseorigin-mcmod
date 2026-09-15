@@ -14,6 +14,6 @@ public interface TransferredBody {
 
     void consume(ServerLevel level);
 
-    /** 旧身体存回这个容器（分身默认 noop，sync 会另生成新分身） */
+    /** 旧身体存回这个容器（由 ServerShell.sync 调用：仅当玩家正站在该克隆仓里） */
     default void receiveOldBody(ServerLevel level, ShellState oldState) {}
 }

@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.SimpleWaterloggedBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -27,6 +28,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -38,11 +41,13 @@ import xiaoshi2022.corpseorigin.registry.ModBlockEntities;
 
 import java.util.Map;
 
-public class CloneChamberBlock extends BaseEntityBlock {
+public class CloneChamberBlock extends BaseEntityBlock implements SimpleWaterloggedBlock {
 
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
     public static final EnumProperty<Direction> FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
+    /** 可含水：仓内将来可以注入营养液体 */
+    public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
     public static final EnumProperty<Part> PART = EnumProperty.create("part", Part.class);
 
     public enum Part implements StringRepresentable {
@@ -122,6 +127,7 @@ public class CloneChamberBlock extends BaseEntityBlock {
                 .setValue(HALF, DoubleBlockHalf.LOWER)
                 .setValue(FACING, Direction.NORTH)
                 .setValue(OPEN, false)
+                .setValue(WATERLOGGED, false)
                 .setValue(PART, Part.BODY_LOWER));
     }
 
@@ -132,7 +138,7 @@ public class CloneChamberBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(HALF, FACING, OPEN, PART);
+        builder.add(HALF, FACING, OPEN, WATERLOGGED, PART);
     }
 
     @Override
@@ -156,6 +162,13 @@ public class CloneChamberBlock extends BaseEntityBlock {
     protected VoxelShape getOcclusionShape(BlockState state) {
         // 玻璃仓体：不遮挡光照
         return Shapes.empty();
+    }
+
+    // ==================== 含水 ====================
+
+    @Override
+    protected FluidState getFluidState(BlockState state) {
+        return state.getValue(WATERLOGGED) ? Fluids.WATER.getSource(false) : super.getFluidState(state);
     }
 
     // ==================== 方块实体 ====================
@@ -189,20 +202,26 @@ public class CloneChamberBlock extends BaseEntityBlock {
         if (pos.getY() < level.getMaxY() && level.getBlockState(pos.above()).canBeReplaced(context)) {
             return this.defaultBlockState()
                     .setValue(FACING, context.getHorizontalDirection().getOpposite())
-                    .setValue(HALF, DoubleBlockHalf.LOWER);
+                    .setValue(HALF, DoubleBlockHalf.LOWER)
+                    .setValue(WATERLOGGED, level.getFluidState(pos).getType() == Fluids.WATER);
         }
         return null;
     }
 
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-        level.setBlock(pos.above(), state.setValue(HALF, DoubleBlockHalf.UPPER), Block.UPDATE_ALL);
+        BlockPos upperPos = pos.above();
+        level.setBlock(upperPos, state.setValue(HALF, DoubleBlockHalf.UPPER)
+                .setValue(WATERLOGGED, level.getFluidState(upperPos).getType() == Fluids.WATER), Block.UPDATE_ALL);
     }
 
     @Override
     protected BlockState updateShape(BlockState state, LevelReader level, ScheduledTickAccess tickAccess,
                                      BlockPos pos, Direction direction, BlockPos neighborPos,
                                      BlockState neighborState, RandomSource random) {
+        if (state.getValue(WATERLOGGED)) {
+            tickAccess.scheduleTick(pos, Fluids.WATER, Fluids.WATER.getTickDelay(level));
+        }
         DoubleBlockHalf half = state.getValue(HALF);
         if (direction.getAxis() == Direction.Axis.Y
                 && (half == DoubleBlockHalf.LOWER) == (direction == Direction.UP)) {

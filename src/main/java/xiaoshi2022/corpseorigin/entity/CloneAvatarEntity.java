@@ -1,5 +1,6 @@
 package xiaoshi2022.corpseorigin.entity;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -9,10 +10,14 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
+import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
+import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.shell.ShellBodyIndex;
 import xiaoshi2022.corpseorigin.shell.ShellState;
 import xiaoshi2022.corpseorigin.shell.TransferredBody;
 
@@ -45,6 +50,10 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     /** 服务端持有的完整身体快照，不参与实体同步（走自定义包或 BE 数据） */
     @Nullable
     private ShellState bodyState;
+
+    /** 派生出这具分身的克隆仓（位置）：夺舍后旧身体要还回那座仓，才能来回换 */
+    @Nullable
+    private BlockPos sourceChamberPos;
 
     public CloneAvatarEntity(EntityType<? extends CloneAvatarEntity> type, Level level) {
         super(type, level);
@@ -102,6 +111,21 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         this.bodyState = bodyState;
     }
 
+    public void setSourceChamber(@Nullable BlockPos pos) {
+        this.sourceChamberPos = pos;
+    }
+
+    /** 取出生它的克隆仓（区块没加载就按需拉一下；仓没了返回 null） */
+    @Nullable
+    public CloneChamberBlockEntity sourceChamber(ServerLevel level) {
+        if (this.sourceChamberPos == null) {
+            return null;
+        }
+        level.getChunkAt(this.sourceChamberPos);
+        return level.getBlockEntity(this.sourceChamberPos) instanceof CloneChamberBlockEntity chamber
+                ? chamber : null;
+    }
+
     /** 从玩家创建一份快照，作为这具分身的"可转移身体" */
     public void captureFrom(ServerPlayer player) {
         this.setOwnerUuid(player.getUUID());
@@ -131,6 +155,9 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         }
         out.putBoolean("Active", this.isActive());
         out.putFloat("Progress", this.getProgress());
+        if (this.sourceChamberPos != null) {
+            out.putLong("SourceChamber", this.sourceChamberPos.asLong());
+        }
         if (this.bodyState != null) {
             this.bodyState.writeTo(out.child("BodyState"));
         }
@@ -147,16 +174,61 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         });
         this.setActive(in.getBooleanOr("Active", false));
         this.setProgress(in.getFloatOr("Progress", 0.0F));
+        this.sourceChamberPos = in.getLong("SourceChamber").isPresent()
+                ? BlockPos.of(in.getLongOr("SourceChamber", 0L)) : null;
         this.bodyState = in.child("BodyState").map(ShellState::read).orElse(null);
+    }
+
+    // ==================== 消失处理 ====================
+
+    /**
+     * 分身消失（被夺舍 / 死亡 / 丢弃）后：从身体索引里注销，并刷新 owner 的列表。
+     */
+    @Override
+    public void remove(RemovalReason reason) {
+        super.remove(reason);
+        if (this.level().isClientSide() || !(this.level() instanceof ServerLevel level)) return;
+
+        ServerPlayer owner = this.ownerPlayer();
+        if (owner != null) {
+            ShellBodyIndex.remove(owner, new ShellBodyIndex.Entry(
+                    level.dimension().identifier(), this.blockPosition(), this.getUUID()));
+            CorpseNetwork.refreshShellStates(owner);
+        }
+    }
+
+    @Nullable
+    private ServerPlayer ownerPlayer() {
+        UUID ownerUuid = this.getOwnerUuid();
+        if (ownerUuid == null || !(this.level() instanceof ServerLevel level) || level.getServer() == null) {
+            return null;
+        }
+        return level.getServer().getPlayerList().getPlayer(ownerUuid);
     }
 
     // ==================== 服务端 tick ====================
 
+    /** 最近一次写进身体索引的区块：分身跨区块时更新索引坐标，区块卸载后也能被按需加载找到 */
+    private long indexedChunk = Long.MIN_VALUE;
+
     @Override
     public void tick() {
         super.tick();
-        if (!this.level().isClientSide() && this.isActive()) {
-            // 未来：分身的 AI 行为、跟随 owner、被 sync 选中时的处理
+        if (this.level().isClientSide() || !this.isActive()) {
+            return;
+        }
+
+        BlockPos pos = this.blockPosition();
+        long chunk = ChunkPos.pack(pos);
+        if (chunk == this.indexedChunk) {
+            return;
+        }
+        this.indexedChunk = chunk;
+
+        ServerPlayer owner = this.ownerPlayer();
+        if (owner != null) {
+            ShellBodyIndex.upsert(owner, new ShellBodyIndex.Entry(
+                    this.level().dimension().identifier(), pos, this.getUUID()));
         }
     }
 

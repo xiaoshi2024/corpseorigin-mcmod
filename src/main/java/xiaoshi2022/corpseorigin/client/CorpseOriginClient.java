@@ -21,17 +21,17 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
-import xiaoshi2022.corpseorigin.block.entity.ShellStorageBlockEntity;
+import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
+import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
 import xiaoshi2022.corpseorigin.client.aps.APSInkSceneManager;
 import xiaoshi2022.corpseorigin.client.aps.APSInkSceneRenderer;
 import xiaoshi2022.corpseorigin.client.camera.PersistentCameraEntity;
 import xiaoshi2022.corpseorigin.client.camera.PersistentCameraEntityGoal;
-import xiaoshi2022.corpseorigin.client.gui.ShellStorageScreen;
+import xiaoshi2022.corpseorigin.client.gui.CloneChamberScreen;
 import xiaoshi2022.corpseorigin.client.hud.InfectionHudOverlay;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.render.laser.BloodLotusLaserManager;
 import xiaoshi2022.corpseorigin.client.renderer.blockentity.CloneChamberRenderer;
-import xiaoshi2022.corpseorigin.client.renderer.blockentity.ShellStorageRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.CloneAvatarRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.FlyingGreatSwordRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.JuQueBeamRenderer;
@@ -84,10 +84,6 @@ public class CorpseOriginClient implements ClientModInitializer {
         BlockEntityRendererRegistry.register(
                 ModBlockEntities.CLONE_CHAMBER,
                 CloneChamberRenderer::new
-        );
-        BlockEntityRendererRegistry.register(
-                ModBlockEntities.SHELL_STORAGE,
-                ShellStorageRenderer::new
         );
         
         // 3. 模型层注册
@@ -193,10 +189,10 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (CorpseKeyBindings.openSkillWheel.consumeClick()) {
-                // 1. 周围有存储仓 → 打开存储仓 UI
-                ShellStorageBlockEntity nearby = findNearbyStorage();
+                // 1. 周围有克隆仓 → 打开克隆仓 UI
+                BlockPos nearby = findNearbyCloneChamber();
                 if (nearby != null) {
-                    client.gui.setScreen(new ShellStorageScreen(nearby.getBlockPos()));
+                    client.gui.setScreen(new CloneChamberScreen(nearby));
                     continue;
                 }
 
@@ -297,8 +293,8 @@ public class CorpseOriginClient implements ClientModInitializer {
                 new CameraDonePacket(targetUuid));
     }
 
-    /** 找玩家周围 3 格内最近的存储仓方块实体 */
-    public static ShellStorageBlockEntity findNearbyStorage() {
+    /** 找玩家周围 3 格内最近的克隆仓（只认下半格），返回其方块坐标 */
+    public static BlockPos findNearbyCloneChamber() {
         var player = Minecraft.getInstance().player;
         if (player == null || player.level() == null) {
             return null;
@@ -312,8 +308,9 @@ public class CorpseOriginClient implements ClientModInitializer {
                 for (int dz = -3; dz <= 3; dz++) {
                     pos.set(origin.getX() + dx, origin.getY() + dy, origin.getZ() + dz);
                     if (player.level().getBlockEntity(pos)
-                            instanceof ShellStorageBlockEntity storage) {
-                        return storage;
+                            instanceof CloneChamberBlockEntity chamber
+                            && CloneChamberBlock.isLower(chamber.getBlockState())) {
+                        return chamber.getBlockPos().immutable();
                     }
                 }
             }

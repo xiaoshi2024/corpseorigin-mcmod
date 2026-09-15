@@ -25,12 +25,15 @@ import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
 import xiaoshi2022.corpseorigin.clone.CloneState;
 import xiaoshi2022.corpseorigin.clone.DoorAnimator;
 import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
+import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModBlockEntities;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.shell.PlayerBodySnapshot;
+import xiaoshi2022.corpseorigin.shell.ShellBodyIndex;
 import xiaoshi2022.corpseorigin.shell.ShellState;
 import xiaoshi2022.corpseorigin.shell.TransferredBody;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -47,9 +50,10 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
     private CloneState clone;
     private DoorAnimator doorAnimator;
     private int tickCount;
-
-    @Nullable
-    private UUID avatarEntityUuid;
+    /** 当前这具身体是否已经写进持久化索引（owner 离线时留到之后重试） */
+    private boolean indexed;
+    /** 当前这具身体是否已进 owner 的注册表（只在服务端登记，客户端 BE 不许进来） */
+    private boolean registered;
 
     public CloneChamberBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CLONE_CHAMBER, pos, state);
@@ -58,15 +62,6 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
 
     public UUID getOwnerUuid() {
         return this.clone != null ? this.clone.getOwner() : null;
-    }
-
-    public boolean isAvatarActive() {
-        return this.avatarEntityUuid != null;
-    }
-
-    public void setAvatarEntityUuid(@Nullable UUID uuid) {
-        this.avatarEntityUuid = uuid;
-        this.setChanged();
     }
 
     // ==================== TransferredBody ====================
@@ -78,35 +73,49 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
 
     @Override
     public ShellState snapshot() {
-        if (this.clone == null || this.avatarEntityUuid != null) {
+        if (this.clone == null) {
             return null;
         }
         ShellState state = ShellState.blank(
                 this.clone.getOwner(),
                 this.clone.getOwnerName(),
-                this.level != null ? this.level.dimension().registry() : null,
+                this.level != null ? this.level.dimension().identifier() : null,
                 this.worldPosition);
+        // ★ 稳定标识：同一个克隆仓每次快照都必须返回同一个 UUID，否则 UI 按 UUID 请求转移会匹配不到
+        state.setUuid(bodyUuid());
         state.setBody(PlayerBodySnapshot.fromCompoundTag(this.clone.getBody()));
         state.setProgress(this.clone.getProgress());
         return state;
     }
 
+    /** 由维度 + 坐标推导的身体标识：UI 上同一个仓内的身体始终是同一个目标 */
+    private UUID bodyUuid() {
+        String key = (this.level == null ? "" : this.level.dimension().identifier().toString())
+                + "@" + this.worldPosition.asLong();
+        return UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
+    }
+
     @Override
     public boolean ready() {
-        return this.clone != null && this.clone.isReady() && this.avatarEntityUuid == null;
+        return this.clone != null && this.clone.isReady();
     }
 
     @Override
     public void consume(ServerLevel level) {
+        UUID owner = this.ownerUuid();
+        ServerLevel chamberLevel = this.ownLevel(level);
         this.unregisterFromRegistry();
         this.clone = null;
         this.setChanged();
-        level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+        chamberLevel.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+        this.unindexBody(chamberLevel, owner);
+        refreshOwnerShellStates(chamberLevel, owner);
     }
 
     @Override
     public void receiveOldBody(ServerLevel level, ShellState oldState) {
         if (oldState.getBody() == null) return;
+        ServerLevel chamberLevel = this.ownLevel(level);
         this.clone = new CloneState(
                 oldState.getOwnerUuid(),
                 oldState.getOwnerName(),
@@ -114,16 +123,64 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
                 oldState.getBody().asCompoundTag());
         this.registerToRegistry();
         this.setChanged();
-        level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+        chamberLevel.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+        this.indexBody(chamberLevel);
+        refreshOwnerShellStates(chamberLevel, this.ownerUuid());
     }
 
-    private void registerToRegistry() {
-        if (this.clone != null && this.clone.getOwner() != null) {
-            REGISTRY.computeIfAbsent(this.clone.getOwner(), k -> new CopyOnWriteArrayList<>()).add(this);
+    /** 方块实体自己所在的维度：跨维度夺舍时调用方传进来的是玩家所在维度，不能用 */
+    private ServerLevel ownLevel(ServerLevel fallback) {
+        return this.level instanceof ServerLevel serverLevel ? serverLevel : fallback;
+    }
+
+    /** 仓内身体变化后，刷新 owner 客户端的可转移身体列表（GUI 用） */
+    private static void refreshOwnerShellStates(ServerLevel level, @Nullable UUID owner) {
+        if (owner == null || level.getServer() == null) return;
+        ServerPlayer player = level.getServer().getPlayerList().getPlayer(owner);
+        if (player != null) {
+            CorpseNetwork.refreshShellStates(player);
         }
     }
 
+    private void registerToRegistry() {
+        if (this.registered || this.clone == null || this.clone.getOwner() == null) {
+            return;
+        }
+        REGISTRY.computeIfAbsent(this.clone.getOwner(), k -> new CopyOnWriteArrayList<>()).add(this);
+        this.registered = true;
+    }
+
+    /** 把仓内身体登记进持久化索引（区块没加载时死亡夺舍也要能找到它） */
+    private void indexBody(ServerLevel level) {
+        ServerPlayer owner = ownerPlayer(level, this.ownerUuid());
+        if (owner == null) {
+            return;   // owner 不在线，等它上线后由 tick 重试
+        }
+        ShellBodyIndex.upsert(owner, new ShellBodyIndex.Entry(
+                level.dimension().identifier(), this.worldPosition, null));
+        this.indexed = true;
+    }
+
+    private void unindexBody(ServerLevel level, @Nullable UUID ownerUuid) {
+        this.indexed = false;
+        ServerPlayer owner = ownerPlayer(level, ownerUuid);
+        if (owner == null) {
+            return;
+        }
+        ShellBodyIndex.remove(owner, new ShellBodyIndex.Entry(
+                level.dimension().identifier(), this.worldPosition, null));
+    }
+
+    @Nullable
+    private static ServerPlayer ownerPlayer(ServerLevel level, @Nullable UUID ownerUuid) {
+        if (ownerUuid == null || level.getServer() == null) {
+            return null;
+        }
+        return level.getServer().getPlayerList().getPlayer(ownerUuid);
+    }
+
     private void unregisterFromRegistry() {
+        this.registered = false;
         if (this.clone != null && this.clone.getOwner() != null) {
             List<CloneChamberBlockEntity> list = REGISTRY.get(this.clone.getOwner());
             if (list != null) {
@@ -160,17 +217,35 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         this.tickCount++;
         boolean changed = false;
 
+        // ★ 只在服务端登记进注册表（客户端 BE 混进去会让夺舍拿到 ClientLevel 而崩溃）
+        if (this.clone != null && !this.registered) {
+            this.registerToRegistry();
+        }
+
+        // ★ 身体索引：owner 不在线时每秒重试一次，保证老存档里的身体也能补登记
+        if (this.clone != null && !this.indexed && this.tickCount % 20 == 0) {
+            this.indexBody(level);
+        }
+
         if (this.clone != null && !this.clone.isReady()) {
             float progress = this.clone.getProgress() + CloneState.COMPLETE_PROGRESS / GROW_TICKS;
-            if (progress >= CloneState.COMPLETE_PROGRESS) {
+            boolean justReady = progress >= CloneState.COMPLETE_PROGRESS;
+            if (justReady) {
                 progress = CloneState.COMPLETE_PROGRESS;
-                this.onCloneReady(level);
             }
             this.clone.setProgress(progress);
             changed = true;
+
+            // ★ 必须先把进度写满再通知，否则快照里 isReady() 仍为 false，列表不会包含这具身体
+            if (justReady) {
+                this.onCloneReady(level);
+            }
         }
 
-        boolean shouldOpen = (this.clone != null && this.clone.isReady()) || this.hasPlayerNearby(level);
+        // ★ 舱门：玩家进了仓就关门封仓；玩家在门口（外）或克隆体就绪则向外开门；
+        //   没人时自动回正（关回默认姿态）。
+        boolean shouldOpen = !this.hasPlayerInside(level)
+                && (this.hasPlayerNearby(level) || (this.clone != null && this.clone.isReady()));
         if (state.getValue(CloneChamberBlock.OPEN) != shouldOpen) {
             CloneChamberBlock.setOpen(state, level, this.worldPosition, shouldOpen);
         }
@@ -183,11 +258,13 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
 
     private void onCloneReady(ServerLevel level) {
         level.playSound(null, this.worldPosition, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 0.7F, 0.8F);
+        this.indexBody(level);
         if (this.clone != null) {
             ServerPlayer owner = level.getServer().getPlayerList().getPlayer(this.clone.getOwner());
             if (owner != null) {
                 owner.connection.send(new ClientboundSetActionBarTextPacket(
                         Component.translatable("message.corpseorigin.clone_chamber.ready")));
+                CorpseNetwork.refreshShellStates(owner);
             }
         }
     }
@@ -205,6 +282,21 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         return false;
     }
 
+    /** 玩家是否站在仓内（上/下半格都算）——进仓就关门封仓 */
+    private boolean hasPlayerInside(ServerLevel level) {
+        BlockPos upper = this.worldPosition.above();
+        for (Player player : level.players()) {
+            if (player.isSpectator()) {
+                continue;
+            }
+            BlockPos feet = player.blockPosition();
+            if (feet.equals(this.worldPosition) || feet.equals(upper)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // ==================== 玩家交互 ====================
 
     public InteractionResult useByPlayer(Level level, BlockState state, BlockPos pos, Player player) {
@@ -215,13 +307,8 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
             return InteractionResult.PASS;
         }
 
-        // ★ clone 为 null 时，如果分身已激活，提示；否则开始培育
+        // ★ 仓里没身体就直接开始培育：分身在外面活动也不影响这座仓复用
         if (this.clone == null) {
-            if (this.isAvatarActive()) {
-                this.actionbar(serverPlayer, Component.translatable(
-                        "message.corpseorigin.clone_chamber.avatar_active"));
-                return InteractionResult.CONSUME;
-            }
             return this.startConstruction(level, serverPlayer);
         }
 
@@ -238,13 +325,8 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
             return InteractionResult.SUCCESS;
         }
 
-        if (this.clone.isReady() && !this.isAvatarActive()) {
+        if (this.clone.isReady()) {
             return this.activateAvatar(level, state, serverPlayer);
-        }
-
-        if (this.isAvatarActive()) {
-            this.actionbar(serverPlayer, Component.translatable("message.corpseorigin.clone_chamber.avatar_active"));
-            return InteractionResult.CONSUME;
         }
 
         int percent = Mth.clamp((int) (this.clone.getProgress() / CloneState.COMPLETE_PROGRESS * 100.0F), 0, 96);
@@ -261,21 +343,22 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
 
         Direction facing = state.getValue(CloneChamberBlock.FACING);
 
-        // ★ 1. 把仓内身体包成 ShellState
-        ShellState bodyState = ShellState.blank(player, this.worldPosition);
-        bodyState.setBody(PlayerBodySnapshot.fromCompoundTag(this.clone.getBody()));
-        bodyState.setProgress(ShellState.PROGRESS_DONE);
-
-        // ★ 2. 生成分身，把身体交给它
-        CloneAvatarEntity avatar = new CloneAvatarEntity(ModEntities.CLONE_AVATAR, serverLevel);
-        avatar.setOwnerUuid(player.getUUID());
-        avatar.setBodyState(bodyState);
-        avatar.setActive(true);
-        avatar.setProgress(1.0F);
-
         double x = this.worldPosition.getX() + 0.5 + facing.getStepX() * 1.5;
         double y = this.worldPosition.getY();
         double z = this.worldPosition.getZ() + 0.5 + facing.getStepZ() * 1.5;
+
+        // ★ 1. 把仓内身体包成 ShellState（坐标用分身自己的落点，不能借用克隆仓的坐标）
+        ShellState bodyState = ShellState.blank(player, BlockPos.containing(x, y, z));
+        bodyState.setBody(PlayerBodySnapshot.fromCompoundTag(this.clone.getBody()));
+        bodyState.setProgress(ShellState.PROGRESS_DONE);
+
+        // ★ 2. 生成分身，把身体交给它（记住出生仓，好让旧身体还得回来）
+        CloneAvatarEntity avatar = new CloneAvatarEntity(ModEntities.CLONE_AVATAR, serverLevel);
+        avatar.setOwnerUuid(player.getUUID());
+        avatar.setBodyState(bodyState);
+        avatar.setSourceChamber(this.worldPosition);
+        avatar.setActive(true);
+        avatar.setProgress(1.0F);
 
         avatar.setPos(x, y, z);
         avatar.setYRot(facing.toYRot());
@@ -284,12 +367,15 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
 
         serverLevel.addFreshEntity(avatar);
 
-        // ★ 3. 记录 UUID，仓内身体清空
-        this.setAvatarEntityUuid(avatar.getUUID());
+        // ★ 3. 仓内身体清空：分身独立存在，这座仓可以立刻再培育下一具
+        this.unindexBody(serverLevel, player.getUUID());
+        ShellBodyIndex.upsert(player, new ShellBodyIndex.Entry(
+                serverLevel.dimension().identifier(), BlockPos.containing(x, y, z), avatar.getUUID()));
         this.unregisterFromRegistry();
         this.clone = null;
         this.setChanged();
         serverLevel.getChunkSource().blockChanged(this.worldPosition);
+        CorpseNetwork.refreshShellStates(player);
 
         this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.avatar_activated"));
         return InteractionResult.SUCCESS;
@@ -311,10 +397,14 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         float startProgress = player.isCreative() ? CloneState.COMPLETE_PROGRESS : 0.0F;
         this.clone = new CloneState(player.getUUID(), player.getScoreboardName(), startProgress, body);
         this.registerToRegistry();
+        if (level instanceof ServerLevel serverLevel) {
+            this.indexBody(serverLevel);
+        }
 
         this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.started"));
         this.setChanged();
         level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), Block.UPDATE_ALL);
+        CorpseNetwork.refreshShellStates(player);
         return InteractionResult.SUCCESS;
     }
 
@@ -324,7 +414,17 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
 
     // ==================== 客户端/比较器访问 ====================
 
+    /**
+     * 舱门开合进度。
+     * <p>
+     * 只有下半格才有 ticker（见 {@link #getTicker}），上半格的动画器不会 {@code step}，
+     * 所以上半格统一取下半格的进度，保证上下两截门动画同步。
+     */
     public float getDoorOpenProgress(float partialTick) {
+        if (!CloneChamberBlock.isLower(this.getBlockState()) && this.level != null
+                && this.level.getBlockEntity(this.worldPosition.below()) instanceof CloneChamberBlockEntity lower) {
+            return lower.getDoorOpenProgress(partialTick);
+        }
         return this.doorAnimator.getProgress(partialTick);
     }
 
@@ -350,20 +450,14 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         if (this.clone != null) {
             this.clone.writeTo(out.child("Clone"));
         }
-        if (this.avatarEntityUuid != null) {
-            out.putString("AvatarEntity", this.avatarEntityUuid.toString());
-        }
     }
 
     @Override
     protected void loadAdditional(ValueInput in) {
         super.loadAdditional(in);
         this.clone = in.child("Clone").map(CloneState::read).orElse(null);
-        String avatarUuid = in.getStringOr("AvatarEntity", "");
-        this.avatarEntityUuid = avatarUuid.isEmpty() ? null : UUID.fromString(avatarUuid);
-        if (this.clone != null && this.avatarEntityUuid == null) {
-            this.registerToRegistry();
-        }
+        // ★ 这里不要在服务端之外登记：客户端读同一份 NBT 会把 ClientLevel 上的仓塞进 REGISTRY，
+        //   夺舍时强转 ServerLevel 就会崩。登记统一放到服务端 tick 里做。
     }
 
     @Override
@@ -377,9 +471,6 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
             }
             cloneTag.putFloat("Progress", this.clone.getProgress());
             tag.put("Clone", cloneTag);
-        }
-        if (this.avatarEntityUuid != null) {
-            tag.putString("AvatarEntity", this.avatarEntityUuid.toString());
         }
         return tag;
     }
