@@ -131,7 +131,7 @@ public final class CorpseNetwork {
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayer joiningPlayer = handler.getPlayer();
             PENDING_SYNC.add(joiningPlayer.getUUID());
-            CorpseOrigin.LOGGER.info("玩家 {} 加入，加入待同步队列",
+            CorpseOrigin.LOGGER.debug("玩家 {} 加入，加入待同步队列",
                     joiningPlayer.getName().getString());
         });
 
@@ -170,7 +170,7 @@ public final class CorpseNetwork {
                 if (player.tickCount >= 20) {
                     iterator.remove();
                     syncAllCorpseDataToPlayer(player, server);
-                    CorpseOrigin.LOGGER.info("✅ 延迟同步完成: {}",
+                    CorpseOrigin.LOGGER.debug("✅ 延迟同步完成: {}",
                             player.getName().getString());
                 }
             }
@@ -290,7 +290,7 @@ public final class CorpseNetwork {
             });
         });
 
-        CorpseOrigin.LOGGER.info("CorpseOrigin network registered (Fabric 26.2)");
+        CorpseOrigin.LOGGER.debug("CorpseOrigin network registered (Fabric 26.2)");
     }
 
     private static void syncShellStates(ServerPlayer player) {
@@ -431,7 +431,7 @@ public final class CorpseNetwork {
                     selfData
             );
             ServerPlayNetworking.send(joiningPlayer, selfPacket);
-            CorpseOrigin.LOGGER.info("✅ 已发送自己的尸兄数据给 {}",
+            CorpseOrigin.LOGGER.debug("✅ 已发送自己的尸兄数据给 {}",
                     joiningPlayer.getName().getString());
         }
 
@@ -468,7 +468,7 @@ public final class CorpseNetwork {
         // ✅ 6. 刷新可转移身体列表
         syncShellStates(joiningPlayer);
 
-        CorpseOrigin.LOGGER.info("✅ 已向玩家 {} 同步 {} 个其他尸兄玩家的数据",
+        CorpseOrigin.LOGGER.debug("✅ 已向玩家 {} 同步 {} 个其他尸兄玩家的数据",
                 joiningPlayer.getName().getString(), count);
     }
 
@@ -490,21 +490,29 @@ public final class CorpseNetwork {
     }
 
     /**
-     * 按"身体 uuid"同步一份尸兄状态。
+     * 按"身体 uuid"把这具身体的尸兄状态广播给同维度所有玩家（外加可能不在这个维度的 owner）。
      * <p>
-     * 克隆分身的实体 uuid、克隆仓里身体的推导 uuid 都走这里，
-     * 这样每具身体的外观（外骨骼/多眼/红眼）各按自己那份状态渲染，而不是共用账号那份。
+     * 仓里的克隆人、放在外面的克隆分身别的玩家也看得见，只发给 owner 的话别人客户端没有这份数据，
+     * 就看不到外骨骼。corpseTag 为 null 时按"不是尸兄"下发，用来清掉同一位置上一具身体留下的旧外观。
      */
-    public static void sendBodyCorpseSync(ServerPlayer receiver, java.util.UUID bodyUuid,
-                                          CompoundTag corpseTag) {
-        if (receiver == null || bodyUuid == null || corpseTag == null || corpseTag.isEmpty()) {
+    public static void broadcastBodyCorpseSync(ServerLevel level, ServerPlayer owner,
+                                               java.util.UUID bodyUuid, CompoundTag corpseTag) {
+        if (level == null || bodyUuid == null) {
             return;
         }
-        ServerPlayNetworking.send(receiver, new CorpsePayloads.PlayerCorpseSyncS2C(
+        CompoundTag data = corpseTag == null ? new CompoundTag() : corpseTag;
+        CorpsePayloads.PlayerCorpseSyncS2C packet = new CorpsePayloads.PlayerCorpseSyncS2C(
                 bodyUuid,
-                corpseTag.getBoolean("is_corpse").orElse(false),
-                corpseTag.getInt("corpse_type").orElse(0),
-                corpseTag.copy()));
+                data.getBoolean("is_corpse").orElse(false),
+                data.getInt("corpse_type").orElse(0),
+                data.copy());
+        for (ServerPlayer receiver : level.players()) {
+            ServerPlayNetworking.send(receiver, packet);
+        }
+        // owner 可能在别的维度（跨维度夺舍），单独补一份
+        if (owner != null && owner.level() != level) {
+            ServerPlayNetworking.send(owner, packet);
+        }
     }
 
     public static void broadcastPlayerCorpseSync(ServerPlayer player) {

@@ -141,10 +141,12 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     }
 
     /**
-     * 把这具身体自己的尸兄状态发给 owner。
+     * 把这具身体自己的尸兄状态发出去。
      * <p>
      * 客户端按分身 uuid 缓存，于是分身的外骨骼/多眼按它自己那份状态渲染，
      * 而不是沿用账号当前那份。
+     * <p>
+     * ★ 广播给同维度所有玩家：分身别人也看得见，只发给 owner 别人会看不到外骨骼。
      */
     private void syncBodyCorpseData() {
         if (this.level().isClientSide() || this.bodyState == null) {
@@ -156,11 +158,9 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         this.entityData.set(DATA_CORPSE_CLONE,
                 tag != null && tag.getBoolean("is_corpse").orElse(false));
 
-        ServerPlayer owner = this.ownerPlayer();
-        if (owner == null) {
-            return;
+        if (this.level() instanceof ServerLevel level) {
+            CorpseNetwork.broadcastBodyCorpseSync(level, this.ownerPlayer(), this.getUUID(), tag);
         }
-        CorpseNetwork.sendBodyCorpseSync(owner, this.getUUID(), tag);
     }
 
     /** 把身体自带的盔甲同步给客户端（渲染克隆人时用） */

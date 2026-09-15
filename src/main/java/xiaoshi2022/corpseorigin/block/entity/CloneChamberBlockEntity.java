@@ -633,20 +633,18 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
     }
 
     /**
-     * 把这具身体自己的尸兄状态发给 owner。
+     * 把这具身体自己的尸兄状态发出去。
      * <p>
      * 客户端按"身体 uuid"缓存，于是仓内克隆人的外骨骼/多眼按这具身体的状态渲染，
      * 而不是沿用账号当前那份。
+     * <p>
+     * ★ 广播给同维度所有玩家：仓里的克隆人不只 owner 看得见，只发给 owner 别人会看不到外骨骼。
      */
     private void syncBodyCorpseData(ServerLevel level) {
         if (this.clone == null) {
             return;
         }
-        ServerPlayer owner = ownerPlayer(level, this.ownerUuid());
-        if (owner == null) {
-            return;
-        }
-        CorpseNetwork.sendBodyCorpseSync(owner, this.bodyUuid(),
-                ShellState.corpseTagOf(this.clone.getComponent()));
+        CorpseNetwork.broadcastBodyCorpseSync(level, ownerPlayer(level, this.ownerUuid()),
+                this.bodyUuid(), ShellState.corpseTagOf(this.clone.getComponent()));
     }
 }

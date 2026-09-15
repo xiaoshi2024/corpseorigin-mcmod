@@ -60,8 +60,8 @@ public class ZombieKinEventHandler {
             int newHunger = Math.min(100, oldHunger + gain);
             comp.setHunger(newHunger);
 
-            CorpseOrigin.LOGGER.info("尸兄玩家 {} 进食：饥饿值 {} -> {}（+{}）",
-                    player.getName().getString(), oldHunger, newHunger, gain);
+//            CorpseOrigin.LOGGER.info("尸兄玩家 {} 进食：饥饿值 {} -> {}（+{}）",
+//                    player.getName().getString(), oldHunger, newHunger, gain);
 
             // ✅ 同步给客户端（更新饥饿值显示）
             if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
