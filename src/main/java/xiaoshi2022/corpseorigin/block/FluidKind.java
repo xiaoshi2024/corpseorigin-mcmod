@@ -31,7 +31,13 @@ public final class FluidKind implements Comparable<FluidKind> {
     /** 空仓 */
     public static final FluidKind NONE = new FluidKind("none", Fluids.EMPTY);
 
-    /** 快照之后才注册进来的其它模组液体（具体是哪种看方块实体） */
+    /**
+     * 快照之后才注册进来的其它模组液体（具体是哪种看方块实体）。
+     * <p>
+     * 流体状态给的是空：这种液体的外观由方块实体渲染器按<b>真实流体</b>自己画
+     * （{@link CloneChamberBlockEntity#storedFluid()}），原版那条 {@code getFluidState()} 的常规路径
+     * 表达不了别的模组的流体。
+     */
     public static final FluidKind OTHER = new FluidKind("other", Fluids.EMPTY);
 
     private static List<FluidKind> all;
@@ -168,9 +174,9 @@ public final class FluidKind implements Comparable<FluidKind> {
         return fluid.is(tag) || sourceOf(fluid).is(tag);
     }
 
-    /** 舀走时返还的桶（没桶就是空手） */
+    /** 舀走时返还的桶（没桶就是空手；{@link #OTHER} 的真实流体在方块实体里，这里不猜） */
     public ItemStack bucketStack() {
-        return this == NONE ? ItemStack.EMPTY : bucketStack(this.fluid);
+        return this == NONE || this == OTHER ? ItemStack.EMPTY : bucketStack(this.fluid);
     }
 
     public static ItemStack bucketStack(Fluid fluid) {

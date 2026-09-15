@@ -60,8 +60,9 @@ public final class ByWaterEventHandler {
             }
 
             // ✅ 只有源块（LEVEL == 0）才能被舀取
-            if (blockState.getValue(LiquidBlock.LEVEL) != 0) {
-                return InteractionResult.PASS;  // 流动水不能舀取
+            //    克隆仓这类"自带流体状态但不是流体方块"的方块没有 LEVEL 属性，先挡掉，别在这里抛异常
+            if (!blockState.hasProperty(LiquidBlock.LEVEL) || blockState.getValue(LiquidBlock.LEVEL) != 0) {
+                return InteractionResult.PASS;  // 流动水 / 非流体方块不能舀取
             }
 
             if (!(level instanceof ServerLevel serverLevel)) {

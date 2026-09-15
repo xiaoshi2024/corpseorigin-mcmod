@@ -5,24 +5,33 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.model.player.PlayerModel;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.block.BlockModelRenderState;
 import net.minecraft.client.renderer.block.BlockModelResolver;
+import net.minecraft.client.renderer.block.FluidRenderer;
+import net.minecraft.client.renderer.block.FluidStateModelSet;
 import net.minecraft.client.renderer.block.model.BlockDisplayContext;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
@@ -114,6 +123,12 @@ public class CloneChamberRenderer
         state.ownerUuid = chamber.getOwnerUuid();
         state.bodyUuid = chamber.bodyUuid();
         state.equipment = chamber.getEquipment();
+
+        // ★ "别的模组的液体"在方块状态里只能记成 OTHER，外观改由渲染器按方块实体里记的真实流体画
+        Fluid storedFluid = chamber.getBlockState().getValue(CloneChamberBlock.FLUID).isUnknown()
+                ? chamber.storedFluid()
+                : null;
+        state.customFluid = storedFluid == null ? null : storedFluid.defaultFluidState();
     }
 
     @Override
@@ -164,6 +179,44 @@ public class CloneChamberRenderer
         pose.popPose();
 
         pose.popPose();
+
+        // ===== 4. 液体：其它模组的液体自己画（原版画不了方块状态里没记的流体） =====
+        if (state.customFluid != null) {
+            renderCustomFluid(state, pose, collector);
+        }
+    }
+
+    /**
+     * 照真实流体画仓内液面。
+     * <p>
+     * 直接借用原版 {@link FluidRenderer#tesselate}：流体的贴图、颜色、液面高度都由它算好，
+     * 所以别的模组的液体看起来和它本来的样子一致。
+     */
+    private void renderCustomFluid(CloneChamberRenderState state, PoseStack pose, SubmitNodeCollector collector) {
+        Minecraft minecraft = Minecraft.getInstance();
+        ClientLevel level = minecraft.level;
+        if (level == null || state.customFluid == null) {
+            return;
+        }
+
+        FluidStateModelSet modelSet = minecraft.getModelManager().getFluidStateModelSet();
+        FluidRenderer renderer = new FluidRenderer(modelSet);
+
+        RenderType renderType = switch (modelSet.get(state.customFluid).layer()) {
+            case SOLID -> RenderTypes.solidMovingBlock();
+            case CUTOUT -> RenderTypes.cutoutMovingBlock();
+            case TRANSLUCENT -> RenderTypes.translucentMovingBlock();
+        };
+
+        BlockPos pos = state.blockPos;
+        collector.submitCustomGeometry(pose, renderType, (poseEntry, consumer) -> {
+            PoseStack local = new PoseStack();
+            local.last().pose().set(poseEntry.pose());
+            local.last().normal().set(poseEntry.normal());
+            // 方块状态传空气：让原版把液面照常画全，不拿仓自己的模型去剔除面
+            renderer.tesselate(level, pos, requestedLayer -> consumer,
+                    Blocks.AIR.defaultBlockState(), state.customFluid);
+        });
     }
 
     // ==================== 克隆人渲染 ====================

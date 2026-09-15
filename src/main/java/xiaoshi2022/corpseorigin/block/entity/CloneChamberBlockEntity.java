@@ -645,6 +645,10 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = new CompoundTag();
+        // ★ 仓内液体的具体种类也要下发：客户端渲染器要靠它画液面
+        if (this.storedFluidId != null) {
+            tag.putString("StoredFluid", this.storedFluidId.toString());
+        }
         if (this.clone != null) {
             CompoundTag cloneTag = new CompoundTag();
             cloneTag.putString("Owner", this.clone.getOwner().toString());

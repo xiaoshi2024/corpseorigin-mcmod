@@ -3,6 +3,8 @@ package xiaoshi2022.corpseorigin.client.renderer.blockentity;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.FluidState;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,4 +22,12 @@ public class CloneChamberRenderState extends BlockEntityRenderState {
     public UUID bodyUuid;
     /** 仓内身体穿的盔甲（顺序：头/胸/腿/脚），来自方块实体更新包 */
     public List<ItemStack> equipment = List.of();
+    /**
+     * 仓内液体的真实流体状态。
+     * <p>
+     * 只有"别的模组的液体"（方块状态里只能记成 {@code OTHER} 的那种）会填这个：
+     * 原版那条按 {@code getFluidState()} 画液体的路走不通，改由渲染器照这个流体状态自己画。
+     */
+    @Nullable
+    public FluidState customFluid;
 }

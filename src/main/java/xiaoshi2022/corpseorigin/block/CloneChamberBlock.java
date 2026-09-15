@@ -199,9 +199,10 @@ public class CloneChamberBlock extends BaseEntityBlock implements BucketPickup, 
     protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                           Player player, InteractionHand hand, BlockHitResult hitResult) {
         if (stack.getItem() instanceof BucketItem bucket) {
-            if (this.canPlaceLiquid(player, level, pos, state, bucket.getContent())) {
+            Fluid bucketFluid = bucket.getContent();
+            if (this.canPlaceLiquid(player, level, pos, state, bucketFluid)) {
                 if (!level.isClientSide()) {
-                    setFluid(state, level, pos, FluidKind.of(bucket.getContent()));
+                    setFluid(state, level, pos, FluidKind.of(bucketFluid), bucketFluid);
                     level.playSound(null, pos, SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 1.0F, 1.0F);
                     player.setItemInHand(hand, BucketItem.getEmptySuccessItem(stack, player));
                 }
@@ -226,7 +227,7 @@ public class CloneChamberBlock extends BaseEntityBlock implements BucketPickup, 
             return false;
         }
         if (!level.isClientSide()) {
-            setFluid(state, level, pos, kind);
+            setFluid(state, level, pos, kind, fluidState.getType());
         }
         return true;
     }
@@ -238,10 +239,19 @@ public class CloneChamberBlock extends BaseEntityBlock implements BucketPickup, 
         if (kind.isEmpty()) {
             return ItemStack.EMPTY;
         }
+        ItemStack bucket = kind.bucketStack();
+        if (kind.isUnknown()) {
+            // 具体是哪种液体存在方块实体里（方块状态只记了"别的模组的液体"）
+            CloneChamberBlockEntity chamber = chamberAt(level, pos, state);
+            Fluid stored = chamber == null ? null : chamber.storedFluid();
+            if (stored != null) {
+                bucket = FluidKind.bucketStack(stored);
+            }
+        }
         if (!level.isClientSide()) {
             setFluid(state, level, pos, FluidKind.NONE);
         }
-        return kind.bucketStack();
+        return bucket;
     }
 
     @Override
@@ -271,8 +281,18 @@ public class CloneChamberBlock extends BaseEntityBlock implements BucketPickup, 
             }
         }
 
-        CloneChamberBlockEntity chamber = chamberAt(level, pos, state);
-        if (chamber != null) {
+        // 上下两半各有自己的方块实体，渲染时各自读自己的那份记录，所以两边都要写
+        recordStoredFluid(level, pos, kind, fluid);
+        BlockPos otherPos = isLower(state) ? pos.above() : pos.below();
+        if (level.getBlockState(otherPos).is(state.getBlock())) {
+            recordStoredFluid(level, otherPos, kind, fluid);
+        }
+    }
+
+    /** 把"具体是哪种液体"记到该位置自己的方块实体里（只有方块状态表达不了的 OTHER 才需要记） */
+    private static void recordStoredFluid(LevelAccessor level, BlockPos pos, FluidKind kind,
+                                          @Nullable Fluid fluid) {
+        if (level.getBlockEntity(pos) instanceof CloneChamberBlockEntity chamber) {
             chamber.setStoredFluid(kind.isUnknown() ? fluid : null);
         }
     }
@@ -329,10 +349,9 @@ public class CloneChamberBlock extends BaseEntityBlock implements BucketPickup, 
 
         // 直接放在模组液体里时，具体液体同样要记进方块实体（方块状态存不下）
         Fluid lowerFluid = level.getFluidState(pos).getType();
-        CloneChamberBlockEntity chamber = chamberAt(level, pos, state);
-        if (chamber != null) {
-            chamber.setStoredFluid(FluidKind.of(lowerFluid).isUnknown() ? lowerFluid : null);
-        }
+        FluidKind lowerKind = FluidKind.of(lowerFluid);
+        recordStoredFluid(level, pos, lowerKind, lowerFluid);
+        recordStoredFluid(level, upperPos, lowerKind, lowerFluid);
     }
 
     @Override
