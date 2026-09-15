@@ -6,7 +6,7 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,7 +17,8 @@ public class CharacterManager {
 
     private static CharacterManager instance;
 
-    private final Map<String, ICharacter> registeredCharacters = new HashMap<>();
+    /** 按注册顺序保存（保证列表与创造物品栏里的顺序稳定） */
+    private final Map<String, ICharacter> registeredCharacters = new LinkedHashMap<>();
 
     /** 客户端缓存的当前角色ID */
     private String clientCachedCharacterId = MortalCharacter.ID;
@@ -35,9 +36,43 @@ public class CharacterManager {
     /** 在模组初始化时调用，注册所有内置角色 */
     public void registerDefaults() {
         registerCharacter(MortalCharacter.getInstance());
+
+        // ==================== 一级优先级（核心战斗 / 主线剧情角色） ====================
         registerCharacter(new BaiXiaoFei());
+        registerCharacter(new HeiXiaoFei());
         registerCharacter(new LongYou());
+        registerCharacter(new ShiChaoZhiZi());
+        registerCharacter(new KaiWeiNai());
         registerCharacter(new XiaoLu());
+        registerCharacter(new XiaoYanZi());
+        registerCharacter(new TianXianBaoBaoZb());
+        registerCharacter(new JinGangZb());
+        registerCharacter(new XiaoHui());
+
+        // ==================== 二级优先级（关键剧情推动角色） ====================
+        registerCharacter(new TuShu());
+        registerCharacter(new MuXi());
+        registerCharacter(new YanYan());
+        registerCharacter(new FengMoHuiTaiLang());
+        registerCharacter(new DarkCouncilK());
+        registerCharacter(new BianSeLongZb());
+        registerCharacter(new ChongMu());
+        registerCharacter(new QingWaZb());
+        registerCharacter(new HuJie());
+        registerCharacter(new ZuoHuFa());
+
+        // ==================== 三级优先级（合并简化的辅助 / 杂兵角色） ====================
+        registerCharacter(new HeiAnHuiSuiCong());
+        registerCharacter(new XiongXingZb());
+        registerCharacter(new ChongQun());
+        registerCharacter(new SiYangYuanZb());
+        registerCharacter(new KuaiDiYuanZb());
+        registerCharacter(new ZhaoRiTian());
+        registerCharacter(new ChuanShangXingCunZhe());
+        registerCharacter(new BianYiGuiYu());
+        registerCharacter(new YanHuangBuDui());
+
+        // 其他既有角色
         registerCharacter(new WeiXin());
     }
 

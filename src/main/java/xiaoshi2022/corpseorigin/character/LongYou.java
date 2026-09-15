@@ -8,6 +8,8 @@ import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.longyou.CorpseKingInfrasoundSkill;
+import xiaoshi2022.corpseorigin.skill.longyou.CorpseKingThunderSkill;
+import xiaoshi2022.corpseorigin.skill.longyou.UndyingWaistSkill;
 
 import java.util.List;
 
@@ -15,12 +17,18 @@ import java.util.List;
  * 龙右 - 尸王
  * <p>
  * 成为龙右即直接变为满级尸兄（尸王类型），并保留意识。
+ * <p>
+ * 含《尸巢之战篇》设定的不死腰体、雷电骨架技能。
  */
 public class LongYou implements ICharacter {
 
     public static final String ID = "longyou";
 
-    private static final List<ISkill> SKILLS = List.of(new CorpseKingInfrasoundSkill());
+    private static final List<ISkill> SKILLS = List.of(
+            new CorpseKingInfrasoundSkill(),
+            new UndyingWaistSkill(),
+            new CorpseKingThunderSkill()
+    );
 
     @Override
     public String getId() {

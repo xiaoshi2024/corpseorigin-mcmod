@@ -142,6 +142,7 @@ public final class CorpseNetwork {
             PENDING_SYNC.remove(uuid);
             PENDING_SYNCS.remove(uuid);
             SkillManager.cleanupDisconnect(uuid);
+            xiaoshi2022.corpseorigin.event.HeiXiaoFeiEventHandler.cleanupDisconnect(uuid);
             BYeffect.clearTotalDuration(uuid);
             BYeffect.clearInfectionSource(uuid);
 

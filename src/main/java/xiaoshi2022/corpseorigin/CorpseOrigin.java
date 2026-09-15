@@ -51,6 +51,13 @@ public class CorpseOrigin implements ModInitializer {
 				ModItems.CORPSE_ORIGIN_TAB
 		);
 
+		// ✅ 5.1 角色选择书页签（带搜索框）
+		Registry.register(
+				BuiltInRegistries.CREATIVE_MODE_TAB,
+				id("character_books"),
+				ModItems.CHARACTER_BOOK_TAB
+		);
+
 		// ✅ 6. 实体
 		ModEntities.init();
 
@@ -87,6 +94,7 @@ public class CorpseOrigin implements ModInitializer {
 		ByWaterEventHandler.register();
 		ServerEvents.register();
 		ZombieKinEventHandler.register();
+		HeiXiaoFeiEventHandler.register();
 		EvolutionEventHandler.register();
 		APSComboHandler.register();
 		APSGreatSwordInterceptor.register();

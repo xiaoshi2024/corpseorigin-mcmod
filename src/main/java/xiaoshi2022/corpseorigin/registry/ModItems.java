@@ -6,8 +6,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.*;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.HeiXiaoFei;
+import xiaoshi2022.corpseorigin.character.ICharacter;
 import xiaoshi2022.corpseorigin.item.ByWaterBottleItem;
 import xiaoshi2022.corpseorigin.item.ByWaterBucketItem;
+import xiaoshi2022.corpseorigin.item.CharacterBookItem;
 import xiaoshi2022.corpseorigin.item.sword.JuQue;
 import xiaoshi2022.corpseorigin.item.weapon.BloodLotusLamp;
 
@@ -52,6 +56,14 @@ public final class ModItems {
                     .setId(itemKey("clone_chamber")))
     );
 
+    /** 角色选择书（所有角色共用，靠 character_id 数据组件区分） */
+    public static final Item CHARACTER_BOOK = register(
+            "character_book",
+            new CharacterBookItem(new Item.Properties()
+                    .stacksTo(1)
+                    .setId(itemKey("character_book")))
+    );
+
     // ==================== 创造物品栏 ====================
     public static final CreativeModeTab CORPSE_ORIGIN_TAB = CreativeModeTab.builder(
                     CreativeModeTab.Row.TOP, 8)
@@ -63,6 +75,26 @@ public final class ModItems {
                 output.accept(JUQUE_TW);
                 output.accept(BLOOD_LOTUS_LAMP);
                 output.accept(CLONE_CHAMBER);
+            })
+            .build();
+
+    /**
+     * 角色选择书页签：装入了全部已注册角色的书。
+     * <p>
+     * ⚠️ 必须保持默认的 {@link CreativeModeTab.Type#CATEGORY} 类型。
+     * 原版搜索框的索引（{@code SessionSearchTrees.updateCreativeTooltips}）只从「搜索」页签的
+     * displayItems 构建，而「搜索」页签的内容生成器会跳过所有 SEARCH 类型页签；
+     * 同时 Fabric 的 {@code CreativeModeTabEvents} 也明确跳过 alignedRight 的页签（搜索页签就是），
+     * 没法往里面补物品。所以书必须放在普通页签里，才能被搜索到。
+     */
+    public static final CreativeModeTab CHARACTER_BOOK_TAB = CreativeModeTab.builder(
+                    CreativeModeTab.Row.TOP, 7)
+            .title(Component.translatable("itemGroup.corpseorigin.character_books"))
+            .icon(() -> CharacterBookItem.createStack(HeiXiaoFei.ID))
+            .displayItems((parameters, output) -> {
+                for (ICharacter character : CharacterManager.getInstance().getRegisteredCharacters()) {
+                    output.accept(CharacterBookItem.createStack(character.getId()));
+                }
             })
             .build();
 

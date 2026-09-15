@@ -31,6 +31,17 @@ public final class ModDataComponents {
                             .build()
             );
 
+    // ✅ 角色选择书记录的角色 ID
+    public static final DataComponentType<String> CHARACTER_ID =
+            Registry.register(
+                    BuiltInRegistries.DATA_COMPONENT_TYPE,
+                    Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "character_id"),
+                    DataComponentType.<String>builder()
+                            .persistent(Codec.STRING)
+                            .networkSynchronized(ByteBufCodecs.STRING_UTF8)
+                            .build()
+            );
+
     public static void init() {
         CorpseOrigin.LOGGER.info("CorpseOrigin data components registered");
     }

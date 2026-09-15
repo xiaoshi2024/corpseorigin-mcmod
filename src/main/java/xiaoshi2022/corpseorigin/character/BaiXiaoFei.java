@@ -5,11 +5,15 @@ import net.minecraft.resources.Identifier;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.AncientPoetrySwordSkill;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.SlaughterAwakeningSkill;
+import xiaoshi2022.corpseorigin.skill.baixiaofei.SpatialBlinkSkill;
+import xiaoshi2022.corpseorigin.skill.baixiaofei.WaterOrbSkill;
 
 import java.util.List;
 
 /**
  * 白小飞 -（主角）
+ * <p>
+ * 含《尸巢之战篇》设定的水异能、空间异能骨架技能。
  */
 public class BaiXiaoFei implements ICharacter {
 
@@ -17,7 +21,9 @@ public class BaiXiaoFei implements ICharacter {
 
     private static final List<ISkill> SKILLS = List.of(
             new SlaughterAwakeningSkill(),
-            new AncientPoetrySwordSkill()
+            new AncientPoetrySwordSkill(),
+            new WaterOrbSkill(),
+            new SpatialBlinkSkill()
     );
 
     @Override

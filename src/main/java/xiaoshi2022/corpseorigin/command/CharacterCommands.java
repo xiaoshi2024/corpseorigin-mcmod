@@ -5,13 +5,17 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.ICharacter;
+import xiaoshi2022.corpseorigin.skill.SkillManager;
+
+import java.util.Collection;
 
 /**
- * 角色命令 /character current|list|select|clear
+ * 角色命令 /character current|list|select|clear|unlockall
  */
 public final class CharacterCommands {
 
@@ -63,7 +67,28 @@ public final class CharacterCommands {
                     ctx.getSource().sendSuccess(() ->
                             Component.translatable("command.corpseorigin.character.cleared"), false);
                     return 1;
-                })));
+                }))
+                // ✅ 作弊：一键解锁全部技能（默认作用于所有在线玩家）
+                .then(Commands.literal("unlockall")
+                        .executes(ctx -> unlockAll(ctx.getSource(),
+                                ctx.getSource().getServer().getPlayerList().getPlayers()))
+                        .then(Commands.argument("targets", EntityArgument.players())
+                                .executes(ctx -> unlockAll(ctx.getSource(),
+                                        EntityArgument.getPlayers(ctx, "targets"))))));
+    }
+
+    /** 为目标玩家解锁其当前角色的全部技能（跳过进化点与前置） */
+    private static int unlockAll(CommandSourceStack source, Collection<ServerPlayer> targets) {
+        int granted = 0;
+        for (ServerPlayer target : targets) {
+            granted += SkillManager.grantAllSkills(target);
+        }
+
+        final int total = granted;
+        final int playerCount = targets.size();
+        source.sendSuccess(() -> Component.translatable(
+                "command.corpseorigin.character.unlock_all", playerCount, total), true);
+        return total;
     }
 
     /** 查看当前角色（没有显式选择时就是默认的凡人） */

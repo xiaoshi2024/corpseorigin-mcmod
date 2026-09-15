@@ -141,6 +141,30 @@ public final class SkillManager {
         return true;
     }
 
+    /**
+     * 作弊解锁：跳过进化点、等级与前置，直接学会当前角色的全部技能。
+     *
+     * @return 授予的技能数量
+     */
+    public static int grantAllSkills(ServerPlayer player) {
+        ICharacter character = CharacterManager.getInstance().getPlayerCharacter(player);
+        PlayerCharacterData data = PlayerCharacterData.get(player);
+
+        int granted = 0;
+        for (ISkill skill : character.getSkills()) {
+            data.learnSkill(player.getUUID(), skill.getId().getPath());
+            granted++;
+        }
+
+        if (granted > 0) {
+            CorpseNetwork.sendEvolutionSync(player);
+        }
+
+        CorpseOrigin.LOGGER.info("玩家 {} 作弊解锁了 {} 的全部技能（{} 个）",
+                player.getName().getString(), character.getId(), granted);
+        return granted;
+    }
+
     private static long getCooldownEnd(UUID uuid, String skillPath) {
         Map<String, Long> map = COOLDOWNS.get(uuid);
         return map == null ? 0L : map.getOrDefault(skillPath, 0L);
