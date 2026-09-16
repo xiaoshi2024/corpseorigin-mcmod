@@ -3,7 +3,7 @@
   "values": [
     "corpseorigin:infected_water",
     "corpseorigin:flowing_infected_water",
-    "biomesoplenty:blood",
-    "biomesoplenty:flowing_blood"
+    { "id": "biomesoplenty:blood", "required": false },
+    { "id": "biomesoplenty:flowing_blood", "required": false }
   ]
 }

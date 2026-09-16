@@ -3,6 +3,8 @@ package xiaoshi2022.corpseorigin.component;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import xiaoshi2022.corpseorigin.limb.LimbSlots;
+import xiaoshi2022.corpseorigin.limb.LimbState;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModDataAttachments;
 
@@ -22,6 +24,12 @@ public class PlayerCorpseComponent {
     private static final String KEY_CONSCIOUSNESS_RESTORED = "consciousness_restored";
     private static final String KEY_IS_CORPSE = "is_corpse";
     private static final String KEY_CORPSE_TYPE = "corpse_type";
+
+    // ==================== 断肢 / 再生 ====================
+    private static final String KEY_LIMB_MASK = "limb_mask";
+    private static final String KEY_LIMB_REGROW = "limb_regrow_ticks";
+    private static final String KEY_LIMB_TOTALS = "limb_regrow_totals";
+    private static final String KEY_LIMB_COOLDOWNS = "limb_cooldowns";
 
     public static final float CONSCIOUSNESS_RETAIN_CHANCE = 0.05f;
 
@@ -294,6 +302,58 @@ public class PlayerCorpseComponent {
 
     public boolean isMindless() {
         return isCorpse() && !hasConsciousness();
+    }
+
+    // ==================== 断肢 / 再生 ====================
+
+    /**
+     * 一次性读出断肢状态（只复制一次 NBT）。
+     * <p>
+     * 客户端读这份数据的路径是 {@code CorpseOriginClient.corpseDataCache}（同样由
+     * PlayerCorpseSyncS2C 携带的整份 tag 驱动），所以断肢状态跟着尸兄数据一起走，
+     * 不需要单独的网络包。
+     */
+    public LimbState readLimbs() {
+        CompoundTag tag = getData();
+        return new LimbState(
+                tag.getByteOr(KEY_LIMB_MASK, LimbSlots.NONE),
+                toSlots(tag.getIntArray(KEY_LIMB_REGROW).orElse(null), LimbSlots.REGROW_PERMANENT),
+                toSlots(tag.getIntArray(KEY_LIMB_TOTALS).orElse(null), 0),
+                toSlots(tag.getIntArray(KEY_LIMB_COOLDOWNS).orElse(null), 0));
+    }
+
+    /** 一次性写入断肢状态（只复制一次 NBT） */
+    public void writeLimbs(LimbState state) {
+        CompoundTag tag = getData();
+        tag.putByte(KEY_LIMB_MASK, state.mask());
+        tag.putIntArray(KEY_LIMB_REGROW, state.regrowTicks());
+        tag.putIntArray(KEY_LIMB_TOTALS, state.totals());
+        tag.putIntArray(KEY_LIMB_COOLDOWNS, state.cooldowns());
+        setData(tag);
+    }
+
+    /** 清掉断肢状态（失去黑小飞身份时用），返回是否原本有断肢 */
+    public boolean clearLimbs() {
+        CompoundTag tag = getData();
+        if (!tag.getByte(KEY_LIMB_MASK).isPresent()) {
+            return false;
+        }
+        tag.remove(KEY_LIMB_MASK);
+        tag.remove(KEY_LIMB_REGROW);
+        tag.remove(KEY_LIMB_TOTALS);
+        tag.remove(KEY_LIMB_COOLDOWNS);
+        setData(tag);
+        return true;
+    }
+
+    /** NBT 里的数组补齐成 4 长，缺失部分用 fill */
+    private static int[] toSlots(int[] raw, int fill) {
+        int[] result = new int[LimbSlots.COUNT];
+        java.util.Arrays.fill(result, fill);
+        if (raw != null) {
+            System.arraycopy(raw, 0, result, 0, Math.min(raw.length, result.length));
+        }
+        return result;
     }
 
     // ==================== 静态工具方法 ====================

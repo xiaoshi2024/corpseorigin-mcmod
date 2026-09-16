@@ -9,6 +9,7 @@ import net.minecraft.resources.Identifier;
 import xiaoshi2022.corpseorigin.network.CorpsePayloads;
 import xiaoshi2022.corpseorigin.skill.EvolutionManager;
 import xiaoshi2022.corpseorigin.skill.ISkill;
+import xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockSource;
 
 import java.util.List;
 
@@ -77,7 +78,15 @@ public class SkillTreeScreen extends Screen {
             } else if (canLearn) {
                 state = Component.translatable("gui.corpseorigin.skill_tree.click_learn").getString();
             } else {
-                state = Component.translatable("gui.corpseorigin.skill_tree.locked").getString();
+                // 未解锁：优先显示"获取式"解锁条件（拿到某个器官 / 宠物 / 物品即学会），
+                // 这样玩家能知道自己该去找什么，而不是只看到一句"未解锁"
+                List<SkillUnlockSource> sources = skill.getUnlockSources();
+                if (!sources.isEmpty()) {
+                    state = Component.translatable("gui.corpseorigin.skill_tree.requires",
+                            sources.get(0).describe()).getString();
+                } else {
+                    state = Component.translatable("gui.corpseorigin.skill_tree.locked").getString();
+                }
             }
             graphics.text(font, state, x + 272 - font.width(state), y + 9, textColor, false);
 

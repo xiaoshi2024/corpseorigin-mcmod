@@ -36,6 +36,7 @@ public class CorpseShellStateComponent extends ShellStateComponent {
     public void applyCloneFormula(net.minecraft.util.RandomSource random,
                                   boolean corpseClone, float completion) {
         CompoundTag tag = this.data.copy();
+        stripLimbs(tag);   // 新培育的身体不该继承本体的断肢
 
         if (!corpseClone) {
             tag.putBoolean("is_corpse", false);
@@ -83,6 +84,14 @@ public class CorpseShellStateComponent extends ShellStateComponent {
             return random.nextFloat() <= completion;
         }
         return random.nextFloat() < (1.0F - completion) * 0.4F;
+    }
+
+    /** 断肢状态跟着身体走，但刚培育出来的克隆体是完好的 */
+    private static void stripLimbs(CompoundTag tag) {
+        tag.remove("limb_mask");
+        tag.remove("limb_regrow_ticks");
+        tag.remove("limb_regrow_totals");
+        tag.remove("limb_cooldowns");
     }
 
     @Override public void readNbt(CompoundTag tag) {

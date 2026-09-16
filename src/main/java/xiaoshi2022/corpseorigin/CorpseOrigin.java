@@ -12,8 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.command.CharacterCommands;
+import xiaoshi2022.corpseorigin.command.LimbCommand;
+import xiaoshi2022.corpseorigin.command.SkillCommand;
 import xiaoshi2022.corpseorigin.command.SummonZbCommand;
 import xiaoshi2022.corpseorigin.event.*;
+import xiaoshi2022.corpseorigin.limb.LimbEvents;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.network.SynchronizationResponsePacket;
 import xiaoshi2022.corpseorigin.registry.*;
@@ -98,12 +101,16 @@ public class CorpseOrigin implements ModInitializer {
 		EvolutionEventHandler.register();
 		APSComboHandler.register();
 		APSGreatSwordInterceptor.register();
+		LimbEvents.register();
+		SkillUnlockEvents.register();
 
 		// ✅ 11. 命令
 		net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback.EVENT.register(
 				(dispatcher, registryAccess, environment) -> {
 					CharacterCommands.register(dispatcher);
 					SummonZbCommand.register(dispatcher);
+					LimbCommand.register(dispatcher);
+					SkillCommand.register(dispatcher);
 				}
 		);
 

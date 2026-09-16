@@ -2,6 +2,10 @@ package xiaoshi2022.corpseorigin.character;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
+import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.heixiaofei.BlackGoldHeartSkill;
 import xiaoshi2022.corpseorigin.skill.heixiaofei.DarkSiphonSkill;
@@ -77,5 +81,17 @@ public class HeiXiaoFei implements ICharacter {
     @Override
     public float getInfectionMultiplier() {
         return 0.4f;
+    }
+
+    /**
+     * 失去黑小飞身份 → 断肢再生能力一并失效，清掉断肢状态并重新广播，
+     * 否则客户端会一直用断肢模型渲染这具身体。
+     */
+    @Override
+    public void onLose(Player player) {
+        if (PlayerCorpseComponent.get(player).clearLimbs()
+                && player instanceof ServerPlayer serverPlayer) {
+            CorpseNetwork.broadcastPlayerCorpseSync(serverPlayer);
+        }
     }
 }

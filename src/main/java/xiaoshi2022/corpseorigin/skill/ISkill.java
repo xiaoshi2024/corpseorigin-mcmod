@@ -3,6 +3,7 @@ package xiaoshi2022.corpseorigin.skill;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockSource;
 
 import java.util.List;
 
@@ -35,6 +36,19 @@ public interface ISkill {
 
     /** 前置技能 ID（技能树用） */
     default List<Identifier> getPrerequisites() {
+        return List.of();
+    }
+
+    /**
+     * 获取式解锁来源（见 {@link xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockSource}）。
+     * <p>
+     * 默认空 = 纯技能树技能，只能花进化点点亮，行为和以前完全一致。
+     * 声明了来源的技能，玩家满足条件时会被免费直接学会 —— 例如拿到「黑金心脏」这个器官，
+     * 就自动解锁黑金心脏技能。两条路并存，互不冲突。
+     * <p>
+     * 多个来源之间的关系是「或」：满足任意一个就算解锁。
+     */
+    default List<SkillUnlockSource> getUnlockSources() {
         return List.of();
     }
 

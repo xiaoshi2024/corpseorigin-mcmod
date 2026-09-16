@@ -18,10 +18,13 @@
   },
   "client": [
     "AvatarRendererMixin",
+    "ClientPlayerGeoAnimatableMixin",
     "ClientPlayerInteractionManagerMixin",
     "ClientPlayerShellMixin",
     "EntityMixin",
     "LivingEntityRendererLayersAccessor",
-    "LivingEntityRendererMixin"
+    "LivingEntityRendererMixin",
+    "LivingEntityRendererSubmitMixin",
+    "PlayerModelLimbMixin"
   ]
 }

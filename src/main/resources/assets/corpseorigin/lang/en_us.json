@@ -67,6 +67,9 @@
   "character.corpseorigin.heixiaofei.trait1": "Slaughter Bloodline: Combat power surges in Slaughter Momentum, wrapped in red-crimson killing aura",
   "character.corpseorigin.heixiaofei.trait2": "Dark Siphon: Drains enemies' blood essence to heal, but is backlashed by bosses",
   "character.corpseorigin.heixiaofei.trait3": "Black Gold Heart: Locks health before a lethal blow and blasts nearby enemies away",
+  "limb.corpseorigin.severed": "Your %1$s was severed! Flesh begins to regrow...",
+  "limb.corpseorigin.regrown": "Your %1$s has regrown",
+  "limb.corpseorigin.starving": "Too hungry - the flesh stops growing",
 
   "character.corpseorigin.longyou": "Long You",
   "character.corpseorigin.longyou.desc": "The Zombie King of Zombie Brother. He created the zombie plague and seeks to rule the world.",
@@ -376,6 +379,20 @@
   "gui.corpseorigin.skill_tree.learned": "Learned",
   "gui.corpseorigin.skill_tree.click_learn": "Click to Learn",
   "gui.corpseorigin.skill_tree.locked": "Locked",
+  "gui.corpseorigin.skill_tree.requires": "Needs %s",
+
+  "relic.corpseorigin.black_gold_heart": "Black Gold Heart",
+  "pet.corpseorigin.ham": "Ham Pet",
+
+  "skill.corpseorigin.unlocked_by_source": "You learned a skill from an acquisition: %s",
+
+  "command.corpseorigin.skill.unlocked": "Unlocked skill %2$s for %1$s",
+  "command.corpseorigin.skill.state.learned": "Learned",
+  "command.corpseorigin.skill.state.tree": "Skill tree %1$s pts / lv %2$s",
+  "command.corpseorigin.skill.state.source": "By acquisition: ",
+  "command.corpseorigin.relic.list": "Acquisitions of %1$s: %2$s",
+  "command.corpseorigin.relic.added": "Granted %2$s to %1$s, unlocked %3$s skill(s)",
+  "command.corpseorigin.relic.removed": "Revoked %2$s from %1$s",
 
   "gui.corpseorigin.skill_wheel.cooldown": "Cooldown %ss",
   "gui.corpseorigin.skill_wheel.ready": "Ready",

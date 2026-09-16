@@ -1,5 +1,7 @@
 package xiaoshi2022.corpseorigin.item;
 
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -22,12 +24,10 @@ public class ByWaterBottleItem extends Item {
 
     @Override
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
-        ItemStack stack = player.getItemInHand(hand);
-        if (player.canEat(false)) {
-            player.startUsingItem(hand);
-            return InteractionResult.CONSUME;
-        }
-        return InteractionResult.PASS;
+        // 故意不做 canEat 检查：这瓶东西是"疫病源"，不是食物，
+        // 饱食度满了也应该能随时喝下去（原版食物行为会在这里把人拦住）。
+        player.startUsingItem(hand);
+        return InteractionResult.CONSUME;
     }
 
     @Override
@@ -56,24 +56,34 @@ public class ByWaterBottleItem extends Item {
 
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity entity) {
-        if (!level.isClientSide() && entity instanceof Player player) {
-            player.addEffect(new MobEffectInstance(
-                    MobEffects.POISON,
-                    400,
-                    1,
-                    false,
-                    true,
-                    true
-            ));
+        // finishUsingItem 只在服务端触发（客户端的 useItemRemaining 归零不会走这里），
+        // 所以这些效果与音效都放在服务端，playSound(null, ...) 会广播给周围玩家（含自己）。
+        if (!level.isClientSide()) {
+            if (entity instanceof Player player) {
+                player.addEffect(new MobEffectInstance(
+                        MobEffects.POISON,
+                        400,
+                        1,
+                        false,
+                        true,
+                        true
+                ));
 
-            player.addEffect(new MobEffectInstance(
-                    ModEffects.QIANS,
-                    200,
-                    0,
-                    false,
-                    true,
-                    true
-            ));
+                player.addEffect(new MobEffectInstance(
+                        ModEffects.QIANS,
+                        200,
+                        0,
+                        false,
+                        true,
+                        true
+                ));
+            }
+
+            // 喝下的音效 —— 原本缺了这一段，所以喝下去是"静音"的。
+            // 参数照原版喝药水（Consumable 组件里的那颗）。
+            level.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+                    SoundEvents.GENERIC_DRINK, SoundSource.NEUTRAL, 0.5F,
+                    level.getRandom().nextFloat() * 0.1F + 0.9F);
         }
 
         return new ItemStack(Items.GLASS_BOTTLE);

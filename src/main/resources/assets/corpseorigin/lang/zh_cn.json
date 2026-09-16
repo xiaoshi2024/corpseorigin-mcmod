@@ -67,6 +67,9 @@
   "character.corpseorigin.heixiaofei.trait1": "杀戮血统：杀势觉醒后战力暴涨，红甲杀气缠身",
   "character.corpseorigin.heixiaofei.trait2": "黑暗虹吸：抽取敌人气血回复自身，对 BOSS 会被反噬",
   "character.corpseorigin.heixiaofei.trait3": "黑金心脏：致命一击前锁血，并震退周围敌人",
+  "limb.corpseorigin.severed": "你的%1$s被斩断了！肉芽开始生长……",
+  "limb.corpseorigin.regrown": "%1$s已经重新长好了",
+  "limb.corpseorigin.starving": "饥饿难耐，肉芽停止生长",
 
   "character.corpseorigin.longyou": "龙右",
   "character.corpseorigin.longyou.desc": "《尸兄》尸王。尸潮的制造者，意图统治世界。",
@@ -376,6 +379,20 @@
   "gui.corpseorigin.skill_tree.learned": "已学习",
   "gui.corpseorigin.skill_tree.click_learn": "点击学习",
   "gui.corpseorigin.skill_tree.locked": "未解锁",
+  "gui.corpseorigin.skill_tree.requires": "需要 %s",
+
+  "relic.corpseorigin.black_gold_heart": "黑金心脏",
+  "pet.corpseorigin.ham": "哈姆宠物",
+
+  "skill.corpseorigin.unlocked_by_source": "获得物让你领悟了技能：%s",
+
+  "command.corpseorigin.skill.unlocked": "已为 %1$s 解锁技能 %2$s",
+  "command.corpseorigin.skill.state.learned": "已学会",
+  "command.corpseorigin.skill.state.tree": "技能树 %1$s点 / %2$s级",
+  "command.corpseorigin.skill.state.source": "获取式: ",
+  "command.corpseorigin.relic.list": "%1$s 已获得的获取物: %2$s",
+  "command.corpseorigin.relic.added": "已授予 %1$s 获取物 %2$s，本次解锁 %3$s 个技能",
+  "command.corpseorigin.relic.removed": "已收回 %1$s 的获取物 %2$s",
 
   "gui.corpseorigin.skill_wheel.cooldown": "冷却 %s 秒",
   "gui.corpseorigin.skill_wheel.ready": "就绪",
