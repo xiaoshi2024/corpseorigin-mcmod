@@ -459,6 +459,8 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         // ★ 2. 生成分身，把身体交给它（记住出生仓，好让旧身体还得回来）
         CloneAvatarEntity avatar = new CloneAvatarEntity(ModEntities.CLONE_AVATAR, level);
         avatar.setOwnerUuid(ownerUuid);
+        // 头顶名字牌显示本体名字，方便分辨哪具分身是谁的
+        avatar.setOwnerName(ownerName);
         avatar.setBodyState(bodyState);
         avatar.setSourceChamber(this.worldPosition);
         avatar.setActive(true);

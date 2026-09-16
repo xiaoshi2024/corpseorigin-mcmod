@@ -37,11 +37,11 @@ public final class EvolutionEventHandler {
             data.addEarnedPoints(player.getUUID(), points);
             CorpseNetwork.sendEvolutionSync(player);
 
-            CorpseOrigin.LOGGER.info("玩家 {}（{}）击杀 {}，获得 {} 进化点",
-                    player.getName().getString(),
-                    character.getId(),
-                    target.getName().getString(),
-                    points);
+//            CorpseOrigin.LOGGER.info("玩家 {}（{}）击杀 {}，获得 {} 进化点",
+//                    player.getName().getString(),
+//                    character.getId(),
+//                    target.getName().getString(),
+//                    points);
         });
     }
 

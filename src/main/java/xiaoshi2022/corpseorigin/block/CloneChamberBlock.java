@@ -372,7 +372,15 @@ public class CloneChamberBlock extends BaseEntityBlock implements BucketPickup, 
     @Override
     public void playerDestroy(Level level, Player player, BlockPos pos, BlockState state,
                               @Nullable BlockEntity blockEntity, ItemStack tool) {
-        // 只有下半格才掉落，避免双高方块掉两次
+        // 创造模式一律不掉落。
+        // 原版正常流程下创造根本不会走到 playerDestroy（它走 removeBlock），
+        // 但这里显式兜一道：别的模组/脚本/指令绕过原版判断调进来时也不会掉东西。
+        if (player.isCreative()) {
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            return;
+        }
+
+        // 只有下半格才掉落，避免双高方块掉两次（loot table 里还有 half=lower 条件做双保险）
         if (isLower(state)) {
             super.playerDestroy(level, player, pos, state, blockEntity, tool);
         }

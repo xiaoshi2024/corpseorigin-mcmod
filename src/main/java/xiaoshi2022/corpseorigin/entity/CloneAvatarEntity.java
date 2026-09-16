@@ -1,6 +1,7 @@
 package xiaoshi2022.corpseorigin.entity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -98,6 +99,25 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
 
     public void setOwnerUuid(@Nullable UUID uuid) {
         this.entityData.set(DATA_OWNER_UUID, uuid == null ? "" : uuid.toString());
+    }
+
+    /**
+     * 设置本体玩家的名字，并常显在头顶名字牌上。
+     * <p>
+     * 直接走原版的 {@link #setCustomName} —— 它本身就是被同步、被存档的实体字段，
+     * 所以不需要再额外加一个同步字段；客户端也无需自己拼名字。
+     * <p>
+     * 名字来自培育时记录的本体名（{@code CloneState#getOwnerName}），
+     * 所以本体不在线时分身照样有名字。
+     */
+    public void setOwnerName(@Nullable String name) {
+        if (name == null || name.isEmpty()) {
+            this.setCustomName(null);
+            this.setCustomNameVisible(false);
+            return;
+        }
+        this.setCustomName(Component.literal(name));
+        this.setCustomNameVisible(true);
     }
 
     @Nullable
@@ -205,6 +225,7 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     /** 从玩家创建一份快照，作为这具分身的"可转移身体" */
     public void captureFrom(ServerPlayer player) {
         this.setOwnerUuid(player.getUUID());
+        this.setOwnerName(player.getName().getString());
         this.bodyState = ShellState.of(player, this.blockPosition());
         this.setActive(true);
         this.setProgress(1.0F);
@@ -277,10 +298,22 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
 
     // ==================== 属性 ====================
 
+    /**
+     * 移动速度。
+     * <p>
+     * 原版玩家的 {@code MOVEMENT_SPEED} 是 0.1，但同一个数值直接给生物会显得偏慢 ——
+     * 属性值只是"目标速度"，AI 走路时会不断重新选路、绕障碍、进出水、在目标之间停顿，
+     * 实际平均速度远达不到按属性值换算出来的水平（原版僵尸干脆用了 0.23 来抵消这一点）。
+     * <p>
+     * 这里取 0.13（= 玩家疾跑速度 <code>0.1 × 1.3</code>），让分身跟得上正常行走或小跑的玩家。
+     * 还嫌跟不上就往上调，0.2 ~ 0.23 是原版僵尸/骷髅的水平。
+     */
+    public static final double MOVEMENT_SPEED = 0.13;
+
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 20.0)
-                .add(Attributes.MOVEMENT_SPEED, 0.1)
+                .add(Attributes.MOVEMENT_SPEED, MOVEMENT_SPEED)
                 .add(Attributes.ATTACK_DAMAGE, 1.0)
                 .add(Attributes.FOLLOW_RANGE, 16.0);
     }

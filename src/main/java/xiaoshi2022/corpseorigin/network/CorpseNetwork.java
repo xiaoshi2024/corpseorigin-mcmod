@@ -476,6 +476,17 @@ public final class CorpseNetwork {
     // ==================== ✅ 玩家尸兄数据同步 ====================
 
     public static void sendPlayerCorpseSync(ServerPlayer player) {
+        sendPlayerCorpseSyncTo(player, player);
+    }
+
+    /**
+     * 把某位玩家的尸兄状态发给<b>指定</b>接收者。
+     * <p>
+     * 用于点对点补发：例如新玩家刚进服时，把在线其他玩家的尸兄状态补给他 ——
+     * 尸兄外观（多眼 / 外骨骼 / 皮肤）是"别人看你"时才渲染的，只给你自己发的话，
+     * 在别人眼里你永远是个普通人。
+     */
+    public static void sendPlayerCorpseSyncTo(ServerPlayer player, ServerPlayer receiver) {
         PlayerCorpseComponent comp = PlayerCorpseComponent.get(player);
         CompoundTag data = comp.getDataPublic();
 
@@ -486,8 +497,9 @@ public final class CorpseNetwork {
                 data
         );
 
-        ServerPlayNetworking.send(player, packet);
-        CorpseOrigin.LOGGER.debug("同步玩家尸兄数据: {}", player.getName().getString());
+        ServerPlayNetworking.send(receiver, packet);
+        CorpseOrigin.LOGGER.debug("同步玩家尸兄数据: {} → {}",
+                player.getName().getString(), receiver.getName().getString());
     }
 
     /**

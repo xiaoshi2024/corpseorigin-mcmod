@@ -82,9 +82,10 @@ public class LongYou implements ICharacter {
         comp.setEvolutionLevel(PlayerCorpseComponent.MAX_EVOLUTION_LEVEL);
         comp.restoreConsciousness();
 
-        // ⚠️ setEvolutionLevel/restoreConsciousness 不会触发同步，需显式补一次
+        // ⚠️ setEvolutionLevel/restoreConsciousness 不会触发同步，需显式补一次。
+        //    必须用广播：尸兄外观是别的玩家看你时才渲染的，只发给自己别人看不到。
         if (player instanceof ServerPlayer serverPlayer) {
-            CorpseNetwork.sendPlayerCorpseSync(serverPlayer);
+            CorpseNetwork.broadcastPlayerCorpseSync(serverPlayer);
         }
     }
 

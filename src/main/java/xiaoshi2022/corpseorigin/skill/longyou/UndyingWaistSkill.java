@@ -4,7 +4,7 @@ import xiaoshi2022.corpseorigin.skill.AbstractSkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
 
 /**
- * 龙右·不死腰体（再生）
+ * 龙右·不死骷体（再生）
  * <p>
  * 设定效果：每秒回血，空血后进入「爆头复活」阶段一次。
  * 被动，无冷却。特效：断口血肉/黑气重组粒子。

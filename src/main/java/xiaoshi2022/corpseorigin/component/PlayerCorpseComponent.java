@@ -1,12 +1,17 @@
 package xiaoshi2022.corpseorigin.component;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import xiaoshi2022.corpseorigin.limb.LimbSlots;
 import xiaoshi2022.corpseorigin.limb.LimbState;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModDataAttachments;
+
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PlayerCorpseComponent {
 
@@ -86,6 +91,49 @@ public class PlayerCorpseComponent {
     private void setData(CompoundTag tag) {
         // ✅ 存入时也复制，避免外部引用污染
         player.setAttached(ModDataAttachments.PLAYER_CORPSE, tag.copy());
+        // 标记"这具身体的尸兄数据变了"，由服务端 tick 末尾统一广播一次
+        markDirty(player);
+    }
+
+    // ==================== 同步：标脏 + 合并广播 ====================
+
+    /**
+     * 本 tick 内尸兄数据改动过的玩家。
+     * <p>
+     * 所有 setter 都汇到 {@link #setData}，那里只做标记、不立刻发包，等到 tick 末尾由
+     * {@link #flushPendingSync} 统一广播一次。这样做的原因有两个：
+     * <ul>
+     *   <li><b>合并连写</b> —— 进化时经常连着改等级、多眼、体型，逐个发包会连发好几个同样大的包；</li>
+     *   <li><b>兜住高频</b> —— 万一某个 setter 被放进 tick 之类的循环里，每 tick 一包也不会刷爆网络。</li>
+     * </ul>
+     * 用 Set 保证同一玩家一个 tick 只会收到一包。
+     */
+    private static final Set<UUID> PENDING_SYNC = ConcurrentHashMap.newKeySet();
+
+    /** 标记这位玩家的尸兄数据已变化，tick 末尾统一广播 */
+    private static void markDirty(Player player) {
+        if (player instanceof ServerPlayer sp) {
+            PENDING_SYNC.add(sp.getUUID());
+        }
+    }
+
+    /**
+     * 由服务端 tick 末尾调用：把本 tick 标记过的玩家各广播一次。
+     * <p>
+     * 必须是<b>广播</b>而不是只发给本人 —— 尸兄外观（多眼 / 外骨骼 / 皮肤 / 伪装）是
+     * 别的玩家看你时才渲染的，只发本人会出现"自己看得见、别人眼里还是普通人"。
+     */
+    public static void flushPendingSync(MinecraftServer server) {
+        if (PENDING_SYNC.isEmpty()) {
+            return;
+        }
+        for (UUID uuid : PENDING_SYNC) {
+            ServerPlayer target = server.getPlayerList().getPlayer(uuid);
+            if (target != null) {
+                CorpseNetwork.broadcastPlayerCorpseSync(target);
+            }
+        }
+        PENDING_SYNC.clear();
     }
 
     public boolean hasData() {
@@ -295,8 +343,9 @@ public class PlayerCorpseComponent {
     public void readNbt(CompoundTag tag) {
         if (tag == null) tag = new CompoundTag();
         player.setAttached(ModDataAttachments.PLAYER_CORPSE, tag.copy());
+        // 外部整份写入（存档恢复等）也走广播，保持和其他路径一致
         if (player instanceof ServerPlayer sp) {
-            CorpseNetwork.sendPlayerCorpseSync(sp);
+            CorpseNetwork.broadcastPlayerCorpseSync(sp);
         }
     }
 
@@ -403,7 +452,10 @@ public class PlayerCorpseComponent {
 
     private static void syncToClient(Player player) {
         if (player instanceof ServerPlayer serverPlayer) {
-            CorpseNetwork.sendPlayerCorpseSync(serverPlayer);
+            // ★ 必须广播而不是只发给自己：尸兄外观是"别人看你"时才渲染的，
+            //   只发本人会导致切换角色后自己看得见、其他玩家眼里还是普通人。
+            //   这个方法只在"变成/失去尸兄"这种低频且影响外观的操作里调用，广播开销可以忽略。
+            CorpseNetwork.broadcastPlayerCorpseSync(serverPlayer);
         }
     }
 }
