@@ -22,6 +22,8 @@
     "ClientPlayerInteractionManagerMixin",
     "ClientPlayerShellMixin",
     "EntityMixin",
+    "ItemInHandRendererMixin",
+    "LevelRendererAccessor",
     "LivingEntityRendererLayersAccessor",
     "LivingEntityRendererMixin",
     "LivingEntityRendererSubmitMixin",
