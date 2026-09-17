@@ -89,8 +89,23 @@ public final class CorpsePayloads {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
-    // ==================== ✅ 玩家尸兄数据同步（用 UUID） ====================
+    /**
+     * 天线宝宝尸兄的「格挡」动画信号（S2C）。
+     * <p>
+     * 被动那 30% 概率挡下一击、或者主动格挡窗口开启时都会发这条，盔甲据此重播
+     * {@code special_attack}（动画文件里没有专门的格挡 clip，所以借用挥击那条）；
+     * {@code durationTicks <= 0} 表示立刻结束。与吸食一样，这条只管表现，判定全在服务端。
+     */
+    public record AntennaBlockSyncS2C(UUID playerUuid, int durationTicks) implements CustomPacketPayload {
+        public static final Type<AntennaBlockSyncS2C> TYPE = new Type<>(id("antenna_block_sync"));
+        public static final StreamCodec<ByteBuf, AntennaBlockSyncS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, p -> p.playerUuid().toString(),
+                ByteBufCodecs.INT, AntennaBlockSyncS2C::durationTicks,
+                (s, t) -> new AntennaBlockSyncS2C(UUID.fromString(s), t));
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
 
+    // ==================== ✅ 玩家尸兄数据同步（用 UUID） ====================
     public record PlayerCorpseSyncS2C(
             UUID playerUuid,       // ✅ 改为 UUID
             boolean isCorpse,

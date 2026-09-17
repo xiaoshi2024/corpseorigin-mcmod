@@ -78,10 +78,14 @@ public class AntennaZBRitem extends Item implements GeoItem {
      * <p>
      * 刻意不用 {@code triggerableAnim}：触发通道和 handler 的返回值挤在同一条控制器上，
      * handler 返 STOP 时会挡掉后续触发，表现就是"只播得出来一次"。这里改成读 render state
-     * 上的信号，并在信号的<b>上升沿</b>把时间轴拉回 0 帧，保证每次挥击 / 每次吸食都从头播。
+     * 上的信号，并在信号的<b>上升沿</b>把时间轴拉回 0 帧，保证每次挥击 / 每次吸食 / 每次格挡都从头播。
      * <p>
-     * 挥击信号本身只有零点几秒，而 special_attack 有 1.25 秒，所以进入攻击后按动画自己的
-     * 时长播完（{@link AnimationController#hasAnimationFinished()}），不会被打断在半路。
+     * 挥击信号本身只有零点几秒、格挡窗口也只有一两秒，而 special_attack 有 1.25 秒，
+     * 所以进入之后按动画自己的时长播完（{@link AnimationController#hasAnimationFinished()}），
+     * 不会被打断在半路。
+     * <p>
+     * 格挡（被动挡下一击 / 主动格挡）复用 special_attack 这条 clip —— 动画文件里没有专门的格挡动画，
+     * 信号由服务端广播过来（见 {@code CorpseNetwork#broadcastAntennaBlock}）。
      * <p>
      * 几个"上一次在不在播"的字段放在这里（而不是物品类上）是有意的：
      * {@code registerControllers} 每个动画实例调一次，每份盔甲 ItemStack 各有一套控制器，
@@ -91,37 +95,49 @@ public class AntennaZBRitem extends Item implements GeoItem {
 
         private boolean wasAttacking;
         private boolean wasAbsorbing;
-        /** 一次 special_attack 是否还在播（挥击信号断了也要让动画走完） */
-        private boolean attackPlaying;
+        private boolean wasBlocking;
+        /** 一次 special_attack 是否还在播（挥击/格挡信号断了也要让动画走完） */
+        private boolean specialPlaying;
 
         @Override
         public PlayState handle(AnimationTest<AntennaZBRitem> test) {
             // 吸食优先：吸食期间不管手上在不在挥，只播 absorb（动画本身是"伸长直插脑门"那条）
             if (test.getDataOrDefault(AntennaArmorRenderData.ABSORBING, false)) {
                 wasAttacking = false;
-                attackPlaying = false;
+                wasBlocking = false;
+                specialPlaying = false;
                 playFromStart(test, ABSORB, wasAbsorbing);
                 wasAbsorbing = true;
                 return PlayState.CONTINUE;
             }
             wasAbsorbing = false;
 
-            // 挥击沿用 GeckoLib 的 SWINGING_ARM（渲染器里从穿戴者的 swinging 填进去）
+            // 挥击沿用 GeckoLib 的 SWINGING_ARM（渲染器里从穿戴者的 swinging 填进去）；
+            // 格挡窗口由服务端广播。两者共用 special_attack，谁新触发就从 0 帧重播一次。
             boolean attacking = test.getDataOrDefault(DataTickets.SWINGING_ARM, false);
-            boolean newSwing = attacking && !wasAttacking;
+            boolean blocking = test.getDataOrDefault(AntennaArmorRenderData.BLOCKING, false);
+            boolean newTrigger = (attacking && !wasAttacking) || (blocking && !wasBlocking);
             wasAttacking = attacking;
+            wasBlocking = blocking;
 
-            if (newSwing) {
-                attackPlaying = true;
+            if (newTrigger) {
+                specialPlaying = true;
                 playFromStart(test, SPECIAL_ATTACK, false);
                 return PlayState.CONTINUE;
             }
-            if (attackPlaying) {
+            if (specialPlaying) {
                 if (!test.controller().hasAnimationFinished()) {
                     test.setAndContinue(SPECIAL_ATTACK);
                     return PlayState.CONTINUE;
                 }
-                attackPlaying = false;
+                specialPlaying = false;
+                // 格挡窗口比这条 clip 长（主动格挡有 3 秒，clip 只有 1.25 秒）：
+                // 窗口还没结束就接着从头播，看起来才是"一直在挡"而不是挡一下就没了
+                if (blocking) {
+                    specialPlaying = true;
+                    playFromStart(test, SPECIAL_ATTACK, false);
+                    return PlayState.CONTINUE;
+                }
             }
 
             // 其余时间常驻 idle

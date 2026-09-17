@@ -93,6 +93,10 @@ public class AntennaZBRitemRenderer<R extends HumanoidRenderState & GeoRenderSta
         boolean sucking = CorpseOriginClient.isAntennaSucking(wearer.getUUID());
         renderState.addGeckolibData(AntennaArmorRenderData.ABSORBING, sucking);
 
+        // 格挡：同样是服务端广播的窗口（被动挡下一击 / 主动格挡），盔甲据此播格挡动画
+        renderState.addGeckolibData(AntennaArmorRenderData.BLOCKING,
+                CorpseOriginClient.isAntennaBlocking(wearer.getUUID()));
+
         // 瞄准：算出"天线根部 → 目标脑门"的方向与距离，喂给动画里的 query.target_*
         // （动画里的表达式是不带正负号的，符号统一由下面的 *_SIGN 常量控制，见常量区的注释）
         Vec3 root = new Vec3(wearer.getX(), wearer.getY() + ANTENNA_ROOT_HEIGHT, wearer.getZ());

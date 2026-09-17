@@ -99,6 +99,15 @@ public class CorpseOriginClient implements ClientModInitializer {
         return suck == null ? -1 : Math.max(0, suck.totalTicks() - suck.ticks());
     }
 
+    /** ✅ 天线宝宝尸兄的"格挡中"窗口：玩家 UUID → 剩余 tick（服务端广播过来的，只影响表现） */
+    public static final Map<UUID, Integer> antennaBlocks = new ConcurrentHashMap<>();
+
+    /** 这位玩家现在是否处于格挡动画窗口（盔甲渲染时读它决定播不播格挡动画） */
+    public static boolean isAntennaBlocking(UUID uuid) {
+        Integer ticks = uuid == null ? null : antennaBlocks.get(uuid);
+        return ticks != null && ticks > 0;
+    }
+
     /**
      * 取「正在被这位玩家吸食的目标实体」，没有 / 不在客户端（未加载、已死）时返回 null。
      * <p>
@@ -290,6 +299,16 @@ public class CorpseOriginClient implements ClientModInitializer {
                     }
                 }));
 
+        // ✅ 天线宝宝尸兄「格挡」动画信号（0 及以下 = 立刻结束）
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.AntennaBlockSyncS2C.TYPE, (payload, context) ->
+                context.client().execute(() -> {
+                    if (payload.durationTicks() <= 0) {
+                        antennaBlocks.remove(payload.playerUuid());
+                    } else {
+                        antennaBlocks.put(payload.playerUuid(), payload.durationTicks());
+                    }
+                }));
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (CorpseKeyBindings.openSkillWheel.consumeClick()) {
                 // 1. 周围有克隆仓 → 打开克隆仓 UI
@@ -333,6 +352,12 @@ public class CorpseOriginClient implements ClientModInitializer {
                 antennaSucks.replaceAll((k, v) ->
                         new AntennaSuck(v.targetEntityId(), v.ticks() - 1, v.totalTicks()));
                 antennaSucks.entrySet().removeIf(e -> e.getValue().ticks() <= 0);
+            }
+
+            // ✅ 格挡窗口计时自减
+            if (!antennaBlocks.isEmpty()) {
+                antennaBlocks.replaceAll((k, v) -> v - 1);
+                antennaBlocks.entrySet().removeIf(e -> e.getValue() <= 0);
             }
         });
 

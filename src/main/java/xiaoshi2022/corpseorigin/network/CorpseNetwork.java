@@ -79,6 +79,11 @@ public final class CorpseNetwork {
                 CorpsePayloads.AntennaSuckSyncS2C.TYPE,
                 CorpsePayloads.AntennaSuckSyncS2C.CODEC);
 
+        // ✅ 天线宝宝尸兄「格挡」动画信号（S2C）
+        PayloadTypeRegistry.clientboundPlay().register(
+                CorpsePayloads.AntennaBlockSyncS2C.TYPE,
+                CorpsePayloads.AntennaBlockSyncS2C.CODEC);
+
 
         // ✅ 学习技能（C2S）
         PayloadTypeRegistry.serverboundPlay().register(
@@ -431,6 +436,24 @@ public final class CorpseNetwork {
     public static void broadcastAntennaSuck(ServerPlayer player, int targetEntityId, int durationTicks) {
         CorpsePayloads.AntennaSuckSyncS2C packet =
                 new CorpsePayloads.AntennaSuckSyncS2C(player.getUUID(), targetEntityId, durationTicks);
+        MinecraftServer server = player.level().getServer();
+        if (server != null) {
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                ServerPlayNetworking.send(p, packet);
+            }
+        } else {
+            ServerPlayNetworking.send(player, packet);
+        }
+    }
+
+    /**
+     * ✅ 广播"这位天线宝宝尸兄正在格挡"，让穿在他身上的盔甲播格挡动画。
+     * <p>
+     * 被动挡下一击时给一个短窗口（够播完借用的那条 clip），主动格挡时给整个持续时间。
+     */
+    public static void broadcastAntennaBlock(ServerPlayer player, int durationTicks) {
+        CorpsePayloads.AntennaBlockSyncS2C packet =
+                new CorpsePayloads.AntennaBlockSyncS2C(player.getUUID(), durationTicks);
         MinecraftServer server = player.level().getServer();
         if (server != null) {
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {

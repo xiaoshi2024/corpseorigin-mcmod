@@ -20,6 +20,14 @@ public final class AntennaArmorRenderData {
             DataTicket.create("antenna_armor_absorbing", Boolean.class);
 
     /**
+     * 穿戴着是否处于格挡窗口 —— 被动那 30% 概率挡下一击、或主动格挡期间，服务端都会广播。
+     * <p>
+     * 驱动 {@code special_attack} 那条 clip（动画文件里没有专门的格挡动画，所以借用挥击那条）。
+     */
+    public static final DataTicket<Boolean> BLOCKING =
+            DataTicket.create("antenna_armor_blocking", Boolean.class);
+
+    /**
      * 吸食目标的水平偏角（度）—— 喂给动画里的 {@code query.target_y_rotation}。
      * <p>
      * 语义见 {@link AntennaZBRitemRenderer} 里的瞄准算法：0 = 正前方，正数 = 目标在右手边。

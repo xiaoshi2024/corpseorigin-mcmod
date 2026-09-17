@@ -1,8 +1,9 @@
 package xiaoshi2022.corpseorigin.event;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -12,62 +13,61 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.character.TianXianBaoBaoZb;
+import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.skill.tianxianbaobao_zb.AntennaBlockSkill;
-
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 天线宝宝尸兄专属事件处理。
  * <p>
- * 目前承载「天线格挡」被动：受到的<b>斧头</b>与<b>箭矢/投掷物</b>伤害降低 30%。
+ * 承载「天线格挡」：挨到<b>斧头</b>或<b>箭矢/投掷物</b>时 ——
+ * <ul>
+ *   <li><b>被动（常驻）</b>：{@value AntennaBlockSkill#PASSIVE_BLOCK_CHANCE_PERCENT}% 概率
+ *       把这一击整个挡掉；</li>
+ *   <li><b>主动（手动触发）</b>：{@link AntennaBlockSkill#isGuarding} 为真期间<b>必定</b>挡下。</li>
+ * </ul>
+ * 两种都是"整下挡掉"（不是减伤），挡下时会广播动画信号给客户端。
  * 和尸水之源、黑金心脏一个套路 —— 要该玩家是天线宝宝尸兄、且已学会这个技能才会触发；
  * 想要"是天线宝宝尸兄就常驻"的话，把 {@link #hasAntennaBlock} 里的 {@code hasLearned} 去掉即可。
  */
 public final class TianXianBaoBaoEventHandler {
-
-    /**
-     * 正在被本处理器"按减免后的数值重打一次"的玩家。
-     * <p>
-     * 为什么需要这个标记：{@code ALLOW_DAMAGE} 只能返回布尔（放行 / 取消），<b>改不了数值</b>，
-     * 所以减免的做法是"取消原来那份 + 自己按 70% 重打一次"。而重打的那一次又会进这个事件 ——
-     * 没有标记就会 70%、49%、34%… 一路递归下去。
-     */
-    private static final Set<UUID> REAPPLYING = ConcurrentHashMap.newKeySet();
 
     private TianXianBaoBaoEventHandler() {
     }
 
     public static void register() {
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
-            if (!(entity instanceof ServerPlayer player) || REAPPLYING.contains(player.getUUID())) {
+            if (!(entity instanceof ServerPlayer player)) {
                 return true;
             }
             if (!hasAntennaBlock(player) || !isBlockedDamage(source)) {
                 return true;
             }
-            if (!(player.level() instanceof ServerLevel level)) {
+
+            // 主动 → 窗口内必定挡下；被动 → 每次挨打现掷骰子。
+            // 两者都是"整下挡掉"：返回 false 直接取消这份伤害，不做任何重打（所以也不涉及递归）。
+            boolean blocked = AntennaBlockSkill.isGuarding(player)
+                    || player.getRandom().nextDouble() < AntennaBlockSkill.PASSIVE_BLOCK_CHANCE;
+            if (!blocked) {
                 return true;
             }
 
-            float reduced = amount * (1.0F - AntennaBlockSkill.DAMAGE_REDUCTION);
-            if (reduced >= amount) {
-                return true;
-            }
-
-            REAPPLYING.add(player.getUUID());
-            try {
-                player.hurtServer(level, source, reduced);
-            } finally {
-                REAPPLYING.remove(player.getUUID());
-            }
-
-            // 原来那份整额伤害取消掉——上面已经按减免后的数值打过了
+            playBlockFeedback(player);
             return false;
         });
 
         CorpseOrigin.LOGGER.info("TianXianBaoBao events registered");
+    }
+
+    /**
+     * 挡下之后的反馈：广播格挡动画 + 一声闷响。
+     * <p>
+     * 动画只给 {@link AntennaBlockSkill#PASSIVE_ANIM_TICKS} tick —— 够播完借用的那条
+     * {@code special_attack}（1.25 秒）；连着挡住好几下时会从头重播，看起来就是"一直在挡"。
+     */
+    private static void playBlockFeedback(ServerPlayer player) {
+        CorpseNetwork.broadcastAntennaBlock(player, AntennaBlockSkill.PASSIVE_ANIM_TICKS);
+        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.SHIELD_BLOCK, SoundSource.PLAYERS, 0.7F, 1.2F);
     }
 
     /** 该玩家是否为已学会「天线格挡」的天线宝宝尸兄 */
