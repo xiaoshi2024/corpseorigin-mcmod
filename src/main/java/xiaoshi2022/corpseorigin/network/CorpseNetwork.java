@@ -74,6 +74,11 @@ public final class CorpseNetwork {
                 CorpsePayloads.TempRedEyeSyncS2C.TYPE,
                 CorpsePayloads.TempRedEyeSyncS2C.CODEC);
 
+        // ✅ 天线宝宝尸兄吸食状态（S2C）
+        PayloadTypeRegistry.clientboundPlay().register(
+                CorpsePayloads.AntennaSuckSyncS2C.TYPE,
+                CorpsePayloads.AntennaSuckSyncS2C.CODEC);
+
 
         // ✅ 学习技能（C2S）
         PayloadTypeRegistry.serverboundPlay().register(
@@ -407,6 +412,25 @@ public final class CorpseNetwork {
     public static void broadcastTempRedEye(ServerPlayer player, int durationTicks) {
         CorpsePayloads.TempRedEyeSyncS2C packet =
                 new CorpsePayloads.TempRedEyeSyncS2C(player.getUUID(), durationTicks);
+        MinecraftServer server = player.level().getServer();
+        if (server != null) {
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                ServerPlayNetworking.send(p, packet);
+            }
+        } else {
+            ServerPlayNetworking.send(player, packet);
+        }
+    }
+
+    /**
+     * 广播「某位玩家正在吸食谁」给全服（含他自己）。
+     * <p>
+     * 盔甲的 absorb 动画和触手朝向都是渲染时看的，所以要发给所有玩家；
+     * {@code durationTicks <= 0} 表示立刻结束（松手 / 被打断），此时 targetEntityId 传 -1。
+     */
+    public static void broadcastAntennaSuck(ServerPlayer player, int targetEntityId, int durationTicks) {
+        CorpsePayloads.AntennaSuckSyncS2C packet =
+                new CorpsePayloads.AntennaSuckSyncS2C(player.getUUID(), targetEntityId, durationTicks);
         MinecraftServer server = player.level().getServer();
         if (server != null) {
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {

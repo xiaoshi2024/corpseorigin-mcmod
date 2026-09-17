@@ -7,7 +7,11 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.ItemStackWithSlot;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -19,8 +23,10 @@ import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
@@ -61,13 +67,13 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
             SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.BOOLEAN);
 
     /** 同步：这具身体穿的盔甲（头/胸/腿/脚），客户端渲染要用 */
-    private static final EntityDataAccessor<net.minecraft.world.item.ItemStack> DATA_HEAD_EQUIPMENT =
+    private static final EntityDataAccessor<ItemStack> DATA_HEAD_EQUIPMENT =
             SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.ITEM_STACK);
-    private static final EntityDataAccessor<net.minecraft.world.item.ItemStack> DATA_CHEST_EQUIPMENT =
+    private static final EntityDataAccessor<ItemStack> DATA_CHEST_EQUIPMENT =
             SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.ITEM_STACK);
-    private static final EntityDataAccessor<net.minecraft.world.item.ItemStack> DATA_LEGS_EQUIPMENT =
+    private static final EntityDataAccessor<ItemStack> DATA_LEGS_EQUIPMENT =
             SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.ITEM_STACK);
-    private static final EntityDataAccessor<net.minecraft.world.item.ItemStack> DATA_FEET_EQUIPMENT =
+    private static final EntityDataAccessor<ItemStack> DATA_FEET_EQUIPMENT =
             SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.ITEM_STACK);
 
     /** 服务端持有的完整身体快照，不参与实体同步（走自定义包或 BE 数据） */
@@ -80,6 +86,11 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
 
     public CloneAvatarEntity(EntityType<? extends CloneAvatarEntity> type, Level level) {
         super(type, level);
+
+        // 身上的盔甲必定掉落：原版生物默认掉率只有 8.5%，这具身体被击杀时盔甲基本等于蒸发
+        for (EquipmentSlot slot : ShellState.EQUIPMENT_SLOTS) {
+            this.setDropChance(slot, 2.0F);
+        }
     }
 
     @Override
@@ -205,6 +216,35 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
                 this.entityData.get(DATA_CHEST_EQUIPMENT),
                 this.entityData.get(DATA_LEGS_EQUIPMENT),
                 this.entityData.get(DATA_FEET_EQUIPMENT));
+    }
+
+    /**
+     * 把同步过来的盔甲真正落到实体槽位上（客户端/服务端都会走）。
+     * <p>
+     * <b>为什么非落不可</b>：GeckoLib 的盔甲渲染是从 {@code LivingEntity.getItemBySlot} 读装备的
+     * （见 {@code GeoArmorRenderer.getRelevantSlotsForRendering}）。只把盔甲写进同步字段、真实槽位空着的话，
+     * 它根本找不到可渲染的盔甲，就放行给原版盔甲层 —— 于是天线宝宝盔甲被按 {@code ArmorMaterial}
+     * 画成了钻石甲。落到真实槽位后两边口径一致，geo 通道才会接管。
+     */
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+
+        if (DATA_HEAD_EQUIPMENT.equals(key)) {
+            mirrorArmor(DATA_HEAD_EQUIPMENT, EquipmentSlot.HEAD);
+        } else if (DATA_CHEST_EQUIPMENT.equals(key)) {
+            mirrorArmor(DATA_CHEST_EQUIPMENT, EquipmentSlot.CHEST);
+        } else if (DATA_LEGS_EQUIPMENT.equals(key)) {
+            mirrorArmor(DATA_LEGS_EQUIPMENT, EquipmentSlot.LEGS);
+        } else if (DATA_FEET_EQUIPMENT.equals(key)) {
+            mirrorArmor(DATA_FEET_EQUIPMENT, EquipmentSlot.FEET);
+        }
+    }
+
+    /** 同步字段 → 真实槽位（要 copy：同步数据返回的是同一个 ItemStack 实例，不能直接共享） */
+    private void mirrorArmor(EntityDataAccessor<ItemStack> key, EquipmentSlot slot) {
+        ItemStack stack = this.entityData.get(key);
+        this.setItemSlot(slot, stack.isEmpty() ? ItemStack.EMPTY : stack.copy());
     }
 
     public void setSourceChamber(@Nullable BlockPos pos) {
@@ -354,6 +394,32 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     }
 
     // ==================== 消失处理 ====================
+
+    /**
+     * 分身被击杀时，把这具身体自带的背包也吐出来。
+     * <p>
+     * 快照里的 {@code Inventory} 是玩家存档格式（主背包 36 格），平时只躺在 {@code bodyState} 里，
+     * 不吐出来的话这具身体一死，里面的东西就跟着蒸发了。
+     * <p>
+     * 盔甲不归这里管：它已经被真正穿在实体槽位上（见 {@link #onSyncedDataUpdated}），
+     * 由 {@code Mob.dropCustomDeathLoot} 按构造函数里设的 2.0 掉率必定掉出来。
+     */
+    @Override
+    protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean recentlyHit) {
+        super.dropCustomDeathLoot(level, source, recentlyHit);
+
+        if (this.bodyState == null || this.bodyState.getBody() == null) {
+            return;
+        }
+
+        ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(),
+                this.bodyState.getBody().asCompoundTag());
+        for (ItemStackWithSlot entry : input.listOrEmpty("Inventory", ItemStackWithSlot.CODEC)) {
+            if (!entry.stack().isEmpty()) {
+                this.drop(entry.stack().copy(), false, false);
+            }
+        }
+    }
 
     /**
      * 分身消失（被夺舍 / 死亡 / 丢弃）后：从身体索引里注销，并刷新 owner 的列表。

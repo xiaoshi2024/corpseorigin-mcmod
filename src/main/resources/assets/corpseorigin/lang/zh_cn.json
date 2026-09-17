@@ -13,6 +13,10 @@
   "item.corpseorigin.bywater_bottle": "尸水瓶",
   "item.corpseorigin.juque_tw": "巨阙II阶",
 
+  "item.corpseorigin.antenna_zbr_armor_helmet": "天线宝宝尸兄头盔",
+  "item.corpseorigin.antenna_zbr_armor_chestplate": "天线宝宝尸兄胸甲",
+  "item.corpseorigin.antenna_zbr_armor_leggings": "天线宝宝尸兄护腿",
+
   "item.corpseorigin.blood_lotus_lantern": "血莲宝灯",
   "item.corpseorigin.blood_lotus_lantern.desc": "血莲教镇教宝灯，可吸收周围敌人的气血之力。",
   "item.corpseorigin.blood_lotus_lantern.blood_qi": "血气: %s / %s",
@@ -273,7 +277,11 @@
   "skill.corpseorigin.escape_passive": "跑路被动",
   "skill.corpseorigin.escape_passive.desc": "被动：附近有队友时自身速度 +1。",
   "skill.corpseorigin.life_drain_suck": "吸食",
-  "skill.corpseorigin.life_drain_suck.desc": "近战抓住玩家持续吸血，可被队友的打断技解救。无冷却。",
+  "skill.corpseorigin.life_drain_suck.desc": "抓住身边任意方向最近的目标持续吸血（触手会自动转向目标），可被打断技解救。无冷却。",
+  "skill.corpseorigin.life_drain_suck.no_target": "身边没有抓得住的目标",
+  "skill.corpseorigin.life_drain_suck.grab": "你抓住了 %s，开始吸食！",
+  "skill.corpseorigin.life_drain_suck.loose": "%s 挣脱了吸食",
+  "skill.corpseorigin.life_drain_suck.interrupted": "吸食被打断！",
   "skill.corpseorigin.heavy_smash": "巨力拍击",
   "skill.corpseorigin.heavy_smash.desc": "高伤害近战拍击，附带击退。冷却 6 秒。",
   "skill.corpseorigin.iron_body": "刀枪不入",

@@ -13,6 +13,10 @@
   "item.corpseorigin.bywater_bottle": "Infected Water Bottle",
   "item.corpseorigin.juque_tw": "Juque II",
 
+  "item.corpseorigin.antenna_zbr_armor_helmet": "Teletubbies Corpse Brother Helmet",
+  "item.corpseorigin.antenna_zbr_armor_chestplate": "Teletubbies Corpse Brother Chestplate",
+  "item.corpseorigin.antenna_zbr_armor_leggings": "Teletubbies Corpse Brother Leggings",
+
   "item.corpseorigin.blood_lotus_lantern": "Blood Lotus Lamp",
   "item.corpseorigin.blood_lotus_lantern.desc": "Precious Lotus Lamp. The Blood Lotus Cult's treasured lamp, capable of absorbing the blood and qi of nearby enemies.",
   "item.corpseorigin.blood_lotus_lantern.blood_qi": "BloodHeld: %s / %s",
@@ -260,7 +264,11 @@
   "skill.corpseorigin.escape_passive": "Run Away Passive",
   "skill.corpseorigin.escape_passive.desc": "Passive: +1 speed while allies are nearby.",
   "skill.corpseorigin.life_drain_suck": "Suck",
-  "skill.corpseorigin.life_drain_suck.desc": "Grab a player in melee and drain continuously; allies can interrupt it to free them. No cooldown.",
+  "skill.corpseorigin.life_drain_suck.desc": "Grab the nearest target in any direction and drain continuously (the tentacle turns toward it); can be interrupted to free them. No cooldown.",
+  "skill.corpseorigin.life_drain_suck.no_target": "There is nothing nearby to grab",
+  "skill.corpseorigin.life_drain_suck.grab": "You grab %s and start draining!",
+  "skill.corpseorigin.life_drain_suck.loose": "%s broke free from the drain",
+  "skill.corpseorigin.life_drain_suck.interrupted": "The drain was interrupted!",
   "skill.corpseorigin.heavy_smash": "Heavy Smash",
   "skill.corpseorigin.heavy_smash.desc": "A high-damage melee smash with knockback. Cooldown 6s.",
   "skill.corpseorigin.iron_body": "Iron Body",

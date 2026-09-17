@@ -3,6 +3,7 @@ package xiaoshi2022.corpseorigin.client.renderer.blockentity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import com.geckolib.renderer.GeoArmorRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.model.geom.EntityModelSet;
@@ -30,6 +31,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.FluidTags;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -446,12 +449,48 @@ public class CloneChamberRenderer
             HumanoidArmorLayer<AvatarRenderState, PlayerModel, PlayerModel> armor =
                     this.armorLayer();
             if (armor != null) {
+                // ★ GeckoLib 的 geo 盔甲要有"每槽位渲染数据"才会接管，而那份数据只在实体渲染状态
+                //   创建时由 GeckoLib 的 EntityRendererMixin 填 —— 方块实体渲染没有那一步，
+                //   于是盔甲会掉回原版通道、按 ArmorMaterial 画成钻石甲。
+                //   这里拿一具离屏假身（装备已塞进真实槽位）手动补一次，之后盔甲层自己就会走 geo 通道。
+                LivingEntity dummy = CloneArmorSupport.dummyWearer(state.equipment);
+                if (dummy != null) {
+                    GeoArmorRenderer.captureRenderStates(avatar, dummy, 0.0F,
+                            (ignored, slot) -> this.cloneModel,
+                            slot -> copyRenderState(avatar));
+                }
                 armor.submit(pose, collector, state.lightCoords, avatar, 0.0F, 0.0F);
             }
             renderCorpseParts(pose, collector, state, avatar);
         }
 
         pose.popPose();
+    }
+
+    /**
+     * 复制一份仓内克隆人的渲染状态。
+     * <p>
+     * GeckoLib 给每个盔甲槽位各要一份 render state（它靠 {@code CURRENT_SLOT} 决定把穿戴者的
+     * 哪些部位姿势拷到盔甲骨的哪些段上），所以这里每个槽位都新建一份，
+     * 而不是四件盔甲共用同一个对象。
+     */
+    private static AvatarRenderState copyRenderState(AvatarRenderState source) {
+        AvatarRenderState copy = new AvatarRenderState();
+        copy.skin = source.skin;
+        copy.lightCoords = source.lightCoords;
+        copy.isSpectator = source.isSpectator;
+        copy.showHat = source.showHat;
+        copy.showJacket = source.showJacket;
+        copy.showLeftPants = source.showLeftPants;
+        copy.showRightPants = source.showRightPants;
+        copy.showLeftSleeve = source.showLeftSleeve;
+        copy.showRightSleeve = source.showRightSleeve;
+        copy.showCape = source.showCape;
+        copy.headEquipment = source.headEquipment;
+        copy.chestEquipment = source.chestEquipment;
+        copy.legsEquipment = source.legsEquipment;
+        copy.feetEquipment = source.feetEquipment;
+        return copy;
     }
 
     private static ItemStack equipmentAt(List<ItemStack> equipment, int index) {

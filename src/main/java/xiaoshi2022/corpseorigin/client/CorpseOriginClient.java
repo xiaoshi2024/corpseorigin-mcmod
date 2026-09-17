@@ -19,6 +19,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
@@ -68,6 +70,39 @@ public class CorpseOriginClient implements ClientModInitializer {
     /** ✅ 临时红眼状态：UUID → 剩余 tick */
     public static final Map<UUID, Integer> tempRedEyeTicks = new ConcurrentHashMap<>();
 
+    /** ✅ 天线宝宝尸兄吸食状态：施术者 UUID → 正在吸的对象与剩余 tick */
+    public static final Map<UUID, AntennaSuck> antennaSucks = new ConcurrentHashMap<>();
+
+    /** 一次进行中的吸食：目标实体 id + 剩余 tick（{@code targetEntityId < 0} = 目标未知，只播动画不转向） */
+    public record AntennaSuck(int targetEntityId, int ticks) {
+    }
+
+    /** 这位玩家现在是否正在吸食（盔甲渲染时读它决定播不播 absorb） */
+    public static boolean isAntennaSucking(UUID uuid) {
+        AntennaSuck suck = uuid == null ? null : antennaSucks.get(uuid);
+        return suck != null && suck.ticks() > 0;
+    }
+
+    /**
+     * 取「正在被这位玩家吸食的目标实体」，没有 / 不在客户端（未加载、已死）时返回 null。
+     * <p>
+     * 盔甲渲染要靠它算触手转向的角度，所以这里只做解析，不做任何逻辑判定。
+     */
+    public static LivingEntity getAntennaSuckTarget(UUID casterUuid) {
+        AntennaSuck suck = casterUuid == null ? null : antennaSucks.get(casterUuid);
+        if (suck == null || suck.ticks() <= 0 || suck.targetEntityId() < 0) {
+            return null;
+        }
+
+        var level = Minecraft.getInstance().level;
+        if (level == null) {
+            return null;
+        }
+
+        Entity entity = level.getEntity(suck.targetEntityId());
+        return entity instanceof LivingEntity living && living.isAlive() ? living : null;
+    }
+
 
     @Override
     public void onInitializeClient() {
@@ -88,6 +123,9 @@ public class CorpseOriginClient implements ClientModInitializer {
         
         // 3. 模型层注册
         ModModelLayers.register();
+
+        // ✅ 天线宝宝盔甲动画用到的 query.target_*_rotation（GeckoLib 没内置，得自己注册）
+        xiaoshi2022.corpseorigin.client.renderer.armor.AntennaZBRitemRenderer.registerMolangQueries();
 
         // 4. 流体纹理
         registerFluidTextures();
@@ -214,6 +252,17 @@ public class CorpseOriginClient implements ClientModInitializer {
                 context.client().execute(() ->
                         tempRedEyeTicks.put(payload.playerUuid(), payload.durationTicks())));
 
+        // ✅ 天线宝宝尸兄吸食状态（0 及以下 = 立刻结束，用于被打断）
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.AntennaSuckSyncS2C.TYPE, (payload, context) ->
+                context.client().execute(() -> {
+                    if (payload.durationTicks() <= 0) {
+                        antennaSucks.remove(payload.playerUuid());
+                    } else {
+                        antennaSucks.put(payload.playerUuid(),
+                                new AntennaSuck(payload.targetEntityId(), payload.durationTicks()));
+                    }
+                }));
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (CorpseKeyBindings.openSkillWheel.consumeClick()) {
                 // 1. 周围有克隆仓 → 打开克隆仓 UI
@@ -250,6 +299,12 @@ public class CorpseOriginClient implements ClientModInitializer {
             if (!tempRedEyeTicks.isEmpty()) {
                 tempRedEyeTicks.replaceAll((k, v) -> v - 1);
                 tempRedEyeTicks.entrySet().removeIf(e -> e.getValue() <= 0);
+            }
+
+            // ✅ 吸食计时自减
+            if (!antennaSucks.isEmpty()) {
+                antennaSucks.replaceAll((k, v) -> new AntennaSuck(v.targetEntityId(), v.ticks() - 1));
+                antennaSucks.entrySet().removeIf(e -> e.getValue().ticks() <= 0);
             }
         });
 
@@ -378,6 +433,11 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         public boolean hasTail() {
             return data.getBoolean("has_tail").orElse(false);
+        }
+
+        /** 尸兄变种：{@code 2} = 无外骨骼通用变种（不长尸眼骨骼） */
+        public int getVariant() {
+            return data.getInt("variant").orElse(0);
         }
     }
 

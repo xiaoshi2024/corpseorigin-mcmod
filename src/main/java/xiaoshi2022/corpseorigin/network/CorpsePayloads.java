@@ -71,6 +71,24 @@ public final class CorpsePayloads {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
+    /**
+     * 天线宝宝尸兄的「吸食」状态（S2C）。
+     * <p>
+     * 驱动穿在身上的天线宝宝盔甲播 {@code absorb} 动画，并让触手转向
+     * {@code targetEntityId} 这具目标（动画里的 {@code query.target_*_rotation}）；
+     * {@code durationTicks <= 0} 表示立刻结束（松手 / 被打断），客户端收到后直接清掉状态。
+     */
+    public record AntennaSuckSyncS2C(UUID playerUuid, int targetEntityId, int durationTicks)
+            implements CustomPacketPayload {
+        public static final Type<AntennaSuckSyncS2C> TYPE = new Type<>(id("antenna_suck_sync"));
+        public static final StreamCodec<ByteBuf, AntennaSuckSyncS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, p -> p.playerUuid().toString(),
+                ByteBufCodecs.INT, AntennaSuckSyncS2C::targetEntityId,
+                ByteBufCodecs.INT, AntennaSuckSyncS2C::durationTicks,
+                (s, targetId, t) -> new AntennaSuckSyncS2C(UUID.fromString(s), targetId, t));
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
     // ==================== ✅ 玩家尸兄数据同步（用 UUID） ====================
 
     public record PlayerCorpseSyncS2C(

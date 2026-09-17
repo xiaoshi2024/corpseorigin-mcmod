@@ -76,7 +76,7 @@ public final class SkillManager {
         // 同步冷却给客户端
         CorpseNetwork.sendCooldownSync(player, skillPath, ticks);
 
-        CorpseOrigin.LOGGER.info("玩家 {} 激活技能 {}，冷却 {} ticks",
+        CorpseOrigin.LOGGER.debug("玩家 {} 激活技能 {}，冷却 {} ticks",
                 player.getName().getString(), skillPath, ticks);
         return true;
     }

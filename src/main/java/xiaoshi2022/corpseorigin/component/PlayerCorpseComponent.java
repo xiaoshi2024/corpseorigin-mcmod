@@ -48,6 +48,10 @@ public class PlayerCorpseComponent {
     /** 尸王（龙右） */
     public static final int TYPE_KING = 2;
 
+    // ==================== 尸兄变种常量 ====================
+    /** 无外骨骼通用变种：算尸兄，但不长尸眼骨骼，外观完全交给盔甲/模型自己表现 */
+    public static final int VARIANT_NO_EXOSKELETON = 2;
+
     /** 进化等级上限 */
     public static final int MAX_EVOLUTION_LEVEL = 5;
 
@@ -419,6 +423,20 @@ public class PlayerCorpseComponent {
      * ✅ 一次性写入所有数据（避免多次 setData）
      */
     public static void setPlayerAsCorpse(Player player, int corpseType) {
+        setPlayerAsCorpse(player, corpseType, player.getRandom().nextFloat() < 0.3f ? 1 : 0);
+    }
+
+    /**
+     * ✅ 同上，但显式指定变种。
+     * <p>
+     * 变种用来给"通用尸兄"分外观流派，目前：
+     * <ul>
+     *   <li>0 / 1 —— 随机分的普通流派，照旧长尸眼骨骼；</li>
+     *   <li>{@link #VARIANT_NO_EXOSKELETON} —— 算尸兄但<b>不长</b>尸眼骨骼，
+     *       给自带整套外观（例如天线宝宝尸兄盔甲）的角色用。</li>
+     * </ul>
+     */
+    public static void setPlayerAsCorpse(Player player, int corpseType, int variant) {
         CompoundTag tag = new CompoundTag();
 
         // ✅ 一次性构建所有数据
@@ -428,7 +446,7 @@ public class PlayerCorpseComponent {
         tag.putString(KEY_SKIN_UUID, player.getUUID().toString());
         tag.putInt(KEY_EVOLUTION_LEVEL, 1);
         tag.putBoolean(KEY_IS_GREEDY, player.getRandom().nextFloat() < 0.5f);
-        tag.putInt(KEY_VARIANT, player.getRandom().nextFloat() < 0.3f ? 1 : 0);
+        tag.putInt(KEY_VARIANT, variant);
         tag.putBoolean(KEY_HAS_WING, false);
         tag.putBoolean(KEY_HAS_TAIL, false);
         tag.putBoolean(KEY_IS_DISGUISED, false);

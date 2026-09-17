@@ -208,6 +208,11 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
         // 角色变了要重新同步给客户端，否则客户端的角色与技能树还是旧的
         CorpseNetwork.sendCharacterSync(self,
                 PlayerCharacterData.get(self).getCharacterId(self.getUUID()));
+        // ★ 进化点数 / 进化等级（由点数换算）/ 击杀数 / 已学技能也跟着身体走：
+        //   补一次同步，否则客户端 HUD 与技能树还停在上一具身体的数据上
+        CorpseNetwork.sendEvolutionSync(self);
+        // ★ 这具身体的尸兄外观（含尸兄进化等级 1-5）跟上一具不一定一样，广播刷新
+        CorpseNetwork.broadcastPlayerCorpseSync(self);
 
         // 传送
         if (state.getPos() != null) {

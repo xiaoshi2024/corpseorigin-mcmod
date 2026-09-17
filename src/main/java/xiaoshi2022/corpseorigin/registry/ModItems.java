@@ -5,6 +5,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.equipment.ArmorType;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.HeiXiaoFei;
@@ -12,8 +13,11 @@ import xiaoshi2022.corpseorigin.character.ICharacter;
 import xiaoshi2022.corpseorigin.item.ByWaterBottleItem;
 import xiaoshi2022.corpseorigin.item.ByWaterBucketItem;
 import xiaoshi2022.corpseorigin.item.CharacterBookItem;
+import xiaoshi2022.corpseorigin.item.armor.AntennaZBRitem;
 import xiaoshi2022.corpseorigin.item.sword.JuQue;
 import xiaoshi2022.corpseorigin.item.weapon.BloodLotusLamp;
+
+import java.util.function.Supplier;
 
 public final class ModItems {
 
@@ -55,6 +59,34 @@ public final class ModItems {
                     .useBlockDescriptionPrefix()
                     .setId(itemKey("clone_chamber")))
     );
+    
+    //尸兄阵营天线宝宝尸兄盔甲
+    public static final Supplier<AntennaZBRitem> ANTENNA_ZBR_ARMOR_HELMET = register(
+            "antenna_zbr_armor_helmet",
+            () -> new AntennaZBRitem(
+                    ArmorMaterialRegistry.ZBR_ARMOR_MATERIAL,
+                    ArmorType.HELMET,
+                    new Item.Properties().setId(itemKey("antenna_zbr_armor_helmet"))
+            )
+    );
+
+    public static final Supplier<AntennaZBRitem> ANTENNA_ZBR_ARMOR_CHESTPLATE = register(
+            "antenna_zbr_armor_chestplate",
+            () -> new AntennaZBRitem(
+                    ArmorMaterialRegistry.ZBR_ARMOR_MATERIAL,
+                    ArmorType.CHESTPLATE,
+                    new Item.Properties().setId(itemKey("antenna_zbr_armor_chestplate"))
+            )
+    );
+
+    public static final Supplier<AntennaZBRitem> ANTENNA_ZBR_ARMOR_LEGGINGS = register(
+            "antenna_zbr_armor_leggings",
+            () -> new AntennaZBRitem(
+                    ArmorMaterialRegistry.ZBR_ARMOR_MATERIAL,
+                    ArmorType.LEGGINGS,
+                    new Item.Properties().setId(itemKey("antenna_zbr_armor_leggings"))
+            )
+    );
 
     /** 角色选择书（所有角色共用，靠 character_id 数据组件区分） */
     public static final Item CHARACTER_BOOK = register(
@@ -75,6 +107,9 @@ public final class ModItems {
                 output.accept(JUQUE_TW);
                 output.accept(BLOOD_LOTUS_LAMP);
                 output.accept(CLONE_CHAMBER);
+                output.accept(ANTENNA_ZBR_ARMOR_HELMET.get());
+                output.accept(ANTENNA_ZBR_ARMOR_CHESTPLATE.get());
+                output.accept(ANTENNA_ZBR_ARMOR_LEGGINGS.get());
             })
             .build();
 
@@ -104,6 +139,13 @@ public final class ModItems {
                 CorpseOrigin.id(name),
                 item
         );
+    }
+
+    // 新增这个重载
+    private static <T extends Item> Supplier<T> register(String name, Supplier<T> itemSupplier) {
+        T item = itemSupplier.get();
+        Registry.register(BuiltInRegistries.ITEM, CorpseOrigin.id(name), item);
+        return () -> item;
     }
 
     private static ResourceKey<Item> itemKey(String path) {
