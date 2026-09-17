@@ -14,6 +14,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import xiaoshi2022.corpseorigin.character.LongYou;
+import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.registry.ModEffects;
 
 public class ByWaterBottleItem extends Item {
@@ -60,23 +62,28 @@ public class ByWaterBottleItem extends Item {
         // 所以这些效果与音效都放在服务端，playSound(null, ...) 会广播给周围玩家（含自己）。
         if (!level.isClientSide()) {
             if (entity instanceof Player player) {
-                player.addEffect(new MobEffectInstance(
-                        MobEffects.POISON,
-                        400,
-                        1,
-                        false,
-                        true,
-                        true
-                ));
+                // 龙右是「尸水之源」，完全免疫尸水；
+                // 已经是尸兄的再喝也没反应（不然会被 QIANS 拉去重走一遍变异流程）
+                if (!LongYou.isImmuneToInfectedWater(player)
+                        && !PlayerCorpseComponent.isCorpse(player)) {
+                    player.addEffect(new MobEffectInstance(
+                            MobEffects.POISON,
+                            400,
+                            1,
+                            false,
+                            true,
+                            true
+                    ));
 
-                player.addEffect(new MobEffectInstance(
-                        ModEffects.QIANS,
-                        200,
-                        0,
-                        false,
-                        true,
-                        true
-                ));
+                    player.addEffect(new MobEffectInstance(
+                            ModEffects.QIANS,
+                            200,
+                            0,
+                            false,
+                            true,
+                            true
+                    ));
+                }
             }
 
             // 喝下的音效 —— 原本缺了这一段，所以喝下去是"静音"的。

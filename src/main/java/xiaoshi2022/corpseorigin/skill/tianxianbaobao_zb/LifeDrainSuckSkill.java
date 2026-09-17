@@ -36,8 +36,13 @@ public class LifeDrainSuckSkill extends AbstractSkill {
 
     public static final String PATH = "life_drain_suck";
 
-    /** 起手抓取距离（不分方向：前后左右上下都算） */
-    private static final double GRAB_RANGE = 3.0;
+    /**
+     * 起手抓取距离（不分方向：前后左右上下都算）。
+     * <p>
+     * 取 6 格是和动画对齐的：{@code absorb} 里 {@code bone6} 的 Y 缩放拉到 5.76，把上面那串骨骼
+     * 推出去大约 6 格，所以判定给到这个距离，视觉上"伸出去够到了"才对得上。
+     */
+    private static final double GRAB_RANGE = 6.0;
     /** 单次吸食持续时长（tick） */
     private static final int DURATION = 60;
     /** 吸一口的间隔与数值 */
@@ -45,8 +50,8 @@ public class LifeDrainSuckSkill extends AbstractSkill {
     private static final float DRAIN_DAMAGE = 2.0f;
     /** 吸血转回自身的比例 */
     private static final float HEAL_RATIO = 0.5f;
-    /** 目标拉开到这个距离就算挣脱 */
-    private static final double BREAK_DISTANCE = 4.5;
+    /** 目标拉开到这个距离就算挣脱（要比抓取距离大一截，否则刚抓住就断） */
+    private static final double BREAK_DISTANCE = 7.5;
 
     /** 施术者 uuid → 正在进行的吸食 */
     private static final Map<UUID, Suck> ACTIVE = new ConcurrentHashMap<>();

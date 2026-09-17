@@ -9,7 +9,8 @@ import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.longyou.CorpseKingInfrasoundSkill;
 import xiaoshi2022.corpseorigin.skill.longyou.CorpseKingThunderSkill;
-import xiaoshi2022.corpseorigin.skill.longyou.UndyingWaistSkill;
+import xiaoshi2022.corpseorigin.skill.longyou.UndyingChestSkill;
+import xiaoshi2022.corpseorigin.skill.longyou.WaterPollutionSkill;
 
 import java.util.List;
 
@@ -18,16 +19,18 @@ import java.util.List;
  * <p>
  * 成为龙右即直接变为满级尸兄（尸王类型），并保留意识。
  * <p>
- * 含《尸巢之战篇》设定的不死腰体、雷电骨架技能。
+ * 含《尸巢之战篇》设定的不死髅体、雷电骨架技能，以及"尸水之源"——
+ * 走过的水源会被污染成尸水（被动，实装在 {@code LongYouEventHandler}）。
  */
 public class LongYou implements ICharacter {
 
     public static final String ID = "longyou";
 
     private static final List<ISkill> SKILLS = List.of(
+            new UndyingChestSkill(),
+            new CorpseKingThunderSkill(),
             new CorpseKingInfrasoundSkill(),
-            new UndyingWaistSkill(),
-            new CorpseKingThunderSkill()
+            new WaterPollutionSkill()
     );
 
     @Override
@@ -72,6 +75,19 @@ public class LongYou implements ICharacter {
     @Override
     public float getInfectionMultiplier() {
         return 0.0f;
+    }
+
+    /**
+     * 这位玩家是不是「尸水之源」本人 —— 完全免疫尸水（角色特质：{@code trait3}）。
+     * <p>
+     * 尸水的中毒/感染判定散在三处（{@code InfectedWaterFluid}、{@code InfectedWaterBlock}、
+     * {@code ByWaterBottleItem}），统一走这里，免得以后漏改一处。
+     * <p>
+     * 注意这是<b>角色特质</b>，不需要学会技能：是龙右就生效。
+     */
+    public static boolean isImmuneToInfectedWater(Player player) {
+        return player != null
+                && ID.equals(CharacterManager.getInstance().getPlayerCharacterId(player));
     }
 
     @Override

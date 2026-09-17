@@ -11,11 +11,11 @@ import xiaoshi2022.corpseorigin.skill.SkillType;
  * <p>
  * TODO 实装：每秒再生 buff → 空血时触发一次爆头复活 → 复活演出与黑气粒子。
  */
-public class UndyingWaistSkill extends AbstractSkill {
+public class UndyingChestSkill extends AbstractSkill {
 
-    public static final String PATH = "undying_waist";
+    public static final String PATH = "undying_chest";
 
-    public UndyingWaistSkill() {
+    public UndyingChestSkill() {
         super(PATH, SkillType.DEFENSE);   // 被动
     }
 }

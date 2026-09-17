@@ -22,6 +22,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
+import xiaoshi2022.corpseorigin.character.LongYou;
+import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.registry.ModEffects;
 import xiaoshi2022.corpseorigin.registry.ModFluids;
 import xiaoshi2022.corpseorigin.registry.ModItems;
@@ -98,6 +100,11 @@ public abstract class InfectedWaterFluid extends FlowingFluid {
         }
 
         if (living instanceof Player player) {
+            // 龙右是「尸水之源」，完全免疫尸水；已经是尸兄的泡在里面也没反应
+            if (LongYou.isImmuneToInfectedWater(player) || PlayerCorpseComponent.isCorpse(player)) {
+                return;
+            }
+
             UUID playerId = player.getUUID();
             long currentTime = System.currentTimeMillis();
             Long lastTime = playerCooldowns.get(playerId);
