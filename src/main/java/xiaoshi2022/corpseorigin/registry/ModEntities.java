@@ -81,6 +81,23 @@ public final class ModEntities {
                     .sized(0.6f, 1.8f)
     );
 
+    /** 初音尸兄 - 双马尾女性尸兄，投掷大葱、吸食血肉、腹部会膨胀 */
+    public static final EntityType<MikuZbEntity> MIKU_ZB = register(
+            "miku_zb",
+            EntityType.Builder.<MikuZbEntity>of(MikuZbEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.8f)
+                    .clientTrackingRange(8)
+    );
+
+    /** 投掷大葱 - 初音尸兄的远程投射物（原作：车顶投掷大葱击杀怪物控） */
+    public static final EntityType<LeekProjectileEntity> LEEK_PROJECTILE = register(
+            "leek_projectile",
+            EntityType.Builder.<LeekProjectileEntity>of(LeekProjectileEntity::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f)
+                    .clientTrackingRange(4)
+                    .updateInterval(2)
+    );
+
     private static <T extends Entity> EntityType<T> register(String name, EntityType.Builder<T> builder) {
         Identifier id = CorpseOrigin.id(name);
         return Registry.register(

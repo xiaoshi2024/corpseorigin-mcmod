@@ -37,6 +37,9 @@ public final class ModAttributes {
         FabricDefaultAttributeRegistry.register(ModEntities.UNCLE, UncleEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.ZB_WORM, ZbWormEntity.createAttributes());
 
+        // 初音尸兄
+        FabricDefaultAttributeRegistry.register(ModEntities.MIKU_ZB, MikuZbEntity.createAttributes());
+
         // TODO: 添加其他实体的属性注册
         // 例如：
         // FabricDefaultAttributeRegistry.register(ModEntities.LONGYOU, LongyouEntity.createAttributes());

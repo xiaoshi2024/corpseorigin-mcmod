@@ -18,6 +18,7 @@
   "item.corpseorigin.coco_zombie_x_spawn_egg": "CoCo尸兄-%s刷怪蛋",
   "item.corpseorigin.uncle_spawn_egg": "大叔（少女漫画家）刷怪蛋",
   "item.corpseorigin.zb_worm_spawn_egg": "尸兄虫刷怪蛋",
+  "item.corpseorigin.miku_zb_spawn_egg": "初音尸兄刷怪蛋",
 
   "item.corpseorigin.zb_worm_item": "尸兄虫",
   "item.corpseorigin.zb_worm.description": "一只蠕动的尸兄虫，散发着诡异的气息",
@@ -68,8 +69,12 @@
   "entity.corpseorigin.coco_zombie_x": "CoCo尸兄-%s",
   "entity.corpseorigin.uncle": "大叔（少女漫画家）",
   "entity.corpseorigin.zb_worm": "尸兄虫",
+  "entity.corpseorigin.miku_zb": "初音尸兄",
+  "entity.corpseorigin.leek_projectile": "投掷大葱",
 
   "effect.corpseorigin.by": "尸毒感染",
+
+  "subtitles.corpseorigin.ground_chi": "尸兄：吃~~",
 
   "command.corpseorigin.character.list_header": "角色列表",
   "command.corpseorigin.character.current": "当前角色：%s（ID：%s）",

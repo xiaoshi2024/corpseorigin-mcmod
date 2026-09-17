@@ -44,6 +44,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
+import xiaoshi2022.corpseorigin.registry.ModSounds;
 
 import java.util.EnumSet;
 import java.util.UUID;
@@ -421,7 +422,7 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, Zombi
 
         float damage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
         if (target.hurtServer((ServerLevel) this.level(), this.damageSources().mobAttack(this), damage)) {
-            this.playSound(SoundEvents.GENERIC_EAT.value(), 1.2F, 0.7F + this.random.nextFloat() * 0.4F);
+            this.playSound(ModSounds.GROUND_CHI, 1.2F, 0.7F + this.random.nextFloat() * 0.4F);
 
             if (this.level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.SWEEP_ATTACK,

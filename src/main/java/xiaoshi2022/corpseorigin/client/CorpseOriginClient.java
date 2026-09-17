@@ -137,6 +137,8 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.COCO_ZOMBIE_X, CocoZombieXRenderer::new);
         EntityRendererRegistry.register(ModEntities.UNCLE, UncleRenderer::new);
         EntityRendererRegistry.register(ModEntities.ZB_WORM, ZbWormRenderer::new);
+        EntityRendererRegistry.register(ModEntities.MIKU_ZB, MikuZbRenderer::new);
+        EntityRendererRegistry.register(ModEntities.LEEK_PROJECTILE, LeekProjectileRenderer::new);
         // 黑色火线克隆仓方块实体渲染器
         BlockEntityRendererRegistry.register(
                 ModBlockEntities.CLONE_CHAMBER,

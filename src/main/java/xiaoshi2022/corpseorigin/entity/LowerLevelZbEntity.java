@@ -17,7 +17,6 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -34,6 +33,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.slf4j.Logger;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinLoader;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinState;
+import xiaoshi2022.corpseorigin.registry.ModSounds;
 
 import java.util.Optional;
 
@@ -173,7 +173,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
             }
 
             float pitch = 0.8F + this.random.nextFloat() * 0.4F;
-            this.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, pitch);
+            this.playSound(ModSounds.GROUND_CHI, 1.0F, pitch);
 
             if (level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(

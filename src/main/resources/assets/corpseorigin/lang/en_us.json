@@ -18,6 +18,7 @@
   "item.corpseorigin.coco_zombie_x_spawn_egg": "CoCo Zombie-%s Spawn Egg",
   "item.corpseorigin.uncle_spawn_egg": "Uncle (Shoujo Manga Artist) Spawn Egg",
   "item.corpseorigin.zb_worm_spawn_egg": "Zombie Worm Spawn Egg",
+  "item.corpseorigin.miku_zb_spawn_egg": "Miku Corpse Brother Spawn Egg",
 
   "item.corpseorigin.zb_worm_item": "Zombie Worm",
   "item.corpseorigin.zb_worm.description": "A wriggling Zombie Worm, emanating an eerie aura",
@@ -68,8 +69,12 @@
   "entity.corpseorigin.coco_zombie_x": "CoCo Zombie-%s",
   "entity.corpseorigin.uncle": "Uncle (Shoujo Manga Artist)",
   "entity.corpseorigin.zb_worm": "Zombie Worm",
+  "entity.corpseorigin.miku_zb": "Miku Corpse Brother",
+  "entity.corpseorigin.leek_projectile": "Thrown Leek",
 
   "effect.corpseorigin.by": "Corpse Infection",
+
+  "subtitles.corpseorigin.ground_chi": "Zombie Brother: Eat~~",
 
   "command.corpseorigin.character.list_header": "Character List",
   "command.corpseorigin.character.current": "Current character: %s (ID: %s)",

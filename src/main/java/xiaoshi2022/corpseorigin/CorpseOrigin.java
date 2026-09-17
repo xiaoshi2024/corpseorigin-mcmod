@@ -32,6 +32,9 @@ public class CorpseOrigin implements ModInitializer {
 		// ⚠️ 重要：先注册效果
 		ModEffects.init();
 
+		// ✅ 自定义音效（尸兄"吃~~"等）
+		ModSounds.init();
+
 		// ✅ 1. 注册数据组件（必须在物品之前）
 		ModDataComponents.init();
 
