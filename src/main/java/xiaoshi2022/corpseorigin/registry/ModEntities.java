@@ -8,15 +8,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
-import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
-import xiaoshi2022.corpseorigin.entity.CocoPenguinEntity;
-import xiaoshi2022.corpseorigin.entity.CocoZombieEntity;
-import xiaoshi2022.corpseorigin.entity.CocoZombieXEntity;
-import xiaoshi2022.corpseorigin.entity.FlyingGreatSwordEntity;
-import xiaoshi2022.corpseorigin.entity.JuQueBeamEntity;
-import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
-import xiaoshi2022.corpseorigin.entity.UncleEntity;
-import xiaoshi2022.corpseorigin.entity.ZbWormEntity;
+import xiaoshi2022.corpseorigin.entity.*;
 
 public final class ModEntities {
 

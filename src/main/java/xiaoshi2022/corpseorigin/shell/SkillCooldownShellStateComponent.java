@@ -9,11 +9,7 @@ import xiaoshi2022.corpseorigin.mixin.ItemCooldownsAccessor;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.skill.SkillManager;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 技能冷却：跟着身体走。

@@ -32,14 +32,7 @@ import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModBlockEntities;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
-import xiaoshi2022.corpseorigin.shell.ApsShellStateComponent;
-import xiaoshi2022.corpseorigin.shell.CharacterShellStateComponent;
-import xiaoshi2022.corpseorigin.shell.CorpseShellStateComponent;
-import xiaoshi2022.corpseorigin.shell.PlayerBodySnapshot;
-import xiaoshi2022.corpseorigin.shell.ShellBodyIndex;
-import xiaoshi2022.corpseorigin.shell.ShellState;
-import xiaoshi2022.corpseorigin.shell.ShellStateComponent;
-import xiaoshi2022.corpseorigin.shell.TransferredBody;
+import xiaoshi2022.corpseorigin.shell.*;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;

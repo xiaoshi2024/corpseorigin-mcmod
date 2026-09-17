@@ -13,7 +13,6 @@ import xiaoshi2022.corpseorigin.character.ICharacter;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.component.PlayerRelicComponent;
 import xiaoshi2022.corpseorigin.skill.ISkill;
-import xiaoshi2022.corpseorigin.skill.SkillManager;
 import xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockManager;
 import xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockSource;
 

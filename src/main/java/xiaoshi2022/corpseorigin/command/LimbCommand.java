@@ -9,11 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
-import xiaoshi2022.corpseorigin.limb.DismembermentLogic;
-import xiaoshi2022.corpseorigin.limb.LimbAccess;
-import xiaoshi2022.corpseorigin.limb.LimbRegenProfiles;
-import xiaoshi2022.corpseorigin.limb.LimbSlots;
-import xiaoshi2022.corpseorigin.limb.LimbState;
+import xiaoshi2022.corpseorigin.limb.*;
 
 import java.util.Collection;
 

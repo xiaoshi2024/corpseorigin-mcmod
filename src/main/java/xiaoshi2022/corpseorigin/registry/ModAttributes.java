@@ -2,13 +2,7 @@ package xiaoshi2022.corpseorigin.registry;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
-import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
-import xiaoshi2022.corpseorigin.entity.CocoPenguinEntity;
-import xiaoshi2022.corpseorigin.entity.CocoZombieEntity;
-import xiaoshi2022.corpseorigin.entity.CocoZombieXEntity;
-import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
-import xiaoshi2022.corpseorigin.entity.UncleEntity;
-import xiaoshi2022.corpseorigin.entity.ZbWormEntity;
+import xiaoshi2022.corpseorigin.entity.*;
 
 /**
  * 实体属性注册 - Fabric 26.2

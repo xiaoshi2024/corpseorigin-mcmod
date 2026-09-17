@@ -7,14 +7,7 @@ import net.minecraft.world.entity.player.Player;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.skill.ISkill;
-import xiaoshi2022.corpseorigin.skill.heixiaofei.BlackGoldHeartSkill;
-import xiaoshi2022.corpseorigin.skill.heixiaofei.DarkSiphonSkill;
-import xiaoshi2022.corpseorigin.skill.heixiaofei.HoundUnleashedSkill;
-import xiaoshi2022.corpseorigin.skill.heixiaofei.KillingIncarnationSkill;
-import xiaoshi2022.corpseorigin.skill.heixiaofei.RoundDanceSkill;
-import xiaoshi2022.corpseorigin.skill.heixiaofei.SeveredArmStrikeSkill;
-import xiaoshi2022.corpseorigin.skill.heixiaofei.SlaughterMomentumSkill;
-import xiaoshi2022.corpseorigin.skill.heixiaofei.TigerClawBeeWheelSkill;
+import xiaoshi2022.corpseorigin.skill.heixiaofei.*;
 
 import java.util.List;
 
