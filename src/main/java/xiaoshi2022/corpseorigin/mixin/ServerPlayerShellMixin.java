@@ -124,10 +124,10 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
 
         if (container != null) {
             container.receiveOldBody(level, oldBody);
-            self.sendSystemMessage(Component.translatable("message.corpseorigin.clone_chamber.body_stored"));
+            self.sendOverlayMessage(Component.translatable("message.corpseorigin.clone_chamber.body_stored"));
         } else if (!self.isSpectator()) {
             dropInventory(self);
-            self.sendSystemMessage(Component.translatable("message.corpseorigin.clone_chamber.body_dropped"));
+            self.sendOverlayMessage(Component.translatable("message.corpseorigin.clone_chamber.body_dropped"));
         }
 
         this.apply(targetState);

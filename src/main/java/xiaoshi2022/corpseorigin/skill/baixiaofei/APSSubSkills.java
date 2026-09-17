@@ -66,7 +66,7 @@ public class APSSubSkills {
                     x, center.getY() + 3, z, 1, 0.1, 0.1, 0.1, 0.01);
         }
 
-        player.sendSystemMessage(Component.translatable(
+        player.sendOverlayMessage(Component.translatable(
                 "skill.corpseorigin.ancient_poetry_sword.stage1"));
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.8F, 1.5F);
@@ -96,7 +96,7 @@ public class APSSubSkills {
 
         CorpseNetwork.broadcastInkPoem(player, 1);
 
-        player.sendSystemMessage(Component.translatable(
+        player.sendOverlayMessage(Component.translatable(
                 "skill.corpseorigin.ancient_poetry_sword.stage2"));
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.TRIDENT_RIPTIDE_3, SoundSource.PLAYERS, 1.0F, 1.2F);
@@ -150,7 +150,7 @@ public class APSSubSkills {
 
         CorpseNetwork.broadcastInkPoem(player, 2);
 
-        player.sendSystemMessage(Component.translatable(
+        player.sendOverlayMessage(Component.translatable(
                 "skill.corpseorigin.ancient_poetry_sword.stage3", 8));
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.8F, 1.5F);
@@ -192,7 +192,7 @@ public class APSSubSkills {
 
         CorpseNetwork.broadcastInkPoem(player, 3);
 
-        player.sendSystemMessage(Component.translatable(
+        player.sendOverlayMessage(Component.translatable(
                 "skill.corpseorigin.ancient_poetry_sword.stage4"));
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.PLAYERS, 1.0F, 0.8F);

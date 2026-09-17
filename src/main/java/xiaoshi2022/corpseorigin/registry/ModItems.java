@@ -1,10 +1,14 @@
 package xiaoshi2022.corpseorigin.registry;
 
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.item.equipment.ArmorType;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
@@ -13,6 +17,7 @@ import xiaoshi2022.corpseorigin.character.ICharacter;
 import xiaoshi2022.corpseorigin.item.ByWaterBottleItem;
 import xiaoshi2022.corpseorigin.item.ByWaterBucketItem;
 import xiaoshi2022.corpseorigin.item.CharacterBookItem;
+import xiaoshi2022.corpseorigin.item.ZbWormItem;
 import xiaoshi2022.corpseorigin.item.armor.AntennaZBRitem;
 import xiaoshi2022.corpseorigin.item.sword.JuQue;
 import xiaoshi2022.corpseorigin.item.weapon.BloodLotusLamp;
@@ -59,6 +64,14 @@ public final class ModItems {
                     .useBlockDescriptionPrefix()
                     .setId(itemKey("clone_chamber")))
     );
+
+    /** 尸兄肉块（尸巢的基本建筑方块，外观由 GeckoLib 的 BER 渲染） */
+    public static final Item ZBR_FLESH = register(
+            "zbr_flesh",
+            new BlockItem(ModBlocks.ZBR_FLESH, new Item.Properties()
+                    .useBlockDescriptionPrefix()
+                    .setId(itemKey("zbr_flesh")))
+    );
     
     //尸兄阵营天线宝宝尸兄盔甲
     public static final Supplier<AntennaZBRitem> ANTENNA_ZBR_ARMOR_HELMET = register(
@@ -96,6 +109,39 @@ public final class ModItems {
                     .setId(itemKey("character_book")))
     );
 
+    // ==================== CoCo 企鹅系刷怪蛋 ====================
+
+    public static final Item COCO_PENGUIN_SPAWN_EGG = register(
+            "coco_penguin_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("coco_penguin_spawn_egg", ModEntities.COCO_PENGUIN))
+    );
+
+    public static final Item COCO_ZOMBIE_SPAWN_EGG = register(
+            "coco_zombie_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("coco_zombie_spawn_egg", ModEntities.COCO_ZOMBIE))
+    );
+
+    public static final Item COCO_ZOMBIE_X_SPAWN_EGG = register(
+            "coco_zombie_x_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("coco_zombie_x_spawn_egg", ModEntities.COCO_ZOMBIE_X))
+    );
+
+    public static final Item UNCLE_SPAWN_EGG = register(
+            "uncle_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("uncle_spawn_egg", ModEntities.UNCLE))
+    );
+
+    public static final Item ZB_WORM_SPAWN_EGG = register(
+            "zb_worm_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("zb_worm_spawn_egg", ModEntities.ZB_WORM))
+    );
+
+    /** 尸兄虫 - 可食用，也是企鹅变尸兄的引子 */
+    public static final Item ZB_WORM_ITEM = register(
+            "zb_worm_item",
+            new ZbWormItem(new Item.Properties().setId(itemKey("zb_worm_item")))
+    );
+
     // ==================== 创造物品栏 ====================
     public static final CreativeModeTab CORPSE_ORIGIN_TAB = CreativeModeTab.builder(
                     CreativeModeTab.Row.TOP, 8)
@@ -107,9 +153,16 @@ public final class ModItems {
                 output.accept(JUQUE_TW);
                 output.accept(BLOOD_LOTUS_LAMP);
                 output.accept(CLONE_CHAMBER);
+                output.accept(ZBR_FLESH);
                 output.accept(ANTENNA_ZBR_ARMOR_HELMET.get());
                 output.accept(ANTENNA_ZBR_ARMOR_CHESTPLATE.get());
                 output.accept(ANTENNA_ZBR_ARMOR_LEGGINGS.get());
+                output.accept(COCO_PENGUIN_SPAWN_EGG);
+                output.accept(COCO_ZOMBIE_SPAWN_EGG);
+                output.accept(COCO_ZOMBIE_X_SPAWN_EGG);
+                output.accept(UNCLE_SPAWN_EGG);
+                output.accept(ZB_WORM_SPAWN_EGG);
+                output.accept(ZB_WORM_ITEM);
             })
             .build();
 
@@ -150,6 +203,15 @@ public final class ModItems {
 
     private static ResourceKey<Item> itemKey(String path) {
         return ResourceKey.create(BuiltInRegistries.ITEM.key(), CorpseOrigin.id(path));
+    }
+
+    /**
+     * 26.2 的刷怪蛋不再自带颜色，实体类型改由 entity_data 组件携带。
+     */
+    private static Item.Properties spawnEggProperties(String id, EntityType<?> type) {
+        return new Item.Properties()
+                .setId(itemKey(id))
+                .component(DataComponents.ENTITY_DATA, TypedEntityData.of(type, new CompoundTag()));
     }
 
     public static void init() {

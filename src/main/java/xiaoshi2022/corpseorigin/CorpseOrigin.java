@@ -99,6 +99,7 @@ public class CorpseOrigin implements ModInitializer {
 		ZombieKinEventHandler.register();
 		HeiXiaoFeiEventHandler.register();
 		LongYouEventHandler.register();
+		TianXianBaoBaoEventHandler.register();
 		EvolutionEventHandler.register();
 		APSComboHandler.register();
 		APSGreatSwordInterceptor.register();

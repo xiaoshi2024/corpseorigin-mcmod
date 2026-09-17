@@ -144,14 +144,14 @@ public class BYeffect extends MobEffect {
         player.level().broadcastEntityEvent(player, (byte) 35);
 
         if (hasConsciousness) {
-            player.sendSystemMessage(Component.literal(
+            player.sendOverlayMessage(Component.literal(
                     "§c§l你已被感染成为尸兄！§r\n" +
                             "§a§l幸运的是，你保留了人类的意识！§r\n" +
                             "§7击杀生物可获得进化点来解锁更多技能！"
             ));
             CorpseOrigin.LOGGER.info("玩家 {} 已转化为尸族！幸运地保留了意识！", player.getName().getString());
         } else {
-            player.sendSystemMessage(Component.literal(
+            player.sendOverlayMessage(Component.literal(
                     "§c§l你已被感染成为尸兄！§r\n" +
                             "§4§l你的意识被黑暗吞噬，只剩下本能...§r\n" +
                             "§7寻找穆博士的眼睛 或 进化到3级 可恢复意识"

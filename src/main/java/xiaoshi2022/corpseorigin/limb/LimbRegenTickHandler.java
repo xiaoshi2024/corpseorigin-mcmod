@@ -102,8 +102,8 @@ public final class LimbRegenTickHandler {
                 cooldowns[slot] = DismembermentLogic.VULNERABLE_TICKS;
                 mask = LimbSlots.withoutSevered(mask, slot);
                 finished = true;
-                player.sendSystemMessage(Component.translatable(
-                        "limb.corpseorigin.regrown", LimbSlots.DISPLAY_NAMES[slot]), true);
+                player.sendOverlayMessage(Component.translatable(
+                        "limb.corpseorigin.regrown", LimbSlots.DISPLAY_NAMES[slot]));
             }
             changed = true;
         }
@@ -113,8 +113,8 @@ public final class LimbRegenTickHandler {
         }
 
         if (blockedByHunger && anyGrowing && server.getTickCount() % 100 == 0) {
-            player.sendSystemMessage(
-                    Component.translatable("limb.corpseorigin.starving"), true);
+            player.sendOverlayMessage(
+                    Component.translatable("limb.corpseorigin.starving"));
         }
 
         if (!changed) {

@@ -210,7 +210,7 @@ public class CloneChamberBlock extends BaseEntityBlock implements BucketPickup, 
             }
             // 装不进去：明确告诉玩家，别让右键看起来"没反应"
             if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
-                serverPlayer.sendSystemMessage(Component.translatable(state.getValue(FLUID).isEmpty()
+                serverPlayer.sendOverlayMessage(Component.translatable(state.getValue(FLUID).isEmpty()
                         ? "message.corpseorigin.clone_chamber.liquid_rejected"
                         : "message.corpseorigin.clone_chamber.already_filled"));
             }

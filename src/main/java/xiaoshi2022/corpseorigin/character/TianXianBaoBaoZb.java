@@ -11,7 +11,7 @@ import xiaoshi2022.corpseorigin.item.armor.AntennaZBRitem;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModItems;
 import xiaoshi2022.corpseorigin.skill.ISkill;
-import xiaoshi2022.corpseorigin.skill.tianxianbaobao_zb.HeavySmashSkill;
+import xiaoshi2022.corpseorigin.skill.tianxianbaobao_zb.AntennaBlockSkill;
 import xiaoshi2022.corpseorigin.skill.tianxianbaobao_zb.LifeDrainSuckSkill;
 
 import java.util.List;
@@ -33,7 +33,7 @@ public class TianXianBaoBaoZb implements ICharacter {
 
     private static final List<ISkill> SKILLS = List.of(
             new LifeDrainSuckSkill(),
-            new HeavySmashSkill()
+            new AntennaBlockSkill()
     );
 
     @Override

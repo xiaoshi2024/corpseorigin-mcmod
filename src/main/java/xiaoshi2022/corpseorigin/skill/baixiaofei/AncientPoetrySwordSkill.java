@@ -55,7 +55,7 @@ public class AncientPoetrySwordSkill implements ISkill {
         if (APSTerrainManager.hasActiveAPS(player)) {
             boolean started = APSTerrainManager.forceRestore(player, level);
             if (started) {
-                player.sendSystemMessage(Component.translatable(
+                player.sendOverlayMessage(Component.translatable(
                         "skill.corpseorigin.ancient_poetry_sword.restoring"));
             }
             return;
@@ -68,14 +68,14 @@ public class AncientPoetrySwordSkill implements ISkill {
             state.putBoolean(ACTIVE_KEY, false);
             state.putInt(STAGE_KEY, 0);
             player.setAttached(ModDataAttachments.APS_STATE, state);
-            player.sendSystemMessage(Component.translatable(
+            player.sendOverlayMessage(Component.translatable(
                     "skill.corpseorigin.ancient_poetry_sword.off"));
         } else {
             state.putBoolean(ACTIVE_KEY, true);
             state.putInt(STAGE_KEY, 0);
             state.putLong(CD_KEY, level.getGameTime());
             player.setAttached(ModDataAttachments.APS_STATE, state);
-            player.sendSystemMessage(Component.translatable(
+            player.sendOverlayMessage(Component.translatable(
                     "skill.corpseorigin.ancient_poetry_sword.on"));
         }
     }

@@ -270,7 +270,7 @@ public class APSTerrainManager {
                         restoreRemovedMobs(sp, level);
                         // ✅ 广播"意境关"
                         broadcastInkSceneClose(level, sp, t.center);
-                        sp.sendSystemMessage(Component.translatable(
+                        sp.sendOverlayMessage(Component.translatable(
                                 "skill.corpseorigin.ancient_poetry_sword.restored"));
                     }
                     cleanupPlayerData(pid, level);
@@ -287,7 +287,7 @@ public class APSTerrainManager {
                         broadcastInkSceneOpen(level, sp, t.center);
                         // ✅ 落第 1 句诗（朝辞白帝彩云间）
                         CorpseNetwork.broadcastInkPoem(sp, 0);
-                        sp.sendSystemMessage(Component.translatable(
+                        sp.sendOverlayMessage(Component.translatable(
                                 "skill.corpseorigin.ancient_poetry_sword.deployed"));
                     }
                 }

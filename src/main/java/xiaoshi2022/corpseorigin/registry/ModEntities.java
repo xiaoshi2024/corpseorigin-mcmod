@@ -9,9 +9,14 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
+import xiaoshi2022.corpseorigin.entity.CocoPenguinEntity;
+import xiaoshi2022.corpseorigin.entity.CocoZombieEntity;
+import xiaoshi2022.corpseorigin.entity.CocoZombieXEntity;
 import xiaoshi2022.corpseorigin.entity.FlyingGreatSwordEntity;
 import xiaoshi2022.corpseorigin.entity.JuQueBeamEntity;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
+import xiaoshi2022.corpseorigin.entity.UncleEntity;
+import xiaoshi2022.corpseorigin.entity.ZbWormEntity;
 
 public final class ModEntities {
 
@@ -45,6 +50,43 @@ public final class ModEntities {
                     .sized(0.6f, 1.8f)
                     .clientTrackingRange(10)
                     .updateInterval(1)
+    );
+
+    /** CoCo 企鹅 - 未尸兄化的王企鹅 */
+    public static final EntityType<CocoPenguinEntity> COCO_PENGUIN = register(
+            "coco_penguin",
+            EntityType.Builder.<CocoPenguinEntity>of(CocoPenguinEntity::new, MobCategory.CREATURE)
+                    .sized(0.6f, 1.2f)
+    );
+
+    /** CoCo 尸兄 - 一阶段，躺下姿态 */
+    public static final EntityType<CocoZombieEntity> COCO_ZOMBIE = register(
+            "coco_zombie",
+            EntityType.Builder.<CocoZombieEntity>of(CocoZombieEntity::new, MobCategory.MONSTER)
+                    .sized(1.0f, 0.6f)
+    );
+
+    /** CoCo 尸兄二阶段 - 与大叔的合体形态 */
+    public static final EntityType<CocoZombieXEntity> COCO_ZOMBIE_X = register(
+            "coco_zombie_x",
+            EntityType.Builder.<CocoZombieXEntity>of(CocoZombieXEntity::new, MobCategory.MONSTER)
+                    .sized(1.2f, 1.4f)
+                    .clientTrackingRange(64)
+                    .updateInterval(2)
+    );
+
+    /** 尸兄虫 - 大叔体内钻出的寄生虫，也是 CoCo 企鹅的食物 */
+    public static final EntityType<ZbWormEntity> ZB_WORM = register(
+            "zb_worm",
+            EntityType.Builder.<ZbWormEntity>of(ZbWormEntity::new, MobCategory.MONSTER)
+                    .sized(0.2f, 0.2f)
+    );
+
+    /** 大叔（少女漫画家）- NPC，与 CoCo 尸兄合体线的起点 */
+    public static final EntityType<UncleEntity> UNCLE = register(
+            "uncle",
+            EntityType.Builder.<UncleEntity>of(UncleEntity::new, MobCategory.CREATURE)
+                    .sized(0.6f, 1.8f)
     );
 
     private static <T extends Entity> EntityType<T> register(String name, EntityType.Builder<T> builder) {

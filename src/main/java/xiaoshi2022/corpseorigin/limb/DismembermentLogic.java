@@ -245,8 +245,8 @@ public final class DismembermentLogic {
                     SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.0F, 0.6F);
         }
 
-        victim.sendSystemMessage(Component.translatable(
-                "limb.corpseorigin.severed", LimbSlots.DISPLAY_NAMES[slot]), true);
+        victim.sendOverlayMessage(Component.translatable(
+                "limb.corpseorigin.severed", LimbSlots.DISPLAY_NAMES[slot]));
     }
 
     /**

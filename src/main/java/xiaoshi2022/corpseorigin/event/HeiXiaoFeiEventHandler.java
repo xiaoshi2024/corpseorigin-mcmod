@@ -87,7 +87,7 @@ public final class HeiXiaoFeiEventHandler {
                     SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.7F, 1.8F);
         }
 
-        player.sendSystemMessage(Component.translatable(
+        player.sendOverlayMessage(Component.translatable(
                 "skill.corpseorigin." + BlackGoldHeartSkill.PATH + ".locked"));
     }
 

@@ -117,7 +117,7 @@ public class DarkSiphonSkill implements ISkill {
         // 对 BOSS 虹吸被反噬
         if (backlash) {
             player.hurtServer(level, level.damageSources().generic(), BACKLASH_DAMAGE);
-            player.sendSystemMessage(Component.translatable(
+            player.sendOverlayMessage(Component.translatable(
                     "skill.corpseorigin." + PATH + ".backlash"));
         }
 

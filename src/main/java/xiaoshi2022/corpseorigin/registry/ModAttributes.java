@@ -3,7 +3,12 @@ package xiaoshi2022.corpseorigin.registry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
+import xiaoshi2022.corpseorigin.entity.CocoPenguinEntity;
+import xiaoshi2022.corpseorigin.entity.CocoZombieEntity;
+import xiaoshi2022.corpseorigin.entity.CocoZombieXEntity;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
+import xiaoshi2022.corpseorigin.entity.UncleEntity;
+import xiaoshi2022.corpseorigin.entity.ZbWormEntity;
 
 /**
  * 实体属性注册 - Fabric 26.2
@@ -28,6 +33,15 @@ public final class ModAttributes {
         );
 
         FabricDefaultAttributeRegistry.register(ModEntities.CLONE_AVATAR, CloneAvatarEntity.createAttributes());
+
+        // CoCo 企鹅 / 一阶段尸兄 / 二阶段合体尸兄
+        FabricDefaultAttributeRegistry.register(ModEntities.COCO_PENGUIN, CocoPenguinEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.COCO_ZOMBIE, CocoZombieEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.COCO_ZOMBIE_X, CocoZombieXEntity.createAttributes());
+
+        // 大叔 NPC / 尸兄虫
+        FabricDefaultAttributeRegistry.register(ModEntities.UNCLE, UncleEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.ZB_WORM, ZbWormEntity.createAttributes());
 
         // TODO: 添加其他实体的属性注册
         // 例如：

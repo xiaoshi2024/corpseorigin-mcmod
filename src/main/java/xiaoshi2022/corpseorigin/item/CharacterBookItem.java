@@ -71,7 +71,7 @@ public class CharacterBookItem extends Item {
         ICharacter character = manager.getCharacter(characterId);
 
         if (characterId.equals(manager.getPlayerCharacterId(player))) {
-            serverPlayer.sendSystemMessage(Component.translatable(
+            serverPlayer.sendOverlayMessage(Component.translatable(
                             "message.corpseorigin.character_book.already", character.getName())
                     .withStyle(ChatFormatting.RED));
             return InteractionResult.FAIL;
@@ -81,17 +81,17 @@ public class CharacterBookItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        serverPlayer.sendSystemMessage(Component.translatable(
+        serverPlayer.sendOverlayMessage(Component.translatable(
                         "message.corpseorigin.character_book.success", character.getName())
                 .withStyle(ChatFormatting.GREEN));
 
         // 角色自带的技能列表（技能仍需在技能树里解锁）
         if (!character.getSkills().isEmpty()) {
-            serverPlayer.sendSystemMessage(Component.translatable(
+            serverPlayer.sendOverlayMessage(Component.translatable(
                             "message.corpseorigin.character_book.skills")
                     .withStyle(ChatFormatting.GOLD));
             for (ISkill skill : character.getSkills()) {
-                serverPlayer.sendSystemMessage(
+                serverPlayer.sendOverlayMessage(
                         Component.literal("• ").append(skill.getName()).withStyle(ChatFormatting.YELLOW));
             }
         }

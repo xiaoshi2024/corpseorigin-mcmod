@@ -94,7 +94,7 @@ public class KillingIncarnationSkill implements ISkill {
                     player.getZ() + Math.sin(angle) * radius,
                     1, 0, 0.02, 0, 0.0);
         }
-        player.sendSystemMessage(Component.translatable(
+        player.sendOverlayMessage(Component.translatable(
                 "skill.corpseorigin." + PATH + ".not_ready"));
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.6F, 1.6F);

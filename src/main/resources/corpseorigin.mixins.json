@@ -6,6 +6,7 @@
     "CooldownInstanceAccessor",
     "CorpseMixin",
     "ItemCooldownsAccessor",
+    "ItemEntityMixin",
     "MobPeacefulMixin",
     "MobPickupMixin",
     "ServerPlayerShellMixin"

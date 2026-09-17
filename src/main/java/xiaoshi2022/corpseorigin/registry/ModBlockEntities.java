@@ -5,6 +5,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
+import xiaoshi2022.corpseorigin.block.entity.ZBRFleshBlockEntity;
 
 import java.util.Set;
 
@@ -16,6 +17,14 @@ public final class ModBlockEntities {
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,
                     CorpseOrigin.id("clone_chamber"),
                     new BlockEntityType<>(CloneChamberBlockEntity::new, Set.of(ModBlocks.CLONE_CHAMBER))
+            );
+
+    /** 尸兄肉块（GeckoLib 动画方块实体） */
+    public static final BlockEntityType<ZBRFleshBlockEntity> ZBR_FLESH =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    CorpseOrigin.id("zbr_flesh"),
+                    new BlockEntityType<>(ZBRFleshBlockEntity::new, Set.of(ModBlocks.ZBR_FLESH))
             );
 
     private ModBlockEntities() {

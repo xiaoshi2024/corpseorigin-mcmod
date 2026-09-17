@@ -65,7 +65,7 @@ public class APSComboHandler {
             state.putBoolean(AncientPoetrySwordSkill.ACTIVE_KEY, false);
             state.putInt(AncientPoetrySwordSkill.STAGE_KEY, 0);
             player.setAttached(ModDataAttachments.APS_STATE, state);
-            player.sendSystemMessage(Component.translatable(
+            player.sendOverlayMessage(Component.translatable(
                     "skill.corpseorigin.ancient_poetry_sword.timeout"));
 
             if (hasRealm) {
@@ -76,7 +76,7 @@ public class APSComboHandler {
 
         // ✅ 情况 2：剑意存在但连招关（第 4 段后）→ 60 秒自动消散
         if (hasRealm && now - lastCast > REALM_AUTO_RESTORE_TICKS) {
-            player.sendSystemMessage(Component.translatable(
+            player.sendOverlayMessage(Component.translatable(
                     "skill.corpseorigin.ancient_poetry_sword.auto_restore"));
             APSTerrainManager.forceRestore(player, player.level());
         }
@@ -106,7 +106,7 @@ public class APSComboHandler {
             state.putBoolean(AncientPoetrySwordSkill.ACTIVE_KEY, false);
             state.putInt(AncientPoetrySwordSkill.STAGE_KEY, 0);
             player.setAttached(ModDataAttachments.APS_STATE, state);
-            player.sendSystemMessage(Component.translatable(
+            player.sendOverlayMessage(Component.translatable(
                     "skill.corpseorigin.ancient_poetry_sword.timeout"));
             APSTerrainManager.forceRestore(player, level);
             return;

@@ -13,6 +13,21 @@
   "item.corpseorigin.bywater_bottle": "尸水瓶",
   "item.corpseorigin.juque_tw": "巨阙II阶",
 
+  "item.corpseorigin.coco_penguin_spawn_egg": "CoCo企鹅刷怪蛋",
+  "item.corpseorigin.coco_zombie_spawn_egg": "CoCo尸兄刷怪蛋",
+  "item.corpseorigin.coco_zombie_x_spawn_egg": "CoCo尸兄-%s刷怪蛋",
+  "item.corpseorigin.uncle_spawn_egg": "大叔（少女漫画家）刷怪蛋",
+  "item.corpseorigin.zb_worm_spawn_egg": "尸兄虫刷怪蛋",
+
+  "item.corpseorigin.zb_worm_item": "尸兄虫",
+  "item.corpseorigin.zb_worm.description": "一只蠕动的尸兄虫，散发着诡异的气息",
+  "item.corpseorigin.zb_worm.effect1": "  §a• %d%%概率获得速度增益",
+  "item.corpseorigin.zb_worm.effect2": "  §a• %d%%概率获得挖掘效率增益",
+  "item.corpseorigin.zb_worm.corpse_bonus": "§a尸兄食用可获得额外效果",
+  "item.corpseorigin.zb_worm.consumed": "§7你食用了尸兄虫",
+  "item.corpseorigin.zb_worm.effect_gained": "§a你获得了特殊效果！",
+  "item.corpseorigin.zb_worm.not_corpse_warning": "§c你不是尸兄，食用会让你感到不适",
+
   "item.corpseorigin.antenna_zbr_armor_helmet": "天线宝宝尸兄头盔",
   "item.corpseorigin.antenna_zbr_armor_chestplate": "天线宝宝尸兄胸甲",
   "item.corpseorigin.antenna_zbr_armor_leggings": "天线宝宝尸兄护腿",
@@ -24,6 +39,7 @@
   "block.corpseorigin.infected_water_block": "尸水",
 
   "block.corpseorigin.clone_chamber": "黑色火线克隆仓",
+  "block.corpseorigin.zbr_flesh": "尸兄肉块",
   "message.corpseorigin.clone_chamber.occupied": "克隆仓已被占用",
   "message.corpseorigin.clone_chamber.low_health": "生命值不足，无法提取基因样本",
   "message.corpseorigin.clone_chamber.need_liquid": "仓内没有培养液，先用液体桶注入",
@@ -46,6 +62,12 @@
   "entity.corpseorigin.juque_beam": "巨阙剑气",
   "entity.corpseorigin.flying_great_sword": "飞行巨剑",
   "entity.corpseorigin.clone_avatar": "克隆分身",
+
+  "entity.corpseorigin.coco_penguin": "CoCo",
+  "entity.corpseorigin.coco_zombie": "CoCo尸兄",
+  "entity.corpseorigin.coco_zombie_x": "CoCo尸兄-%s",
+  "entity.corpseorigin.uncle": "大叔（少女漫画家）",
+  "entity.corpseorigin.zb_worm": "尸兄虫",
 
   "effect.corpseorigin.by": "尸毒感染",
 
@@ -284,8 +306,9 @@
   "skill.corpseorigin.life_drain_suck.grab": "你抓住了 %s，开始吸食！",
   "skill.corpseorigin.life_drain_suck.loose": "%s 挣脱了吸食",
   "skill.corpseorigin.life_drain_suck.interrupted": "吸食被打断！",
-  "skill.corpseorigin.heavy_smash": "巨力拍击",
-  "skill.corpseorigin.heavy_smash.desc": "高伤害近战拍击，附带击退。冷却 6 秒。",
+  "skill.corpseorigin.life_drain_suck.special_blood": "特殊血液（%s）—— 强化更持久！",
+  "skill.corpseorigin.antenna_block": "天线格挡",
+  "skill.corpseorigin.antenna_block.desc": "被动：受到的斧头与箭矢/投掷物伤害降低 30%。",
   "skill.corpseorigin.iron_body": "刀枪不入",
   "skill.corpseorigin.iron_body.desc": "被动：正面免疫普通攻击，攻击头部弱点才能造成伤害。",
   "skill.corpseorigin.pounce_combo": "扑咬连击",

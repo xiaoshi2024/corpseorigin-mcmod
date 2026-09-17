@@ -40,6 +40,13 @@ public final class AntennaArmorRenderData {
     public static final DataTicket<Double> TARGET_X_ROTATION =
             DataTicket.create("antenna_armor_target_x_rotation", Double.class);
 
+    /**
+     * 末尾"刺出去"那一段 {@code bone6} 该用的 Y 缩放 —— 按"根部到目标脑门的距离"反算出来的，
+     * 让骨链伸直后的尖端正好落在脑门上（1.0 = 动画原本的基准长度）。
+     */
+    public static final DataTicket<Double> TARGET_STRETCH =
+            DataTicket.create("antenna_armor_target_stretch", Double.class);
+
     private AntennaArmorRenderData() {
     }
 }

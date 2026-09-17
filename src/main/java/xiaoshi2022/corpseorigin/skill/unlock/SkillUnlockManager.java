@@ -68,8 +68,8 @@ public final class SkillUnlockManager {
         if (!quiet) {
             for (ISkill skill : newly) {
                 // actionbar 提示：玩家抓到获取物的瞬间就能看到反馈
-                player.sendSystemMessage(Component.translatable(
-                        "skill.corpseorigin.unlocked_by_source", skill.getName()), true);
+                player.sendOverlayMessage(Component.translatable(
+                        "skill.corpseorigin.unlocked_by_source", skill.getName()));
             }
         }
         CorpseNetwork.sendEvolutionSync(player);

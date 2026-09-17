@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "corpseorigin:item/zb_worm_item",
+    "model": {
+      "type": "geckolib:geckolib"
+    }
+  }
+}

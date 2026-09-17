@@ -6,8 +6,10 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
+import xiaoshi2022.corpseorigin.block.ZBRFleshBlock;
 
 public final class ModBlocks {
 
@@ -22,6 +24,17 @@ public final class ModBlocks {
                     .strength(3.5F, 6.0F)
                     .requiresCorrectToolForDrops()
                     .setId(blockKey("clone_chamber")))
+    );
+
+    /** 尸兄肉块：尸巢的基本建筑方块，外观由 GeckoLib 的 BER 渲染（所以 render shape 是 INVISIBLE） */
+    public static final Block ZBR_FLESH = register(
+            "zbr_flesh",
+            new ZBRFleshBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SLIME_BLOCK)
+                    .strength(2.0F, 4.0F)
+                    .mapColor(MapColor.COLOR_RED)
+                    .noOcclusion()
+                    .randomTicks()
+                    .setId(blockKey("zbr_flesh")))
     );
 
     private static Block register(String name, Block block) {

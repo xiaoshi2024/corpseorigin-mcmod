@@ -35,9 +35,14 @@ import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.render.laser.BloodLotusLaserManager;
 import xiaoshi2022.corpseorigin.client.renderer.blockentity.CloneChamberRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.CloneAvatarRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.entity.CocoPenguinRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.entity.CocoZombieRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.entity.CocoZombieXRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.FlyingGreatSwordRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.JuQueBeamRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.LowerLevelZbRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.entity.UncleRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.entity.ZbWormRenderer;
 import xiaoshi2022.corpseorigin.client.skin.clone.ClientSkinCache;
 import xiaoshi2022.corpseorigin.event.client.AttackAnimationHandler;
 import xiaoshi2022.corpseorigin.event.client.ClientEntityEventHandler;
@@ -74,13 +79,24 @@ public class CorpseOriginClient implements ClientModInitializer {
     public static final Map<UUID, AntennaSuck> antennaSucks = new ConcurrentHashMap<>();
 
     /** 一次进行中的吸食：目标实体 id + 剩余 tick（{@code targetEntityId < 0} = 目标未知，只播动画不转向） */
-    public record AntennaSuck(int targetEntityId, int ticks) {
+    public record AntennaSuck(int targetEntityId, int ticks, int totalTicks) {
     }
 
     /** 这位玩家现在是否正在吸食（盔甲渲染时读它决定播不播 absorb） */
     public static boolean isAntennaSucking(UUID uuid) {
         AntennaSuck suck = uuid == null ? null : antennaSucks.get(uuid);
         return suck != null && suck.ticks() > 0;
+    }
+
+    /**
+     * 这次吸食已经进行了多少 tick（-1 = 没在吸）。
+     * <p>
+     * 盔甲渲染拿它判断"现在播到动画的哪一段" —— 动画后半段（刺出去那几帧）要把触手
+     * 精确插进目标脑门，得知道进度才能对上动画自己的节奏。
+     */
+    public static int getAntennaSuckElapsed(UUID casterUuid) {
+        AntennaSuck suck = casterUuid == null ? null : antennaSucks.get(casterUuid);
+        return suck == null ? -1 : Math.max(0, suck.totalTicks() - suck.ticks());
     }
 
     /**
@@ -115,10 +131,20 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.FLYING_GREAT_SWORD, FlyingGreatSwordRenderer::new);
         EntityRendererRegistry.register(ModEntities.CLONE_AVATAR,
                 context -> new CloneAvatarRenderer(context, false));
+        EntityRendererRegistry.register(ModEntities.COCO_PENGUIN, CocoPenguinRenderer::new);
+        EntityRendererRegistry.register(ModEntities.COCO_ZOMBIE, CocoZombieRenderer::new);
+        EntityRendererRegistry.register(ModEntities.COCO_ZOMBIE_X, CocoZombieXRenderer::new);
+        EntityRendererRegistry.register(ModEntities.UNCLE, UncleRenderer::new);
+        EntityRendererRegistry.register(ModEntities.ZB_WORM, ZbWormRenderer::new);
         // 黑色火线克隆仓方块实体渲染器
         BlockEntityRendererRegistry.register(
                 ModBlockEntities.CLONE_CHAMBER,
                 CloneChamberRenderer::new
+        );
+        // 尸兄肉块（GeckoLib 动画方块）
+        BlockEntityRendererRegistry.register(
+                ModBlockEntities.ZBR_FLESH,
+                xiaoshi2022.corpseorigin.client.renderer.blockentity.ZBRFleshRenderer::new
         );
         
         // 3. 模型层注册
@@ -163,7 +189,7 @@ public class CorpseOriginClient implements ClientModInitializer {
 
                     // 文字提示（失败原因、死亡自动夺舍的提示之类）
                     if (!payload.message().isEmpty() && client.player != null) {
-                        client.player.sendSystemMessage(Component.literal(payload.message()));
+                        client.player.sendOverlayMessage(Component.literal(payload.message()));
                     }
 
                     if (!payload.success()) {
@@ -259,7 +285,8 @@ public class CorpseOriginClient implements ClientModInitializer {
                         antennaSucks.remove(payload.playerUuid());
                     } else {
                         antennaSucks.put(payload.playerUuid(),
-                                new AntennaSuck(payload.targetEntityId(), payload.durationTicks()));
+                                new AntennaSuck(payload.targetEntityId(), payload.durationTicks(),
+                                        payload.durationTicks()));
                     }
                 }));
 
@@ -287,7 +314,7 @@ public class CorpseOriginClient implements ClientModInitializer {
             while (CorpseKeyBindings.toggleHud.consumeClick()) {
                 ClientState.hudVisible = !ClientState.hudVisible;
                 if (Minecraft.getInstance().player != null) {
-                    Minecraft.getInstance().player.sendSystemMessage(
+                    Minecraft.getInstance().player.sendOverlayMessage(
                             Component.translatable(ClientState.hudVisible
                                     ? "hud.corpseorigin.toggle.on"
                                     : "hud.corpseorigin.toggle.off")
@@ -303,7 +330,8 @@ public class CorpseOriginClient implements ClientModInitializer {
 
             // ✅ 吸食计时自减
             if (!antennaSucks.isEmpty()) {
-                antennaSucks.replaceAll((k, v) -> new AntennaSuck(v.targetEntityId(), v.ticks() - 1));
+                antennaSucks.replaceAll((k, v) ->
+                        new AntennaSuck(v.targetEntityId(), v.ticks() - 1, v.totalTicks()));
                 antennaSucks.entrySet().removeIf(e -> e.getValue().ticks() <= 0);
             }
         });

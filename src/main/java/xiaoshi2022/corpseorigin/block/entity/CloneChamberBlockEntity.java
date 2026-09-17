@@ -573,7 +573,7 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
 
         this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.started"));
         if (this.liquidGrowthMultiplier() > 1.0F) {
-            player.sendSystemMessage(Component.translatable("message.corpseorigin.clone_chamber.liquid_boost"));
+            player.sendOverlayMessage(Component.translatable("message.corpseorigin.clone_chamber.liquid_boost"));
         }
         this.setChanged();
         level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), Block.UPDATE_ALL);
