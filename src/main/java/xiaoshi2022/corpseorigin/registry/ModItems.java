@@ -12,7 +12,6 @@ import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.item.equipment.ArmorType;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
-import xiaoshi2022.corpseorigin.character.HeiXiaoFei;
 import xiaoshi2022.corpseorigin.character.ICharacter;
 import xiaoshi2022.corpseorigin.item.ByWaterBottleItem;
 import xiaoshi2022.corpseorigin.item.ByWaterBucketItem;
@@ -217,7 +216,8 @@ public final class ModItems {
             .build();
 
     /**
-     * 角色选择书页签：装入了全部已注册角色的书。
+     * 角色选择书页签：第一本是<b>统一角色书</b>（右键打开选人界面，选完消失），
+     * 之后是各角色的<b>定向书</b>（右键直接切成书里写的那个角色）。
      * <p>
      * ⚠️ 必须保持默认的 {@link CreativeModeTab.Type#CATEGORY} 类型。
      * 原版搜索框的索引（{@code SessionSearchTrees.updateCreativeTooltips}）只从「搜索」页签的
@@ -228,8 +228,11 @@ public final class ModItems {
     public static final CreativeModeTab CHARACTER_BOOK_TAB = CreativeModeTab.builder(
                     CreativeModeTab.Row.TOP, 7)
             .title(Component.translatable("itemGroup.corpseorigin.character_books"))
-            .icon(() -> CharacterBookItem.createStack(HeiXiaoFei.ID))
+            .icon(CharacterBookItem::createUnboundStack)
             .displayItems((parameters, output) -> {
+                // 第一本：统一角色书 —— 右键打开选人界面，从全部已注册角色里挑一位，选完书就消失
+                output.accept(CharacterBookItem.createUnboundStack());
+                // 之后是"零散"的定向书：右键直接切成书里写的那个角色（成就奖励 / 指令 / 整合包发单角色用）
                 for (ICharacter character : CharacterManager.getInstance().getRegisteredCharacters()) {
                     output.accept(CharacterBookItem.createStack(character.getId()));
                 }

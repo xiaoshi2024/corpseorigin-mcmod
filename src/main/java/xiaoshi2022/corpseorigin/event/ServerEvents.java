@@ -3,10 +3,16 @@ package xiaoshi2022.corpseorigin.event;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
+import xiaoshi2022.corpseorigin.item.CharacterBookItem;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+
+import java.util.UUID;
 
 /**
  * 服务端事件处理
@@ -41,6 +47,8 @@ public final class ServerEvents {
                     CorpseNetwork.sendPlayerCorpseSyncTo(other, player);
                 }
             }
+            // 生存开局：第一次进服的玩家发一本统一角色书
+            giveStarterBookOnce(player);
         });
 
         // 每 tick 末尾：把本 tick 改过尸兄数据的玩家统一广播一次
@@ -70,5 +78,35 @@ public final class ServerEvents {
         });
 
         CorpseOrigin.LOGGER.info("CorpseOrigin server events registered");
+    }
+
+    /**
+     * 生存开局送一本「统一角色书」—— 右键打开选人界面，从全部已注册角色里挑一位，选完书消失。
+     * <p>
+     * <b>创造模式不发</b>（他们能直接从创造页签里拿），而且这一条写在"打标记"之前，
+     * 所以创造模式的玩家只是<b>这次不发</b>，并没有被记成"已领过"——
+     * 等他哪天转生存了，下次登录照样能领到。
+     * <p>
+     * 每个玩家只发一次：<b>发的那一刻</b>就在 {@link PlayerCharacterData} 里打上标记（跟随世界存档，
+     * 并且跟着换身搬家的那条 NBT 通路一起走），所以重复登录、死亡重生、换身都不会再收到第二本。
+     * <p>
+     * 老存档里"从没领过"的玩家下次登录会补一本 —— 不然他们没有任何选角色的入口。
+     * 背包满时 {@code placeItemBackInInventory} 会把它丢在脚下，不会凭空消失。
+     */
+    private static void giveStarterBookOnce(ServerPlayer player) {
+        if (player.isCreative()) {
+            return;
+        }
+
+        PlayerCharacterData data = PlayerCharacterData.get(player);
+        UUID uuid = player.getUUID();
+        if (data.hasReceivedStarterBook(uuid)) {
+            return;
+        }
+
+        data.markStarterBookReceived(uuid);
+        player.getInventory().placeItemBackInInventory(CharacterBookItem.createUnboundStack());
+        player.sendOverlayMessage(Component.translatable("message.corpseorigin.character_book.starter")
+                .withStyle(ChatFormatting.GOLD));
     }
 }

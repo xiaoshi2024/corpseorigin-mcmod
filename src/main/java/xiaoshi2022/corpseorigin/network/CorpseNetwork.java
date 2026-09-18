@@ -82,6 +82,17 @@ public final class CorpseNetwork {
             });
         });
 
+        // ✅ 统一角色书：界面里选完 → 服务端校验手上拿着书 → 应用角色 + 消耗一本
+        PayloadTypeRegistry.serverboundPlay().register(
+                CorpsePayloads.CharacterBookSelectC2S.TYPE,
+                CorpsePayloads.CharacterBookSelectC2S.CODEC);
+
+        ServerPlayNetworking.registerGlobalReceiver(CorpsePayloads.CharacterBookSelectC2S.TYPE, (payload, context) -> {
+            ServerPlayer player = context.player();
+            context.server().execute(() ->
+                    xiaoshi2022.corpseorigin.item.CharacterBookItem.selectFromBook(player, payload.characterId()));
+        });
+
         PayloadTypeRegistry.clientboundPlay().register(
                 CorpsePayloads.TempRedEyeSyncS2C.TYPE,
                 CorpsePayloads.TempRedEyeSyncS2C.CODEC);

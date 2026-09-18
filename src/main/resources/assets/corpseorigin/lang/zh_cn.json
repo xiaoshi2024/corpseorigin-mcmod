@@ -14,9 +14,17 @@
   "item.corpseorigin.character_book": "角色选择书",
   "item.corpseorigin.character_book.named": "角色选择书：%s",
   "item.corpseorigin.character_book.tooltip": "右键使用：切换为该角色",
+  "item.corpseorigin.character_book.tooltip.unbound": "右键使用：打开角色选择界面（选完这本书就消失）",
   "message.corpseorigin.character_book.success": "已切换为角色：%s",
   "message.corpseorigin.character_book.already": "你当前已经是 %s",
   "message.corpseorigin.character_book.skills": "该角色技能（需在技能树中解锁）：",
+  "message.corpseorigin.character_book.starter": "你获得了一本《角色选择书》—— 右键打开，选一位角色开始",
+
+  "gui.corpseorigin.character_book": "角色选择书",
+  "gui.corpseorigin.character_book.hint": "选择一位角色 —— 选定后这本书就会消失",
+  "gui.corpseorigin.character_book.current": "当前角色",
+  "gui.corpseorigin.character_book.select": "点击选择",
+  "gui.corpseorigin.character_book.scroll_hint": "滚轮翻页",
 
   "item.corpseorigin.bywater_bucket": "尸水桶",
   "item.corpseorigin.bywater_bottle": "尸水瓶",
@@ -73,6 +81,7 @@
   "fluid.corpseorigin.flowing_infected_water": "流动的尸水",
 
   "entity.corpseorigin.lower_level_zb": "低级尸兄",
+  "entity.corpseorigin.aotuman_zb": "凹凸曼尸兄",
   "entity.corpseorigin.juque_beam": "巨阙剑气",
   "entity.corpseorigin.flying_great_sword": "飞行巨剑",
   "entity.corpseorigin.clone_avatar": "克隆分身",

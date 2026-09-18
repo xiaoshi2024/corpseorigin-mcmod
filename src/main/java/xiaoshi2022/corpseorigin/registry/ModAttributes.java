@@ -26,6 +26,12 @@ public final class ModAttributes {
                 LowerLevelZbEntity.createAttributes()
         );
 
+        // 凹凸曼尸兄（低级尸兄的虚弱原皮版本）
+        FabricDefaultAttributeRegistry.register(
+                ModEntities.AOTUMAN_ZB,
+                AotumanZbEntity.createAttributes()
+        );
+
         FabricDefaultAttributeRegistry.register(ModEntities.CLONE_AVATAR, CloneAvatarEntity.createAttributes());
 
         // CoCo 企鹅 / 一阶段尸兄 / 二阶段合体尸兄

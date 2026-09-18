@@ -25,7 +25,8 @@ public class PlayerCharacterData extends SavedData {
                     .optionalFieldOf("learned_skills", List.of())
                     .forGetter(e -> List.copyOf(e.learnedSkills)),
             Codec.INT.optionalFieldOf("earned_points", 0).forGetter(e -> e.earnedPoints),
-            Codec.INT.optionalFieldOf("available_points", 0).forGetter(e -> e.availablePoints)
+            Codec.INT.optionalFieldOf("available_points", 0).forGetter(e -> e.availablePoints),
+            Codec.BOOL.optionalFieldOf("starter_book", false).forGetter(e -> e.starterBookGiven)
     ).apply(inst, PlayerEntry::new));
 
     private static final Codec<PlayerCharacterData> CODEC = RecordCodecBuilder.create(inst -> inst.group(
@@ -90,18 +91,21 @@ public class PlayerCharacterData extends SavedData {
         public Set<String> learnedSkills = new LinkedHashSet<>();
         public int earnedPoints = 0;
         public int availablePoints = 0;
+        /** 是否已经领过"生存开局"送的那本角色选择书（只发一次，防重复登录白嫖） */
+        public boolean starterBookGiven = false;
 
         public PlayerEntry() {
         }
 
         private PlayerEntry(String characterId, List<String> learnedSkills,
-                            int earnedPoints, int availablePoints) {
+                            int earnedPoints, int availablePoints, boolean starterBookGiven) {
             this.characterId = characterId;
             for (String skill : learnedSkills) {
                 this.learnedSkills.add(normalizeSkillId(skill));
             }
             this.earnedPoints = earnedPoints;
             this.availablePoints = availablePoints;
+            this.starterBookGiven = starterBookGiven;
         }
     }
 
@@ -113,6 +117,23 @@ public class PlayerCharacterData extends SavedData {
 
     public void setCharacterId(UUID uuid, String characterId) {
         getEntry(uuid).characterId = characterId;
+        setDirty();
+    }
+
+    // ==================== 开局角色书 ====================
+
+    /** 是否已经领过"生存开局"送的那本统一角色书 */
+    public boolean hasReceivedStarterBook(UUID uuid) {
+        return getEntry(uuid).starterBookGiven;
+    }
+
+    /**
+     * 标记开局角色书已发。
+     * <p>
+     * <b>发的同一刻就写</b>，而不是等玩家用掉才写 —— 否则玩家每次登录都会再收到一本。
+     */
+    public void markStarterBookReceived(UUID uuid) {
+        getEntry(uuid).starterBookGiven = true;
         setDirty();
     }
 
@@ -178,6 +199,9 @@ public class PlayerCharacterData extends SavedData {
 
         tag.putInt("Earned", entry.earnedPoints);
         tag.putInt("Available", entry.availablePoints);
+        // 开局角色书是否已发也要跟着走：这条 NBT 是换身/换壳搬家用的一条独立通路，
+        // 漏掉的话换一次身就会"重置"，下次登录又白给一本
+        tag.putBoolean("StarterBook", entry.starterBookGiven);
         return tag;
     }
 
@@ -199,6 +223,7 @@ public class PlayerCharacterData extends SavedData {
 
         entry.earnedPoints = tag.getIntOr("Earned", 0);
         entry.availablePoints = tag.getIntOr("Available", 0);
+        entry.starterBookGiven = tag.getBooleanOr("StarterBook", false);
 
         setDirty();
     }

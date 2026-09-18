@@ -19,6 +19,17 @@ public final class ModEntities {
                     .clientTrackingRange(8)
     );
 
+    /**
+     * 凹凸曼尸兄 —— 低阶尸兄的"原皮"版本：贴图直接用 {@code textures/entity/aotuman.png}
+     * （不叠尸化骨骼层，所以脸上没有尸眼），虚弱且不主动攻击。见 {@link AotumanZbEntity}。
+     */
+    public static final EntityType<AotumanZbEntity> AOTUMAN_ZB = register(
+            "aotuman_zb",
+            EntityType.Builder.<AotumanZbEntity>of(AotumanZbEntity::new, MobCategory.MONSTER)
+                    .sized(0.6f, 1.8f)
+                    .clientTrackingRange(8)
+    );
+
     // ✅ 新增剑气实体
     public static final EntityType<JuQueBeamEntity> JUQUE_BEAM = register(
             "juque_beam",

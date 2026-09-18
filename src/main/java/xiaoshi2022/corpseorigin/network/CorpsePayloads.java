@@ -35,6 +35,26 @@ public final class CorpsePayloads {
         }
     }
 
+    /**
+     * 「统一角色书」界面里选定角色（C2S）。
+     * <p>
+     * 和 {@link SelectCharacterC2S} 分开，是因为这条<b>要求手上真的拿着角色书</b>才生效：
+     * 服务端校验通过后才应用角色并消耗一本（创造模式除外）。界面只管发包，
+     * "换人 + 扣书"两件事都留在服务端判定。
+     */
+    public record CharacterBookSelectC2S(String characterId) implements CustomPacketPayload {
+        public static final Type<CharacterBookSelectC2S> TYPE = new Type<>(id("character_book_select"));
+        public static final StreamCodec<ByteBuf, CharacterBookSelectC2S> CODEC =
+                CustomPacketPayload.codec(
+                        (payload, buf) -> ByteBufCodecs.STRING_UTF8.encode(buf, payload.characterId()),
+                        buf -> new CharacterBookSelectC2S(ByteBufCodecs.STRING_UTF8.decode(buf)));
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
     public record CharacterSyncS2C(String characterId) implements CustomPacketPayload {
         public static final Type<CharacterSyncS2C> TYPE = new Type<>(id("character_sync"));
         public static final StreamCodec<ByteBuf, CharacterSyncS2C> CODEC =

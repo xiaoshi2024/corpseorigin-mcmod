@@ -14,9 +14,17 @@
   "item.corpseorigin.character_book": "Character Book",
   "item.corpseorigin.character_book.named": "Character Book: %s",
   "item.corpseorigin.character_book.tooltip": "Right-click to switch to this character",
+  "item.corpseorigin.character_book.tooltip.unbound": "Right-click to open the character selection (the book is consumed)",
   "message.corpseorigin.character_book.success": "Switched to character: %s",
   "message.corpseorigin.character_book.already": "You are already %s",
   "message.corpseorigin.character_book.skills": "Skills of this character (unlock them in the skill tree):",
+  "message.corpseorigin.character_book.starter": "You received a Character Book — right-click to pick your character",
+
+  "gui.corpseorigin.character_book": "Character Book",
+  "gui.corpseorigin.character_book.hint": "Pick a character — the book is consumed once you choose",
+  "gui.corpseorigin.character_book.current": "Current",
+  "gui.corpseorigin.character_book.select": "Click to select",
+  "gui.corpseorigin.character_book.scroll_hint": "Scroll to browse",
 
   "item.corpseorigin.bywater_bucket": "Infected Water Bucket",
   "item.corpseorigin.bywater_bottle": "Infected Water Bottle",
@@ -73,6 +81,7 @@
   "fluid.corpseorigin.flowing_infected_water": "Flowing Infected Water",
 
   "entity.corpseorigin.lower_level_zb": "Lower-level Corpse Brother",
+  "entity.corpseorigin.aotuman_zb": "Ultraman Corpse Brother",
   "entity.corpseorigin.juque_beam": "Juque Beam",
   "entity.corpseorigin.flying_great_sword": "Flying Great Sword",
   "entity.corpseorigin.clone_avatar": "Clone Avatar",

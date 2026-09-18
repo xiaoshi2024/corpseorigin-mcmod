@@ -130,6 +130,7 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         // 2. 实体渲染器
         EntityRendererRegistry.register(ModEntities.LOWER_LEVEL_ZB, LowerLevelZbRenderer::new);
+        EntityRendererRegistry.register(ModEntities.AOTUMAN_ZB, AotumanZbRenderer::new);
         EntityRendererRegistry.register(ModEntities.JUQUE_BEAM, JuQueBeamRenderer::new);
         EntityRendererRegistry.register(ModEntities.FLYING_GREAT_SWORD, FlyingGreatSwordRenderer::new);
         EntityRendererRegistry.register(ModEntities.CLONE_AVATAR,
