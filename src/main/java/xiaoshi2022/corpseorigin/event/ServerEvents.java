@@ -41,9 +41,10 @@ public final class ServerEvents {
         ServerTickEvents.END_SERVER_TICK.register(server ->
                 xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.flushPendingSync(server));
 
-        // 每 tick 推进天线宝宝尸兄的吸食（抓取 → 持续吸血 → 松手/被打断）
+        // 每 tick 推进天线宝宝盔甲的吸食（抓取 → 持续吸血 → 松手/被打断）
+        // 玩家和穿戴该套装的生物共用同一套逻辑
         ServerTickEvents.END_SERVER_TICK.register(
-                xiaoshi2022.corpseorigin.skill.tianxianbaobao_zb.LifeDrainSuckSkill::tick);
+                xiaoshi2022.corpseorigin.skill.tianxianbaobao_zb.EntityAntennaSuckHandler::tick);
 
         // 退出 → 清理
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {

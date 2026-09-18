@@ -14,6 +14,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -115,7 +117,8 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
 
     @Override
     public boolean ready() {
-        return this.clone != null && this.clone.isReady();
+        // 生物克隆体不参与夺舍列表，只能右键放出来
+        return this.clone != null && this.clone.isReady() && !this.clone.isEntityClone();
     }
 
     @Override
@@ -378,8 +381,12 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
             return InteractionResult.PASS;
         }
 
-        // ★ 仓里没身体就直接开始培育：分身在外面活动也不影响这座仓复用
+        // ★ 仓里没身体
         if (this.clone == null) {
+            // 潜行右键 + 仓内有生物：克隆该生物到附近空仓（消耗下界之星）
+            if (player.isSecondaryUseActive()) {
+                return this.tryCloneEntity(level, serverPlayer);
+            }
             return this.startConstruction(level, serverPlayer);
         }
 
@@ -387,6 +394,17 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
             this.actionbar(serverPlayer, Component.translatable(
                     "message.corpseorigin.clone_chamber.wrong_owner",
                     Component.literal(this.clone.getOwnerName() == null ? "?" : this.clone.getOwnerName())));
+            return InteractionResult.CONSUME;
+        }
+
+        // 生物克隆体：右键直接放出来（潜行也不允许夺舍）
+        if (this.clone.isEntityClone()) {
+            if (this.clone.isReady()) {
+                this.awakenClone((ServerLevel) level, state);
+                return InteractionResult.SUCCESS;
+            }
+            int percent = Mth.clamp((int) (this.clone.getProgress() / this.clone.getCompletion() * 100.0F), 0, 99);
+            this.actionbar(serverPlayer, Component.translatable("message.corpseorigin.clone_chamber.growing", percent));
             return InteractionResult.CONSUME;
         }
 
@@ -430,6 +448,13 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         if (this.clone == null) {
             return;
         }
+
+        // ★ 生物克隆体：直接生成对应生物实体，不走 CloneAvatarEntity 流程
+        if (this.clone.isEntityClone()) {
+            this.awakenEntityClone(level, state);
+            return;
+        }
+
         UUID ownerUuid = this.clone.getOwner();
         String ownerName = this.clone.getOwnerName();
         Direction facing = state.getValue(CloneChamberBlock.FACING);
@@ -484,6 +509,58 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         }
     }
 
+    /** 生物克隆体出仓：生成对应生物实体 */
+    private void awakenEntityClone(ServerLevel level, BlockState state) {
+        UUID ownerUuid = this.clone.getOwner();
+        Direction facing = state.getValue(CloneChamberBlock.FACING);
+        BlockPos spot = this.findAwakenSpot(level, state);
+        double x = spot.getX() + 0.5;
+        double y = spot.getY();
+        double z = spot.getZ() + 0.5;
+
+        // 根据存储的实体类型生成实体
+        Identifier entityId = this.clone.getEntityType();
+        var ref = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(entityId).orElse(null);
+        EntityType<?> entityType = ref == null ? null : ref.value();
+        if (entityType == null) {
+            // 类型不存在，清空仓体
+            this.clone = null;
+            this.setChanged();
+            level.sendBlockUpdated(this.worldPosition, state, state, Block.UPDATE_ALL);
+            return;
+        }
+
+        net.minecraft.world.entity.Entity entity = entityType.create(level,
+                net.minecraft.world.entity.EntitySpawnReason.LOAD);
+        if (entity != null) {
+            // 加载存储的 NBT（保留生物属性/装备/状态）
+            if (this.clone.getEntityData() != null) {
+                net.minecraft.nbt.CompoundTag data = this.clone.getEntityData().copy();
+                entity.load(net.minecraft.world.level.storage.TagValueInput.create(
+                        net.minecraft.util.ProblemReporter.DISCARDING,
+                        level.registryAccess(),
+                        data));
+            }
+            entity.setPos(x, y, z);
+            entity.setYRot(facing.toYRot());
+            entity.setXRot(0.0F);
+            entity.setYHeadRot(facing.toYRot());
+            level.addFreshEntity(entity);
+        }
+
+        // 清空仓体
+        this.unindexBody(level, ownerUuid);
+        this.unregisterFromRegistry();
+        this.clone = null;
+        this.readyTicks = 0;
+        this.setChanged();
+        level.sendBlockUpdated(this.worldPosition, state, state, Block.UPDATE_ALL);
+        ServerPlayer owner = ownerPlayer(level, ownerUuid);
+        if (owner != null) {
+            CorpseNetwork.refreshShellStates(owner);
+        }
+    }
+
     /** 出仓落点：正面优先，其次左右、背面；都不通就还是正面（交给物理挤出） */
     private BlockPos findAwakenSpot(ServerLevel level, BlockState state) {
         Direction facing = state.getValue(CloneChamberBlock.FACING);
@@ -499,6 +576,141 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
             }
         }
         return this.worldPosition.relative(facing, 2);
+    }
+
+    // ==================== 生物克隆 ====================
+
+    /**
+     * 克隆仓内生物到附近空克隆仓。
+     * <p>
+     * 流程：玩家把生物推进空仓 → 潜行右键 → 消耗 1 下界之星 → 生物 NBT 被复制到最近的空仓开始培育。
+     */
+    private InteractionResult tryCloneEntity(Level level, ServerPlayer player) {
+        // 1. 检测仓内是否有可克隆生物
+        net.minecraft.world.entity.Entity entity = findEntityInside(level);
+        if (entity == null || entity instanceof Player) {
+            this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.no_entity"));
+            return InteractionResult.CONSUME;
+        }
+        // 只克隆活体生物
+        if (!(entity instanceof net.minecraft.world.entity.LivingEntity living)) {
+            this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.no_entity"));
+            return InteractionResult.CONSUME;
+        }
+
+        // 2. 检查下界之星
+        ItemStack star = findNetherStar(player);
+        if (star.isEmpty()) {
+            this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.need_star"));
+            return InteractionResult.CONSUME;
+        }
+
+        // 3. 找附近的空克隆仓
+        CloneChamberBlockEntity target = findNearbyEmptyChamber(level);
+        if (target == null) {
+            this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.no_empty_chamber"));
+            return InteractionResult.CONSUME;
+        }
+
+        // 4. 消耗下界之星
+        star.shrink(1);
+
+        // 5. 保存生物 NBT（剥离 UUID/位置/维度，生成时重新赋值）
+        net.minecraft.world.level.storage.TagValueOutput output =
+                net.minecraft.world.level.storage.TagValueOutput.createWithoutContext(
+                        net.minecraft.util.ProblemReporter.DISCARDING);
+        living.saveWithoutId(output);
+        net.minecraft.nbt.CompoundTag entityNbt = output.buildResult();
+        entityNbt.remove("UUID");
+        entityNbt.remove("Pos");
+        entityNbt.remove("Dimension");
+        entityNbt.remove("Rotation");
+        entityNbt.remove("Motion");
+
+        Identifier entityId = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(living.getType());
+
+        // 6. 在目标仓开始培育生物克隆体
+        target.startEntityClone(player, entityId, entityNbt);
+
+        this.actionbar(player, Component.translatable("message.corpseorigin.clone_chamber.entity_cloned"));
+        level.playSound(null, this.worldPosition, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 0.7F, 0.8F);
+        return InteractionResult.SUCCESS;
+    }
+
+    /** 检测仓内（上下两格）的非玩家实体 */
+    @Nullable
+    private net.minecraft.world.entity.Entity findEntityInside(Level level) {
+        BlockPos lower = this.worldPosition;
+        BlockPos upper = lower.above();
+        AABB box = new AABB(lower).minmax(new AABB(upper)).inflate(0.1);
+        net.minecraft.world.entity.Entity closest = null;
+        double bestDist = Double.MAX_VALUE;
+        for (net.minecraft.world.entity.Entity e : level.getEntities((net.minecraft.world.entity.Entity) null, box,
+                e -> e.isAlive() && !(e instanceof Player) && !(e instanceof CloneAvatarEntity))) {
+            double d = e.distanceToSqr(lower.getX() + 0.5, lower.getY() + 0.5, lower.getZ() + 0.5);
+            if (d < bestDist) {
+                bestDist = d;
+                closest = e;
+            }
+        }
+        return closest;
+    }
+
+    /** 玩家身上是否有下界之星 */
+    private static ItemStack findNetherStar(Player player) {
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (stack.is(net.minecraft.world.item.Items.NETHER_STAR)) {
+                return stack;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    /** 找附近（8 格内）的空克隆仓 */
+    @Nullable
+    private CloneChamberBlockEntity findNearbyEmptyChamber(Level level) {
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        CloneChamberBlockEntity best = null;
+        double bestDist = 64.0;   // 8 格
+        for (int dx = -8; dx <= 8; dx++) {
+            for (int dy = -4; dy <= 4; dy++) {
+                for (int dz = -8; dz <= 8; dz++) {
+                    pos.set(this.worldPosition.getX() + dx, this.worldPosition.getY() + dy, this.worldPosition.getZ() + dz);
+                    BlockState state = level.getBlockState(pos);
+                    if (!(state.getBlock() instanceof CloneChamberBlock)) continue;
+                    BlockPos lowerPos = CloneChamberBlock.isLower(state) ? pos : pos.below();
+                    if (level.getBlockEntity(lowerPos) instanceof CloneChamberBlockEntity chamber
+                            && chamber != this && chamber.clone == null) {
+                        double d = lowerPos.distSqr(this.worldPosition);
+                        if (d < bestDist) {
+                            bestDist = d;
+                            best = chamber;
+                        }
+                    }
+                }
+            }
+        }
+        return best;
+    }
+
+    /** 在本仓培育一具生物克隆体 */
+    private void startEntityClone(ServerPlayer player, Identifier entityId, net.minecraft.nbt.CompoundTag entityNbt) {
+        ShellStateComponent components = ShellStateComponent.empty();
+        // 生物克隆体不继承玩家身体，body 留空
+        this.clone = new CloneState(player.getUUID(), player.getScoreboardName(), 0.0F, null, components);
+        this.clone.setEntityType(entityId);
+        this.clone.setEntityData(entityNbt);
+        // 生物克隆完成度固定 100%，但仍需培育时间
+        this.clone.setCompletion(1.0F);
+        this.clone.setAutoAwaken(!player.isCreative());
+        this.registerToRegistry();
+        if (this.level instanceof ServerLevel serverLevel) {
+            this.indexBody(serverLevel);
+        }
+        this.setChanged();
+        this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), Block.UPDATE_ALL);
+        CorpseNetwork.refreshShellStates(player);
     }
 
     private InteractionResult startConstruction(Level level, ServerPlayer player) {
@@ -653,6 +865,13 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
             cloneTag.putFloat("Progress", this.clone.getProgress());
             // ★ 这具克隆体自己的完成度：客户端渲染靠它判断是否已"成熟"
             cloneTag.putFloat("Completion", this.clone.getCompletion());
+            // ★ 生物克隆体：把实体类型和 NBT 下发给客户端，渲染器据此画出对应生物
+            if (this.clone.getEntityType() != null) {
+                cloneTag.putString("EntityType", this.clone.getEntityType().toString());
+                if (this.clone.getEntityData() != null) {
+                    cloneTag.put("EntityData", this.clone.getEntityData().copy());
+                }
+            }
             // ★ 盔甲也要下发，否则客户端画的仓内克隆人光着
             if (!this.clone.getEquipment().isEmpty()) {
                 var out = net.minecraft.world.level.storage.TagValueOutput.createWithContext(
@@ -672,6 +891,18 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
     /** 供渲染取用的盔甲（顺序：头/胸/腿/脚） */
     public List<net.minecraft.world.item.ItemStack> getEquipment() {
         return this.clone == null ? List.of() : this.clone.getEquipment();
+    }
+
+    /** 生物克隆体的实体类型 ID；null 表示玩家克隆体 */
+    @Nullable
+    public Identifier getCloneEntityType() {
+        return this.clone == null ? null : this.clone.getEntityType();
+    }
+
+    /** 生物克隆体的 NBT（含外观/装备/状态） */
+    @Nullable
+    public net.minecraft.nbt.CompoundTag getCloneEntityData() {
+        return this.clone == null ? null : this.clone.getEntityData();
     }
 
     /**

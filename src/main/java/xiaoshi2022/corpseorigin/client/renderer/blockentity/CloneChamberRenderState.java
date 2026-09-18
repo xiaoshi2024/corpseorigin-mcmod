@@ -2,6 +2,8 @@ package xiaoshi2022.corpseorigin.client.renderer.blockentity;
 
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.FluidState;
 import org.jetbrains.annotations.Nullable;
@@ -22,6 +24,14 @@ public class CloneChamberRenderState extends BlockEntityRenderState {
     public UUID bodyUuid;
     /** 仓内身体穿的盔甲（顺序：头/胸/腿/脚），来自方块实体更新包 */
     public List<ItemStack> equipment = List.of();
+    /** 生物克隆体的实体类型 ID；非 null 表示这是生物克隆体（非玩家） */
+    @Nullable
+    public Identifier entityType;
+    /** 生物克隆体的 NBT（用于加载外观/装备/状态到离屏实体） */
+    @Nullable
+    public CompoundTag entityData;
+    /** 当前帧的 partial tick（供实体渲染器做动画插值） */
+    public float partialTick;
     /**
      * 仓内液体的真实流体状态。
      * <p>

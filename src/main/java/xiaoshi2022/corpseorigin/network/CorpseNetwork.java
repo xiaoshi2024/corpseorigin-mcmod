@@ -435,21 +435,21 @@ public final class CorpseNetwork {
     }
 
     /**
-     * 广播「某位玩家正在吸食谁」给全服（含他自己）。
+     * 广播「某位穿戴着天线宝宝盔甲的实体正在吸食谁」给全服。
      * <p>
      * 盔甲的 absorb 动画和触手朝向都是渲染时看的，所以要发给所有玩家；
      * {@code durationTicks <= 0} 表示立刻结束（松手 / 被打断），此时 targetEntityId 传 -1。
+     * <p>
+     * 支持玩家和任意穿戴该套装的生物：caster 可以是 ServerPlayer 或 LivingEntity。
      */
-    public static void broadcastAntennaSuck(ServerPlayer player, int targetEntityId, int durationTicks) {
+    public static void broadcastAntennaSuck(net.minecraft.world.entity.LivingEntity caster, int targetEntityId, int durationTicks) {
         CorpsePayloads.AntennaSuckSyncS2C packet =
-                new CorpsePayloads.AntennaSuckSyncS2C(player.getUUID(), targetEntityId, durationTicks);
-        MinecraftServer server = player.level().getServer();
+                new CorpsePayloads.AntennaSuckSyncS2C(caster.getUUID(), targetEntityId, durationTicks);
+        MinecraftServer server = caster.level().getServer();
         if (server != null) {
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {
                 ServerPlayNetworking.send(p, packet);
             }
-        } else {
-            ServerPlayNetworking.send(player, packet);
         }
     }
 

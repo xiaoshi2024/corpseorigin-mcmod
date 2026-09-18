@@ -28,6 +28,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.PlayerSkin;
@@ -130,6 +131,9 @@ public class CloneChamberRenderer
         state.ownerUuid = chamber.getOwnerUuid();
         state.bodyUuid = chamber.bodyUuid();
         state.equipment = chamber.getEquipment();
+        state.entityType = chamber.getCloneEntityType();
+        state.entityData = chamber.getCloneEntityData();
+        state.partialTick = partialTick;
 
         // ★ "别的模组的液体"在方块状态里只能记成 OTHER，外观改由渲染器自绘：
         //   贴图用原版水/熔岩的，颜色取流体自己烘焙模型上的染色
@@ -210,7 +214,7 @@ public class CloneChamberRenderer
 
         // ===== 3. 克隆人（只在下半格渲染） =====
         if (state.lowerHalf && state.hasClone) {
-            renderClone(pose, collector, state);
+            renderClone(pose, collector, state, camera);
         }
 
         // 右门：铰链 origin [15.5, 16, 1]
@@ -386,7 +390,13 @@ public class CloneChamberRenderer
     private static final float BODY_Y = INTERIOR_FLOOR_Y;
     private static final float BODY_Z = INTERIOR_CENTER_Z;
 
-    private void renderClone(PoseStack pose, SubmitNodeCollector collector, CloneChamberRenderState state) {
+    private void renderClone(PoseStack pose, SubmitNodeCollector collector, CloneChamberRenderState state, CameraRenderState camera) {
+        // ★ 生物克隆体：用对应生物的渲染器画出和原实体一样的外观
+        if (state.entityType != null) {
+            renderEntityClone(pose, collector, state, camera);
+            return;
+        }
+
         float progress = state.cloneProgress;
         PlayerSkin skin = ClientSkinCache.resolve(state.ownerUuid);
         boolean grown = progress >= 1.0F;   // getCloneProgress() 已按这具身体自己的完成度归一化
@@ -460,6 +470,97 @@ public class CloneChamberRenderer
             }
             renderCorpseParts(pose, collector, state, avatar);
         }
+
+        pose.popPose();
+    }
+
+    // ==================== 生物克隆体渲染 ====================
+
+    /** 缓存的离屏生物实体（按实体类型 ID 缓存，避免每帧重建） */
+    private static final java.util.Map<Identifier, net.minecraft.world.entity.Entity> ENTITY_CACHE = new java.util.HashMap<>();
+
+    /** 离屏实体的 id 发号器：用递减的负数，保证非 0 且不与服务端分配的正数 id 撞车 */
+    private static int nextOffscreenId = -1;
+
+    /**
+     * 渲染生物克隆体：用该生物类型自己的渲染器画出和原实体完全一致的外观。
+     * <p>
+     * 方案：客户端创建一具同类型的离屏实体，加载存储的 NBT（保留装备/外观/状态），
+     * 再用 {@code EntityRenderDispatcher.submit} 画到仓内。实体不加入世界，纯渲染用。
+     */
+    private void renderEntityClone(PoseStack pose, SubmitNodeCollector collector, CloneChamberRenderState state, CameraRenderState camera) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || state.entityType == null) {
+            return;
+        }
+
+        // 1. 取（或创建）离屏实体
+        net.minecraft.world.entity.Entity entity = ENTITY_CACHE.get(state.entityType);
+        boolean created = false;
+        if (entity == null || entity.level() != mc.level) {
+            var ref = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(state.entityType).orElse(null);
+            if (ref == null) return;
+            net.minecraft.world.entity.EntityType<?> type = ref.value();
+            entity = type.create(mc.level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
+            if (entity == null) return;
+            created = true;
+            ENTITY_CACHE.put(state.entityType, entity);
+        }
+
+        // 2. 加载 NBT（保留外观/装备/状态效果）
+        if (state.entityData != null) {
+            net.minecraft.nbt.CompoundTag data = state.entityData.copy();
+            entity.load(net.minecraft.world.level.storage.TagValueInput.create(
+                    net.minecraft.util.ProblemReporter.DISCARDING,
+                    mc.level.registryAccess(),
+                    data));
+        }
+
+        // ★ 实体没加入世界就没有 id（id == 0），而 GeckoLib 提取渲染状态时会给手持物
+        //   调 ItemModelResolver.updateForLiving → Entity.getId()，那里对 id == 0 直接抛
+        //   "Tried to access entity ID before ID assignment"。
+        //   放在 load 之后补，免得被 NBT 里的字段盖掉；只在新建那一帧补一次，缓存的实体沿用。
+        if (created) {
+            entity.setId(nextOffscreenId--);
+        }
+
+        // 3. 定位到仓内中心，适当缩放适应仓体
+        pose.pushPose();
+        pose.translate(BODY_X, BODY_Y, BODY_Z);
+        float scale = 0.9F;
+        pose.scale(scale, scale, scale);
+        // 朝向玩家（面朝仓门）
+        pose.mulPose(Axis.YP.rotationDegrees(180.0F));
+
+        // 4. 提取实体渲染状态并提交绘制
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        net.minecraft.client.renderer.entity.EntityRenderer renderer =
+                mc.getEntityRenderDispatcher().getRenderer(entity);
+
+        // GeckoLib 的 createRenderState() 返回 null，必须用 createRenderState(animatable, partialTick)
+        // 它内部会同时完成创建 + extractRenderState + finalizeRenderState
+        net.minecraft.client.renderer.entity.state.EntityRenderState renderState;
+        if (renderer instanceof com.geckolib.renderer.GeoEntityRenderer geoRenderer) {
+            renderState = geoRenderer.createRenderState(entity, state.partialTick);
+        } else {
+            renderState = renderer.createRenderState();
+            if (renderState != null) {
+                renderer.extractRenderState(entity, renderState, state.partialTick);
+            }
+        }
+
+        if (renderState == null) {
+            pose.popPose();
+            return;
+        }
+
+        // ★ 补光照：正常走 EntityRenderDispatcher 时它会先按实体所在位置算好 lightCoords
+        //   再 extract，我们这里是手动 extract 的，不补这一句光照就恒为 0 —— 画出来一片死黑。
+        //   直接用仓格自己的光照即可（克隆体就在仓里）。
+        renderState.lightCoords = state.lightCoords;
+
+        mc.getEntityRenderDispatcher().submit(
+                renderState, camera, 0, 0, 0, pose, collector);
 
         pose.popPose();
     }

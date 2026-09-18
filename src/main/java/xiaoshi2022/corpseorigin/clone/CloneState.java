@@ -1,8 +1,10 @@
 package xiaoshi2022.corpseorigin.clone;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import org.jetbrains.annotations.Nullable;
 import xiaoshi2022.corpseorigin.shell.ShellStateComponent;
 
 import java.util.UUID;
@@ -41,6 +43,17 @@ public class CloneState {
     private ShellStateComponent component = ShellStateComponent.empty();
     /** 这具身体穿的四件盔甲（头/胸/腿/脚），用于克隆人渲染 */
     private java.util.List<net.minecraft.world.item.ItemStack> equipment = java.util.List.of();
+    /**
+     * 生物克隆体：被克隆生物的实体类型 ID。
+     * <p>
+     * 非 null 表示这具克隆体是生物（非玩家），{@link #body} 存的是该生物的 NBT；
+     * null 表示玩家克隆体，{@link #body} 存的是玩家 NBT。
+     */
+    @Nullable
+    private Identifier entityType;
+    /** 生物克隆体的原始 NBT（不含 UUID/Pos，生成时再赋值） */
+    @Nullable
+    private CompoundTag entityData;
     /**
      * 培育成熟后是否自己苏醒、走出培养仓。
      * <p>
@@ -117,6 +130,30 @@ public class CloneState {
         this.equipment = equipment == null ? java.util.List.of() : java.util.List.copyOf(equipment);
     }
 
+    /** 生物克隆体的实体类型 ID；null 表示玩家克隆体 */
+    @Nullable
+    public Identifier getEntityType() {
+        return this.entityType;
+    }
+
+    public void setEntityType(@Nullable Identifier entityType) {
+        this.entityType = entityType;
+    }
+
+    /** 生物克隆体是否为非玩家生物 */
+    public boolean isEntityClone() {
+        return this.entityType != null;
+    }
+
+    @Nullable
+    public CompoundTag getEntityData() {
+        return this.entityData;
+    }
+
+    public void setEntityData(@Nullable CompoundTag entityData) {
+        this.entityData = entityData;
+    }
+
     /** 成熟后是否自己走出培养仓（只有自然培育出来的身体为 true） */
     public boolean isAutoAwaken() {
         return this.autoAwaken;
@@ -146,6 +183,12 @@ public class CloneState {
         if (!this.equipment.isEmpty()) {
             out.store("Equipment", net.minecraft.world.item.ItemStack.OPTIONAL_CODEC.listOf(), this.equipment);
         }
+        if (this.entityType != null) {
+            out.putString("EntityType", this.entityType.toString());
+        }
+        if (this.entityData != null) {
+            out.store("EntityData", CompoundTag.CODEC, this.entityData);
+        }
     }
 
     /** 从磁盘存档或方块实体更新包读取（更新包里没有 Body 时身体快照为 null） */
@@ -161,6 +204,8 @@ public class CloneState {
         state.setAutoAwaken(in.getBooleanOr("AutoAwaken", false));
         state.setEquipment(in.read("Equipment", net.minecraft.world.item.ItemStack.OPTIONAL_CODEC.listOf())
                 .orElse(java.util.List.of()));
+        in.getString("EntityType").map(Identifier::tryParse).ifPresent(state::setEntityType);
+        in.read("EntityData", CompoundTag.CODEC).ifPresent(state::setEntityData);
         return state;
     }
 }

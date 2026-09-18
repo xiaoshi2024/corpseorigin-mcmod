@@ -7,27 +7,36 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.character.TianXianBaoBaoZb;
+import xiaoshi2022.corpseorigin.item.armor.AntennaZBRitem;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.skill.tianxianbaobao_zb.AntennaBlockSkill;
+import xiaoshi2022.corpseorigin.skill.tianxianbaobao_zb.EntityAntennaSuckHandler;
 
 /**
  * 天线宝宝尸兄专属事件处理。
  * <p>
- * 承载「天线格挡」：挨到<b>斧头</b>或<b>箭矢/投掷物</b>时 ——
+ * 承载两件事：
  * <ul>
- *   <li><b>被动（常驻）</b>：{@value AntennaBlockSkill#PASSIVE_BLOCK_CHANCE_PERCENT}% 概率
- *       把这一击整个挡掉；</li>
- *   <li><b>主动（手动触发）</b>：{@link AntennaBlockSkill#isGuarding} 为真期间<b>必定</b>挡下。</li>
+ *   <li><b>「天线格挡」</b>：挨到<b>斧头</b>或<b>箭矢/投掷物</b>时 ——
+ *       <ul>
+ *         <li><b>被动（常驻）</b>：{@value AntennaBlockSkill#PASSIVE_BLOCK_CHANCE_PERCENT}% 概率
+ *             把这一击整个挡掉；</li>
+ *         <li><b>主动（手动触发）</b>：{@link AntennaBlockSkill#isGuarding} 为真期间<b>必定</b>挡下。</li>
+ *       </ul>
+ *       两种都是"整下挡掉"（不是减伤），挡下时会广播动画信号给客户端。
+ *       和尸水之源、黑金心脏一个套路 —— 要该玩家是天线宝宝尸兄、且已学会这个技能才会触发；
+ *       想要"是天线宝宝尸兄就常驻"的话，把 {@link #hasAntennaBlock} 里的 {@code hasLearned} 去掉即可。</li>
+ *   <li><b>「吸食」（生物）</b>：非玩家生物只要穿戴了天线宝宝套装，攻击命中时就能发动吸食 ——
+ *       抓取距最近的目标持续吸血，并让身上的盔甲播 {@code absorb} 动画。
+ *       逻辑与玩家的技能入口完全共用（{@link EntityAntennaSuckHandler}）。</li>
  * </ul>
- * 两种都是"整下挡掉"（不是减伤），挡下时会广播动画信号给客户端。
- * 和尸水之源、黑金心脏一个套路 —— 要该玩家是天线宝宝尸兄、且已学会这个技能才会触发；
- * 想要"是天线宝宝尸兄就常驻"的话，把 {@link #hasAntennaBlock} 里的 {@code hasLearned} 去掉即可。
  */
 public final class TianXianBaoBaoEventHandler {
 
@@ -55,7 +64,39 @@ public final class TianXianBaoBaoEventHandler {
             return false;
         });
 
+        // ★ 生物穿戴天线宝宝套装 → 攻击命中时发动吸食（玩家走技能入口，这里跳过）
+        ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+            if (!(source.getEntity() instanceof LivingEntity attacker)) {
+                return true;
+            }
+            if (attacker instanceof ServerPlayer) {
+                return true;
+            }
+            if (!wearsAntennaSet(attacker)) {
+                return true;
+            }
+            // 已经在吸 / 附近没目标时内部直接返回 false，不会重复触发
+            EntityAntennaSuckHandler.start(attacker);
+            return true;
+        });
+
         CorpseOrigin.LOGGER.info("TianXianBaoBao events registered");
+    }
+
+    /**
+     * 这个生物身上有没有穿戴天线宝宝套装（头盔 / 胸甲 / 护腿任意一件）。
+     * <p>
+     * 判定用 {@code instanceof AntennaZBRitem}，所以不依赖具体是哪个槽位、也不受以后
+     * 新增部件影响；玩家由技能入口负责，不走这条。
+     */
+    private static boolean wearsAntennaSet(LivingEntity entity) {
+        for (EquipmentSlot slot : new EquipmentSlot[]{
+                EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS}) {
+            if (entity.getItemBySlot(slot).getItem() instanceof AntennaZBRitem) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -450,6 +450,10 @@
   "hud.corpseorigin.toggle.off": "HUD: OFF",
 
   "message.corpseorigin.clone_chamber.avatar_activated": "Avatar activated",
+  "message.corpseorigin.clone_chamber.no_entity": "No cloneable entity inside chamber",
+  "message.corpseorigin.clone_chamber.need_star": "Requires 1 Nether Star to clone entity",
+  "message.corpseorigin.clone_chamber.no_empty_chamber": "No empty clone chamber nearby",
+  "message.corpseorigin.clone_chamber.entity_cloned": "Entity DNA copied to nearby chamber",
 
   "key.corpseorigin.toggle_hud": "Toggle HUD"
 }
