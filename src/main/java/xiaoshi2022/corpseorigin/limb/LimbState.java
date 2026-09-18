@@ -12,12 +12,15 @@ import java.util.Arrays;
  */
 public record LimbState(byte mask, int[] regrowTicks, int[] totals, int[] cooldowns) {
 
-    public static final LimbState EMPTY = new LimbState(
-            LimbSlots.NONE,
-            new int[]{LimbSlots.REGROW_PERMANENT, LimbSlots.REGROW_PERMANENT,
-                    LimbSlots.REGROW_PERMANENT, LimbSlots.REGROW_PERMANENT},
-            new int[LimbSlots.COUNT],
-            new int[LimbSlots.COUNT]);
+    public static final LimbState EMPTY = createEmpty();
+
+    /** 空状态按部位数量生成，加部位时不用手改数组长度 */
+    private static LimbState createEmpty() {
+        int[] regrow = new int[LimbSlots.COUNT];
+        java.util.Arrays.fill(regrow, LimbSlots.REGROW_PERMANENT);
+        return new LimbState(LimbSlots.NONE, regrow,
+                new int[LimbSlots.COUNT], new int[LimbSlots.COUNT]);
+    }
 
     /** 可写的空状态（数组是独立副本） */
     public static LimbState empty() {

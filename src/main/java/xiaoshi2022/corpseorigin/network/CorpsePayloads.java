@@ -6,6 +6,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 
 import java.util.UUID;
@@ -210,6 +211,7 @@ public final class CorpsePayloads {
     // ==================== ✅ 内力同步（S2C） ====================
 
     public record InnerPowerSyncS2C(int current, int max) implements CustomPacketPayload {
+
         public static final Type<InnerPowerSyncS2C> TYPE = new Type<>(id("inner_power_sync"));
 
         public static final StreamCodec<ByteBuf, InnerPowerSyncS2C> CODEC = StreamCodec.composite(
@@ -223,6 +225,63 @@ public final class CorpsePayloads {
         @Override
         public Type<? extends CustomPacketPayload> type() {
             return TYPE;
+        }
+    }
+
+    // ==================== ✅ 尸王雷电特效（S2C） ====================
+
+    /**
+     * 一道紫色雷电：从 from 劈到 to，客户端渲染 durationTicks 后消散。
+     * <p>
+     * 几何和血莲宝灯那条链子共用同一套（赫兹波形 + 双层发光），只是换成紫白配色 ——
+     * 落雷、球状闪电炸开时的电弧都用这个包。
+     */
+    public record ThunderBoltFxS2C(
+            double fromX, double fromY, double fromZ,
+            double toX, double toY, double toZ,
+            int durationTicks,
+            float width
+    ) implements CustomPacketPayload {
+
+        public static final Type<ThunderBoltFxS2C> TYPE = new Type<>(id("thunder_bolt_fx"));
+
+        public static final StreamCodec<ByteBuf, ThunderBoltFxS2C> CODEC =
+                StreamCodec.ofMember(ThunderBoltFxS2C::write, ThunderBoltFxS2C::read);
+
+        private static ThunderBoltFxS2C read(ByteBuf buf) {
+            return new ThunderBoltFxS2C(
+                    buf.readDouble(), buf.readDouble(), buf.readDouble(),
+                    buf.readDouble(), buf.readDouble(), buf.readDouble(),
+                    buf.readInt(), buf.readFloat());
+        }
+
+        private void write(ByteBuf buf) {
+            buf.writeDouble(fromX);
+            buf.writeDouble(fromY);
+            buf.writeDouble(fromZ);
+            buf.writeDouble(toX);
+            buf.writeDouble(toY);
+            buf.writeDouble(toZ);
+            buf.writeInt(durationTicks);
+            buf.writeFloat(width);
+        }
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+
+        public static ThunderBoltFxS2C create(Vec3 from, Vec3 to, int durationTicks, float width) {
+            return new ThunderBoltFxS2C(from.x, from.y, from.z, to.x, to.y, to.z,
+                    durationTicks, width);
+        }
+
+        public Vec3 getFrom() {
+            return new Vec3(fromX, fromY, fromZ);
+        }
+
+        public Vec3 getTo() {
+            return new Vec3(toX, toY, toZ);
         }
     }
 }

@@ -91,7 +91,7 @@ public final class ClientLimbCache {
             return null;
         }
 
-        int mask = tag.getByteOr("limb_mask", (byte) 0) & 0xF;
+        int mask = tag.getByteOr("limb_mask", (byte) 0) & LimbSlots.MASK_ALL;
         int[] remaining = tag.getIntArray("limb_regrow_ticks").orElse(null);
         int[] totals = tag.getIntArray("limb_regrow_totals").orElse(null);
         if (mask == 0 || remaining == null || totals == null

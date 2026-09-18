@@ -33,6 +33,7 @@ import xiaoshi2022.corpseorigin.client.gui.CloneChamberScreen;
 import xiaoshi2022.corpseorigin.client.hud.InfectionHudOverlay;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.render.laser.BloodLotusLaserManager;
+import xiaoshi2022.corpseorigin.client.render.thunder.ThunderFxManager;
 import xiaoshi2022.corpseorigin.client.renderer.blockentity.CloneChamberRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.*;
 import xiaoshi2022.corpseorigin.client.skin.clone.ClientSkinCache;
@@ -367,6 +368,8 @@ public class CorpseOriginClient implements ClientModInitializer {
             PoseStack poseStack = context.poseStack();
             SubmitNodeCollector collector = context.submitNodeCollector();
             BloodLotusLaserManager.getInstance().render(poseStack, collector);
+            // ✅ 尸王雷电（紫色）
+            ThunderFxManager.getInstance().render(poseStack, collector);
 
             // ✅ 水墨意境
             Minecraft mc = Minecraft.getInstance();
@@ -396,6 +399,18 @@ public class CorpseOriginClient implements ClientModInitializer {
             });
         });
 
+        // ✅ 接收紫色雷电特效（落雷 / 球状闪电电弧）
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.ThunderBoltFxS2C.TYPE, (payload, context) -> {
+            context.client().execute(() -> {
+                ThunderFxManager.getInstance().addBolt(
+                        payload.getFrom(),
+                        payload.getTo(),
+                        payload.durationTicks(),
+                        payload.width()
+                );
+            });
+        });
+
         ClientPlayNetworking.registerGlobalReceiver(APSInkScenePayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
                 if (payload.open()) {
@@ -417,6 +432,7 @@ public class CorpseOriginClient implements ClientModInitializer {
 // 每 tick 更新
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             BloodLotusLaserManager.getInstance().tick();
+            ThunderFxManager.getInstance().tick();
         });
 
         CorpseOrigin.LOGGER.debug("CorpseOrigin client initialized");

@@ -3,6 +3,7 @@ package xiaoshi2022.corpseorigin.entity;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import xiaoshi2022.corpseorigin.character.LongYou;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 
 public interface ZombieKin {
@@ -46,6 +47,17 @@ public interface ZombieKin {
         return !isZombieKin(entity);
     }
 
+    /**
+     * 这位是不是"尸王"（龙右）。
+     * <p>
+     * 认的是身体不是账号：玩家把意识转移进龙右克隆身体、或者龙右分身实体，都算尸王。
+     * 尸族对尸王只有敬畏 —— 不主动索敌、被打也不还手（AI 层见 {@code MobZombieKingRespectMixin}，
+     * 伤害层见 {@link #canAttack}）。
+     */
+    static boolean isZombieKing(Entity entity) {
+        return entity instanceof LivingEntity living && LongYou.isLongYouBody(living);
+    }
+
     // ==================== 攻击判定 ====================
 
     /**
@@ -62,6 +74,9 @@ public interface ZombieKin {
      */
     static boolean canAttack(LivingEntity attacker, Entity target) {
         if (attacker == target) return false;
+
+        // ✅ 尸王：尸族不敢对他不敬 —— 主动攻击、被打了还手，一律不允许
+        if (isZombieKing(target)) return false;
 
         // 目标不是尸族 → 可以攻击
         if (!isZombieKin(target)) {

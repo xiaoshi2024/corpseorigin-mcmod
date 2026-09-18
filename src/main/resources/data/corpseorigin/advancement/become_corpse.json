@@ -1,0 +1,28 @@
+{
+  "parent": "corpseorigin:root",
+  "display": {
+    "icon": {
+      "id": "corpseorigin:bywater_bottle"
+    },
+    "title": {
+      "translate": "advancements.corpseorigin.become_corpse.title"
+    },
+    "description": {
+      "translate": "advancements.corpseorigin.become_corpse.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "become_corpse": {
+      "trigger": "corpseorigin:become_corpse"
+    }
+  },
+  "requirements": [
+    ["become_corpse"]
+  ],
+  "rewards": {
+    "experience": 50
+  }
+}

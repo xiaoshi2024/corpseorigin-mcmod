@@ -36,6 +36,8 @@ public class CharacterManager {
     /** 在模组初始化时调用，注册所有内置角色 */
     public void registerDefaults() {
         registerCharacter(MortalCharacter.getInstance());
+        // 凡人被尸水感染后自动转入的角色（尸兄的进化效果挂在它身上）
+        registerCharacter(new CorpseBrother());
 
         // ==================== 一级优先级（核心战斗 / 主线剧情角色） ====================
         registerCharacter(new BaiXiaoFei());
@@ -111,6 +113,10 @@ public class CharacterManager {
         String oldId = data.getCharacterId(player.getUUID());
 
         if (oldId.equals(character.getId())) {
+            // ★ 重复选择同一个角色：不发包也不清技能（下面那条 clearLearnedSkills 不会走到），
+            //   但客户端可能因为换身 / 重登而把角色缓存丢了 —— 表现为"技能树空空如也、
+            //   再选一次角色也没用"。这里补一次同步，让"重新选一次角色"真的能修好客户端。
+            syncToClient(serverPlayer);
             return true;
         }
 

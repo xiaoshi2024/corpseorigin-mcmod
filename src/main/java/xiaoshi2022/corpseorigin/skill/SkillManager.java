@@ -51,9 +51,9 @@ public final class SkillManager {
             return false;
         }
 
-        // 校验已学习
+        // 校验已学习（「原体保底」例外见 isOriginalBodyFallback）
         PlayerCharacterData data = PlayerCharacterData.get(player);
-        if (!data.hasLearned(player.getUUID(), skillPath)) {
+        if (!data.hasLearned(player.getUUID(), skillPath) && !isOriginalBodyFallback(player, skillPath)) {
             CorpseOrigin.LOGGER.warn("玩家 {} 尝试激活未学习的技能: {}",
                     player.getName().getString(), skillPath);
             return false;
@@ -169,6 +169,17 @@ public final class SkillManager {
         CorpseOrigin.LOGGER.info("玩家 {} 作弊解锁了 {} 的全部技能（{} 个）",
                 player.getName().getString(), character.getId(), granted);
         return granted;
+    }
+
+    /**
+     * 「原体保底」：人缩在尸王原体里的时候，「血肉重塑」不校验"是否已学会"。
+     * <p>
+     * 否则只要没在技能树里点过它，玩家就会被困在拇指大小的身体里出不来。
+     * 这一条是硬保底 —— 不依赖"进原体时自动学会"那条路径，老存档 / 异常途径也能救回来。
+     */
+    private static boolean isOriginalBodyFallback(ServerPlayer player, String skillPath) {
+        return xiaoshi2022.corpseorigin.skill.longyou.FleshReshapeSkill.PATH.equals(skillPath)
+                && xiaoshi2022.corpseorigin.skill.longyou.BodyTransplantHandler.isInOriginalBody(player);
     }
 
     private static long getCooldownEnd(UUID uuid, String skillPath) {

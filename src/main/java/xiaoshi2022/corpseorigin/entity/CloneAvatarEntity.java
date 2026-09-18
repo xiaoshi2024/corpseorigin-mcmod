@@ -26,18 +26,23 @@ import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
+import xiaoshi2022.corpseorigin.character.LongYou;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.shell.CharacterShellStateComponent;
 import xiaoshi2022.corpseorigin.shell.ShellBodyIndex;
 import xiaoshi2022.corpseorigin.shell.ShellState;
 import xiaoshi2022.corpseorigin.shell.TransferredBody;
+import xiaoshi2022.corpseorigin.skill.longyou.InfrasoundFieldHandler;
 
 import java.util.UUID;
 
@@ -196,6 +201,20 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
             this.inheritLowerLevelZbAttributes(healWhenInherited);
         }
         this.entityData.set(DATA_CORPSE_CLONE, corpseClone);
+        // 这具身体是不是"龙右身体"：决定它会不会像尸王那样自己放次声波
+        this.corpseKingBody = isCorpseKingBody(this.bodyState);
+        // 身体的大小（尸王原体是缩小版）
+        AttributeInstance scale = this.getAttribute(Attributes.SCALE);
+        if (scale != null) {
+            scale.setBaseValue(this.bodyState == null ? 1.0F : this.bodyState.getScale());
+        }
+        // 原体体术：跳得高、摔不伤（"原体"形态的分身同样适用）
+        LongYou.applyOriginalBodyAgility(this, this.bodyState != null && this.bodyState.getScale() < 1.0F);
+        // 龙右身体要套上尸王的基础数值（血量 50 / 护甲 10 / 击退抗性 50% ……）
+        LongYou.applyIfLongYou(this);
+        if (healWhenInherited && this.corpseKingBody) {
+            this.setHealth(this.getMaxHealth());
+        }
 
         if (this.level() instanceof ServerLevel level) {
             CorpseNetwork.broadcastBodyCorpseSync(level, this.ownerPlayer(), this.getUUID(), tag);
@@ -305,6 +324,71 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         return this.entityData.get(DATA_CORPSE_CLONE);
     }
 
+    /**
+     * 这具身体是不是"龙右身体"（尸王）。
+     * <p>
+     * 由 {@link #syncBodyCorpseData} 在身体状况同步时算好缓存下来 ——
+     * 每 tick 都去翻一遍 NBT 里的角色 id 没必要。
+     */
+    private static boolean isCorpseKingBody(@Nullable ShellState state) {
+        if (state == null) {
+            return false;
+        }
+        CharacterShellStateComponent character = state.getComponent().as(CharacterShellStateComponent.class);
+        return character != null && LongYou.ID.equals(character.getCharacterId());
+    }
+
+    /** 这具身体是不是龙右身体（缓存值，见 {@link #syncBodyCorpseData}） */
+    public boolean isCorpseKingBody() {
+        return this.corpseKingBody;
+    }
+
+    // ==================== 尸王分身：自动次声波 ====================
+
+    /** 自己放次声波的间隔（12 秒，和玩家那招的冷却对齐） */
+    private static final int INFRASOUND_INTERVAL = 240;
+    /** 身边没目标时的重试间隔（1 秒）：别每 tick 都扫一遍实体 */
+    private static final int INFRASOUND_RETRY = 20;
+
+    /** 这具身体是不是龙右身体（由身体状况同步刷新） */
+    private boolean corpseKingBody;
+    /** 距下一次放次声波还有多少 tick：刚培育出来的身体先等满一个间隔 */
+    private int infrasoundCooldown = INFRASOUND_INTERVAL;
+
+    /**
+     * 龙右身体的克隆分身会像尸王一样自己放次声波：震散飞来的箭矢、压制周围的人，
+     * 顺便把附近的尸兄收编成听命于自己的打手（目标就是分身自己正在打的那个）。
+     * <p>
+     * 身边没有值得放的东西（没人、没箭）就不放 —— 免得白放一发还刷一堆粒子。
+     */
+    private void tickInfrasound() {
+        if (!this.corpseKingBody || InfrasoundFieldHandler.isActive(this.getUUID())) {
+            return;
+        }
+        if (this.infrasoundCooldown > 0) {
+            this.infrasoundCooldown--;
+            return;
+        }
+        if (!this.hasInfrasoundTarget()) {
+            this.infrasoundCooldown = INFRASOUND_RETRY;
+            return;
+        }
+        if (InfrasoundFieldHandler.start(this)) {
+            this.infrasoundCooldown = INFRASOUND_INTERVAL;
+        }
+    }
+
+    /** 身边有没有"值得放次声波"的东西：活着的生物（本体不算），或者飞行中的投掷物 */
+    private boolean hasInfrasoundTarget() {
+        AABB area = this.getBoundingBox().inflate(InfrasoundFieldHandler.FIELD_RADIUS);
+        if (!this.level().getEntitiesOfClass(AbstractArrow.class, area).isEmpty()) {
+            return true;
+        }
+        UUID owner = this.getOwnerUuid();
+        return !this.level().getEntitiesOfClass(LivingEntity.class, area,
+                e -> e != this && e.isAlive() && (owner == null || !owner.equals(e.getUUID()))).isEmpty();
+    }
+
     // ---- 下面三个目标只在尸兄克隆体上生效，干净人形克隆体保持被动 ----
 
     private final class CorpseMeleeGoal extends MeleeAttackGoal {
@@ -321,7 +405,12 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         CorpseRetaliateGoal() { super(CloneAvatarEntity.this); }
 
         @Override
-        public boolean canUse() { return isCorpseClone() && super.canUse(); }
+        public boolean canUse() {
+            // 尸王打了也不还手：尸族对龙右只有敬畏（尸兄克隆体也一样）
+            return isCorpseClone()
+                    && !ZombieKin.isZombieKing(getLastHurtByMob())
+                    && super.canUse();
+        }
     }
 
     /**
@@ -352,6 +441,10 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
      */
     private static boolean isPrey(LivingEntity target) {
         if (target instanceof ZombieKin) {
+            return false;
+        }
+        // 尸王：尸族不敢对他不敬，尸兄克隆体也一样
+        if (ZombieKin.isZombieKing(target)) {
             return false;
         }
         return target instanceof Player
@@ -538,6 +631,9 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         if (this.tickCount % 100 == 0) {
             this.syncBodyCorpseData(false);
         }
+
+        // 龙右身体：像尸王那样自己放次声波
+        this.tickInfrasound();
 
         BlockPos pos = this.blockPosition();
         long chunk = ChunkPos.pack(pos);

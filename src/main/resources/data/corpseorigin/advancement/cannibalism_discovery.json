@@ -1,0 +1,28 @@
+{
+  "parent": "corpseorigin:become_corpse",
+  "display": {
+    "icon": {
+      "id": "corpseorigin:zbr_flesh"
+    },
+    "title": {
+      "translate": "advancements.corpseorigin.cannibalism_discovery.title"
+    },
+    "description": {
+      "translate": "advancements.corpseorigin.cannibalism_discovery.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "cannibalism_discovery": {
+      "trigger": "corpseorigin:cannibalism_discovery"
+    }
+  },
+  "requirements": [
+    ["cannibalism_discovery"]
+  ],
+  "rewards": {
+    "experience": 75
+  }
+}

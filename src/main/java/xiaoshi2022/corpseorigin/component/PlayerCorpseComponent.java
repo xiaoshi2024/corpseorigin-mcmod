@@ -461,6 +461,12 @@ public class PlayerCorpseComponent {
 
         // ✅ 只同步一次
         syncToClient(player);
+
+        // ★ 成就：成为尸兄。尸水感染、选到尸兄角色、被夺舍成尸兄……全都汇到这一个写入口，
+        //   所以挂在这里就够了
+        if (player instanceof ServerPlayer serverPlayer) {
+            xiaoshi2022.corpseorigin.advancement.CorpseAdvancements.BECOME_CORPSE.trigger(serverPlayer);
+        }
     }
 
     public static void removeCorpseState(Player player) {

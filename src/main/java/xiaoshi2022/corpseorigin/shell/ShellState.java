@@ -39,6 +39,14 @@ public class ShellState {
     /** 这具身体穿的四件盔甲（头/胸/腿/脚），用于克隆人渲染 */
     private final java.util.List<net.minecraft.world.item.ItemStack> equipment = new java.util.ArrayList<>();
 
+    /**
+     * 这具身体的大小倍率（1.0 = 正常体型）。
+     * <p>
+     * 尸王的「原体」是缩小版（见 {@code LongYou#ORIGINAL_BODY_SCALE}），
+     * 转移进去时把这个值写到玩家的 {@code SCALE} 属性上，渲染与碰撞箱一起变小。
+     */
+    private float scale = 1.0F;
+
     private ShellState() {
     }
 
@@ -91,6 +99,9 @@ public class ShellState {
         }
 
         state.component = ShellStateComponent.of(player);
+        // ★ 记下这具身体当前的大小：玩家要是正待在"尸王原体"里换身出来，
+        //   原体的缩小体型必须跟着身体走，否则换出去再换回来就变回正常大小了
+        state.scale = (float) player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.SCALE);
         for (net.minecraft.world.entity.EquipmentSlot slot : EQUIPMENT_SLOTS) {
             state.equipment.add(player.getItemBySlot(slot).copy());
         }
@@ -104,6 +115,7 @@ public class ShellState {
             out.putString("OwnerName", this.ownerName);
         }
         out.putFloat("Progress", this.progress);
+        out.putFloat("Scale", this.scale);
         out.putBoolean("Artificial", this.artificial);
         if (this.world != null) {
             out.putString("World", this.world.toString());
@@ -130,6 +142,7 @@ public class ShellState {
         state.ownerUuid = UUID.fromString(in.getStringOr("Owner", new UUID(0L, 0L).toString()));
         state.ownerName = in.getString("OwnerName").orElse(null);
         state.progress = in.getFloatOr("Progress", 0.0F);
+        state.scale = in.getFloatOr("Scale", 1.0F);
         state.artificial = in.getBooleanOr("Artificial", false);
         state.world = in.getString("World").map(Identifier::tryParse).orElse(null);
         state.pos = in.read("Pos", BlockPos.CODEC).orElse(null);
@@ -165,6 +178,15 @@ public class ShellState {
         if (equipment != null) {
             this.equipment.addAll(equipment);
         }
+    }
+
+    /** 这具身体的大小倍率（1.0 = 正常体型） */
+    public float getScale() {
+        return this.scale;
+    }
+
+    public void setScale(float scale) {
+        this.scale = scale;
     }
 
     public UUID getUuid() { return this.uuid; }

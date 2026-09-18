@@ -1,0 +1,24 @@
+{
+  "display": {
+    "icon": {
+      "id": "corpseorigin:bywater_bucket"
+    },
+    "title": {
+      "translate": "advancements.corpseorigin.root.title"
+    },
+    "description": {
+      "translate": "advancements.corpseorigin.root.description"
+    },
+    "background": "corpseorigin:block/zbr_flesh_item",
+    "show_toast": false,
+    "announce_to_chat": false
+  },
+  "criteria": {
+    "tick": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "requirements": [
+    ["tick"]
+  ]
+}

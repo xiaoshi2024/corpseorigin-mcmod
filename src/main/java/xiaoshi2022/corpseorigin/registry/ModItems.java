@@ -19,6 +19,7 @@ import xiaoshi2022.corpseorigin.item.ByWaterBucketItem;
 import xiaoshi2022.corpseorigin.item.CharacterBookItem;
 import xiaoshi2022.corpseorigin.item.ZbWormItem;
 import xiaoshi2022.corpseorigin.item.armor.AntennaZBRitem;
+import xiaoshi2022.corpseorigin.item.armor.LongYouClothItem;
 import xiaoshi2022.corpseorigin.item.sword.JuQue;
 import xiaoshi2022.corpseorigin.item.weapon.BloodLotusLamp;
 
@@ -101,6 +102,36 @@ public final class ModItems {
             )
     );
 
+    // ==================== 尸王专属服装（龙右） ====================
+    // 模型/动画/贴图见 assets/corpseorigin/geckolib/.../armor/longyoucloth.*
+
+    public static final Supplier<LongYouClothItem> LONGYOU_CLOTH_HELMET = register(
+            "longyou_cloth_helmet",
+            () -> new LongYouClothItem(
+                    ArmorMaterialRegistry.LONGYOU_ARMOR_MATERIAL,
+                    ArmorType.HELMET,
+                    new Item.Properties().setId(itemKey("longyou_cloth_helmet"))
+            )
+    );
+
+    public static final Supplier<LongYouClothItem> LONGYOU_CLOTH_CHESTPLATE = register(
+            "longyou_cloth_chestplate",
+            () -> new LongYouClothItem(
+                    ArmorMaterialRegistry.LONGYOU_ARMOR_MATERIAL,
+                    ArmorType.CHESTPLATE,
+                    new Item.Properties().setId(itemKey("longyou_cloth_chestplate"))
+            )
+    );
+
+    public static final Supplier<LongYouClothItem> LONGYOU_CLOTH_LEGGINGS = register(
+            "longyou_cloth_leggings",
+            () -> new LongYouClothItem(
+                    ArmorMaterialRegistry.LONGYOU_ARMOR_MATERIAL,
+                    ArmorType.LEGGINGS,
+                    new Item.Properties().setId(itemKey("longyou_cloth_leggings"))
+            )
+    );
+
     /** 角色选择书（所有角色共用，靠 character_id 数据组件区分） */
     public static final Item CHARACTER_BOOK = register(
             "character_book",
@@ -171,6 +202,9 @@ public final class ModItems {
                 output.accept(ANTENNA_ZBR_ARMOR_HELMET.get());
                 output.accept(ANTENNA_ZBR_ARMOR_CHESTPLATE.get());
                 output.accept(ANTENNA_ZBR_ARMOR_LEGGINGS.get());
+                output.accept(LONGYOU_CLOTH_HELMET.get());
+                output.accept(LONGYOU_CLOTH_CHESTPLATE.get());
+                output.accept(LONGYOU_CLOTH_LEGGINGS.get());
                 output.accept(COCO_PENGUIN_SPAWN_EGG);
                 output.accept(COCO_ZOMBIE_SPAWN_EGG);
                 output.accept(COCO_ZOMBIE_X_SPAWN_EGG);

@@ -13,6 +13,8 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.LongYou;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 
@@ -192,6 +194,23 @@ public final class DismembermentLogic {
             leg = victim.getRandom().nextBoolean();
         }
 
+        // 头部：只对「尸王」开放 —— 他是不死髅体，脑袋掉了也能自己长回来；
+        // 别的尸兄没有再生策略，断头就是永久残废，所以不给砍。
+        // 判据是"从上往下劈中天灵盖"：攻击者得比受害者高半格以上（跳劈、从台阶上劈），
+        // 且这一下落在头顶（高于身高的 85%）。
+        // ⚠️ 近战伤害的 {@code getSourcePosition()} 是 null（只有爆炸/投掷物才带位置），
+        // 所以这里不能只靠 hitPos，得退回用攻击者的眼睛高度来判高度。
+        double strikeY = hitPos != null
+                ? hitPos.y
+                : (attacker != null ? attacker.getEyeY() : Double.NaN);
+        boolean fromAbove = attacker != null && attacker.getY() >= victim.getY() + 0.5D;
+        if (fromAbove
+                && strikeY >= victim.getY() + victim.getBbHeight() * 0.85D
+                && !state.isSevered(LimbSlots.HEAD)
+                && LongYou.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(victim))) {
+            return LimbSlots.HEAD;
+        }
+
         int first = leg
                 ? (onRightSide ? LimbSlots.RIGHT_LEG : LimbSlots.LEFT_LEG)
                 : (onRightSide ? LimbSlots.RIGHT_ARM : LimbSlots.LEFT_ARM);
@@ -258,6 +277,10 @@ public final class DismembermentLogic {
         boolean rightLeg = state.isSevered(LimbSlots.RIGHT_LEG);
         boolean leftLeg = state.isSevered(LimbSlots.LEFT_LEG);
 
+        if (state.isSevered(LimbSlots.HEAD)) {
+            // 没脑袋：眼前一片黑（脖子以上都空了），直到脑袋长回来
+            player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0, false, false, true));
+        }
         if (rightArm || leftArm) {
             // 独臂：挖掘疲劳 III（主手侧断掉时手也用不利索）
             player.addEffect(new MobEffectInstance(MobEffects.MINING_FATIGUE, 60, 2, false, false, true));

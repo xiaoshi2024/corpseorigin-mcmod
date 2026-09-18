@@ -1,0 +1,28 @@
+{
+  "parent": "corpseorigin:root",
+  "display": {
+    "icon": {
+      "id": "corpseorigin:character_book"
+    },
+    "title": {
+      "translate": "advancements.corpseorigin.meet_corpse_king.title"
+    },
+    "description": {
+      "translate": "advancements.corpseorigin.meet_corpse_king.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "meet_corpse_king": {
+      "trigger": "corpseorigin:meet_corpse_king"
+    }
+  },
+  "requirements": [
+    ["meet_corpse_king"]
+  ],
+  "rewards": {
+    "experience": 100
+  }
+}

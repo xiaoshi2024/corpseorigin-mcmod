@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.Unique;
 import xiaoshi2022.corpseorigin.client.limb.ClientLimbCache;
 import xiaoshi2022.corpseorigin.client.limb.LimbRenderData;
 import xiaoshi2022.corpseorigin.client.limb.PlayerGeoAnimatable;
+import xiaoshi2022.corpseorigin.limb.LimbSlots;
 
 /**
  * 让玩家实体本身成为断肢模型的动画宿主（GeoAnimatable）。
@@ -45,6 +46,8 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
             RawAnimation.begin().thenPlay("regrow_right_leg");
     private static final RawAnimation CORPSEORIGIN$REGROW_LEFT_LEG =
             RawAnimation.begin().thenPlay("regrow_left_leg");
+    private static final RawAnimation CORPSEORIGIN$REGROW_HEAD =
+            RawAnimation.begin().thenPlay("regrow_head");
 
     @Unique
     private AnimatableInstanceCache corpseorigin$animatableCache;
@@ -62,7 +65,15 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
      * 这个值会一直停在 1.0。
      */
     @Unique
-    private final float[] corpseorigin$lastRegrow = {-1.0F, -1.0F, -1.0F, -1.0F};
+    private final float[] corpseorigin$lastRegrow = corpseorigin$newRegrowArray();
+
+    /** 上一帧各部位的再生进度都从"完好"（-1）开始 */
+    @Unique
+    private static float[] corpseorigin$newRegrowArray() {
+        float[] array = new float[LimbSlots.COUNT];
+        java.util.Arrays.fill(array, -1.0F);
+        return array;
+    }
 
     /** 上一帧是否在挥击 —— 用来抓"挥击开始"的上升沿 */
     @Unique
@@ -81,6 +92,8 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
                 "regrow_right_leg", CORPSEORIGIN$REGROW_RIGHT_LEG, LimbRenderData.REGROW_RIGHT_LEG, 2));
         controllers.add(corpseorigin$regrowController(
                 "regrow_left_leg", CORPSEORIGIN$REGROW_LEFT_LEG, LimbRenderData.REGROW_LEFT_LEG, 3));
+        controllers.add(corpseorigin$regrowController(
+                "regrow_head", CORPSEORIGIN$REGROW_HEAD, LimbRenderData.REGROW_HEAD, LimbSlots.HEAD));
     }
 
     @Unique

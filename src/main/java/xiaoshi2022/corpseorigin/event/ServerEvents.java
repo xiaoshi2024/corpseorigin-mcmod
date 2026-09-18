@@ -20,12 +20,19 @@ public final class ServerEvents {
         // 重生 → 同步角色
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
             CharacterManager.getInstance().syncToClient(newPlayer);
+            // 重生是换了一个新的玩家实体，尸王的基础数值要重新套上（不是龙右就是摘掉）
+            xiaoshi2022.corpseorigin.character.LongYou.applyIfLongYou(newPlayer);
+            // ★ 体型也要复位：死在"拇指原体"里重生，SCALE 属性会被一起带过来，
+            //   不复位的话人会一直是个小人儿
+            xiaoshi2022.corpseorigin.character.LongYou.resetBodySize(newPlayer);
         });
 
         // 登录 → 同步角色
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayer player = handler.getPlayer();
             CharacterManager.getInstance().syncToClient(player);
+            // 同理：补一次尸王基础数值，避免老存档里已经切到龙右的玩家没数值
+            xiaoshi2022.corpseorigin.character.LongYou.applyIfLongYou(player);
             // ★ 把在线其他玩家的尸兄状态补给刚进来的玩家。
             //   尸兄数据平时只在"发生变化"时广播，新玩家错过那些包的话，
             //   在他眼里别人就都是普通人（看不到多眼/外骨骼）。
@@ -45,6 +52,17 @@ public final class ServerEvents {
         // 玩家和穿戴该套装的生物共用同一套逻辑
         ServerTickEvents.END_SERVER_TICK.register(
                 xiaoshi2022.corpseorigin.skill.tianxianbaobao_zb.EntityAntennaSuckHandler::tick);
+
+        // 每 tick 推进尸王次声波声场（频率扫描震散投掷物 + 持续指派被操控的尸兄）
+        ServerTickEvents.END_SERVER_TICK.register(
+                xiaoshi2022.corpseorigin.skill.longyou.InfrasoundFieldHandler::tick);
+
+        // 每 tick 推进尸王的球状闪电（飞行 → 放电 → 炸开）
+        ServerTickEvents.END_SERVER_TICK.register(
+                xiaoshi2022.corpseorigin.skill.longyou.ThunderStrikeHandler::tick);
+
+        // 金蝉脱壳后：右键旧身体穿回去（只在缩在原体里的时候接管）
+        xiaoshi2022.corpseorigin.skill.longyou.BodyTransplantHandler.register();
 
         // 退出 → 清理
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {

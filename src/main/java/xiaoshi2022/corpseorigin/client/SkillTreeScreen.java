@@ -6,6 +6,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 import xiaoshi2022.corpseorigin.network.CorpsePayloads;
 import xiaoshi2022.corpseorigin.skill.EvolutionManager;
 import xiaoshi2022.corpseorigin.skill.ISkill;
@@ -14,13 +15,24 @@ import xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockSource;
 import java.util.List;
 
 /**
- * 技能进化树 GUI - 列出当前角色全部技能，点击学习
+ * 技能进化树 GUI - 列出当前角色全部技能，点击学习。
+ * <p>
+ * 列表会随窗口高度自适应：一屏放不下的技能用<b>滚轮</b>滑动查看（右侧有滚动条），
+ * 面板宽度也会随窗口收窄，避免小分辨率下超出画面。
  */
 public class SkillTreeScreen extends Screen {
 
     private List<ISkill> skills = List.of();
     private static final int ROW_HEIGHT = 30;
-    private int top;
+    /** 顶部标题 + 进化点占用掉的固定高度（这两行一直可见） */
+    private static final int HEADER = 42;
+    /** 底部滚动提示占用掉的高度 */
+    private static final int FOOTER = 22;
+    /** 面板最大宽度（窗口更窄时会自动收窄） */
+    private static final int PANEL_MAX_WIDTH = 280;
+
+    /** 当前屏幕顶部那条可见的行下标（滚轮滑动用） */
+    private int scrollRow;
 
     public SkillTreeScreen() {
         super(Component.translatable("gui.corpseorigin.skill_tree"));
@@ -29,7 +41,46 @@ public class SkillTreeScreen extends Screen {
     @Override
     protected void init() {
         skills = ClientCharacterCache.getCharacterSkills();
-        top = 40;
+        scrollRow = Mth.clamp(scrollRow, 0, maxScrollRow());
+    }
+
+    // ==================== 布局 ====================
+
+    private int panelWidth() {
+        return Math.max(120, Math.min(PANEL_MAX_WIDTH, width - 40));
+    }
+
+    private int panelX() {
+        return width / 2 - panelWidth() / 2;
+    }
+
+    /** 一屏最多显示几行 */
+    private int visibleRows() {
+        return Math.max(1, (height - HEADER - FOOTER) / ROW_HEIGHT);
+    }
+
+    /** 最多能往上滑几行（0 = 一屏放得下，不需要滑动） */
+    private int maxScrollRow() {
+        return Math.max(0, skills.size() - visibleRows());
+    }
+
+    /** 行下标 → 屏幕 y；这一行当前不可见时返回 -1（直接跳过绘制/点击） */
+    private int rowY(int index) {
+        int visibleIndex = index - scrollRow;
+        if (visibleIndex < 0 || visibleIndex >= visibleRows()) {
+            return -1;
+        }
+        return HEADER + visibleIndex * ROW_HEIGHT;
+    }
+
+    /** 滚轮滑动（只在放不下时才吃事件，否则交还给父类） */
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (maxScrollRow() > 0 && scrollY != 0) {
+            scrollRow = Mth.clamp(scrollRow - (int) Math.signum(scrollY), 0, maxScrollRow());
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     @Override
@@ -42,13 +93,18 @@ public class SkillTreeScreen extends Screen {
                         ClientState.availablePoints, ClientState.earnedPoints),
                 width / 2, 28, 0xFF55FF55);
 
-        int x = width / 2 - 140;
-        int y = top;
+        int x = panelX();
+        int w = panelWidth();
         int level = EvolutionManager.getLevel(ClientState.earnedPoints);
 
-        for (ISkill skill : skills) {
+        for (int i = 0; i < skills.size(); i++) {
+            int y = rowY(i);
+            if (y < 0) {
+                continue;
+            }
+            ISkill skill = skills.get(i);
             boolean learned = ClientState.hasLearned(skill.getId().getPath());
-            boolean hovered = mouseX >= x && mouseX <= x + 280
+            boolean hovered = mouseX >= x && mouseX <= x + w
                     && mouseY >= y && mouseY <= y + ROW_HEIGHT - 2;
             boolean canLearn = !learned
                     && level >= skill.getRequiredLevel()
@@ -60,7 +116,7 @@ public class SkillTreeScreen extends Screen {
             if (hovered) {
                 bg |= 0x33000000;
             }
-            graphics.fill(x, y, x + 280, y + ROW_HEIGHT - 2, bg);
+            graphics.fill(x, y, x + w, y + ROW_HEIGHT - 2, bg);
             graphics.fill(x, y, x + 3, y + ROW_HEIGHT - 2,
                     0xFF000000 | skill.getSkillType().getColor());
 
@@ -88,9 +144,22 @@ public class SkillTreeScreen extends Screen {
                     state = Component.translatable("gui.corpseorigin.skill_tree.locked").getString();
                 }
             }
-            graphics.text(font, state, x + 272 - font.width(state), y + 9, textColor, false);
+            graphics.text(font, state, x + w - 8 - font.width(state), y + 9, textColor, false);
+        }
 
-            y += ROW_HEIGHT;
+        // 技能没显示完 → 右侧滚动条 + 底部提示
+        if (maxScrollRow() > 0) {
+            int trackTop = HEADER;
+            int trackHeight = visibleRows() * ROW_HEIGHT;
+            int barX = x + w + 4;
+            int thumbHeight = Math.max(12, trackHeight * visibleRows() / Math.max(1, skills.size()));
+            int thumbY = trackTop + (trackHeight - thumbHeight) * scrollRow / Math.max(1, maxScrollRow());
+
+            graphics.fill(barX, trackTop, barX + 2, trackTop + trackHeight, 0x44FFFFFF);
+            graphics.fill(barX, thumbY, barX + 2, thumbY + thumbHeight, 0xCCFFFFFF);
+            graphics.centeredText(font,
+                    Component.translatable("gui.corpseorigin.skill_tree.scroll_hint"),
+                    width / 2, height - 14, 0xFF999999);
         }
     }
 
@@ -99,13 +168,18 @@ public class SkillTreeScreen extends Screen {
         if (event.button() == 0) {
             int mouseX = (int) event.x();
             int mouseY = (int) event.y();
-            int x = width / 2 - 140;
-            int y = top;
+            int x = panelX();
+            int w = panelWidth();
             int level = EvolutionManager.getLevel(ClientState.earnedPoints);
-            for (ISkill skill : skills) {
-                boolean hovered = mouseX >= x && mouseX <= x + 280
+            for (int i = 0; i < skills.size(); i++) {
+                int y = rowY(i);
+                if (y < 0) {
+                    continue;
+                }
+                boolean hovered = mouseX >= x && mouseX <= x + w
                         && mouseY >= y && mouseY <= y + ROW_HEIGHT - 2;
                 if (hovered) {
+                    ISkill skill = skills.get(i);
                     boolean learned = ClientState.hasLearned(skill.getId().getPath());
                     boolean canLearn = !learned
                             && level >= skill.getRequiredLevel()
@@ -118,7 +192,6 @@ public class SkillTreeScreen extends Screen {
                     }
                     return true;
                 }
-                y += ROW_HEIGHT;
             }
         }
         return super.mouseClicked(event, doubled);

@@ -11,6 +11,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -62,6 +63,7 @@ public final class CorpseNetwork {
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.EvolutionSyncS2C.TYPE, CorpsePayloads.EvolutionSyncS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.CooldownSyncS2C.TYPE, CorpsePayloads.CooldownSyncS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.InnerPowerSyncS2C.TYPE, CorpsePayloads.InnerPowerSyncS2C.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.ThunderBoltFxS2C.TYPE, CorpsePayloads.ThunderBoltFxS2C.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(CorpsePayloads.SelectCharacterC2S.TYPE, (payload, context) -> {
             ServerPlayer player = context.player();
@@ -154,6 +156,10 @@ public final class CorpseNetwork {
             PENDING_SYNCS.remove(uuid);
             SkillManager.cleanupDisconnect(uuid);
             xiaoshi2022.corpseorigin.character.InnerPowerManager.cleanupDisconnect(uuid);
+            // 尸水之源是开关技能，断开时清掉，免得重登后莫名掉饱食度
+            xiaoshi2022.corpseorigin.skill.longyou.WaterPollutionSkill.clearOnDisconnect(uuid);
+            // 雷电之力同样是开关，清掉免得重登后还开着
+            xiaoshi2022.corpseorigin.skill.longyou.ThunderPowerSkill.clearOnDisconnect(uuid);
             xiaoshi2022.corpseorigin.event.HeiXiaoFeiEventHandler.cleanupDisconnect(uuid);
             BYeffect.clearTotalDuration(uuid);
             BYeffect.clearInfectionSource(uuid);
@@ -641,5 +647,25 @@ public final class CorpseNetwork {
         int current = xiaoshi2022.corpseorigin.character.InnerPowerManager.getInnerPower(player);
         int max = xiaoshi2022.corpseorigin.character.InnerPowerManager.getMaxInnerPower(player);
         ServerPlayNetworking.send(player, new CorpsePayloads.InnerPowerSyncS2C(current, max));
+    }
+
+    /**
+     * 广播一道紫色雷电特效给附近的玩家（尸王雷电系技能）。
+     *
+     * @param center 用于筛选接收者的中心点（通常是落点）
+     * @param from   起点（落雷 = 天上）
+     * @param to     终点（落雷 = 落点）
+     */
+    public static void broadcastThunderBolt(ServerLevel level, Vec3 center, Vec3 from, Vec3 to,
+                                            int durationTicks, float width) {
+        sendBolt(level, center, CorpsePayloads.ThunderBoltFxS2C.create(from, to, durationTicks, width));
+    }
+
+    /** 同一个包发给中心点附近的玩家（雷电经常一次发好几道，抽出来复用） */
+    private static void sendBolt(ServerLevel level, Vec3 center,
+                                 CorpsePayloads.ThunderBoltFxS2C payload) {
+        for (ServerPlayer player : level.getPlayers(p -> p.distanceToSqr(center) < 96.0 * 96.0)) {
+            ServerPlayNetworking.send(player, payload);
+        }
     }
 }

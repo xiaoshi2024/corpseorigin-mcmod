@@ -750,7 +750,17 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         }
         CharacterShellStateComponent charComp = components.as(CharacterShellStateComponent.class);
         if (charComp != null) {
-            charComp.applyCloneFormula(random, completion);
+            // ★ 尸王（龙右）转移身体不会忘记任何东西：技能不做"记忆残缺"裁剪，
+            //   身份也不"白纸化" —— 一旦这具身体被清成凡人，玩家换进去后客户端会变成凡人
+            //   （技能树直接空白），再用角色书重选龙右又会触发"切角色清空已学技能"，
+            //   技能就真的没了。所以龙右这条路上什么都不清。
+            if (!xiaoshi2022.corpseorigin.character.LongYou.isLongYouBody(player)) {
+                charComp.applyCloneFormula(random, completion);
+                // ★ 角色不克隆：培育出来的身体是凡人（进化点/已学技能照旧按继承度继承）。
+                //   否则培育一具身体就等于把本体的角色身份也复制了一份 ——
+                //   想当白小飞/龙右，得换进这具身体后用角色选择书自己选。
+                charComp.clearCharacterId();
+            }
         }
         ApsShellStateComponent apsComp = components.as(ApsShellStateComponent.class);
         if (apsComp != null) {

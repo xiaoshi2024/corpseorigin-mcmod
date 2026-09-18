@@ -15,12 +15,16 @@ public final class LimbSlots {
     public static final int LEFT_ARM = 1;
     public static final int RIGHT_LEG = 2;
     public static final int LEFT_LEG = 3;
-    public static final int COUNT = 4;
+    /** 头部：尸王被劈中头时会把脑袋砍下来（见 {@code DismembermentLogic#pickSlot}） */
+    public static final int HEAD = 4;
+    public static final int COUNT = 5;
 
     /** 四肢完好 */
     public static final byte NONE = 0;
-    /** 四肢全断 */
-    public static final byte ALL = (byte) 0b1111;
+    /** 全部位断掉 */
+    public static final byte ALL = (byte) 0b11111;
+    /** 部位位掩码的全 1 值（读取时用来裁掉多余的高位） */
+    public static final int MASK_ALL = (1 << COUNT) - 1;
 
     /** regrow_ticks 为该值时表示"断掉但不能自愈" */
     public static final int REGROW_PERMANENT = -1;
@@ -39,11 +43,13 @@ public final class LimbSlots {
             {"left_arm2"},
             {"right_leg2"},
             {"left_leg2"},
+            // 头部没有"head2"这一层，画方块的就是 head 本身
+            {"head"},
     };
 
     /** geo.json 里的残桩骨名（挂点的子骨骼） */
     public static final String[] STUMP_BONES =
-            {"right_arm_stump", "left_arm_stump", "right_leg_stump", "left_leg_stump"};
+            {"right_arm_stump", "left_arm_stump", "right_leg_stump", "left_leg_stump", "head_stump"};
 
     /**
      * 再生时爬出来的藤蔓状血管的<b>根骨</b>（挂点的子骨骼，自身没有方块）。
@@ -59,12 +65,13 @@ public final class LimbSlots {
             {"left_arm_vein", "left_arm_vein2", "left_arm_vein3"},
             {"right_leg_vein", "right_leg_vein2", "right_leg_vein3"},
             {"left_leg_vein", "left_leg_vein2", "left_leg_vein3"},
+            {"head_vein"},
     };
 
     /** 提示文字用 */
-    public static final String[] DISPLAY_NAMES = {"右臂", "左臂", "右腿", "左腿"};
+    public static final String[] DISPLAY_NAMES = {"右臂", "左臂", "右腿", "左腿", "头部"};
     /** 指令参数用 */
-    public static final String[] KEYS = {"arm_r", "arm_l", "leg_r", "leg_l"};
+    public static final String[] KEYS = {"arm_r", "arm_l", "leg_r", "leg_l", "head"};
 
     private LimbSlots() {
     }

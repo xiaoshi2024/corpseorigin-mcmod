@@ -10,6 +10,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.villager.Villager;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.CorpseBrother;
+import xiaoshi2022.corpseorigin.character.MortalCharacter;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
@@ -137,6 +140,16 @@ public class BYeffect extends MobEffect {
 
     private void convertPlayerToCorpse(ServerPlayer player) {
         PlayerCorpseComponent.setPlayerAsCorpse(player, 1);
+
+        // ★ 凡人被感染成尸兄 → 自动转入「尸兄」角色。
+        //   尸兄的进化效果（技能树、进化等级联动）都挂在这个角色上，
+        //   所以不能只是"阵营变了、角色还是凡人"。
+        //   ⚠️ 必须放在 setPlayerAsCorpse 之后：CorpseBrother.onAcquire 看到"已经是尸兄"就不会
+        //   重写状态，感染给的尸兄类型 / 变种才保得住。
+        CharacterManager characters = CharacterManager.getInstance();
+        if (characters.getPlayerCharacter(player) instanceof MortalCharacter) {
+            characters.setPlayerCharacter(player, CorpseBrother.ID);
+        }
 
         boolean hasConsciousness = PlayerCorpseComponent.get(player).hasInnateConsciousness();
 

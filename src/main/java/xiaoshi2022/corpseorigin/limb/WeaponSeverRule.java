@@ -6,6 +6,8 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.LongYou;
 
 /**
  * 内置的锋利武器规则（剑 / 斧 / 带 WEAPON 组件的物品）—— 也是默认唯一的截断来源。
@@ -30,6 +32,15 @@ public final class WeaponSeverRule implements LimbSeverRule {
     public static final float MIN_DAMAGE = 4.0F;
     /** 重击门槛 */
     public static final float HEAVY_DAMAGE = 9.0F;
+
+    /**
+     * 龙右（尸王）的截断概率倍数。
+     * <p>
+     * 不死髅体护甲厚（裸装 10 点），刀砍上去基本"没事"，代价就落在截断上 ——
+     * 砍不动他，但很容易把手脚卸下来。0.15 → 0.45，重击时直接 0.9。
+     * 代价给得起：尸王走 {@code CorpseRegenProfile.KING_TICKS}（5 秒）自己长回来。
+     */
+    public static final float LONG_YOU_CHANCE_MULT = 3.0F;
 
     @Override
     public String id() {
@@ -71,6 +82,10 @@ public final class WeaponSeverRule implements LimbSeverRule {
         if (state.cooldowns()[slot] > 0) {
             chance *= VULNERABLE_CHANCE_MULT;
         }
-        return chance;
+        // 尸王：砍不动，但手脚容易被卸下来
+        if (LongYou.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(victim))) {
+            chance *= LONG_YOU_CHANCE_MULT;
+        }
+        return Math.min(1.0F, chance);
     }
 }

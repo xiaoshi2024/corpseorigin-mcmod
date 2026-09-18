@@ -36,6 +36,25 @@ public class BloodLotusLaserRenderer {
     /** 外层宽度倍率 */
     private static final float GLOW_WIDTH_MULT = 3.0F;
 
+    // ==================== 尸王雷电配色（紫色） ====================
+
+    /** 外层光晕：紫 */
+    private static final int THUNDER_GLOW_R = 120;
+    private static final int THUNDER_GLOW_G = 40;
+    private static final int THUNDER_GLOW_B = 255;
+
+    /** 内层核心：亮白紫 */
+    private static final int THUNDER_CORE_R = 232;
+    private static final int THUNDER_CORE_G = 205;
+    private static final int THUNDER_CORE_B = 255;
+
+    /**
+     * 雷电的波形比血链要"直"一些：振幅小、频率高才是闪电那种锯齿感，
+     * 血链那套（振幅 1.0 / 频率 3.5）画出来更像一条飘带。
+     */
+    private static final double THUNDER_AMPLITUDE = 0.45;
+    private static final double THUNDER_FREQUENCY = 6.0;
+
     private static final Random RANDOM = new Random();
 
     // ==================== 赫兹波参数 ====================
@@ -51,6 +70,33 @@ public class BloodLotusLaserRenderer {
     public static void submitLaser(PoseStack poseStack, SubmitNodeCollector collector,
                                    Vec3 start, Vec3 end, float width, float alpha,
                                    long seed) {
+        submitChain(poseStack, collector, start, end, width, alpha, seed,
+                GLOW_R, GLOW_G, GLOW_B, CORE_R, CORE_G, CORE_B,
+                HERTZ_AMPLITUDE, HERTZ_FREQUENCY);
+    }
+
+    /**
+     * 提交一道紫色雷电（尸王雷电系技能）。
+     * <p>
+     * 几何和血莲宝灯那条链子完全共用（{@link #submitChain}），只是换成紫白配色 + 更直的锯齿波形。
+     */
+    public static void submitThunderBolt(PoseStack poseStack, SubmitNodeCollector collector,
+                                         Vec3 start, Vec3 end, float width, float alpha,
+                                         long seed) {
+        submitChain(poseStack, collector, start, end, width, alpha, seed,
+                THUNDER_GLOW_R, THUNDER_GLOW_G, THUNDER_GLOW_B,
+                THUNDER_CORE_R, THUNDER_CORE_G, THUNDER_CORE_B,
+                THUNDER_AMPLITUDE, THUNDER_FREQUENCY);
+    }
+
+    /**
+     * 通用配色版赫兹波链条（双层渲染）：血莲宝灯与尸王雷电都走这里。
+     */
+    private static void submitChain(PoseStack poseStack, SubmitNodeCollector collector,
+                                    Vec3 start, Vec3 end, float width, float alpha, long seed,
+                                    int glowR, int glowG, int glowB,
+                                    int coreR, int coreG, int coreB,
+                                    double amplitude, double frequency) {
         Vec3 direction = end.subtract(start);
         double totalLength = direction.length();
         if (totalLength < 1.0E-6) {
@@ -60,7 +106,8 @@ public class BloodLotusLaserRenderer {
         Vec3 dirNorm = direction.normalize();
         Random rng = new Random(seed);
 
-        List<Vec3> chainPoints = generateHertzChain(start, end, dirNorm, totalLength, rng);
+        List<Vec3> chainPoints = generateHertzChain(start, end, dirNorm, totalLength, rng,
+                amplitude, frequency);
 
         collector.submitCustomGeometry(poseStack, LASER_RENDER_TYPE, (pose, consumer) -> {
             Matrix4f matrix = pose.pose();
@@ -75,7 +122,7 @@ public class BloodLotusLaserRenderer {
 
                 drawSegmentColored(consumer, matrix, segStart, segEnd,
                         width * GLOW_WIDTH_MULT, glowAlpha,
-                        GLOW_R, GLOW_G, GLOW_B);
+                        glowR, glowG, glowB);
             }
 
             // ✅ 第二层：内层核心（细、亮）
@@ -88,7 +135,7 @@ public class BloodLotusLaserRenderer {
 
                 drawSegmentColored(consumer, matrix, segStart, segEnd,
                         width, coreAlpha,
-                        CORE_R, CORE_G, CORE_B);
+                        coreR, coreG, coreB);
             }
         });
     }
@@ -156,7 +203,8 @@ public class BloodLotusLaserRenderer {
      */
     private static List<Vec3> generateHertzChain(Vec3 start, Vec3 end,
                                                  Vec3 dirNorm, double totalLength,
-                                                 Random rng) {
+                                                 Random rng,
+                                                 double amplitude, double frequency) {
         List<Vec3> points = new ArrayList<>();
 
         int segmentCount = Math.max(16, (int) (totalLength / 0.3));
@@ -174,13 +222,13 @@ public class BloodLotusLaserRenderer {
 
             double envelope = Math.sin(t * Math.PI);
 
-            double wave1 = Math.sin(t * Math.PI * 2 * HERTZ_FREQUENCY + phase)
-                    * HERTZ_AMPLITUDE * envelope;
+            double wave1 = Math.sin(t * Math.PI * 2 * frequency + phase)
+                    * amplitude * envelope;
 
             Vec3 offset;
             if (HERTZ_HELICAL) {
-                double wave2 = Math.cos(t * Math.PI * 2 * HERTZ_FREQUENCY + phase)
-                        * HERTZ_AMPLITUDE * envelope;
+                double wave2 = Math.cos(t * Math.PI * 2 * frequency + phase)
+                        * amplitude * envelope;
                 offset = perp1.scale(wave1).add(perp2.scale(wave2));
             } else {
                 offset = perp1.scale(wave1);

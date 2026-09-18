@@ -9,6 +9,7 @@
     "ItemEntityMixin",
     "MobPeacefulMixin",
     "MobPickupMixin",
+    "MobZombieKingRespectMixin",
     "ServerPlayerShellMixin"
   ],
   "injectors": {

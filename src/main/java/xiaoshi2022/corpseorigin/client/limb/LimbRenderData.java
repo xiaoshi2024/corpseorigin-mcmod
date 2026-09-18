@@ -39,10 +39,12 @@ public final class LimbRenderData {
             DataTicket.create("corpse_limb_regrow_right_leg", Float.class);
     public static final DataTicket<Float> REGROW_LEFT_LEG =
             DataTicket.create("corpse_limb_regrow_left_leg", Float.class);
+    public static final DataTicket<Float> REGROW_HEAD =
+            DataTicket.create("corpse_limb_regrow_head", Float.class);
 
     /** 按下标取进度信号，顺序与 {@link xiaoshi2022.corpseorigin.limb.LimbSlots} 的部位下标一致 */
     public static final List<DataTicket<Float>> REGROW_BY_SLOT = List.of(
-            REGROW_RIGHT_ARM, REGROW_LEFT_ARM, REGROW_RIGHT_LEG, REGROW_LEFT_LEG);
+            REGROW_RIGHT_ARM, REGROW_LEFT_ARM, REGROW_RIGHT_LEG, REGROW_LEFT_LEG, REGROW_HEAD);
 
     private LimbRenderData() {
     }

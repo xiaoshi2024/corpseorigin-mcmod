@@ -91,7 +91,6 @@ public class JuQue extends Item implements GeoItem {
     }
 
     /** 剑意核心（大剑实体） */
-    /** 剑意核心（大剑实体） */
     public static void releaseGreatSwordStatic(Player player, ItemStack stack, InteractionHand hand) {
         if (player.getCooldowns().isOnCooldown(stack)) return;
 

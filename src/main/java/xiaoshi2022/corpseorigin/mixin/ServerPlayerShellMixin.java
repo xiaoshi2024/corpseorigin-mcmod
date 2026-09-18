@@ -10,6 +10,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.TagValueInput;
@@ -20,6 +22,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
+import xiaoshi2022.corpseorigin.character.LongYou;
 import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.shell.ServerShell;
@@ -207,7 +210,20 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
         self.setDeltaMovement(Vec3.ZERO);
 
         // ★ 组件：把这具身体自带的尸兄状态 / 角色数据 / 技能状态覆盖到玩家身上
+        // ★ 尸王（龙右）换身体不忘记身份与技能。
+        //   身体快照里的角色数据可能是"白纸"（克隆仓培育的身体一律把角色清成凡人），
+        //   照抄过去尸王就变成凡人了 —— 客户端技能树当场空白，再用角色书重选龙右
+        //   又会触发"切角色清空已学技能"，技能就真的没了。所以换身前先抓一份
+        //   "我是谁 + 我学了什么 + 我的进化点"，换完立刻写回。
+        //   换身的所有入口（克隆仓面板 / 金蝉脱壳 / 血肉重塑 / 右键回旧身体 / 死亡夺舍）
+        //   都汇到这里，保证只有这一处需要维护。
+        CompoundTag longYouIdentity = LongYou.isLongYouBody(self)
+                ? PlayerCharacterData.get(self).writeNbt(self.getUUID())
+                : null;
         state.getComponent().applyTo(self);
+        if (longYouIdentity != null) {
+            PlayerCharacterData.get(self).readNbt(self.getUUID(), longYouIdentity);
+        }
         // 角色变了要重新同步给客户端，否则客户端的角色与技能树还是旧的
         CorpseNetwork.sendCharacterSync(self,
                 PlayerCharacterData.get(self).getCharacterId(self.getUUID()));
@@ -260,6 +276,19 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
         if (self.gameMode() != gameType) {
             self.setGameMode(gameType);
         }
+
+        // ★ 尸王的基础数值（血量 50 / 护甲 10 / 击退抗性 50% …）挂在"身体"上：
+        //   换到龙右身体就套上，从龙右身体换走就摘掉。
+        //   ⚠️ 必须放在 self.load 之后 —— load 会用身体快照里的属性覆盖实体属性表。
+        LongYou.applyIfLongYou(self);
+
+        // ★ 身体的大小（尸王原体是缩小版）：同样在 load 之后写，渲染与碰撞箱一起变
+        AttributeInstance scale = self.getAttribute(Attributes.SCALE);
+        if (scale != null) {
+            scale.setBaseValue(state.getScale());
+        }
+        // ★ 原体的体术：拇指大小但跳得高、摔不伤
+        LongYou.applyOriginalBodyAgility(self, state.getScale() < 1.0F);
 
         if (self.getHealth() <= 0.0F) {
             self.setHealth(1.0F);

@@ -97,7 +97,9 @@ public class PlayerCharacterData extends SavedData {
         private PlayerEntry(String characterId, List<String> learnedSkills,
                             int earnedPoints, int availablePoints) {
             this.characterId = characterId;
-            this.learnedSkills = new LinkedHashSet<>(learnedSkills);
+            for (String skill : learnedSkills) {
+                this.learnedSkills.add(normalizeSkillId(skill));
+            }
             this.earnedPoints = earnedPoints;
             this.availablePoints = availablePoints;
         }
@@ -187,7 +189,11 @@ public class PlayerCharacterData extends SavedData {
         entry.learnedSkills.clear();
         tag.getList("LearnedSkills").ifPresent(list -> {
             for (Tag t : list) {
-                if (t instanceof StringTag s) entry.learnedSkills.add(String.valueOf(s.asString()));
+                // ⚠️ 26.2 的 StringTag#asString() 返回的是 Optional<String>，
+                //    写成 String.valueOf(...) 会把技能存成 "Optional[thunder_power]"，
+                //    换一次身体再套一层（Optional[Optional[...]]），技能树就全变"未解锁"了。
+                //    这里必须取 value()（StringTag 是 record，value() 才是真正的字符串）。
+                if (t instanceof StringTag s) entry.learnedSkills.add(normalizeSkillId(s.value()));
             }
         });
 
@@ -200,5 +206,24 @@ public class PlayerCharacterData extends SavedData {
     public void clearLearnedSkills(UUID uuid) {
         getEntry(uuid).learnedSkills.clear();
         setDirty();
+    }
+
+    /**
+     * 修掉老存档里已被写坏的技能 id。
+     * <p>
+     * 26.2 的 {@code StringTag#asString()} 返回 {@code Optional<String>}，早期代码写成
+     * {@code String.valueOf(tag.asString())}，于是技能被存成了 {@code Optional[thunder_power]}，
+     * 每换一次身体还会再多套一层壳 —— 技能树因此全部显示"未解锁"。
+     * 这里把外面那几层 {@code Optional[...]} 剥掉，让已经中招的存档也能自动恢复。
+     */
+    private static String normalizeSkillId(String skill) {
+        if (skill == null) {
+            return null;
+        }
+        String value = skill;
+        while (value.startsWith("Optional[") && value.endsWith("]")) {
+            value = value.substring("Optional[".length(), value.length() - 1);
+        }
+        return value;
     }
 }
