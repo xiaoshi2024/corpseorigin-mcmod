@@ -32,10 +32,10 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import xiaoshi2022.corpseorigin.registry.ModItems;
 import xiaoshi2022.corpseorigin.registry.ModSounds;
 
 /**
@@ -76,9 +76,10 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
 
     // ==================== 数值 ====================
     private static final int ATTACK_ANIM_TICKS = 15;
-    private static final int THROW_COOLDOWN_TICKS = 60;
-    private static final float THROW_MIN_DIST = 4.0F;
-    private static final float THROW_MAX_DIST = 14.0F;
+    private static final int THROW_COOLDOWN_TICKS = 100;
+    private static final int THROW_WINDUP_TICKS = 15;
+    private static final float THROW_MIN_DIST = 5.0F;
+    private static final float THROW_MAX_DIST = 16.0F;
     /** 饱食度超过该值 → 消化不良 */
     private static final int OVERFULL_THRESHOLD = 80;
     /** 消化速度：每 100 tick 消化 1 点 */
@@ -187,8 +188,20 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
 
     // ==================== 投掷大葱 ====================
 
+    private int throwWindup = 0;
+
     private void tickLeekThrow() {
         if (this.throwCooldown > 0) this.throwCooldown--;
+
+        // 投掷前摇：先停顿瞄准再出手，避免边跑边扔
+        if (this.throwWindup > 0) {
+            this.throwWindup--;
+            this.setDeltaMovement(this.getDeltaMovement().multiply(0.2, 1.0, 0.2));
+            if (this.throwWindup == 0) {
+                doThrowLeek();
+            }
+            return;
+        }
 
         if (this.tickCount % 5 != 0 || this.throwCooldown > 0) return;
 
@@ -199,10 +212,20 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
         if (dist < THROW_MIN_DIST || dist > THROW_MAX_DIST) return;
         if (!this.hasLineOfSight(target)) return;
 
+        // 进入前摇：面向目标、短暂停顿，再掷出
+        this.getLookControl().setLookAt(target, 30.0F, 30.0F);
+        this.throwWindup = THROW_WINDUP_TICKS;
+        this.throwCooldown = THROW_COOLDOWN_TICKS;
+    }
+
+    private void doThrowLeek() {
+        LivingEntity target = this.getTarget();
+        if (target == null || !target.isAlive()) return;
+        if (!this.hasLineOfSight(target)) return;
+
         if (this.level() instanceof ServerLevel serverLevel) {
             LeekProjectileEntity.throwLeek(serverLevel, this, target);
             triggerAttackAnimation();
-            this.throwCooldown = THROW_COOLDOWN_TICKS;
         }
     }
 
@@ -320,10 +343,10 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
     protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean recentlyHit) {
         super.dropCustomDeathLoot(level, source, recentlyHit);
 
-        // 大葱（以竹节代替）：掉落 0~2
+        // 大葱：掉落 0~2 根
         int count = this.random.nextInt(3);
         if (count > 0) {
-            this.spawnAtLocation(level, new ItemStack(Items.BAMBOO, count), 0.0F);
+            this.spawnAtLocation(level, new ItemStack(ModItems.LEEK, count), 0.0F);
         }
     }
 

@@ -14,13 +14,13 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
+import xiaoshi2022.corpseorigin.registry.ModItems;
 
 import java.util.List;
 import java.util.UUID;
@@ -30,7 +30,7 @@ import java.util.UUID;
  * <p>
  * 原作：初音尸兄在车顶用大葱投掷击杀了怪物控。
  * 飞行逻辑参照 {@link FlyingGreatSwordEntity}（照抄箭矢的直线飞行），带轻微下坠。
- * 渲染用竹节（BAMBOO）代替大葱，直到有正式的大葱贴图/模型。
+ * 渲染用 {@link ModItems#LEEK} 大葱物品模型。
  */
 public class LeekProjectileEntity extends Entity {
 
@@ -73,7 +73,7 @@ public class LeekProjectileEntity extends Entity {
         leek.ownerUUID = thrower.getUUID();
         leek.flyDir = dir;
 
-        leek.entityData.set(DATA_ITEM, new ItemStack(Items.BAMBOO));
+        leek.entityData.set(DATA_ITEM, new ItemStack(ModItems.LEEK));
         float yaw = (float) Math.toDegrees(Math.atan2(-dir.x, dir.z));
         float pitch = (float) Math.toDegrees(-Math.asin(dir.y));
         leek.setYRot(yaw);

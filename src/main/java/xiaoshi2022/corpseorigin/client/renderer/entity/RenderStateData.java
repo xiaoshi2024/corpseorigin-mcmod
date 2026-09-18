@@ -14,5 +14,9 @@ public final class RenderStateData {
     public static final DataTicket<LowerLevelZbEntity> ENTITY =
             DataTicket.create("entity", new TypeToken<LowerLevelZbEntity>() {});
 
+    /** 初音尸兄是否处于「消化不良」大肚子状态 */
+    public static final DataTicket<Boolean> MIKU_OVERFULL =
+            DataTicket.create("miku_overfull", Boolean.class);
+
     private RenderStateData() {}
 }

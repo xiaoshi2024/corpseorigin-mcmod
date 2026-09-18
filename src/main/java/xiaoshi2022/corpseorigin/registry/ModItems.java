@@ -147,6 +147,15 @@ public final class ModItems {
             new ZbWormItem(new Item.Properties().setId(itemKey("zb_worm_item")))
     );
 
+    /** 大葱 - 初音尸兄的远程投掷物材料，可作食物 */
+    public static final Item LEEK = register(
+            "leek",
+            new Item(new Item.Properties()
+                    .setId(itemKey("leek"))
+                    .food(new net.minecraft.world.food.FoodProperties.Builder()
+                            .nutrition(2).saturationModifier(0.3F).build()))
+    );
+
     // ==================== 创造物品栏 ====================
     public static final CreativeModeTab CORPSE_ORIGIN_TAB = CreativeModeTab.builder(
                     CreativeModeTab.Row.TOP, 8)
@@ -169,6 +178,7 @@ public final class ModItems {
                 output.accept(ZB_WORM_SPAWN_EGG);
                 output.accept(MIKU_ZB_SPAWN_EGG);
                 output.accept(ZB_WORM_ITEM);
+                output.accept(LEEK);
             })
             .build();
 
