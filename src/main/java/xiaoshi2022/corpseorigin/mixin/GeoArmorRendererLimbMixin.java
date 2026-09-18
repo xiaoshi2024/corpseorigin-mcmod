@@ -46,7 +46,7 @@ public abstract class GeoArmorRendererLimbMixin {
             }
             String bone = self.getBoneNameForSegment(avatar, segment);
             if (bone == null || bone.isEmpty()) {
-                continue;
+                continue;   // 模型里没这根骨（比如这套没做靴子几何）
             }
             snapshots.get(bone).ifPresent(snapshot -> {
                 // 方块往往挂在骨段的子骨上（armorRightArm → "Right Arm"），所以两层都要藏

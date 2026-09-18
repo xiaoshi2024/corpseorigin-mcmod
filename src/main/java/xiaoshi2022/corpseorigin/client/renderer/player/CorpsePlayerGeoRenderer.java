@@ -1,5 +1,6 @@
 package xiaoshi2022.corpseorigin.client.renderer.player;
 
+import com.geckolib.constant.DataTickets;
 import com.geckolib.renderer.GeoReplacedEntityRenderer;
 import com.geckolib.renderer.base.BoneSnapshots;
 import com.geckolib.renderer.base.RenderPassInfo;
@@ -63,6 +64,50 @@ public class CorpsePlayerGeoRenderer
             CorpseOrigin.LOGGER.info("✅ 断肢玩家渲染器已创建");
         }
         return instance;
+    }
+
+    /**
+     * 把断肢数据写进玩家的 render state，并让 GeckoLib 当场求值控制器、产出动画快照。
+     * <p>
+     * ⚠️ 所有 ticket 必须写在 {@link #extractRenderState} <b>之前</b> —— 控制器求值时读的就是这些值；
+     * 晚填的话 regrow 进度读不到、退回 {@code INTACT}（负数），动画一律 STOP。
+     * <p>
+     * 有两个调用点，缺一不可：
+     * <ol>
+     *   <li>{@code AvatarRenderer.extractRenderState} 的 RETURN —— 常规路径（见 {@code AvatarRendererMixin}）；</li>
+     *   <li>{@code GeoArmorRenderer.captureRenderStates} 的 RETURN —— <b>补写</b>（见 {@code GeoArmorRendererCaptureMixin}）。
+     *       GeckoLib 给每个盔甲件准备 per-slot 渲染状态时，只有"头盔"那一件会直接拿<b>玩家本人的 render state</b>
+     *       顶替（胸/腿会重新 extract 一份新的，所以不冲突），随后
+     *       {@code fillRenderState} 就会把<b>头盔物品</b>的动画控制器快照写进这份 state，
+     *       把玩家自己的 {@code ANIMATION_CONTROLLER_STATES} 整个盖掉。
+     *       而渲染时 {@code applyAnimationControllers} 只读这个数组 ——
+     *       于是所有动画停在 0 帧：血管 scale 不生长、残桩不动，表现就是"穿了（含头盔的）geo 套就不播动画"。
+     *       所以必须在它盖完之后把玩家的数据写回去。</li>
+     * </ol>
+     */
+    public static void writeLimbRenderData(AvatarRenderState state, AbstractClientPlayer player, float partialTick) {
+        ClientLimbCache.Entry limbs = ClientLimbCache.get(player);
+        if (limbs == null) {
+            return;   // 四肢完好 → 照原版玩家渲染，不碰 GeckoLib
+        }
+        CorpsePlayerGeoRenderer renderer = instance;
+        if (renderer == null) {
+            return;
+        }
+
+        // ① 先把控制器要读的值全部写好（此刻 AvatarRenderer 已经填好 walkAnimationSpeed / attackTime）
+        state.addGeckolibData(LimbRenderData.LIMB_MASK, limbs.mask());
+        for (int slot = 0; slot < LimbSlots.COUNT; slot++) {
+            state.addGeckolibData(LimbRenderData.REGROW_BY_SLOT.get(slot),
+                    limbs.progress(slot, partialTick));
+        }
+        state.addGeckolibData(LimbRenderData.MOVING, state.walkAnimationSpeed > 0.02F);
+        state.addGeckolibData(LimbRenderData.ATTACKING, state.attackTime > 0.0F);
+        // 不补的话 GeoRenderState.getPackedLight() 会退回"全亮"，模型在暗处自带发光
+        state.addGeckolibData(DataTickets.PACKED_LIGHT, state.lightCoords);
+
+        // ② 再走官方路径：GeckoLib 补齐渲染数据 + 当场求值控制器、产出动画快照
+        renderer.extractRenderState(player, state, partialTick);
     }
 
     /**
@@ -217,8 +262,20 @@ public class CorpsePlayerGeoRenderer
         return DefaultPlayerSkin.getDefaultTexture();
     }
 
+    /**
+     * 残桩 / 血管用<b>带深度偏移</b>的实体 RenderType 画（穿模显示）。
+     * <p>
+     * 这个绘制器只负责"断掉那一肢"的残桩与血管，而它们长在关节处、紧贴盔甲内壁 ——
+     * 正常深度测试下会被贴身的 geo 套装（长袍 / 护腿 / 胸甲肩片）盖住：
+     * 裸装看得见生长过程，穿上套装就看不见了。
+     * <p>
+     * 换成 ZOffset 之后这几块方块在深度上往前挪一点点，就能"盖在长袍上面画"；
+     * 偏移量很小，所以地形、墙体这些真正挡住玩家的东西照样能正常遮挡它（不会透视穿墙）。
+     * 另外提交顺序也配合改了：见 {@code LivingEntityRendererSubmitMixin}，它在 TAIL 提交，
+     * 保证这一层排在盔甲层之后。
+     */
     @Override
     public RenderType getRenderType(AvatarRenderState renderState, Identifier texture) {
-        return RenderTypes.entityCutout(texture);
+        return RenderTypes.entityCutoutZOffset(texture);
     }
 }

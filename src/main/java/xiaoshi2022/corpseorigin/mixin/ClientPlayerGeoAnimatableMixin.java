@@ -100,9 +100,15 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
 
     @Unique
     private PlayState corpseorigin$movement(AnimationTest<PlayerGeoAnimatable> test) {
-        return test.getDataOrDefault(LimbRenderData.MOVING, false)
-                ? test.setAndContinue(CORPSEORIGIN$WALK)
-                : test.setAndContinue(CORPSEORIGIN$IDLE);
+        Boolean moving = test.getDataOrDefault(LimbRenderData.MOVING, null);
+        if (moving == null) {
+            // ★ 这次求值没带玩家身体的信号（典型情况：穿着 GeoLib 套装时，
+            //   GeoArmorRenderer 会拿同一个 animatable 用"盔甲那份 render state"再求一次值，
+            //   而那份 state 上没有我们的 ticket）。这种"别人的回合"必须原样返回、不碰内部状态，
+            //   否则会把身体这边的动画打断/每帧重置。
+            return PlayState.CONTINUE;
+        }
+        return moving ? test.setAndContinue(CORPSEORIGIN$WALK) : test.setAndContinue(CORPSEORIGIN$IDLE);
     }
 
     /**
@@ -115,7 +121,11 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
      */
     @Unique
     private PlayState corpseorigin$attack(AnimationTest<PlayerGeoAnimatable> test) {
-        boolean attacking = test.getDataOrDefault(LimbRenderData.ATTACKING, false);
+        Boolean attackingData = test.getDataOrDefault(LimbRenderData.ATTACKING, null);
+        if (attackingData == null) {
+            return PlayState.CONTINUE;   // 别人的回合（盔甲那条管线），不碰状态
+        }
+        boolean attacking = attackingData;
         if (!attacking) {
             corpseorigin$attacking = false;
             return PlayState.STOP;
@@ -162,7 +172,19 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
     @Unique
     private PlayState corpseorigin$regrow(AnimationTest<PlayerGeoAnimatable> test,
                                          RawAnimation animation, DataTicket<Float> progressTicket, int slot) {
-        float progress = test.getDataOrDefault(progressTicket, ClientLimbCache.INTACT);
+        Float progressData = test.getDataOrDefault(progressTicket, null);
+        if (progressData == null) {
+            // ★ 关键：这次求值不是"玩家身体"那条管线。
+            //   穿着 GeoLib 套装时，GeoArmorRenderer 会拿同一个 animatable、用盔甲自己的
+            //   render state 再求一次值，而那份 state 上没有任何 REGROW_* / MOVING ticket。
+            //   以前这里写 getDataOrDefault(..., ClientLimbCache.INTACT)，于是那种求值被当成
+            //   "这肢完好"→ 直接 STOP，顺带把 lastRegrow 写成 -1；等身体那边再求值时又变成
+            //   "进度倒退 → 重播"，动画每帧从第 0 帧重新开始 —— 表现就是
+            //   "穿着 GeoLib 套装时四肢的再生动画完全不播"（原版盔甲没有这条管线，所以正常）。
+            //   正确做法：不是我的回合就原样返回，不碰任何内部状态。
+            return PlayState.CONTINUE;
+        }
+        float progress = progressData;
         if (progress < 0.0F) {
             // 完好（INTACT）或断了不会自愈（PERMANENT）→ 不播，由 renderer 决定显示方块骨还是残桩
             corpseorigin$lastRegrow[slot] = progress;
