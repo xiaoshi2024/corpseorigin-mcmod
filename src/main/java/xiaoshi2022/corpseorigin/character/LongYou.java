@@ -18,14 +18,7 @@ import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModItems;
 import xiaoshi2022.corpseorigin.skill.ISkill;
-import xiaoshi2022.corpseorigin.skill.longyou.BallLightningSkill;
-import xiaoshi2022.corpseorigin.skill.longyou.CorpseKingInfrasoundSkill;
-import xiaoshi2022.corpseorigin.skill.longyou.CorpseKingThunderSkill;
-import xiaoshi2022.corpseorigin.skill.longyou.FleshReshapeSkill;
-import xiaoshi2022.corpseorigin.skill.longyou.GoldenCicadaShellSkill;
-import xiaoshi2022.corpseorigin.skill.longyou.ThunderPowerSkill;
-import xiaoshi2022.corpseorigin.skill.longyou.UndyingChestSkill;
-import xiaoshi2022.corpseorigin.skill.longyou.WaterPollutionSkill;
+import xiaoshi2022.corpseorigin.skill.longyou.*;
 
 import java.util.List;
 

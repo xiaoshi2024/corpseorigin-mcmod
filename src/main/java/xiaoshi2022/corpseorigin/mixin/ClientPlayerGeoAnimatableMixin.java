@@ -11,7 +11,6 @@ import com.geckolib.util.GeckoLibUtil;
 import net.minecraft.client.player.AbstractClientPlayer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
-import xiaoshi2022.corpseorigin.client.limb.ClientLimbCache;
 import xiaoshi2022.corpseorigin.client.limb.LimbRenderData;
 import xiaoshi2022.corpseorigin.client.limb.PlayerGeoAnimatable;
 import xiaoshi2022.corpseorigin.limb.LimbSlots;
