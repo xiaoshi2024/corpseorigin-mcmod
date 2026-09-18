@@ -29,15 +29,20 @@ public class AntennaBlockSkill extends AbstractSkill {
 
     public static final String PATH = "antenna_block";
 
-    /** 被动：挡下这一击的概率 */
-    public static final double PASSIVE_BLOCK_CHANCE = 0.30;
+    /**
+     * 被动：挡下这一击的概率。
+     * <p>
+     * ⚠️ 注意挡的是<b>整次伤害</b>（不是减伤），等于凭空多一条命。原来 30% 太超模，
+     * 砍到 15% —— 还是能明显感觉到"偶尔免伤"，但不再是对砍时的常态。
+     */
+    public static final double PASSIVE_BLOCK_CHANCE = 0.15;
     /** 上面概率的百分数写法（只用于文案） */
-    public static final int PASSIVE_BLOCK_CHANCE_PERCENT = 30;
+    public static final int PASSIVE_BLOCK_CHANCE_PERCENT = 15;
 
-    /** 主动：按下后"必定格挡"的持续时间（3 秒） */
-    public static final int GUARD_DURATION = 60;
-    /** 主动：冷却（12 秒） */
-    private static final int GUARD_COOLDOWN = 240;
+    /** 主动：按下后"必定格挡"的持续时间（2 秒）—— 原来是 3 秒，挡得又久又稳 */
+    public static final int GUARD_DURATION = 40;
+    /** 主动：冷却（20 秒）—— 原来是 12 秒，配合被动几乎半程无敌 */
+    private static final int GUARD_COOLDOWN = 400;
 
     /**
      * 被动挡下时同步给客户端的动画时长。

@@ -33,19 +33,41 @@ public final class EntityAntennaSuckHandler {
 
     private EntityAntennaSuckHandler() {}
 
-    private static final double GRAB_RANGE = 8.0;
-    private static final int DURATION = 120;
-    private static final int DRAIN_INTERVAL = 6;
-    private static final float DRAIN_DAMAGE = 4.0f;
-    private static final float HEAL_RATIO = 0.8f;
-    private static final double BREAK_DISTANCE = 9.5;
+    /**
+     * 起手抓取距离（不分方向：前后左右上下都算）。
+     * <p>
+     * ⚠️ 这里同时是"触手能伸多远"的上限（渲染端按实际距离反算伸长量），
+     * 所以调大等于同时加射程和加命中率，是这套装备最容易超模的旋钮。
+     */
+    public static final double GRAB_RANGE = 5.0;
+    /** 单次吸食持续时长（tick）：5 秒 */
+    private static final int DURATION = 100;
+    /** 吸一口的间隔与数值：每 0.5 秒一口、每口 2.5 点 */
+    private static final int DRAIN_INTERVAL = 10;
+    private static final float DRAIN_DAMAGE = 2.5f;
+    /** 吸血转回自身的比例（原来 0.8 —— 几乎吸多少回多少，太离谱） */
+    private static final float HEAL_RATIO = 0.5f;
+    /** 目标拉开到这个距离就算挣脱（要比抓取距离大一截，否则刚抓住就断） */
+    private static final double BREAK_DISTANCE = 7.0;
 
-    private static final double SLOWNESS_CHANCE = 0.4;
-    private static final int SLOWNESS_DURATION = 24;
+    /**
+     * 生物施术者的"起手保护期"（tick）：这段时间内挨打不松手。
+     * <p>
+     * 玩家挨打立刻松手（那是"打断技解救"的手感）；但生物不行 —— 它一动手，
+     * 被咬的目标下一个 tick 必然还手，{@code hurtTime} 立刻置位，
+     * 起手包和松手包落在同一帧，动画一帧都渲染不出来（表现就是"吸食生效了但没有动画"）。
+     * 给 1 秒缓冲，动画至少能完整起手；之后挨打照样断。
+     */
+    private static final int MOB_BREAK_GRACE = 20;
+
+    private static final double SLOWNESS_CHANCE = 0.3;
+    private static final int SLOWNESS_DURATION = 20;
     private static final int SLOWNESS_AMPLIFIER = 2;
 
-    private static final int BUFF_DURATION = 100;
-    private static final int SPECIAL_BLOOD_BUFF_DURATION = 300;
+    /** 吸血带来的强化：普通目标给这么多 tick（3 秒） */
+    private static final int BUFF_DURATION = 60;
+    /** 特殊血液目标（本模组角色玩家）给更久（6 秒）—— 同类血液更补 */
+    private static final int SPECIAL_BLOOD_BUFF_DURATION = 120;
     private static final int SPECIAL_BLOOD_AMPLIFIER_BONUS = 1;
 
     /** 施术者 uuid → 正在进行的吸食 */
@@ -72,8 +94,8 @@ public final class EntityAntennaSuckHandler {
             return false;
         }
 
-        ACTIVE.put(caster.getUUID(),
-                new Suck(target, caster.tickCount + DURATION, caster.tickCount + DRAIN_INTERVAL));
+        ACTIVE.put(caster.getUUID(), new Suck(target, caster.tickCount,
+                caster.tickCount + DURATION, caster.tickCount + DRAIN_INTERVAL));
         tryApplySlowness(target);
 
         // 告诉所有客户端"它在吸食谁"，盔甲据此播 absorb 并把触手转向目标
@@ -129,8 +151,12 @@ public final class EntityAntennaSuckHandler {
             stop(caster, suck);
             return false;
         }
-        // 自己挨打就松手
-        if (caster.hurtTime > 0) {
+        // 自己挨打就松手 —— 这是给玩家设计的"打断技解救"：被吸的玩家打施术者一下就能挣脱。
+        // 生物施术者同样能被打断，但要走一段起手保护期：怪物近战互殴时对方必然还手，
+        // 施术者挨一下（hurtTime = 10 tick）就立刻松手，而"起手"和"松手"两个包会落在
+        // 同一帧里，客户端根本来不及渲染 —— 表现就是"吸食力量生效了但动画不播"。
+        int breakGrace = caster instanceof ServerPlayer ? 0 : MOB_BREAK_GRACE;
+        if (caster.hurtTime > 0 && caster.tickCount - suck.startTick >= breakGrace) {
             stop(caster, suck);
             return false;
         }
@@ -233,11 +259,13 @@ public final class EntityAntennaSuckHandler {
     /** 一次进行中的吸食 */
     private static final class Suck {
         private final LivingEntity target;
+        private final int startTick;
         private final int until;
         private int nextDrain;
 
-        private Suck(LivingEntity target, int until, int nextDrain) {
+        private Suck(LivingEntity target, int startTick, int until, int nextDrain) {
             this.target = target;
+            this.startTick = startTick;
             this.until = until;
             this.nextDrain = nextDrain;
         }

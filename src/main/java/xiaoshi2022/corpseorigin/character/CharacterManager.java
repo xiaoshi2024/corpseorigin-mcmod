@@ -183,5 +183,8 @@ public class CharacterManager {
         CorpseNetwork.sendCharacterSync(player, characterId);
         // ✅ 同步进化状态 + 已学技能
         CorpseNetwork.sendEvolutionSync(player);
+        // ✅ 同步内力：HUD 只认这个包，而内力表在退出时会被清掉，
+        //    登录/重生后不补发的话内力条要等到玩家用一次技能才会出现
+        InnerPowerManager.syncTo(player);
     }
 }

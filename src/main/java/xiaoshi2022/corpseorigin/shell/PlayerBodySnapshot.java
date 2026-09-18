@@ -47,9 +47,12 @@ public final class PlayerBodySnapshot {
         // 空背包（必须显式写，否则 load 不会清背包）
         tag.put("Inventory", new ListTag());
 
-        // ★ 克隆体是干净身体：不继承盔甲与手持物品
-        tag.put("ArmorItems", new ListTag());
-        tag.put("HandItems", new ListTag());
+        // ★ 克隆体是干净身体：不继承盔甲与手持物品。
+        //   26.2 里装备存在 LivingEntity 的 "equipment" 键（走 EntityEquipment.CODEC），
+        //   而 load 读不到该键时会回退成空 EntityEquipment —— 所以摘掉这个键就等于清空装备。
+        //   ⚠️ 别再写 ArmorItems / HandItems：那是 1.21.4 及更早的格式，现在根本不会被读，
+        //   写了也不生效（这正是"右键克隆仍然继承玩家盔甲"的原因）。
+        tag.remove("equipment");
 
         // 满血、饱食 20、经验归零
         tag.putFloat("Health", player.getMaxHealth());

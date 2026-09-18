@@ -1,6 +1,7 @@
 package xiaoshi2022.corpseorigin.entity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -12,7 +13,13 @@ import net.minecraft.world.ItemStackWithSlot;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.animal.golem.IronGolem;
+import net.minecraft.world.entity.npc.villager.AbstractVillager;
+import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
@@ -164,7 +171,7 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     public void setBodyState(@Nullable ShellState bodyState) {
         this.bodyState = bodyState;
         this.syncEquipment(bodyState);
-        this.syncBodyCorpseData();
+        this.syncBodyCorpseData(true);
     }
 
     /**
@@ -175,15 +182,20 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
      * <p>
      * ★ 广播给同维度所有玩家：分身别人也看得见，只发给 owner 别人会看不到外骨骼。
      */
-    private void syncBodyCorpseData() {
+    private void syncBodyCorpseData(boolean healWhenInherited) {
         if (this.level().isClientSide() || this.bodyState == null) {
             return;
         }
         net.minecraft.nbt.CompoundTag tag =
                 xiaoshi2022.corpseorigin.shell.ShellState.corpseTagOf(this.bodyState.getComponent());
         // 尸水培育出来的克隆体是尸兄：行为也按低阶尸兄走
-        this.entityData.set(DATA_CORPSE_CLONE,
-                tag != null && tag.getBoolean("is_corpse").orElse(false));
+        boolean corpseClone = tag != null && tag.getBoolean("is_corpse").orElse(false);
+        // 只在"从干净人形变成尸兄克隆体"这一次做属性迁移，
+        // 否则每次重发身体状况都会把血回满
+        if (corpseClone && !this.isCorpseClone()) {
+            this.inheritLowerLevelZbAttributes(healWhenInherited);
+        }
+        this.entityData.set(DATA_CORPSE_CLONE, corpseClone);
 
         if (this.level() instanceof ServerLevel level) {
             CorpseNetwork.broadcastBodyCorpseSync(level, this.ownerPlayer(), this.getUUID(), tag);
@@ -312,14 +324,40 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         public boolean canUse() { return isCorpseClone() && super.canUse(); }
     }
 
-    private final class CorpseTargetGoal extends NearestAttackableTargetGoal<Player> {
-        CorpseTargetGoal() { super(CloneAvatarEntity.this, Player.class, true); }
+    /**
+     * 尸兄克隆体的索敌：抓"活人"。
+     * <p>
+     * ⚠️ 原来是 {@code NearestAttackableTargetGoal<Player>} —— 只认玩家，
+     * 所以村民从它面前走过完全不会触发，看着就不像尸兄。
+     * 现在放宽到 {@link LivingEntity}，再用 {@link #isPrey} 收窄成"人形猎物"。
+     */
+    private final class CorpseTargetGoal extends NearestAttackableTargetGoal<LivingEntity> {
+        CorpseTargetGoal() {
+            super(CloneAvatarEntity.this, LivingEntity.class, 10, true, false,
+                    (target, level) -> isPrey(target));
+        }
 
         @Override
         public boolean canUse() { return isCorpseClone() && super.canUse(); }
 
         @Override
         public boolean canContinueToUse() { return isCorpseClone() && super.canContinueToUse(); }
+    }
+
+    /**
+     * 尸兄要吃的东西：玩家、村民（含流浪商人），以及护村的铁傀儡。
+     * <p>
+     * 刻意不放进牛羊猪这类动物 —— 原版僵尸也不猎食它们，尸兄吃的是"人"。
+     * 尸族（{@link ZombieKin}）也排除掉，免得克隆体去啃同类。
+     */
+    private static boolean isPrey(LivingEntity target) {
+        if (target instanceof ZombieKin) {
+            return false;
+        }
+        return target instanceof Player
+                || target instanceof Villager
+                || target instanceof AbstractVillager
+                || target instanceof IronGolem;
     }
 
     /**
@@ -354,6 +392,42 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
                 .add(Attributes.FOLLOW_RANGE, 16.0);
     }
 
+    /**
+     * 尸兄克隆体直接继承低等尸兄的属性。
+     * <p>
+     * 上面 {@link #createAttributes()} 给的是"干净人形"的底子（速度 0.13、伤害 1.0、无护甲），
+     * 尸水培育出来的克隆体不该是这个水平 —— 它跟 {@link LowerLevelZbEntity} 是同一种东西，
+     * 血量 / 攻击 / 速度 / 护甲 / 索敌范围都该照搬。
+     * <p>
+     * 数值不写死，而是现取 {@link LowerLevelZbEntity#createAttributes()} 的基准值，
+     * 以后调整低等尸兄的属性时这里会自动跟着变，不会对不上。
+     * <p>
+     * ⚠️ 必须用 {@code setBaseValue} 而不是替换 AttributeSupplier：实体属性表在构造时就固定了，
+     * 这里只改基础数值，既保留了装备/药水等修饰符的槽位，也不需要重建实体。
+     *
+     * @param heal true = 回满血（刚苏醒的身体是满状态的）；
+     *             false = 只把超出新上限的血量收回去（重载时用，免得变成"重进世界就回血"）
+     */
+    private void inheritLowerLevelZbAttributes(boolean heal) {
+        AttributeSupplier source = LowerLevelZbEntity.createAttributes().build();
+        copyBaseValue(source, Attributes.MAX_HEALTH);
+        copyBaseValue(source, Attributes.ATTACK_DAMAGE);
+        copyBaseValue(source, Attributes.MOVEMENT_SPEED);
+        copyBaseValue(source, Attributes.ARMOR);
+        copyBaseValue(source, Attributes.FOLLOW_RANGE);
+        if (heal || this.getHealth() > this.getMaxHealth()) {
+            this.setHealth(this.getMaxHealth());
+        }
+    }
+
+    /** 把 source 里某个属性的基础值搬到自己身上（自己没有该属性时跳过） */
+    private void copyBaseValue(AttributeSupplier source, Holder<Attribute> attribute) {
+        AttributeInstance instance = this.getAttribute(attribute);
+        if (instance != null) {
+            instance.setBaseValue(source.getBaseValue(attribute));
+        }
+    }
+
     // ==================== 持久化 ====================
 
     @Override
@@ -386,7 +460,13 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         this.setProgress(in.getFloatOr("Progress", 0.0F));
         this.sourceChamberPos = in.getLong("SourceChamber").isPresent()
                 ? BlockPos.of(in.getLongOr("SourceChamber", 0L)) : null;
+        // ★ 走 setBodyState 的派生逻辑而不是直接赋值：它会把"是不是尸兄克隆体"
+        //   （连带低等尸兄属性）和身上这套盔甲重新推出来。直接写字段的话，重进世界后
+        //   尸兄克隆体会退回干净人形的属性、盔甲也不会回到槽位上。
+        //   这里传 false：重载只恢复属性，不顺手回血。
         this.bodyState = in.child("BodyState").map(ShellState::read).orElse(null);
+        this.syncEquipment(this.bodyState);
+        this.syncBodyCorpseData(false);
     }
 
     // ==================== 消失处理 ====================
@@ -456,7 +536,7 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
 
         // 每 5 秒补发一次尸兄状态（客户端重连后自愈）
         if (this.tickCount % 100 == 0) {
-            this.syncBodyCorpseData();
+            this.syncBodyCorpseData(false);
         }
 
         BlockPos pos = this.blockPosition();

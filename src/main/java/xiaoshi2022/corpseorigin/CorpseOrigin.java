@@ -103,10 +103,15 @@ public class CorpseOrigin implements ModInitializer {
 		// ✅ 10. 事件
 		ByWaterEventHandler.register();
 		ServerEvents.register();
+		// ⚠️ 天线宝宝必须排在其他 ALLOW_DAMAGE 监听器之前：
+		//   Fabric 的 ALLOW_DAMAGE 一旦有人 return false 就会中断后续监听器，
+		//   而"穿戴套装的生物攻击时发动吸食"挂在这个事件上 ——
+		//   排在尸族规则后面的话，尸兄互伤被拦掉时吸食连着动画一起没了。
+		//   它自己永远 return true，不取消任何人，排最前面没有副作用。
+		TianXianBaoBaoEventHandler.register();
 		ZombieKinEventHandler.register();
 		HeiXiaoFeiEventHandler.register();
 		LongYouEventHandler.register();
-		TianXianBaoBaoEventHandler.register();
 		EvolutionEventHandler.register();
 		APSComboHandler.register();
 		APSGreatSwordInterceptor.register();

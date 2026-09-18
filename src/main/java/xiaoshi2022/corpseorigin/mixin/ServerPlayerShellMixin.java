@@ -216,6 +216,9 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
         CorpseNetwork.sendEvolutionSync(self);
         // ★ 这具身体的尸兄外观（含尸兄进化等级 1-5）跟上一具不一定一样，广播刷新
         CorpseNetwork.broadcastPlayerCorpseSync(self);
+        // ★ 内力条同理：客户端的内力只认这个包，换身完必须补发一次，
+        //   否则 HUD 还停在上具身体的内力（上限也跟着角色走，所以最大值也要一起刷）
+        CorpseNetwork.sendInnerPowerSync(self);
 
         // 传送
         if (state.getPos() != null) {

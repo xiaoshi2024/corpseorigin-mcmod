@@ -76,6 +76,10 @@ public final class InnerPowerManager {
         int max = getMaxInnerPower(player);
         if (max <= 0) {
             INNER_POWER.remove(player.getUUID());
+            // ★ 无内力也要发一次（current=0, max=0）：
+            //   HUD 完全靠这个包刷新，早退不发的话客户端还留着上一具身体的内力条 ——
+            //   换身到无内力角色/身体时表现为"内力 HUD 没同步过来"。
+            sync(player);
             return;
         }
         int clamped = Math.max(0, Math.min(max, value));
@@ -129,6 +133,13 @@ public final class InnerPowerManager {
     /** 玩家断开连接时清理缓存 */
     public static void cleanupDisconnect(UUID uuid) {
         INNER_POWER.remove(uuid);
+    }
+
+    /**
+     * 把当前内力状态补发给客户端（登录、换身体这类"客户端缓存的还是旧值"的时机用）。
+     */
+    public static void syncTo(ServerPlayer player) {
+        sync(player);
     }
 
     private static void sync(ServerPlayer player) {
