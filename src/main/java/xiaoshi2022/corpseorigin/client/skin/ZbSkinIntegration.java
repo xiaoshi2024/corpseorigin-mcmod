@@ -1,5 +1,8 @@
 package xiaoshi2022.corpseorigin.client.skin;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.logging.LogUtils;
@@ -18,6 +21,9 @@ import org.slf4j.Logger;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -26,6 +32,13 @@ import java.util.concurrent.CompletableFuture;
 public class ZbSkinIntegration {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static boolean cslLoaded = false;
+
+    /** Mojang 公开接口：名字 → 真实 UUID */
+    private static final String MOJANG_NAME_TO_UUID =
+            "https://api.mojang.com/users/profiles/minecraft/";
+    /** Mojang 公开接口：UUID → 玩家档案（properties 里有 base64 的 textures，含皮肤地址） */
+    private static final String MOJANG_PROFILE =
+            "https://sessionserver.mojang.com/session/minecraft/profile/";
 
     static {
         try {
@@ -86,7 +99,16 @@ public class ZbSkinIntegration {
                     }
                 }
 
-                // 方式3：回退到默认皮肤
+                // 方式3：自己按名字查 —— 不依赖 CSL。
+                //   原版 SkinManager.get() 是<b>按 UUID</b> 去 sessionserver 查的（内部
+                //   sessionService.getPackedTextures(profile)，只用 profile.getId()），
+                //   而这里手里只有名字、离线 UUID 又对不上任何账号 —— 所以必须先拿真实 UUID 再取皮肤。
+                Identifier resolved = resolveSkinFromMojang(username);
+                if (resolved != null) {
+                    return resolved;
+                }
+
+                // 方式4：回退到默认皮肤
                 LOGGER.info("⚠️ 使用默认皮肤: {}", username);
                 return DefaultPlayerSkin.get(fakeUuid).body().texturePath();
 
@@ -95,6 +117,83 @@ public class ZbSkinIntegration {
                 return null;
             }
         });
+    }
+
+    /**
+     * 按名字自己解析皮肤，不依赖 CustomSkinLoader。
+     * <p>
+     * 两步：{@code api.mojang.com} 把名字换成<b>真实 UUID</b> —— 这一步是关键，
+     * 因为原版 {@link SkinManager#get(GameProfile)} 内部只认 {@code profile.getId()}，
+     * 拿"离线 UUID"去问永远查不到任何账号；再问 {@code sessionserver.mojang.com} 拿档案里的
+     * {@code textures} 属性，解出皮肤地址后下载注册成动态纹理。
+     * <p>
+     * ⚠️ 这两步都要能连上 Mojang：网络不通（例如国内直连被墙）会返回 {@code null} 退回默认皮肤 ——
+     * 那种环境请改用 CustomSkinLoader + 可达的皮肤源（就是上面"方式2"那条路）。
+     */
+    private static Identifier resolveSkinFromMojang(String username) {
+        try {
+            String uuidJson = fetchText(MOJANG_NAME_TO_UUID + URLEncoder.encode(username, StandardCharsets.UTF_8));
+            if (uuidJson == null) {
+                return null;
+            }
+            String uuid = JsonParser.parseString(uuidJson).getAsJsonObject().get("id").getAsString();
+
+            String profileJson = fetchText(MOJANG_PROFILE + uuid);
+            if (profileJson == null) {
+                return null;
+            }
+            return registerSkinFromProfile(profileJson, username);
+        } catch (Exception e) {
+            LOGGER.warn("按名字解析皮肤失败（{}）: {}", username, e.getMessage());
+            return null;
+        }
+    }
+
+    /** 从档案 JSON 里挖出 {@code textures.SKIN.url}，交给 {@link #downloadAndRegisterSkin} */
+    private static Identifier registerSkinFromProfile(String profileJson, String username) {
+        JsonObject root = JsonParser.parseString(profileJson).getAsJsonObject();
+        if (!root.has("properties")) {
+            return null;
+        }
+        for (JsonElement element : root.getAsJsonArray("properties")) {
+            JsonObject property = element.getAsJsonObject();
+            if (!property.has("name") || !"textures".equals(property.get("name").getAsString())) {
+                continue;
+            }
+            byte[] decoded = Base64.getDecoder().decode(property.get("value").getAsString());
+            JsonObject textures = JsonParser.parseString(new String(decoded, StandardCharsets.UTF_8))
+                    .getAsJsonObject().getAsJsonObject("textures");
+            if (textures == null || !textures.has("SKIN")) {
+                return null;
+            }
+            String skinUrl = textures.getAsJsonObject("SKIN").get("url").getAsString();
+            LOGGER.info("📥 Mojang 接口查到皮肤: {} -> {}", username, skinUrl);
+            return downloadAndRegisterSkin(skinUrl, username);
+        }
+        return null;
+    }
+
+    /** 取一段文本；超时 / 非 200 / 断网一律返回 {@code null}，由调用方退回默认皮肤 */
+    private static String fetchText(String url) {
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) URI.create(url).toURL().openConnection();
+            connection.setRequestProperty("User-Agent", "CorpseOrigin");
+            connection.setConnectTimeout(8000);
+            connection.setReadTimeout(8000);
+            if (connection.getResponseCode() != 200) {
+                return null;
+            }
+            try (InputStream stream = connection.getInputStream()) {
+                return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+            }
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
     }
 
     /**

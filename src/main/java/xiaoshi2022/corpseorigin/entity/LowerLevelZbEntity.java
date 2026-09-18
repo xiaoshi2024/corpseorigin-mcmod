@@ -17,10 +17,13 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
@@ -28,6 +31,7 @@ import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.slf4j.Logger;
@@ -300,6 +304,34 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
 
     public void setPlayerSkinName(String playerName) {
         this.entityData.set(DATA_PLAYER_NAME, playerName != null ? playerName : "");
+    }
+
+    /**
+     * 这个尸兄是否"吃名字皮肤"—— 即要不要按 {@link #getPlayerSkinName()} 去查同名玩家的皮肤。
+     * <p>
+     * 凹凸曼是个例外（它用固定贴图，见 {@code AotumanZbRenderer}），所以会覆写成 {@code false}，
+     * 免得白跑一遍皮肤查询。
+     */
+    protected boolean usesNamedSkin() {
+        return true;
+    }
+
+    /**
+     * 自然生成时补一个随机的"玩家 ID"。
+     * <p>
+     * 野外刷出来的尸兄本来是"无主"的（名字为空 → 一律默认皮肤），这里给它们随机组合一个像玩家的名字，
+     * 客户端就能拿它去查同名玩家的皮肤，从而让每一只尸兄长得都不一样（查不到就退回默认皮肤）。
+     * <p>
+     * 只认 {@link EntitySpawnReason#NATURAL}：刷怪蛋、{@code /summon}、玩家被感染这些
+     * 已经有明确来源的场景不去覆盖人家给的名字。
+     */
+    @Override
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty,
+                                        EntitySpawnReason reason, SpawnGroupData spawnGroupData) {
+        if (usesNamedSkin() && reason == EntitySpawnReason.NATURAL && getPlayerSkinName().isEmpty()) {
+            setPlayerSkinName(ZbNameGenerator.random(this.getRandom()));
+        }
+        return super.finalizeSpawn(level, difficulty, reason, spawnGroupData);
     }
 
     @Environment(EnvType.CLIENT)

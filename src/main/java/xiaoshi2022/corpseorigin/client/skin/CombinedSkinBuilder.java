@@ -10,6 +10,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.config.CorpseConfig;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,12 +33,17 @@ public class CombinedSkinBuilder {
     private static final int TEXTURE_WIDTH = 64;
     private static final int TEXTURE_HEIGHT = 64;
 
-    /** ✅ LRU 缓存最大容量 */
-    private static final int MAX_CACHE_SIZE = 64;
+    /**
+     * ✅ LRU 缓存最大容量
+     * <p>
+     * 注意现在的 key 是"皮肤路径 + 变体号"：每个尸兄的 ID 都会派生出一个变体，
+     * 所以条目数比"一种皮肤一条"多得多，这里放宽一些（每条只有 64×64 RGBA ≈ 16KB）。
+     */
+    private static final int MAX_CACHE_SIZE = 128;
 
     /**
      * ✅ LRU 缓存
-     * key = 皮肤路径字符串
+     * key = 皮肤路径 + "#" + 变体号
      * value = 组合纹理 + 引用计数
      */
     private static final LinkedHashMap<String, CacheEntry> CACHE =
@@ -80,11 +86,22 @@ public class CombinedSkinBuilder {
      * 相同皮肤路径复用同一个组合纹理。
      */
     public static synchronized Identifier acquire(Identifier skinTexture) {
+        return acquire(skinTexture, 0);
+    }
+
+    /**
+     * ✅ 获取组合纹理，并指定"变体号"（按玩家 ID 派生）。
+     * <p>
+     * 变体号的作用：<b>查不到真实皮肤时，让每只尸兄长得都不一样</b> ——
+     * 同一个变体永远产出同一个色调（可缓存、可复用），不同变体各不同。
+     * 变体 0 表示"不染色"（默认皮肤、兜底纹理走这条）。
+     */
+    public static synchronized Identifier acquire(Identifier skinTexture, int variant) {
         if (skinTexture == null) {
             return getDefaultCombined();
         }
 
-        String cacheKey = skinTexture.toString();
+        String cacheKey = cacheKey(skinTexture, variant);
         CacheEntry entry = CACHE.get(cacheKey);
 
         if (entry != null) {
@@ -95,9 +112,9 @@ public class CombinedSkinBuilder {
 
         // 创建新纹理
         try {
-            Identifier combined = buildCombinedSkin(skinTexture);
+            Identifier combined = buildCombinedSkin(skinTexture, variant);
             CACHE.put(cacheKey, new CacheEntry(combined));
-            LOGGER.info("✅ 组合纹理已创建: {} -> {} (ref=1)", skinTexture, combined);
+            LOGGER.info("✅ 组合纹理已创建: {} (variant={}) -> {} (ref=1)", skinTexture, variant, combined);
             return combined;
         } catch (Exception e) {
             LOGGER.error("❌ 创建组合纹理失败: {}", cacheKey, e);
@@ -111,9 +128,14 @@ public class CombinedSkinBuilder {
      * 当引用计数为 0 时，纹理保留在缓存中，等 LRU 淘汰时释放。
      */
     public static synchronized void release(Identifier skinTexture) {
+        release(skinTexture, 0);
+    }
+
+    /** ✅ 释放组合纹理（带变体号，和 {@link #acquire(Identifier, int)} 配对使用） */
+    public static synchronized void release(Identifier skinTexture, int variant) {
         if (skinTexture == null) return;
 
-        String cacheKey = skinTexture.toString();
+        String cacheKey = cacheKey(skinTexture, variant);
         CacheEntry entry = CACHE.get(cacheKey);
         if (entry != null) {
             entry.refCount = Math.max(0, entry.refCount - 1);
@@ -127,14 +149,23 @@ public class CombinedSkinBuilder {
      * 用于实体死亡时清理。
      */
     public static synchronized void forceRelease(Identifier skinTexture) {
+        forceRelease(skinTexture, 0);
+    }
+
+    /** ✅ 强制释放（带变体号） */
+    public static synchronized void forceRelease(Identifier skinTexture, int variant) {
         if (skinTexture == null) return;
 
-        String cacheKey = skinTexture.toString();
-        CacheEntry entry = CACHE.remove(cacheKey);
+        CacheEntry entry = CACHE.remove(cacheKey(skinTexture, variant));
         if (entry != null) {
             releaseTexture(entry.texture);
             LOGGER.info("🗑️ 强制释放组合纹理: {}", entry.texture);
         }
+    }
+
+    /** 缓存 key：皮肤路径 + 变体号 */
+    private static String cacheKey(Identifier skinTexture, int variant) {
+        return skinTexture + "#" + variant;
     }
 
     /**
@@ -171,9 +202,9 @@ public class CombinedSkinBuilder {
     }
 
     /**
-     * 构建组合纹理：玩家皮肤 + 骨骼叠加
+     * 构建组合纹理：玩家皮肤（按变体上色）+ 骨骼叠加
      */
-    private static Identifier buildCombinedSkin(Identifier skinTexture) throws IOException {
+    private static Identifier buildCombinedSkin(Identifier skinTexture, int variant) throws IOException {
         TextureManager textureManager = Minecraft.getInstance().getTextureManager();
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
 
@@ -189,6 +220,9 @@ public class CombinedSkinBuilder {
             LOGGER.warn("⚠️ 使用默认皮肤替代: {}", skinTexture);
         }
 
+        // 1.5 按变体给基础皮肤上"尸化色调"（必须在叠骨骼层之前，否则骨骼也会被染色）
+        applyVariantTint(combined, variant);
+
         // 2. 叠加尸化骨骼纹理
         NativeImage skeletonImage = loadSkeletonTexture(resourceManager);
         if (skeletonImage != null) {
@@ -197,7 +231,8 @@ public class CombinedSkinBuilder {
         }
 
         // 3. 注册组合纹理（用确定性 hash，避免随机 UUID）
-        String hash = Integer.toHexString(skinTexture.toString().hashCode());
+        String hash = Integer.toHexString(skinTexture.toString().hashCode())
+                + "_" + Integer.toHexString(variant);
         Identifier location = Identifier.fromNamespaceAndPath(
                 CorpseOrigin.MOD_ID,
                 "skins/zb_combined_" + hash
@@ -267,6 +302,51 @@ public class CombinedSkinBuilder {
             LOGGER.warn("加载骨骼纹理失败: {}", e.getMessage());
         }
         return null;
+    }
+
+    /**
+     * 按变体号给基础皮肤上一层"尸化色调"，让每只尸兄长得都不一样。
+     * <p>
+     * 变体号是从尸兄的玩家 ID 派生的（见 {@code LowerLevelZbRenderer}）：同一个 ID 永远同一个色调，
+     * 不同 ID 各不相同。三个通道各乘一个由变体派生的系数（并整体偏"失血发青"一点），
+     * 所以出来的是<b>稳定的、可缓存的</b>差异，而不是每次渲染都变。
+     * <p>
+     * 变体 0 = 不染色：默认皮肤与兜底纹理走这条，保持原样。
+     */
+    private static void applyVariantTint(NativeImage image, int variant) {
+        if (variant == 0) {
+            return;
+        }
+        // 强度来自配置（skin.tintStrength）：1 = 默认，0 = 不染，2 = 更夸张
+        float strength = CorpseConfig.get().skin.tintStrength;
+        if (strength <= 0.0F) {
+            return;
+        }
+
+        // 先打散，避免相邻的变体号出来太像
+        int hash = variant * 0x9E3779B9;
+        float redScale = tint(0.78F + ((hash >>> 8) & 0xFF) / 255F * 0.25F, strength);
+        float greenScale = tint(0.80F + ((hash >>> 16) & 0xFF) / 255F * 0.30F, strength);
+        float blueScale = tint(0.78F + ((hash >>> 24) & 0xFF) / 255F * 0.30F, strength);
+
+        for (int x = 0; x < image.getWidth(); x++) {
+            for (int y = 0; y < image.getHeight(); y++) {
+                int color = image.getPixel(x, y);
+                int alpha = (color >>> 24) & 0xFF;
+                if (alpha == 0) {
+                    continue;   // 透明像素不动
+                }
+                int r = Math.min(255, (int) (((color >>> 16) & 0xFF) * redScale));
+                int g = Math.min(255, (int) (((color >>> 8) & 0xFF) * greenScale));
+                int b = Math.min(255, (int) ((color & 0xFF) * blueScale));
+                image.setPixel(x, y, (alpha << 24) | (r << 16) | (g << 8) | b);
+            }
+        }
+    }
+
+    /** 把"相对 1.0 的偏移量"按强度缩放：strength=1 保持原样，0 等于不染，>1 更夸张 */
+    private static float tint(float baseScale, float strength) {
+        return 1.0F + (baseScale - 1.0F) * strength;
     }
 
     private static void overlaySkeletonTexture(NativeImage combined, NativeImage skeletonImage) {
@@ -353,7 +433,7 @@ public class CombinedSkinBuilder {
         }
 
         try {
-            defaultCombined = buildCombinedSkin(DEFAULT_SKIN);
+            defaultCombined = buildCombinedSkin(DEFAULT_SKIN, 0);
             LOGGER.info("✅ 默认组合纹理已创建");
             return defaultCombined;
         } catch (Exception e) {

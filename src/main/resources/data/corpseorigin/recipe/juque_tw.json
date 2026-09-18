@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "N": "minecraft:netherite_ingot",
+    "Z": "corpseorigin:zbr_flesh"
+  },
+  "pattern": [
+    "N",
+    "N",
+    "Z"
+  ],
+  "result": {
+    "id": "corpseorigin:juque_tw"
+  }
+}

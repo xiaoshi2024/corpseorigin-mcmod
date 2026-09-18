@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "Z": "corpseorigin:zbr_flesh",
+    "G": "minecraft:glowstone",
+    "L": "minecraft:lava_bucket"
+  },
+  "pattern": [
+    "ZGZ",
+    "GLG",
+    "ZGZ"
+  ],
+  "result": {
+    "id": "corpseorigin:blood_lotus_lantern"
+  }
+}

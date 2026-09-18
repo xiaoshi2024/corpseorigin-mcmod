@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:water_bucket",
+    "minecraft:rotten_flesh",
+    "minecraft:rotten_flesh"
+  ],
+  "result": {
+    "id": "corpseorigin:bywater_bucket"
+  }
+}

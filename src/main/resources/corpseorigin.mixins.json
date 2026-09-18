@@ -10,7 +10,8 @@
     "MobPeacefulMixin",
     "MobPickupMixin",
     "MobZombieKingRespectMixin",
-    "ServerPlayerShellMixin"
+    "ServerPlayerShellMixin",
+    "SpawnPlacementsInvoker"
   ],
   "injectors": {
     "defaultRequire": 1

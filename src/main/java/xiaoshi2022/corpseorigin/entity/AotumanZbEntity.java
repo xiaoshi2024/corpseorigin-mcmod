@@ -95,6 +95,17 @@ public class AotumanZbEntity extends LowerLevelZbEntity {
         return false;
     }
 
+    /**
+     * 凹凸曼不吃"名字皮肤"。
+     * <p>
+     * 它用的是固定贴图 {@code aotuman.png}（见 {@code AotumanZbRenderer}），
+     * 名字对它没有任何渲染作用 —— 关掉这个开关，自然生成时就不会白分一个 ID、也不会白跑一遍皮肤查询。
+     */
+    @Override
+    protected boolean usesNamedSkin() {
+        return false;
+    }
+
     /** 永远不处于"饿极了"状态 —— 它没胃口也不进食，别顶着怒气粒子晃悠 */
     @Override
     public boolean isStarving() {

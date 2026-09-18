@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "D": "minecraft:diamond",
+    "Z": "corpseorigin:zbr_flesh"
+  },
+  "pattern": [
+    "DDD",
+    "DZD"
+  ],
+  "result": {
+    "id": "corpseorigin:antenna_zbr_armor_helmet"
+  }
+}

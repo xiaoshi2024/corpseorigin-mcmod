@@ -29,6 +29,10 @@ public class CorpseOrigin implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		// ✅ 0. 配置文件（config/corpseorigin.json）—— 不存在就生成一份默认的，
+		//    后面刷怪权重、名字名单、皮肤染色强度都从它读，所以必须最先加载
+		xiaoshi2022.corpseorigin.config.CorpseConfig.get();
+
 		// ⚠️ 重要：先注册效果
 		ModEffects.init();
 
@@ -72,6 +76,12 @@ public class CorpseOrigin implements ModInitializer {
 
 		// ✅ 7. 实体属性
 		ModAttributes.register();
+
+		// ✅ 7.5 自然生成（生成规则 + 进生物群系生成表）
+		ModSpawns.register();
+
+		// ✅ 7.6 地形生成（尸水泉）
+		ModWorldGen.register();
 
 		// ✅ 8. 角色系统
 		CharacterManager.getInstance().registerDefaults();
