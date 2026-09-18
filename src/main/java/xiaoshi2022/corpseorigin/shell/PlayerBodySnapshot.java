@@ -47,6 +47,10 @@ public final class PlayerBodySnapshot {
         // 空背包（必须显式写，否则 load 不会清背包）
         tag.put("Inventory", new ListTag());
 
+        // ★ 克隆体是干净身体：不继承盔甲与手持物品
+        tag.put("ArmorItems", new ListTag());
+        tag.put("HandItems", new ListTag());
+
         // 满血、饱食 20、经验归零
         tag.putFloat("Health", player.getMaxHealth());
         tag.putInt("foodLevel", 20);

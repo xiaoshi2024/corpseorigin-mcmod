@@ -76,6 +76,11 @@ public class HeiXiaoFei implements ICharacter {
         return 0.4f;
     }
 
+    @Override
+    public int getMaxInnerPower() {
+        return 120;
+    }
+
     /**
      * 失去黑小飞身份 → 断肢再生能力一并失效，清掉断肢状态并重新广播，
      * 否则客户端会一直用断肢模型渲染这具身体。

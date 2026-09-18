@@ -75,5 +75,20 @@ public final class InfectionHudOverlay {
                 Component.translatable("hud.corpseorigin.evolution",
                         level, ClientState.availablePoints),
                 x, y + 8, 0xFF55FF55, true);
+        y += 18;
+
+        // ===== 内力条（仅拥有内力的角色显示） =====
+        int maxIp = ClientState.maxInnerPower;
+        if (maxIp > 0) {
+            int ip = Math.min(maxIp, Math.max(0, ClientState.innerPower));
+            int ipWidth = (int) (barWidth * ip / (double) maxIp);
+            graphics.fill(x, y, x + barWidth, y + 5, 0x88000000);
+            // 内力条：青蓝色渐变
+            graphics.fill(x, y, x + ipWidth, y + 5, 0xFF3399FF);
+            graphics.fill(x, y, x + ipWidth, y + 2, 0xFF66CCFF);
+            graphics.text(mc.font,
+                    Component.translatable("hud.corpseorigin.inner_power", ip, maxIp),
+                    x, y + 6, 0xFF88CCFF, true);
+        }
     }
 }

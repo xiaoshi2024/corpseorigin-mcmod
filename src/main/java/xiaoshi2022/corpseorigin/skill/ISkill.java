@@ -58,6 +58,16 @@ public interface ISkill {
     /** 冷却时间（ticks） */
     int getCooldownTicks();
 
+    /**
+     * 内力消耗（0 = 不消耗）。
+     * <p>
+     * 只有拥有内力的角色（{@code getMaxInnerPower() > 0}）才会扣除内力；
+     * 无内力角色使用内力消耗 > 0 的技能时，内力自动视为足够。
+     */
+    default int getInnerPowerCost() {
+        return 0;
+    }
+
     /** 服务端玩家激活技能时的效果回调 */
     default void onActivate(ServerPlayer player) {
         // 空实现，子类可重写

@@ -23,25 +23,32 @@ public abstract class AbstractSkill implements ISkill {
     private final int cost;
     private final int requiredLevel;
     private final boolean activatable;
+    private final int innerPowerCost;
 
     protected AbstractSkill(String path, SkillType type, int cooldownTicks,
-                            int cost, int requiredLevel, boolean activatable) {
+                            int cost, int requiredLevel, boolean activatable, int innerPowerCost) {
         this.path = path;
         this.type = type;
         this.cooldownTicks = cooldownTicks;
         this.cost = cost;
         this.requiredLevel = requiredLevel;
         this.activatable = activatable;
+        this.innerPowerCost = innerPowerCost;
     }
 
-    /** 主动技能（默认 1 点 / 1 级） */
+    /** 主动技能（默认 1 点 / 1 级 / 不消耗内力） */
     protected AbstractSkill(String path, SkillType type, int cooldownTicks) {
-        this(path, type, cooldownTicks, 1, 1, true);
+        this(path, type, cooldownTicks, 1, 1, true, 0);
+    }
+
+    /** 主动技能（指定内力消耗） */
+    protected AbstractSkill(String path, SkillType type, int cooldownTicks, int innerPowerCost) {
+        this(path, type, cooldownTicks, 1, 1, true, innerPowerCost);
     }
 
     /** 被动技能（不进技能轮盘、无冷却） */
     protected AbstractSkill(String path, SkillType type) {
-        this(path, type, 0, 1, 1, false);
+        this(path, type, 0, 1, 1, false, 0);
     }
 
     @Override
@@ -82,6 +89,11 @@ public abstract class AbstractSkill implements ISkill {
     @Override
     public boolean isActivatable() {
         return activatable;
+    }
+
+    @Override
+    public int getInnerPowerCost() {
+        return innerPowerCost;
     }
 
     /**

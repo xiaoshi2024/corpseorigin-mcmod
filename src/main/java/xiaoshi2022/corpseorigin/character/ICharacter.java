@@ -43,6 +43,16 @@ public interface ICharacter {
         return 1.0f;
     }
 
+    /**
+     * 内力上限（0 = 无内力，不显示内力条）。
+     * <p>
+     * 尸兄原著中拥有内力的角色（白小飞、龙右、黑小飞等）返回正值，
+     * 凡人和普通角色返回 0，不参与内力系统。
+     */
+    default int getMaxInnerPower() {
+        return 0;
+    }
+
     /** 服务端玩家获得角色时的回调 */
     default void onAcquire(Player player) {
         // 空实现，子类可重写

@@ -439,6 +439,7 @@
 
   "hud.corpseorigin.infection": "感染度：%s%%",
   "hud.corpseorigin.evolution": "进化等级 %s  |  点数：%s",
+  "hud.corpseorigin.inner_power": "内力：%s / %s",
 
   "key.categories.corpseorigin.main": "尸源",
   "key.category.corpseorigin.main": "尸源",

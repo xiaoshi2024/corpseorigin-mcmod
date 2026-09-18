@@ -63,4 +63,9 @@ public class MuXi implements ICharacter {
     public float getInfectionMultiplier() {
         return 0.5f;
     }
+
+    @Override
+    public int getMaxInnerPower() {
+        return 90;
+    }
 }

@@ -63,4 +63,9 @@ public class DarkCouncilK implements ICharacter {
     public float getInfectionMultiplier() {
         return 0.2f;
     }
+
+    @Override
+    public int getMaxInnerPower() {
+        return 110;
+    }
 }

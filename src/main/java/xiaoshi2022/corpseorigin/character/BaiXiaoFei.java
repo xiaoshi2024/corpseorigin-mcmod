@@ -68,4 +68,10 @@ public class BaiXiaoFei implements ICharacter {
     public float getInfectionMultiplier() {
         return 0.4f;
     }
+
+    /** 白小飞：习得水异能与空间异能，内力上限 100 */
+    @Override
+    public int getMaxInnerPower() {
+        return 100;
+    }
 }

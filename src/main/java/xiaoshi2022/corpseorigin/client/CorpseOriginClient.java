@@ -277,6 +277,13 @@ public class CorpseOriginClient implements ClientModInitializer {
                 context.client().execute(() ->
                         ClientState.infection = payload.infection()));
 
+        // ✅ 接收内力同步
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.InnerPowerSyncS2C.TYPE, (payload, context) ->
+                context.client().execute(() -> {
+                    ClientState.innerPower = payload.current();
+                    ClientState.maxInnerPower = payload.max();
+                }));
+
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.TempRedEyeSyncS2C.TYPE, (payload, context) ->
                 context.client().execute(() ->
                         tempRedEyeTicks.put(payload.playerUuid(), payload.durationTicks())));

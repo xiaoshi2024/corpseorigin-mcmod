@@ -92,6 +92,10 @@ public class CorpseOrigin implements ModInitializer {
 				SkillCooldownShellStateComponent::new,
 				SkillCooldownShellStateComponent::new
 		);
+		ShellStateComponentRegistry.getInstance().register(
+				InnerPowerShellStateComponent::new,
+				InnerPowerShellStateComponent::new
+		);
 
 		// ✅ 9. 网络
 		CorpseNetwork.register();

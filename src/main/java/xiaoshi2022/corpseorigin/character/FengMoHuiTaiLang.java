@@ -63,4 +63,9 @@ public class FengMoHuiTaiLang implements ICharacter {
     public float getInfectionMultiplier() {
         return 0.3f;
     }
+
+    @Override
+    public int getMaxInnerPower() {
+        return 100;
+    }
 }

@@ -439,6 +439,7 @@
 
   "hud.corpseorigin.infection": "Infection: %s%%",
   "hud.corpseorigin.evolution": "Evolution Lv.%s  |  Points: %s",
+  "hud.corpseorigin.inner_power": "Inner Power: %s / %s",
 
   "key.categories.corpseorigin.main": "Corpse Origin",
   "key.category.corpseorigin.main": "Corpse Origin",

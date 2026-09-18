@@ -63,4 +63,9 @@ public class ShiChaoZhiZi implements ICharacter {
     public float getInfectionMultiplier() {
         return 0.0f;
     }
+
+    @Override
+    public int getMaxInnerPower() {
+        return 90;
+    }
 }

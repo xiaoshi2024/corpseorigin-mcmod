@@ -61,4 +61,9 @@ public class ZhaoRiTian implements ICharacter {
     public float getInfectionMultiplier() {
         return 1.0f;
     }
+
+    @Override
+    public int getMaxInnerPower() {
+        return 70;
+    }
 }

@@ -66,4 +66,9 @@ public class WeiXin implements ICharacter {
     public float getInfectionMultiplier() {
         return 0.6f;
     }
+
+    @Override
+    public int getMaxInnerPower() {
+        return 70;
+    }
 }

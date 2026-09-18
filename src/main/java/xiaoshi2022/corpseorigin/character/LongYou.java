@@ -77,6 +77,12 @@ public class LongYou implements ICharacter {
         return 0.0f;
     }
 
+    /** 龙右（尸王）：千年修为，内力深厚，上限 200 */
+    @Override
+    public int getMaxInnerPower() {
+        return 200;
+    }
+
     /**
      * 这位玩家是不是「尸水之源」本人 —— 完全免疫尸水（角色特质：{@code trait3}）。
      * <p>

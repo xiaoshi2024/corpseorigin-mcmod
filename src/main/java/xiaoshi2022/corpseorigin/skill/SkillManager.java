@@ -5,6 +5,7 @@ import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.ICharacter;
+import xiaoshi2022.corpseorigin.character.InnerPowerManager;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 
@@ -63,6 +64,11 @@ public final class SkillManager {
         long end = getCooldownEnd(player.getUUID(), skillPath);
         if (end > now) {
             return false;  // 仍在冷却中
+        }
+
+        // 校验内力（无内力角色自动通过）
+        if (!InnerPowerManager.consume(player, skill.getInnerPowerCost())) {
+            return false;
         }
 
         // 执行效果

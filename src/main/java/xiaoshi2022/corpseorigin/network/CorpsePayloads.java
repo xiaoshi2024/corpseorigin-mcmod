@@ -206,4 +206,23 @@ public final class CorpsePayloads {
             return TYPE;
         }
     }
+
+    // ==================== ✅ 内力同步（S2C） ====================
+
+    public record InnerPowerSyncS2C(int current, int max) implements CustomPacketPayload {
+        public static final Type<InnerPowerSyncS2C> TYPE = new Type<>(id("inner_power_sync"));
+
+        public static final StreamCodec<ByteBuf, InnerPowerSyncS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.INT,
+                InnerPowerSyncS2C::current,
+                ByteBufCodecs.INT,
+                InnerPowerSyncS2C::max,
+                InnerPowerSyncS2C::new
+        );
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
 }

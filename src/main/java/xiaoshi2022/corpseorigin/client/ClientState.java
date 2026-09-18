@@ -26,6 +26,10 @@ public final class ClientState {
     public static int kills = 0;
     /** 感染度 0-100 */
     public static int infection = 0;
+    /** 当前内力值 */
+    public static int innerPower = 0;
+    /** 内力上限（0 = 无内力，不显示内力条） */
+    public static int maxInnerPower = 0;
     /** 已学技能ID集合（字符串路径） */
     public static final Set<String> learnedSkills = new HashSet<>();
     /** 技能冷却结束时间戳（毫秒） */

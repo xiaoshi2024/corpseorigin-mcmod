@@ -61,6 +61,7 @@ public final class CorpseNetwork {
         PayloadTypeRegistry.serverboundPlay().register(CorpsePayloads.ActivateSkillC2S.TYPE, CorpsePayloads.ActivateSkillC2S.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.EvolutionSyncS2C.TYPE, CorpsePayloads.EvolutionSyncS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.CooldownSyncS2C.TYPE, CorpsePayloads.CooldownSyncS2C.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.InnerPowerSyncS2C.TYPE, CorpsePayloads.InnerPowerSyncS2C.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(CorpsePayloads.SelectCharacterC2S.TYPE, (payload, context) -> {
             ServerPlayer player = context.player();
@@ -152,6 +153,7 @@ public final class CorpseNetwork {
             PENDING_SYNC.remove(uuid);
             PENDING_SYNCS.remove(uuid);
             SkillManager.cleanupDisconnect(uuid);
+            xiaoshi2022.corpseorigin.character.InnerPowerManager.cleanupDisconnect(uuid);
             xiaoshi2022.corpseorigin.event.HeiXiaoFeiEventHandler.cleanupDisconnect(uuid);
             BYeffect.clearTotalDuration(uuid);
             BYeffect.clearInfectionSource(uuid);
@@ -163,8 +165,13 @@ public final class CorpseNetwork {
             }
         });
 
-        // ✅ 每 tick 检查待同步队列（延迟 20 tick 后同步）
+        // ✅ 每 tick 检查待同步队列（延迟 20 tick 后同步）+ 内力自然回复
         ServerTickEvents.END_SERVER_TICK.register(server -> {
+            // 内力回复
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                xiaoshi2022.corpseorigin.character.InnerPowerManager.tickRegen(player);
+            }
+
             if (PENDING_SYNC.isEmpty()) return;
 
             var iterator = PENDING_SYNC.iterator();
@@ -627,5 +634,12 @@ public final class CorpseNetwork {
      */
     public static void sendCooldownSync(ServerPlayer player, String skillPath, int ticks) {
         ServerPlayNetworking.send(player, new CorpsePayloads.CooldownSyncS2C(skillPath, ticks));
+    }
+
+    /** 同步内力值给客户端（S2C） */
+    public static void sendInnerPowerSync(ServerPlayer player) {
+        int current = xiaoshi2022.corpseorigin.character.InnerPowerManager.getInnerPower(player);
+        int max = xiaoshi2022.corpseorigin.character.InnerPowerManager.getMaxInnerPower(player);
+        ServerPlayNetworking.send(player, new CorpsePayloads.InnerPowerSyncS2C(current, max));
     }
 }

@@ -122,6 +122,9 @@ public class CharacterManager {
         data.setCharacterId(player.getUUID(), character.getId());
         character.onAcquire(player);
 
+        // ✅ 角色切换后重置内力（上线即满 / 切换角色满内力）
+        InnerPowerManager.reset(serverPlayer);
+
         // ✅ 自动学习该角色的全部技能（技能树未启用，故直接授予）
         data.clearLearnedSkills(player.getUUID());
         //注释一下就不自动学习

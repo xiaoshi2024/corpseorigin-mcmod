@@ -62,4 +62,9 @@ public class XiaoLu implements ICharacter {
     public float getInfectionMultiplier() {
         return 0.7f;
     }
+
+    @Override
+    public int getMaxInnerPower() {
+        return 80;
+    }
 }
