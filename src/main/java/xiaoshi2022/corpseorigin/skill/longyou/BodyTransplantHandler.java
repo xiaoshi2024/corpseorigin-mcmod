@@ -80,21 +80,46 @@ public final class BodyTransplantHandler {
         if (state == null) {
             return false;
         }
-        // 先取下快照再移除实体：实体的 remove() 会顺手把身体索引里那条也清掉
+        // ★ 真过场：镜头播完（见 CorpseNetwork#playTransferCutscene）才真正穿回去，
+        //   终点是那具旧身体所在的位置/维度，所以镜头会朝它甩出去
+        CorpseNetwork.playTransferCutscene(player,
+                state.getPos() == null ? body.blockPosition() : state.getPos(),
+                player.getDirection(),
+                state.getWorld() == null ? body.level().dimension().identifier() : state.getWorld(),
+                p -> doReturnToBody(p, body));
+        return true;
+    }
+
+    /** 过场结束后的实际动作：取下快照 → 移除分身（remove() 会顺手清掉身体索引）→ 写回玩家 */
+    private static void doReturnToBody(ServerPlayer player, CloneAvatarEntity body) {
+        ShellState state = body.getBodyState();
+        if (state == null) {
+            return;   // 过场这几秒里身体被取走了
+        }
         body.discard();
         ServerShell.of(player).apply(state);
-        return true;
     }
 
     /**
      * 金蝉脱壳：把当前身体蜕成分身，意识直接转移进藏在体内的「原体」——
      * 原著里那颗拇指大小、黑发黑身的真身。
      *
-     * @return true = 换身成功
+     * @return true = 换身已排队（镜头播完才真正执行）
      */
     public static boolean shedIntoOriginalBody(ServerPlayer player) {
-        if (!(player.level() instanceof ServerLevel level)) {
+        if (!(player.level() instanceof ServerLevel)) {
             return false;
+        }
+        // 原地换身：镜头终点就是原地，水平段会沿身体朝向的反方向把意识抽出来
+        CorpseNetwork.playTransferCutscene(player, player.blockPosition(), player.getDirection(),
+                player.level().dimension().identifier(),
+                BodyTransplantHandler::doShedIntoOriginalBody);
+        return true;
+    }
+
+    private static void doShedIntoOriginalBody(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return;
         }
         ShellState original = buildOwnBody(player, LongYou.ORIGINAL_BODY_SCALE, false);
         shedOldBodyAsAvatar(player, level);
@@ -102,7 +127,8 @@ public final class BodyTransplantHandler {
         // ★ 保底：缩进原体后「血肉重塑」必须能用（哪怕从没在技能树里点过它），
         //   否则人被困在拇指身体里出不来。
         grantReshapeFallback(player);
-        return true;
+        player.sendOverlayMessage(Component.translatable(
+                "skill.corpseorigin." + GoldenCicadaShellSkill.PATH + ".done"));
     }
 
     /** 把「血肉重塑」直接学会并同步给客户端 —— 原体状态的脱身保底 */
@@ -121,7 +147,7 @@ public final class BodyTransplantHandler {
      * 意识是搬进去的，不是把旧壳蜕在原地。所以随身物品要跟着一起进新身体，
      * 否则东西会连同被丢掉的那具身体一起消失。
      *
-     * @return true = 换身成功；false = 太饿，没重塑出来
+     * @return true = 换身已排队（镜头播完才真正换；太饿则直接 false）
      */
     public static boolean reshapeBody(ServerPlayer player) {
         if (!(player.level() instanceof ServerLevel)) {
@@ -138,12 +164,22 @@ public final class BodyTransplantHandler {
             return false;
         }
         // 代价：一半饱食度（饥饿值与饱和一起砍半）
+        // ★ 先扣：过场只是表现，判定和消耗不该跟着镜头一起延后
         food.setFoodLevel(food.getFoodLevel() / 2);
         food.setSaturation(food.getSaturationLevel() / 2.0F);
 
         // carryInventory = true：背包与装备原样带进新身体（不留壳，所以不能丢东西）
-        ServerShell.of(player).apply(buildOwnBody(player, 1.0F, true));
+        CorpseNetwork.playTransferCutscene(player, player.blockPosition(), player.getDirection(),
+                player.level().dimension().identifier(),
+                BodyTransplantHandler::doReshapeBody);
         return true;
+    }
+
+    /** 过场结束后的实际动作：不留旧身体，行囊跟着意识一起进新身体 */
+    private static void doReshapeBody(ServerPlayer player) {
+        ServerShell.of(player).apply(buildOwnBody(player, 1.0F, true));
+        player.sendOverlayMessage(Component.translatable(
+                "skill.corpseorigin." + FleshReshapeSkill.PATH + ".done"));
     }
 
     // ==================== 技能不随换身丢失 ====================

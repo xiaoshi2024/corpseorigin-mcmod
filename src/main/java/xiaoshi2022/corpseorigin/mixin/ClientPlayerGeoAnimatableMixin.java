@@ -81,6 +81,8 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        // 四肢的摆动走 corpse_player 自己的 JSON 动画（idle / walk / attack）；
+        // 躯干与头则由 CorpsePlayerGeoRenderer 每帧对齐到原版骨架（盔甲才贴得住）。
         controllers.add(new AnimationController<PlayerGeoAnimatable>("movement", 5, this::corpseorigin$movement));
         controllers.add(new AnimationController<PlayerGeoAnimatable>("attack", 2, this::corpseorigin$attack));
         // 再生：每个部位一条独立动画，每次断开都从头播一遍
@@ -104,16 +106,12 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
     }
 
     /**
-     * 攻击控制器。
+     * 攻击控制器：每次挥击都要从头播。
      * <p>
-     * 关键点是"每次挥击都要从头播"，而这两件事都不能靠：
-     * <ul>
-     *   <li>{@code setAndContinue} 单独干 —— 它只在"目标动画 ≠ 当前动画"时才切换，
-     *       一次挥击播完后 controller 仍持有 attack 这条动画，后续挥击会被当成"已经在播"忽略掉；</li>
-     *   <li>{@code triggerableAnim}/{@code triggerAnimation} —— 触发通道和 handler 的返回值挤在同一个
-     *       controller 上，handler 返 STOP 时会挡掉后续触发，表现还是"只播一次"。</li>
-     * </ul>
-     * 所以这里直接一点：把动画挂上，并在**挥击开始的上升沿**把时间轴拉回 0 帧。
+     * {@code setAndContinue} 单独干不行 —— 它只在"目标动画 ≠ 当前动画"时才切换，
+     * 一次挥击播完后 controller 仍持有 attack，后续挥击会被当成"已经在播"忽略掉；
+     * {@code triggerableAnim} 那条路也会被 handler 的 STOP 挡掉后续触发。
+     * 所以这里直接在**挥击开始的上升沿**把时间轴拉回 0 帧。
      */
     @Unique
     private PlayState corpseorigin$attack(AnimationTest<PlayerGeoAnimatable> test) {

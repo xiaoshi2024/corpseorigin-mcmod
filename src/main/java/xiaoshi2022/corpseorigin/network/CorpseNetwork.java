@@ -38,6 +38,7 @@ import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 public final class CorpseNetwork {
 
@@ -48,6 +49,14 @@ public final class CorpseNetwork {
     public record PendingSync(ShellState targetState, TransferredBody target) {}
 
     private static final Map<UUID, PendingSync> PENDING_SYNCS = new ConcurrentHashMap<>();
+
+    /** 待执行的换身动作（直角过场用）：镜头播完才跑，存的就是"换身这件事本身" */
+    private static final Map<UUID, PendingTransfer> PENDING_TRANSFERS = new ConcurrentHashMap<>();
+
+    /** 回包最长等这么久；超时就作废，免得客户端掉线/被打断后留一颗脏雷给下一次过场 */
+    private static final long TRANSFER_TIMEOUT_MS = 15_000L;
+
+    private record PendingTransfer(Consumer<ServerPlayer> action, long expireAt) {}
 
     private CorpseNetwork() {
     }
@@ -154,6 +163,7 @@ public final class CorpseNetwork {
 
             PENDING_SYNC.remove(uuid);
             PENDING_SYNCS.remove(uuid);
+            PENDING_TRANSFERS.remove(uuid);
             SkillManager.cleanupDisconnect(uuid);
             xiaoshi2022.corpseorigin.character.InnerPowerManager.cleanupDisconnect(uuid);
             // 尸水之源是开关技能，断开时清掉，免得重登后莫名掉饱食度
@@ -290,7 +300,7 @@ public final class CorpseNetwork {
                 PENDING_SYNCS.put(player.getUUID(), new PendingSync(targetState, target));
 
                 ServerPlayNetworking.send(player, new SynchronizationResponsePacket(
-                        true, true, "",
+                        true, true, SynchronizationResponsePacket.CameraStyle.STAIRWAY, "",
                         payload.targetStateUuid(),
                         fromWorld, fromPos, player.getDirection(),
                         toWorld, toPos, Direction.NORTH));
@@ -302,19 +312,56 @@ public final class CorpseNetwork {
             context.server().execute(() -> {
                 ServerPlayer player = context.player();
                 PendingSync pending = PENDING_SYNCS.remove(player.getUUID());
-                if (pending == null || pending.target() == null) return;
-
-                Either<ShellState, String> result = ServerShell.of(player).sync(pending.target());
-                if (result.right().isPresent()) {
-                    ServerPlayNetworking.send(player,
-                            SynchronizationResponsePacket.failure(result.right().get()));
+                if (pending != null && pending.target() != null) {
+                    Either<ShellState, String> result = ServerShell.of(player).sync(pending.target());
+                    if (result.right().isPresent()) {
+                        ServerPlayNetworking.send(player,
+                                SynchronizationResponsePacket.failure(result.right().get()));
+                    }
+                    syncShellStates(player);
+                    return;
                 }
 
+                // ★ 尸王换身（金蝉脱壳 / 血肉重塑 / 右键回旧身体）：过场播完，现在才真正换
+                PendingTransfer transfer = PENDING_TRANSFERS.remove(player.getUUID());
+                if (transfer == null) {
+                    return;
+                }
+                if (transfer.expireAt() < System.currentTimeMillis()) {
+                    CorpseOrigin.LOGGER.debug("过场回包超时，丢弃待执行的换身");
+                    return;
+                }
+                transfer.action().accept(player);
                 syncShellStates(player);
             });
         });
 
         CorpseOrigin.LOGGER.debug("CorpseOrigin network registered (Fabric 26.2)");
+    }
+
+    /**
+     * 让客户端先播一段意识转移过场（直角直出），播完（客户端回 {@link CameraDonePacket}）再真正换身。
+     * <p>
+     * 这是"真过场"：真正的换身动作被推迟到镜头结束之后，所以调用方只管把"要做什么"传进来，
+     * 不要自己先改状态（金蝉脱壳 / 血肉重塑 / 右键回旧身体都走这条）。
+     * <p>
+     * 过场期间客户端会盖一层黑幕（见 {@code CameraBlackoutScreen}），换完由客户端自己在黑幕里把视角交还。
+     *
+     * @param toPos    过场终点（原地换身就传原地，穿回旧身体就传那具身体的位置）
+     * @param toFacing 终点朝向
+     * @param toWorld  终点维度（跨维度换身时镜头也要知道往哪边去）
+     * @param transfer 镜头播完后要执行的换身动作
+     */
+    public static void playTransferCutscene(ServerPlayer player, BlockPos toPos, Direction toFacing,
+                                            Identifier toWorld, Consumer<ServerPlayer> transfer) {
+        PENDING_TRANSFERS.put(player.getUUID(),
+                new PendingTransfer(transfer, System.currentTimeMillis() + TRANSFER_TIMEOUT_MS));
+        // targetStateUuid 在这条分支用不上（服务端只认玩家自己的待执行动作），给个零值占位
+        ServerPlayNetworking.send(player, new SynchronizationResponsePacket(
+                true, true, SynchronizationResponsePacket.CameraStyle.RIGHT_ANGLE, "",
+                new UUID(0L, 0L),
+                player.level().dimension().identifier(), player.blockPosition(), player.getDirection(),
+                toWorld, toPos, toFacing));
     }
 
     private static void syncShellStates(ServerPlayer player) {

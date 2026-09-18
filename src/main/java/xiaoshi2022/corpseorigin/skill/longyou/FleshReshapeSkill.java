@@ -1,6 +1,5 @@
 package xiaoshi2022.corpseorigin.skill.longyou;
 
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.skill.AbstractSkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
@@ -23,8 +22,8 @@ public class FleshReshapeSkill extends AbstractSkill {
 
     @Override
     public void onActivate(ServerPlayer player) {
-        if (BodyTransplantHandler.reshapeBody(player)) {
-            player.sendOverlayMessage(Component.translatable("skill.corpseorigin." + PATH + ".done"));
-        }
+        // 换身由 BodyTransplantHandler 排队执行：镜头过场播完才真正重塑，
+        // 完成提示也在那时候发 —— 现在发会被过场的黑场盖掉。
+        BodyTransplantHandler.reshapeBody(player);
     }
 }

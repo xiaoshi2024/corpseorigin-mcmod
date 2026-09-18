@@ -32,6 +32,15 @@ import xiaoshi2022.corpseorigin.client.renderer.player.CorpsePlayerGeoRenderer;
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererSubmitMixin {
 
+    /**
+     * 尸体模型的垂直校准值（格）。
+     * <p>
+     * 改成"分肢体替换"之后，geo 里只有残桩/血管会出画，而它们的挂点骨枢轴和原版骨骼是同一套坐标
+     * （腿 0→12、臂 12→24 那块逐块对得上），所以零点一致、这里是 0。
+     * 万一残桩整体偏高/偏低，只改这一个数即可（负值往下压、正值往上抬）。
+     */
+    private static final double CORPSE_MODEL_Y_OFFSET = -0.6;
+
     @Inject(method = "submit", at = @At("HEAD"))
     private void corpseorigin$submitLimbModel(LivingEntityRenderState state, PoseStack poseStack,
                                               SubmitNodeCollector collector, CameraRenderState camera,
@@ -53,6 +62,18 @@ public abstract class LivingEntityRendererSubmitMixin {
             return;
         }
 
+        // 原版是在 submit 内部才 scale(state.scale)（体型缩放，比如尸王原体的 0.15），
+        // 而我们在 submit 的 HEAD 就把 Geo 模型画了 —— 这一步得自己补，
+        // 否则缩小状态下的身体不会跟着缩，看起来比盔甲大一整圈。
+        poseStack.pushPose();
+        // corpse_player 的零点比原版玩家模型高 2px（实测值），补回来才不会浮在盔甲上面。
+        // 想在游戏里微调就改这个常量：负值 = 往下压。
+        poseStack.translate(0.0, CORPSE_MODEL_Y_OFFSET, 0.0);
+        float scale = avatarState.scale;
+        if (scale != 1.0F) {
+            poseStack.scale(scale, scale, scale);
+        }
         renderer.submit(avatarState, poseStack, collector, camera);
+        poseStack.popPose();
     }
 }

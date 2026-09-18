@@ -11,6 +11,8 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
@@ -243,6 +245,11 @@ public final class DismembermentLogic {
 
         comp.writeLimbs(new LimbState(old.withSevered(slot), regrow, totals, cooldowns));
 
+        // ★ 头被砍掉时，头盔跟着脑袋一起离开 —— 不然那顶头盔会挂在没脑袋的脖子上
+        if (slot == LimbSlots.HEAD) {
+            dropHeadArmor(victim);
+        }
+
         // 立刻广播（含自己），客户端靠 mask 切到断肢模型
         CorpseNetwork.broadcastPlayerCorpseSync(victim);
 
@@ -266,6 +273,22 @@ public final class DismembermentLogic {
 
         victim.sendOverlayMessage(Component.translatable(
                 "limb.corpseorigin.severed", LimbSlots.DISPLAY_NAMES[slot]));
+    }
+
+    /**
+     * 头被砍掉时把头盔摘下来：先塞回背包，背包塞不下就掉在脚下。
+     * <p>
+     * 不摘的话，那顶头盔会继续挂在"没有脑袋的脖子"上 —— 断肢期间盔甲本来就整身不画，
+     * 但那只是渲染层的处理，物品还好端端地占着装备槽；这里让物品也跟着一起掉。
+     */
+    private static void dropHeadArmor(ServerPlayer victim) {
+        ItemStack helmet = victim.getItemBySlot(EquipmentSlot.HEAD);
+        if (helmet.isEmpty()) {
+            return;
+        }
+        victim.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+        // 先塞回背包；一个空位都没有时原版会自己把它丢在脚下（见 Inventory#placeItemBackInInventory）
+        victim.getInventory().placeItemBackInInventory(helmet);
     }
 
     /**

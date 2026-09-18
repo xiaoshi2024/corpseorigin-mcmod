@@ -164,7 +164,8 @@ public class CorpseOrigin implements ModInitializer {
 								? deathTarget.getWorld()
 								: player.level().dimension().identifier();
 						ServerPlayNetworking.send(player, new SynchronizationResponsePacket(
-								true, true, "意识已转移至最近的克隆体",
+								true, true, SynchronizationResponsePacket.CameraStyle.STAIRWAY,
+								"意识已转移至最近的克隆体",
 								deathTarget.getUuid(),
 								player.level().dimension().identifier(), player.blockPosition(),
 								player.getDirection(),

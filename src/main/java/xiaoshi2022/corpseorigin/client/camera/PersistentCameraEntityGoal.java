@@ -143,6 +143,53 @@ public class PersistentCameraEntityGoal {
                 PHASE_DELAY, MAX_DISTANCE, onTransitionFinished);
     }
 
+    /** 直角直出的垂直段高度（格）—— 刻意不抬高太多，这条分支要的是"直出"不是"上天" */
+    public static final double RIGHT_ANGLE_RISE = 8.0;
+    /** 起点和目标重合（原地换身）时，水平段甩出去的距离（格） */
+    public static final double RIGHT_ANGLE_OUT = 8.0;
+    public static final long RIGHT_ANGLE_RISE_DURATION = 900;
+    public static final long RIGHT_ANGLE_OUT_DURATION = 800;
+    public static final long RIGHT_ANGLE_DELAY = 150;
+
+    /**
+     * 直角直出：先原地<b>垂直抬起</b>，到位后 90° 拐弯，沿水平方向<b>直甩出去</b>。
+     * <p>
+     * 和 {@link #stairwayToHeaven} 的区别就在这条直角折线：天梯是先退后飞、飞到 y=320 再落下来，
+     * 而这条分支全程只抬 {@link #RIGHT_ANGLE_RISE} 格，然后横着抽走 —— 没有"上天"的观感。
+     * <p>
+     * 水平段的方向：朝目标（换到远处那具身体时，镜头正好"飞向"它）；起点和目标几乎重合时
+     * （金蝉脱壳 / 血肉重塑都是原地换身）沿<b>身体朝向的反方向</b>抽出来，像是在把意识从躯壳里拉出。
+     */
+    public static PersistentCameraEntityGoal rightAngleExit(BlockPos start, Direction startFacing, BlockPos target,
+                                                            Consumer<PersistentCameraEntity> onTransitionFinished) {
+        double dX = target.getX() - start.getX();
+        double dZ = target.getZ() - start.getZ();
+        double horizontal = Math.sqrt(dX * dX + dZ * dZ);
+        double outDistance;
+        if (horizontal < 1.0) {
+            dX = -startFacing.getStepX();
+            dZ = -startFacing.getStepZ();
+            horizontal = 1.0;
+            outDistance = RIGHT_ANGLE_OUT;
+        } else {
+            outDistance = Math.min(horizontal, MAX_DISTANCE);
+        }
+        double dirX = dX / horizontal;
+        double dirZ = dZ / horizontal;
+
+        double centerX = start.getX() + 0.5;
+        double centerZ = start.getZ() + 0.5;
+        Vec3 elevated = new Vec3(centerX, start.getY() + RIGHT_ANGLE_RISE, centerZ);
+        Vec3 outPos = new Vec3(centerX + dirX * outDistance, elevated.y, centerZ + dirZ * outDistance);
+        // 水平段的视线顺着"甩出去"的方向：直出感来自镜头也跟着拐这 90°
+        float exitYaw = (float) Math.toDegrees(Math.atan2(-dirX, dirZ));
+
+        PersistentCameraEntityGoal rise = create(elevated, startFacing.toYRot(), 0, RIGHT_ANGLE_RISE_DURATION);
+        PersistentCameraEntityGoal out = create(outPos, exitYaw, 0, RIGHT_ANGLE_DELAY,
+                RIGHT_ANGLE_OUT_DURATION, onTransitionFinished);
+        return rise.then(out);
+    }
+
     public static PersistentCameraEntityGoal highwayToHell(BlockPos start, Direction startFacing, double y, BlockPos target,
                                                            Direction targetFacing, long firstPhaseDuration, long secondPhaseDuration,
                                                            long phaseDelay, double maxDistance,

@@ -24,6 +24,8 @@
     "ClientPlayerInteractionManagerMixin",
     "ClientPlayerShellMixin",
     "EntityMixin",
+    "GeoArmorRendererLimbMixin",
+    "HumanoidModelLimbArmorMixin",
     "ItemInHandRendererMixin",
     "LevelRendererAccessor",
     "LivingEntityRendererLayersAccessor",

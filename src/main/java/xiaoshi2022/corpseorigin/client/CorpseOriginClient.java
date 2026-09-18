@@ -29,6 +29,7 @@ import xiaoshi2022.corpseorigin.client.aps.APSInkSceneManager;
 import xiaoshi2022.corpseorigin.client.aps.APSInkSceneRenderer;
 import xiaoshi2022.corpseorigin.client.camera.PersistentCameraEntity;
 import xiaoshi2022.corpseorigin.client.camera.PersistentCameraEntityGoal;
+import xiaoshi2022.corpseorigin.client.gui.CameraBlackoutScreen;
 import xiaoshi2022.corpseorigin.client.gui.CloneChamberScreen;
 import xiaoshi2022.corpseorigin.client.hud.InfectionHudOverlay;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
@@ -221,6 +222,22 @@ public class CorpseOriginClient implements ClientModInitializer {
                     Direction startFacing = payload.fromFacing();
                     BlockPos targetPos = payload.toPos();
                     Direction targetFacing = payload.toFacing();
+
+                    // ★ 直角分支（尸王换身：金蝉脱壳 / 血肉重塑 / 右键回旧身体）：
+                    //   原地垂直抬起 → 90° 拐弯横着甩出去，全程盖一层黑场；播完才让服务端真正换身
+                    if (payload.cameraStyle() == SynchronizationResponsePacket.CameraStyle.RIGHT_ANGLE) {
+                        if (PersistentCameraEntity.isLocalPlayerFirstPersonView(client)) {
+                            CameraBlackoutScreen.fadeIn(client);
+                            PersistentCameraEntity.setup(client, PersistentCameraEntityGoal.rightAngleExit(
+                                    startPos, startFacing, targetPos,
+                                    __ -> finishCameraDirect(payload.targetStateUuid(), targetPos,
+                                            payload.toWorld())));
+                        } else {
+                            // 不接管视角（旁观/第三人称）也必须回包，否则服务端一直等，身体永远换不过来
+                            finishCameraDirect(payload.targetStateUuid(), targetPos, payload.toWorld());
+                        }
+                        return;
+                    }
 
                     // ★ 过场只针对「当前玩家自己的第一人称视角」：相机被别人接管（旁观/切视角）或第三人称时
                     //   不播过场，但仍然立刻回包，否则服务端会一直等 CameraDonePacket，身体永远换不过来
@@ -445,6 +462,16 @@ public class CorpseOriginClient implements ClientModInitializer {
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
                 new CameraDonePacket(targetUuid));
         PersistentCameraEntity.beginHandoff(startPos, startFacing, targetPos, targetFacing, targetWorld);
+    }
+
+    /**
+     * 直角分支（尸王换身）的收尾：镜头不飞天也不下落 —— 只回包让服务端换身，
+     * 然后等玩家落到目标位置，在黑幕里把视角交还（见 {@code beginDirectRelease}）。
+     */
+    private static void finishCameraDirect(java.util.UUID targetUuid, BlockPos targetPos, Identifier targetWorld) {
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
+                new CameraDonePacket(targetUuid));
+        PersistentCameraEntity.beginDirectRelease(targetPos, targetWorld);
     }
 
     /** 找玩家周围 3 格内最近的克隆仓（只认下半格），返回其方块坐标 */

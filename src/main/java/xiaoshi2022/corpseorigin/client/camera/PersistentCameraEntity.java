@@ -11,6 +11,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.phys.Vec3;
+import xiaoshi2022.corpseorigin.client.gui.CameraBlackoutScreen;
 
 import java.util.Objects;
 
@@ -50,6 +51,8 @@ public class PersistentCameraEntity extends LocalPlayer {
     private static Identifier handoffTargetWorld;
     private static int handoffWaitTicks;
     private static int handoffSettleTicks;
+    /** true = 直角分支：不播"下落附身"，落位后直接在黑幕里把视角交还 */
+    private static boolean handoffDirectRelease;
 
     private PersistentCameraEntity(Minecraft client) {
         super(client,
@@ -117,6 +120,22 @@ public class PersistentCameraEntity extends LocalPlayer {
         handoffTargetWorld = null;
         handoffWaitTicks = 0;
         handoffSettleTicks = 0;
+        handoffDirectRelease = false;
+    }
+
+    /**
+     * 直角分支（尸王换身）的收尾：不下落也不附身，等服务端换完、玩家真的落到目标位置后，
+     * 直接在黑幕里把视角交还 —— 这一段玩家本来就被黑场盖着，"睁眼"时人已经在新身体里了。
+     */
+    public static void beginDirectRelease(BlockPos targetPos, Identifier targetWorld) {
+        handoffStartPos = null;
+        handoffStartFacing = null;
+        handoffTargetPos = targetPos;
+        handoffTargetFacing = null;
+        handoffTargetWorld = targetWorld;
+        handoffWaitTicks = HANDOFF_MAX_TICKS;
+        handoffSettleTicks = HANDOFF_SETTLE_TICKS;
+        handoffDirectRelease = true;
     }
 
     /** @return true 表示镜头还在等落位（本次 tick 已经处理过了） */
@@ -139,6 +158,14 @@ public class PersistentCameraEntity extends LocalPlayer {
         }
 
         if (!landed && --handoffWaitTicks > 0) {
+            return true;
+        }
+
+        // ★ 直角分支：换身已完成、人也落位了 —— 不搞"从天上扎下来"，就在黑幕里把视角还回去，然后睁眼
+        if (handoffDirectRelease) {
+            clearHandoff();
+            unset(client);
+            CameraBlackoutScreen.fadeOut();
             return true;
         }
 

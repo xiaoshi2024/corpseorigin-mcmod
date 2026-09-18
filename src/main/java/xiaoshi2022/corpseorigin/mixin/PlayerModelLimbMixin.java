@@ -7,15 +7,18 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import xiaoshi2022.corpseorigin.client.limb.LimbRenderData;
+import xiaoshi2022.corpseorigin.limb.LimbSlots;
 
 /**
- * 断肢形态下屏蔽原版玩家模型的<b>本体</b>，只让 RenderLayer 继续跑。
+ * 断肢形态下，原版玩家模型只隐藏<b>断掉的那几肢</b>，其余部位照常渲染。
  * <p>
- * 必须注入在 {@code setupAnim} 的 TAIL：这个方法每帧都会把各部位的 {@code visible}
- * 按 {@code state} 重设一遍（潜行/旁观之类的逻辑），只有最后覆盖才留得住。
+ * 这是"分肢体替换"的一半：<b>原版模型继续画躯干、头、完好的四肢</b>（以及挂在它们上面的盔甲、
+ * 皮肤外层、其它模组的层），断掉的那一肢才交给 corpse_player 模型去画残桩与血管
+ * （见 {@code CorpsePlayerGeoRenderer}）。相比"整具身体换模型"，这样盔甲与皮肤的参照系完全一致，
+ * 不需要任何位置/旋转补偿。
  * <p>
- * 只改 {@code visible} 不改 pose —— RenderLayer（盔甲、披风、外骨骼红眼、其它模组的层）
- * 读的是部位的旋转/位移，不看 visible，所以它们的位置完全不受影响。
+ * ⚠️ 必须注入在 {@code setupAnim} 的 TAIL：这个方法每帧都会把 body / 四肢 / 袖子 / 裤子按 state
+ * 重设成"显示"，<b>唯独不碰 head</b>；只有最后覆盖才留得住，也才能同时把 head 恢复回来。
  */
 @Mixin(PlayerModel.class)
 public abstract class PlayerModelLimbMixin {
@@ -24,29 +27,35 @@ public abstract class PlayerModelLimbMixin {
             method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;)V",
             at = @At("TAIL")
     )
-    private void corpseorigin$hideVanillaBody(AvatarRenderState state, CallbackInfo ci) {
+    private void corpseorigin$hideSeveredLimbs(AvatarRenderState state, CallbackInfo ci) {
         PlayerModel self = (PlayerModel) (Object) this;
         Integer mask = state.getGeckolibData(LimbRenderData.LIMB_MASK);
+        int severed = mask == null ? 0 : (mask & LimbSlots.MASK_ALL);
 
-        if (mask == null || mask == 0) {
-            // ⚠️ 必须自己恢复 head.visible：PlayerModel.setupAnim 只重置 body / 四肢 /
-            // 袖子裤子夹克这几个（this.body.visible = showBody 之类），**唯独不碰 head**。
-            // 不在这里恢复的话，断肢长好之后头会永久消失。
-            self.head.visible = true;
-            return;
-        }
+        boolean head = severed(severed, LimbSlots.HEAD);
+        self.head.visible = !head;
+        self.hat.visible = !head;
 
-        self.head.visible = false;
-        self.hat.visible = false;
-        self.body.visible = false;
-        self.jacket.visible = false;
-        self.rightArm.visible = false;
-        self.rightSleeve.visible = false;
-        self.leftArm.visible = false;
-        self.leftSleeve.visible = false;
-        self.rightLeg.visible = false;
-        self.rightPants.visible = false;
-        self.leftLeg.visible = false;
-        self.leftPants.visible = false;
+        boolean rightArm = severed(severed, LimbSlots.RIGHT_ARM);
+        self.rightArm.visible = !rightArm;
+        self.rightSleeve.visible = !rightArm;
+
+        boolean leftArm = severed(severed, LimbSlots.LEFT_ARM);
+        self.leftArm.visible = !leftArm;
+        self.leftSleeve.visible = !leftArm;
+
+        boolean rightLeg = severed(severed, LimbSlots.RIGHT_LEG);
+        self.rightLeg.visible = !rightLeg;
+        self.rightPants.visible = !rightLeg;
+
+        boolean leftLeg = severed(severed, LimbSlots.LEFT_LEG);
+        self.leftLeg.visible = !leftLeg;
+        self.leftPants.visible = !leftLeg;
+
+        // 躯干（body / jacket）永远由原版渲染：它上面挂着胸甲，位置必须和盔甲一致
+    }
+
+    private static boolean severed(int mask, int slot) {
+        return (mask & (1 << slot)) != 0;
     }
 }
