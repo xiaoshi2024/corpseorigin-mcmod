@@ -13,6 +13,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import xiaoshi2022.corpseorigin.client.limb.LimbRenderData;
 import xiaoshi2022.corpseorigin.client.limb.PlayerGeoAnimatable;
+import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyAnimations;
+import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
 import xiaoshi2022.corpseorigin.limb.LimbSlots;
 
 /**
@@ -35,6 +37,9 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
     private static final RawAnimation CORPSEORIGIN$WALK = RawAnimation.begin().thenLoop("walk");
     /** 只播一次的攻击动画（每次挥击由上升沿把时间轴拉回 0 帧重播） */
     private static final RawAnimation CORPSEORIGIN$ATTACK = RawAnimation.begin().thenPlay("attack");
+    // 注意：左护法变异体（zuo_guardian）的动画不在这里 ——
+    // 它那套名字（reptile / swim / raised / riderx_attack）走专属控制器 +
+    // 配置化的对应表，见 MutantBodyAnimations。
 
     // 再生动画：每条只播一次，播完停在末帧（动画自己的速度就是播放速度）
     private static final RawAnimation CORPSEORIGIN$REGROW_RIGHT_ARM =
@@ -78,6 +83,12 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
     @Unique
     private boolean corpseorigin$attacking;
 
+    /** 变异体：上一帧是否在挥击 / 潜行 —— 这两条都是"播一次停在末帧"，靠上升沿重播 */
+    @Unique
+    private boolean corpseorigin$mutantAttacking;
+    @Unique
+    private boolean corpseorigin$mutantSneaking;
+
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         // 四肢的摆动走 corpse_player 自己的 JSON 动画（idle / walk / attack）；
@@ -95,10 +106,66 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
                 "regrow_left_leg", CORPSEORIGIN$REGROW_LEFT_LEG, LimbRenderData.REGROW_LEFT_LEG, 3));
         controllers.add(corpseorigin$regrowController(
                 "regrow_head", CORPSEORIGIN$REGROW_HEAD, LimbRenderData.REGROW_HEAD, LimbSlots.HEAD));
+        // ★ 左护法变异体专属控制器：放在最后注册，让它出的骨骼值盖在这几条之上；
+        //   变异体形态下 movement / attack 会主动让开（见各自方法开头）。
+        controllers.add(new AnimationController<PlayerGeoAnimatable>("mutant_body", 0, this::corpseorigin$mutantBody));
+    }
+
+    /**
+     * 左护法变异体（{@code zuo_guardian}）的专属动画控制器。
+     * <p>
+     * <b>为什么单独开一条</b>：这套模型的动画名跟玩家断肢模型（corpse_player）完全不同 ——
+     * 它没有 walk / regrow_*，却有 reptile / swim / raised。共用 movement 那条控制器时，
+     * "什么状态播哪条"会和断肢那套搅在一起；开一条独立的，变异体形态下让 movement / attack 停掉，
+     * 由这里统一按对应表（见 {@link MutantBodyAnimations}）选动画，两个形态就互不干扰。
+     * <p>
+     * 状态来自 {@code ZuoGuardianBodyRenderer.writeBodyRenderData} 每帧写入的 ticket：
+     * 移动 / 水里 / 潜行 / 挥击。映射关系（哪条动画）写在配置 {@code mutantBody.animations} 里。
+     * <p>
+     * 两条"播一次停在末帧"的动画（探头、攻击）在<b>上升沿把时间轴拉回 0 帧</b>重播，
+     * 否则蹲下→站起→再蹲下、连挥两刀都会卡在末帧不动。
+     */
+    @Unique
+    private PlayState corpseorigin$mutantBody(AnimationTest<PlayerGeoAnimatable> test) {
+        Boolean active = test.getDataOrDefault(MutantBodyRenderData.ACTIVE, null);
+        if (active == null) {
+            return PlayState.CONTINUE;   // 别人的回合（盔甲 / 断肢管线），不碰状态
+        }
+        if (!active) {
+            // 不是变异体形态：显式停掉 —— 这几条动画名别的模型里没有，泄漏过去只会刷日志
+            corpseorigin$mutantAttacking = false;
+            corpseorigin$mutantSneaking = false;
+            return PlayState.STOP;
+        }
+
+        boolean attacking = Boolean.TRUE.equals(
+                test.getDataOrDefault(LimbRenderData.ATTACKING, Boolean.FALSE));
+        boolean inWater = Boolean.TRUE.equals(
+                test.getDataOrDefault(MutantBodyRenderData.SWIMMING, Boolean.FALSE));
+        boolean sneaking = Boolean.TRUE.equals(
+                test.getDataOrDefault(MutantBodyRenderData.SNEAKING, Boolean.FALSE));
+        boolean moving = Boolean.TRUE.equals(
+                test.getDataOrDefault(MutantBodyRenderData.MOVING, Boolean.FALSE));
+
+        boolean restart = (attacking && !corpseorigin$mutantAttacking)
+                || (sneaking && !corpseorigin$mutantSneaking);
+        corpseorigin$mutantAttacking = attacking;
+        corpseorigin$mutantSneaking = sneaking;
+
+        MutantBodyAnimations.State state = MutantBodyAnimations.select(attacking, inWater, sneaking, moving);
+        test.setAndContinue(MutantBodyAnimations.animation(state));
+        if (restart && MutantBodyAnimations.oneShot(state)) {
+            test.controller().setAnimationTime(0.0D);
+        }
+        return PlayState.CONTINUE;
     }
 
     @Unique
     private PlayState corpseorigin$movement(AnimationTest<PlayerGeoAnimatable> test) {
+        // 变异体形态交给 mutant_body 那条控制器，这里让开（两套一起出会互相盖骨头）
+        if (Boolean.TRUE.equals(test.getDataOrDefault(MutantBodyRenderData.ACTIVE, null))) {
+            return PlayState.STOP;
+        }
         Boolean moving = test.getDataOrDefault(LimbRenderData.MOVING, null);
         if (moving == null) {
             // ★ 这次求值没带玩家身体的信号（典型情况：穿着 GeoLib 套装时，
@@ -123,6 +190,11 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
         Boolean attackingData = test.getDataOrDefault(LimbRenderData.ATTACKING, null);
         if (attackingData == null) {
             return PlayState.CONTINUE;   // 别人的回合（盔甲那条管线），不碰状态
+        }
+        // 变异体形态交给 mutant_body 那条控制器（它按对应表播 riderx_attack），这里让开
+        if (Boolean.TRUE.equals(test.getDataOrDefault(MutantBodyRenderData.ACTIVE, null))) {
+            corpseorigin$attacking = false;
+            return PlayState.STOP;
         }
         boolean attacking = attackingData;
         if (!attacking) {

@@ -227,6 +227,10 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
         // 角色变了要重新同步给客户端，否则客户端的角色与技能树还是旧的
         CorpseNetwork.sendCharacterSync(self,
                 PlayerCharacterData.get(self).getCharacterId(self.getUUID()));
+        // ★ 形态自洽：蛟龙身体只属于左护法角色。克隆仓培育出来的身体角色是凡人、
+        //   尸兄数据却从本体复制（带着左护法的外观变种），换进去就会"凡人长着蛟龙身体"。
+        //   这一步必须在下面的 broadcastPlayerCorpseSync 之前做完，广播才会带上修正后的数据。
+        xiaoshi2022.corpseorigin.component.MutantForm.reconcile(self);
         // ★ 进化点数 / 进化等级（由点数换算）/ 击杀数 / 已学技能也跟着身体走：
         //   补一次同步，否则客户端 HUD 与技能树还停在上一具身体的数据上
         CorpseNetwork.sendEvolutionSync(self);
@@ -281,6 +285,10 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
         //   换到龙右身体就套上，从龙右身体换走就摘掉。
         //   ⚠️ 必须放在 self.load 之后 —— load 会用身体快照里的属性覆盖实体属性表。
         LongYou.applyIfLongYou(self);
+
+        // ★ 左护法同理：换到左护法身体就按<b>当前形态</b>套上数值（合体档 / 人形档，
+        //   前者比后者多 5 颗心），从这具身体换走就摘掉。同样要在 load 之后。
+        xiaoshi2022.corpseorigin.character.ZuoHuFa.applyIfZuoHuFa(self);
 
         // ★ 身体的大小（尸王原体是缩小版）：同样在 load 之后写，渲染与碰撞箱一起变
         AttributeInstance scale = self.getAttribute(Attributes.SCALE);

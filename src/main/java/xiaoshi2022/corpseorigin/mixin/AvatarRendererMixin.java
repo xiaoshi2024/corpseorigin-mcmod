@@ -15,6 +15,8 @@ import xiaoshi2022.corpseorigin.client.model.ExoskeletonModel;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.render.layer.ExoskeletonRenderLayer;
 import xiaoshi2022.corpseorigin.client.renderer.player.CorpsePlayerGeoRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.ZuoGuardianBodyRenderer;
 import xiaoshi2022.corpseorigin.registry.ModModelLayers;
 
 @Mixin(AvatarRenderer.class)
@@ -47,6 +49,13 @@ public abstract class AvatarRendererMixin {
         } catch (Exception e) {
             CorpseOrigin.LOGGER.error("❌ 创建断肢玩家渲染器失败: {}", e.getMessage(), e);
         }
+
+        // ✅ 左护法变异体渲染器（同样是单例，整体替换玩家身体）
+        try {
+            ZuoGuardianBodyRenderer.createIfAbsent(context);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("❌ 创建左护法变异体渲染器失败: {}", e.getMessage(), e);
+        }
     }
 
     /**
@@ -76,8 +85,16 @@ public abstract class AvatarRendererMixin {
     )
     private void corpseorigin$extractLimbState(Avatar avatar, AvatarRenderState state, float partialTick,
                                               CallbackInfo ci) {
-        if (avatar instanceof AbstractClientPlayer player) {
-            CorpsePlayerGeoRenderer.writeLimbRenderData(state, player, partialTick);
+        if (!(avatar instanceof AbstractClientPlayer player)) {
+            return;
         }
+        // 左护法变异体形态：整身换成 zuo_guardian，断肢那套不参与（身体都不是同一具了）
+        if (MutantBodyRenderData.isMutantBody(player)) {
+            ZuoGuardianBodyRenderer.writeBodyRenderData(state, player, partialTick);
+            return;
+        }
+        // 不在变异体形态：清掉日志标记，下次再变进来会重新打一条动画状态
+        ZuoGuardianBodyRenderer.forget(player.getUUID());
+        CorpsePlayerGeoRenderer.writeLimbRenderData(state, player, partialTick);
     }
 }

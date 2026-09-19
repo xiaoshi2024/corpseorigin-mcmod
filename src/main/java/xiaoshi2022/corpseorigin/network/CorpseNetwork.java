@@ -176,6 +176,8 @@ public final class CorpseNetwork {
             PENDING_SYNCS.remove(uuid);
             PENDING_TRANSFERS.remove(uuid);
             SkillManager.cleanupDisconnect(uuid);
+            // 软联动（Snakes Alive）那边记的"上次吐出的蛇"也清掉
+            xiaoshi2022.corpseorigin.compat.SnakesAliveCompat.forget(uuid);
             xiaoshi2022.corpseorigin.character.InnerPowerManager.cleanupDisconnect(uuid);
             // 尸水之源是开关技能，断开时清掉，免得重登后莫名掉饱食度
             xiaoshi2022.corpseorigin.skill.longyou.WaterPollutionSkill.clearOnDisconnect(uuid);

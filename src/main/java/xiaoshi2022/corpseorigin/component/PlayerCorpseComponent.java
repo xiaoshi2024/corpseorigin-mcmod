@@ -51,6 +51,11 @@ public class PlayerCorpseComponent {
     // ==================== 尸兄变种常量 ====================
     /** 无外骨骼通用变种：算尸兄，但不长尸眼骨骼，外观完全交给盔甲/模型自己表现 */
     public static final int VARIANT_NO_EXOSKELETON = 2;
+    /**
+     * 左护法变异体变种：算尸兄，但整具外观换成 {@code zuo_guardian} 变异体模型
+     * （见 {@code ZuoGuardianBodyRenderer}），原版玩家模型、盔甲一律不画，也不长尸眼骨骼。
+     */
+    public static final int VARIANT_ZUO_GUARDIAN = 3;
 
     /** 进化等级上限 */
     public static final int MAX_EVOLUTION_LEVEL = 5;
@@ -417,6 +422,33 @@ public class PlayerCorpseComponent {
 
     public static boolean isCorpse(Player player) {
         return get(player).isCorpse();
+    }
+
+    /**
+     * 轻量判定：这具身体现在是不是「左护法变异体」形态（尸兄 + 非伪装 + 变种 3）。
+     * <p>
+     * 直接读附件、<b>不做 NBT 副本</b> —— 这个方法会被每 tick 的碰撞箱 / 拾取逻辑反复调用，
+     * 而 {@link #getData()} 每次都会复制整份 tag。判定条件与客户端那份缓存（
+     * {@code MutantBodyRenderData}）保持一致。
+     */
+    public static boolean isMutantVariant(Player player) {
+        CompoundTag tag = player.getAttached(ModDataAttachments.PLAYER_CORPSE);
+        if (tag == null) {
+            return false;
+        }
+        return tag.getBoolean(KEY_IS_CORPSE).orElse(false)
+                && !tag.getBoolean(KEY_IS_DISGUISED).orElse(false)
+                && tag.getInt(KEY_VARIANT).orElse(0) == VARIANT_ZUO_GUARDIAN;
+    }
+
+    /**
+     * 这个变种要不要长那根尸眼骨骼。
+     * <p>
+     * 自带整套外观的变种（天线宝宝尸兄盔甲 {@link #VARIANT_NO_EXOSKELETON}、左护法变异体
+     * {@link #VARIANT_ZUO_GUARDIAN}）都返回 {@code false} —— 它们算尸兄，但外观不靠这根骨骼。
+     */
+    public static boolean hasExoskeleton(int variant) {
+        return variant != VARIANT_NO_EXOSKELETON && variant != VARIANT_ZUO_GUARDIAN;
     }
 
     /**

@@ -109,6 +109,39 @@ public final class ModEntities {
                     .updateInterval(2)
     );
 
+    /**
+     * 左护法「蛟龙」的一节碰撞箱（隐形实体，伤害转给主人玩家）。
+     * <p>
+     * {@code noSummon}：不给刷怪蛋 / 指令召唤；{@code noSave}：不写进存档（主人没了就销毁）；
+     * {@code updateInterval(1)}：每 tick 同步位置，客户端打架子才跟得上动画。
+     */
+    public static final EntityType<GuardianPartEntity> GUARDIAN_PART = register(
+            "guardian_part",
+            EntityType.Builder.<GuardianPartEntity>of(GuardianPartEntity::new, MobCategory.MISC)
+                    .sized(1.0F, 1.0F)
+                    .noSummon()
+                    .noSave()
+                    .fireImmune()
+                    .clientTrackingRange(10)
+                    .updateInterval(1)
+    );
+
+    /**
+     * 尸蛟龙（{@code zuo_flood_long}）—— 左护法用「脱离」蜕下来的那条蛟龙，独立的宠物 BOSS。
+     * <p>
+     * {@code noSummon}：不给刷怪蛋 / 指令召唤（只能由技能放出来）；{@code noSave}：不写进存档
+     * （非持久宠物，主人没了就该没了）；尺寸给的是"未缩放"的基准，实际大小按配置缩放（见实体里的 getDimensions）。
+     */
+    public static final EntityType<ZuoFloodLongEntity> ZUO_FLOOD_LONG = register(
+            "zuo_flood_long",
+            EntityType.Builder.<ZuoFloodLongEntity>of(ZuoFloodLongEntity::new, MobCategory.MISC)
+                    .sized(3.0F, 5.0F)
+                    .noSummon()
+                    .noSave()
+                    .clientTrackingRange(10)
+                    .updateInterval(2)
+    );
+
     private static <T extends Entity> EntityType<T> register(String name, EntityType.Builder<T> builder) {
         Identifier id = CorpseOrigin.id(name);
         return Registry.register(

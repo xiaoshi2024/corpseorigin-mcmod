@@ -7,9 +7,12 @@
     "CorpseMixin",
     "ItemCooldownsAccessor",
     "ItemEntityMixin",
+    "LivingEntityBreatheMixin",
     "MobPeacefulMixin",
     "MobPickupMixin",
     "MobZombieKingRespectMixin",
+    "PlayerPickableMixin",
+    "ProjectileOwnBodyMixin",
     "ServerPlayerShellMixin",
     "SpawnPlacementsInvoker"
   ],

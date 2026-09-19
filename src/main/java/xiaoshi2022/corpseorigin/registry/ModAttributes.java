@@ -46,6 +46,12 @@ public final class ModAttributes {
         // 初音尸兄
         FabricDefaultAttributeRegistry.register(ModEntities.MIKU_ZB, MikuZbEntity.createAttributes());
 
+        // 尸蛟龙（左护法"脱离"后放出来的宠物 BOSS）
+        FabricDefaultAttributeRegistry.register(
+                ModEntities.ZUO_FLOOD_LONG,
+                ZuoFloodLongEntity.createAttributes()
+        );
+
         // TODO: 添加其他实体的属性注册
         // 例如：
         // FabricDefaultAttributeRegistry.register(ModEntities.LONGYOU, LongyouEntity.createAttributes());

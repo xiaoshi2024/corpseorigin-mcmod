@@ -68,6 +68,16 @@ public interface ISkill {
         return 0;
     }
 
+    /**
+     * 硬前置检查：返回 {@code null} = 现在可以用；返回一段文字 = 现在不能用，并给出原因。
+     * <p>
+     * 不能用时技能<b>不生效、不进冷却、也不扣内力</b>，只把那句话顶到玩家快捷栏上。
+     * 给"形态不对 / 宠物不在身边"这类硬前置用 —— 否则玩家会白白吃掉一次冷却。
+     */
+    default Component checkUsable(ServerPlayer player) {
+        return null;
+    }
+
     /** 服务端玩家激活技能时的效果回调 */
     default void onActivate(ServerPlayer player) {
         // 空实现，子类可重写

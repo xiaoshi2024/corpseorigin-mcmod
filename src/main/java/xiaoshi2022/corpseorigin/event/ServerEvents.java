@@ -28,6 +28,8 @@ public final class ServerEvents {
             CharacterManager.getInstance().syncToClient(newPlayer);
             // 重生是换了一个新的玩家实体，尸王的基础数值要重新套上（不是龙右就是摘掉）
             xiaoshi2022.corpseorigin.character.LongYou.applyIfLongYou(newPlayer);
+            // 左护法同理：新实体上要按当前形态（合体 / 分离）重套一遍基础数值
+            xiaoshi2022.corpseorigin.character.ZuoHuFa.applyIfZuoHuFa(newPlayer);
             // ★ 体型也要复位：死在"拇指原体"里重生，SCALE 属性会被一起带过来，
             //   不复位的话人会一直是个小人儿
             xiaoshi2022.corpseorigin.character.LongYou.resetBodySize(newPlayer);
@@ -36,9 +38,14 @@ public final class ServerEvents {
         // 登录 → 同步角色
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ServerPlayer player = handler.getPlayer();
+            // ★ 先做一次形态自洽修正：老存档里若有"角色不是左护法、尸兄数据却是蛟龙变种"的身体
+            //   （克隆/换身留下的），在这里降级回普通尸兄外观 —— 后面补发的尸兄数据就是修正后的
+            xiaoshi2022.corpseorigin.component.MutantForm.reconcile(player);
             CharacterManager.getInstance().syncToClient(player);
             // 同理：补一次尸王基础数值，避免老存档里已经切到龙右的玩家没数值
             xiaoshi2022.corpseorigin.character.LongYou.applyIfLongYou(player);
+            // 左护法：登录时按当前形态补一次基础数值（老存档 / 上次异常退出的兜底）
+            xiaoshi2022.corpseorigin.character.ZuoHuFa.applyIfZuoHuFa(player);
             // ★ 把在线其他玩家的尸兄状态补给刚进来的玩家。
             //   尸兄数据平时只在"发生变化"时广播，新玩家错过那些包的话，
             //   在他眼里别人就都是普通人（看不到多眼/外骨骼）。
@@ -71,6 +78,10 @@ public final class ServerEvents {
 
         // 金蝉脱壳后：右键旧身体穿回去（只在缩在原体里的时候接管）
         xiaoshi2022.corpseorigin.skill.longyou.BodyTransplantHandler.register();
+
+        // 每 tick 维护左护法变异体的"蛟龙节碰撞箱"（生成 / 摆位 / 清理）
+        ServerTickEvents.END_SERVER_TICK.register(
+                xiaoshi2022.corpseorigin.event.MutantHitboxHandler::tick);
 
         // 退出 → 清理
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {

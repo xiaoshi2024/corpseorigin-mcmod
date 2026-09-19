@@ -142,6 +142,10 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.ZB_WORM, ZbWormRenderer::new);
         EntityRendererRegistry.register(ModEntities.MIKU_ZB, MikuZbRenderer::new);
         EntityRendererRegistry.register(ModEntities.LEEK_PROJECTILE, LeekProjectileRenderer::new);
+        // 左护法蛟龙的节碰撞箱：隐形实体，只需要一个"什么都不画"的绘制器
+        EntityRendererRegistry.register(ModEntities.GUARDIAN_PART, GuardianPartRenderer::new);
+        // 尸蛟龙（左护法"脱离"后放出来的宠物 BOSS）
+        EntityRendererRegistry.register(ModEntities.ZUO_FLOOD_LONG, ZuoFloodLongRenderer::new);
         // 黑色火线克隆仓方块实体渲染器
         BlockEntityRendererRegistry.register(
                 ModBlockEntities.CLONE_CHAMBER,

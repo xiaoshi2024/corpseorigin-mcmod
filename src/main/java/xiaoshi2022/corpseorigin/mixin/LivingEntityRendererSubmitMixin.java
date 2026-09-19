@@ -14,6 +14,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import xiaoshi2022.corpseorigin.client.limb.LimbRenderData;
 import xiaoshi2022.corpseorigin.client.renderer.player.CorpsePlayerGeoRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.ZuoGuardianBodyRenderer;
+import xiaoshi2022.corpseorigin.config.CorpseConfig;
 
 /**
  * 断肢形态下用 Geolib 模型替换玩家"身体"。
@@ -52,6 +55,50 @@ public abstract class LivingEntityRendererSubmitMixin {
      * 的位移（残桩直接飘出身体），正常体型下却只有 1 像素。盔甲外扩层是 0.25 像素，0.75 像素够穿出去。
      */
     private static final double LIMB_OVERLAY_PUSH_PIXELS = 0.75;
+
+    /**
+     * 左护法变异体形态：<b>整体替换</b>玩家 —— 原版模型、盔甲、披风、外骨骼等层全部不画，
+     * 只提交 zuo_guardian（巨蛇 + 骑手）。
+     * <p>
+     * 所以在 HEAD 就接管并 {@code cancel}（而不是像断肢那样在 TAIL 补画一层）。
+     * 代价是名字牌也一并不画 —— 这是"变成一具变异体"的取舍，见 {@code MutantBodyRenderData}。
+     * <p>
+     * ⚠️ 原版是在 submit 内部才 scale(state.scale)（体型缩放），我们在 HEAD 就画了，
+     * 这一步得自己补，否则缩小状态下的变异体不会跟着缩。缩放/垂直微调见配置
+     * {@code mutantBody.scale} / {@code mutantBody.yOffset}（模型是 BOSS 体型，默认缩到一半）。
+     */
+    @Inject(method = "submit", at = @At("HEAD"), cancellable = true)
+    private void corpseorigin$submitMutantBody(LivingEntityRenderState state, PoseStack poseStack,
+                                               SubmitNodeCollector collector, CameraRenderState camera,
+                                               CallbackInfo ci) {
+        if (!(state instanceof AvatarRenderState avatarState)) {
+            return;
+        }
+        if (!((Object) this instanceof AvatarRenderer<?>)) {
+            return;
+        }
+        if (avatarState.getGeckolibData(MutantBodyRenderData.BODY_TEXTURE) == null) {
+            return;   // 不是变异体形态（或这一帧纹理没合成出来）→ 完全走原版渲染
+        }
+
+        ZuoGuardianBodyRenderer renderer = ZuoGuardianBodyRenderer.get();
+        if (renderer == null) {
+            return;
+        }
+
+        CorpseConfig.MutantBody config = CorpseConfig.get().mutantBody;
+
+        poseStack.pushPose();
+        poseStack.translate(0.0, config.yOffset, 0.0);
+        float scale = avatarState.scale * config.scale;
+        if (scale != 1.0F) {
+            poseStack.scale(scale, scale, scale);
+        }
+        renderer.submit(avatarState, poseStack, collector, camera);
+        poseStack.popPose();
+
+        ci.cancel();
+    }
 
     @Inject(method = "submit", at = @At("TAIL"))
     private void corpseorigin$submitLimbModel(LivingEntityRenderState state, PoseStack poseStack,

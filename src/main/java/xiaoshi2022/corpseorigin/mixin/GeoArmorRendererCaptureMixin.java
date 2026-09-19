@@ -10,6 +10,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import xiaoshi2022.corpseorigin.client.renderer.player.CorpsePlayerGeoRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.ZuoGuardianBodyRenderer;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -31,8 +33,13 @@ import java.util.function.Function;
  * <p>
  * 胸甲 / 护腿因为是各自独立的新 state，不会碰到玩家那份，所以"只穿胸甲没事、带头盔就坏"。
  * <p>
- * 这个注入点排在 {@code captureRenderStates} 的 RETURN，即 GeckoLib 全部盖完之后，把断肢数据重新写回
- * （见 {@link CorpsePlayerGeoRenderer#writeLimbRenderData}）。
+ * 这个注入点排在 {@code captureRenderStates} 的 RETURN，即 GeckoLib 全部盖完之后，把玩家自己的渲染数据写回：
+ * <ul>
+ *   <li>左护法变异体形态 → 写回变异体那套（见 {@code ZuoGuardianBodyRenderer#writeBodyRenderData}）；</li>
+ *   <li>其余（断肢形态）→ 写回断肢那套（见 {@link CorpsePlayerGeoRenderer#writeLimbRenderData}）。</li>
+ * </ul>
+ * ⚠️ 变异体这条分支不能省：龙右这类角色会<b>自动穿上 geo 套装且失去角色时不脱</b>，
+ * 玩家身上带着套装切回左护法时，动画数据每帧都会被盖掉一次 —— 表现就是"切过一次角色后动画错乱"。
  */
 @Mixin(GeoArmorRenderer.class)
 public abstract class GeoArmorRendererCaptureMixin {
@@ -46,7 +53,11 @@ public abstract class GeoArmorRendererCaptureMixin {
             return;
         }
         if (!(entity instanceof AbstractClientPlayer player)) {
-            return;   // 只有玩家（含克隆分身）才有断肢这回事
+            return;   // 只有玩家（含克隆分身）才有断肢 / 变异体这回事
+        }
+        if (MutantBodyRenderData.isMutantBody(player)) {
+            ZuoGuardianBodyRenderer.writeBodyRenderData(avatarState, player, partialTick);
+            return;
         }
         CorpsePlayerGeoRenderer.writeLimbRenderData(avatarState, player, partialTick);
     }

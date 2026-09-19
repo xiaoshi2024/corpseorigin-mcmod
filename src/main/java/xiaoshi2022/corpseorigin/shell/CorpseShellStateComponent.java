@@ -37,6 +37,10 @@ public class CorpseShellStateComponent extends ShellStateComponent {
                                   boolean corpseClone, float completion) {
         CompoundTag tag = this.data.copy();
         stripLimbs(tag);   // 新培育的身体不该继承本体的断肢
+        // ★ 角色专属的外观变种（左护法蛟龙身体）不能继承 —— 培育出来的身体角色一律是凡人
+        //   （见 CloneChamberBlockEntity 里的 clearCharacterId），身体再带着蛟龙变种就成了
+        //   "凡人长着蛟龙身体"。通用尸兄特征（多眼/翅膀/尾巴/进化等级）照旧按继承度走。
+        stripRoleVariant(tag);
 
         if (!corpseClone) {
             tag.putBoolean("is_corpse", false);
@@ -92,6 +96,13 @@ public class CorpseShellStateComponent extends ShellStateComponent {
         tag.remove("limb_regrow_ticks");
         tag.remove("limb_regrow_totals");
         tag.remove("limb_cooldowns");
+    }
+
+    /** 清掉"角色专属外观变种"（左护法蛟龙身体），只保留通用尸兄特征 */
+    private static void stripRoleVariant(CompoundTag tag) {
+        if (tag.getInt("variant").orElse(0) == PlayerCorpseComponent.VARIANT_ZUO_GUARDIAN) {
+            tag.putInt("variant", 0);
+        }
     }
 
     @Override public void readNbt(CompoundTag tag) {

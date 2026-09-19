@@ -66,6 +66,13 @@ public final class SkillManager {
             return false;  // 仍在冷却中
         }
 
+        // 硬前置（形态 / 宠物在身边之类）：不满足就只提示，不吃冷却、不扣内力
+        net.minecraft.network.chat.Component blocked = skill.checkUsable(player);
+        if (blocked != null) {
+            player.sendOverlayMessage(blocked);
+            return false;
+        }
+
         // 校验内力（无内力角色自动通过）
         if (!InnerPowerManager.consume(player, skill.getInnerPowerCost())) {
             return false;

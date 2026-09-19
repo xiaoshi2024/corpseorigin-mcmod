@@ -55,10 +55,10 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
 
         // ==================== 1. 尸兄器官渲染（原有逻辑） ====================
         // 分身的尸兄状态已按它自己的 uuid 同步过来，所以这里直接用实体 uuid
-        // 无外骨骼通用变种（天线宝宝尸兄那种自带整套盔甲外观的）算尸兄，但不长这根尸眼骨骼
+        // 无外骨骼通用变种（天线宝宝尸兄那种自带整套盔甲外观的、左护法变异体）算尸兄，但不长这根尸眼骨骼
         CorpseOriginClient.ClientCorpseData corpseData = CorpseOriginClient.corpseDataCache.get(uuid);
         if (corpseData != null && corpseData.isCorpse && !corpseData.isDisguised()
-                && corpseData.getVariant() != PlayerCorpseComponent.VARIANT_NO_EXOSKELETON) {
+                && PlayerCorpseComponent.hasExoskeleton(corpseData.getVariant())) {
             model.copyFromHead(parentModel.head);
             model.setupAnim(state);
 

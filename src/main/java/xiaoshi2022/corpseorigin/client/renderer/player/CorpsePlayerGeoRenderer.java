@@ -86,6 +86,14 @@ public class CorpsePlayerGeoRenderer
      * </ol>
      */
     public static void writeLimbRenderData(AvatarRenderState state, AbstractClientPlayer player, float partialTick) {
+        // 左护法变异体形态整具身体都换了，断肢那套不参与 ——
+        // 这里必须挡住：GeckoLib 的盔甲管线（GeoArmorRendererCaptureMixin）也会走到这个方法，
+        // 一旦让它写进去，玩家的动画控制器快照就被断肢那几条动画（walk / regrow_*）覆盖，
+        // 而变异体模型里没有这些动画 → 整具身体一根骨骼都不动。
+        if (MutantBodyRenderData.isMutantBody(player)) {
+            return;
+        }
+
         ClientLimbCache.Entry limbs = ClientLimbCache.get(player);
         if (limbs == null) {
             return;   // 四肢完好 → 照原版玩家渲染，不碰 GeckoLib
