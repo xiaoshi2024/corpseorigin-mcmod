@@ -103,6 +103,20 @@ public class CorpseOriginClient implements ClientModInitializer {
     }
 
     /**
+     * ✅ 开胃奶「菊花盾」的格挡窗口：玩家 UUID → 剩余 tick（服务端广播过来的，只影响表现）。
+     * <p>
+     * 窗口内背后那套 {@code niunaix} 背挂播 {@code parry}（花瓣张开成盾），并配合服务端
+     * {@code KaiWeiNaiEventHandler} 的箭矢反弹。
+     */
+    public static final Map<UUID, Integer> niunaiParries = new ConcurrentHashMap<>();
+
+    /** 这位玩家现在是否在菊花盾格挡窗口内（背挂渲染时读它决定播不播 parry） */
+    public static boolean isNiunaiParrying(UUID uuid) {
+        Integer ticks = uuid == null ? null : niunaiParries.get(uuid);
+        return ticks != null && ticks > 0;
+    }
+
+    /**
      * 取「正在被这位玩家吸食的目标实体」，没有 / 不在客户端（未加载、已死）时返回 null。
      * <p>
      * 盔甲渲染要靠它算触手转向的角度，所以这里只做解析，不做任何逻辑判定。
@@ -333,6 +347,16 @@ public class CorpseOriginClient implements ClientModInitializer {
                     }
                 }));
 
+        // ✅ 开胃奶「菊花盾」格挡窗口（0 及以下 = 立刻结束）
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.NiunaiParrySyncS2C.TYPE, (payload, context) ->
+                context.client().execute(() -> {
+                    if (payload.durationTicks() <= 0) {
+                        niunaiParries.remove(payload.playerUuid());
+                    } else {
+                        niunaiParries.put(payload.playerUuid(), payload.durationTicks());
+                    }
+                }));
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (CorpseKeyBindings.openSkillWheel.consumeClick()) {
                 // 1. 周围有克隆仓 → 打开克隆仓 UI
@@ -382,6 +406,12 @@ public class CorpseOriginClient implements ClientModInitializer {
             if (!antennaBlocks.isEmpty()) {
                 antennaBlocks.replaceAll((k, v) -> v - 1);
                 antennaBlocks.entrySet().removeIf(e -> e.getValue() <= 0);
+            }
+
+            // ✅ 开胃奶菊花盾窗口计时自减
+            if (!niunaiParries.isEmpty()) {
+                niunaiParries.replaceAll((k, v) -> v - 1);
+                niunaiParries.entrySet().removeIf(e -> e.getValue() <= 0);
             }
         });
 

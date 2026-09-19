@@ -56,6 +56,11 @@ public class PlayerCorpseComponent {
      * （见 {@code ZuoGuardianBodyRenderer}），原版玩家模型、盔甲一律不画，也不长尸眼骨骼。
      */
     public static final int VARIANT_ZUO_GUARDIAN = 3;
+    /**
+     * 开胃奶「背挂」变种：算尸兄，但不长通用尸眼骨骼，改在背后挂 {@code niunaix} 那套
+     * 触角 / 捆仙索 / 菊花盾（见 {@code NiunaiXRenderer}）。原版玩家模型、盔甲照常渲染。
+     */
+    public static final int VARIANT_NIUNAIX = 4;
 
     /** 进化等级上限 */
     public static final int MAX_EVOLUTION_LEVEL = 5;
@@ -445,10 +450,29 @@ public class PlayerCorpseComponent {
      * 这个变种要不要长那根尸眼骨骼。
      * <p>
      * 自带整套外观的变种（天线宝宝尸兄盔甲 {@link #VARIANT_NO_EXOSKELETON}、左护法变异体
-     * {@link #VARIANT_ZUO_GUARDIAN}）都返回 {@code false} —— 它们算尸兄，但外观不靠这根骨骼。
+     * {@link #VARIANT_ZUO_GUARDIAN}、开胃奶背挂 {@link #VARIANT_NIUNAIX}）都返回 {@code false}
+     * —— 它们算尸兄，但外观不靠这根骨骼。
      */
     public static boolean hasExoskeleton(int variant) {
-        return variant != VARIANT_NO_EXOSKELETON && variant != VARIANT_ZUO_GUARDIAN;
+        return variant != VARIANT_NO_EXOSKELETON
+                && variant != VARIANT_ZUO_GUARDIAN
+                && variant != VARIANT_NIUNAIX;
+    }
+
+    /**
+     * 轻量判定：这具身体现在是不是「开胃奶背挂」形态（尸兄 + 非伪装 + 变种 4）。
+     * <p>
+     * 与 {@link #isMutantVariant} 同样直接读附件、不做 NBT 副本 —— 判定条件与客户端那份缓存
+     * （{@code NiunaiXRenderData}）保持一致。
+     */
+    public static boolean isNiunaiVariant(Player player) {
+        CompoundTag tag = player.getAttached(ModDataAttachments.PLAYER_CORPSE);
+        if (tag == null) {
+            return false;
+        }
+        return tag.getBoolean(KEY_IS_CORPSE).orElse(false)
+                && !tag.getBoolean(KEY_IS_DISGUISED).orElse(false)
+                && tag.getInt(KEY_VARIANT).orElse(0) == VARIANT_NIUNAIX;
     }
 
     /**

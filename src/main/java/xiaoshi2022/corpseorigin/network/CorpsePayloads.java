@@ -126,6 +126,22 @@ public final class CorpsePayloads {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
+    /**
+     * 开胃奶「菊花盾」的格挡窗口（S2C）。
+     * <p>
+     * 主动开盾时发一条覆盖整个持续时间的窗口，客户端据此让背后那套 {@code niunaix} 背挂
+     * 播 {@code parry}（花瓣张开成盾）；{@code durationTicks <= 0} 表示立刻结束。
+     * 与天线格挡一样，这条只管表现，反弹判定全在服务端。
+     */
+    public record NiunaiParrySyncS2C(UUID playerUuid, int durationTicks) implements CustomPacketPayload {
+        public static final Type<NiunaiParrySyncS2C> TYPE = new Type<>(id("niunai_parry_sync"));
+        public static final StreamCodec<ByteBuf, NiunaiParrySyncS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, p -> p.playerUuid().toString(),
+                ByteBufCodecs.INT, NiunaiParrySyncS2C::durationTicks,
+                (s, t) -> new NiunaiParrySyncS2C(UUID.fromString(s), t));
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
     // ==================== ✅ 玩家尸兄数据同步（用 UUID） ====================
     public record PlayerCorpseSyncS2C(
             UUID playerUuid,       // ✅ 改为 UUID

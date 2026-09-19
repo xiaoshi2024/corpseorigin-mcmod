@@ -2,6 +2,10 @@ package xiaoshi2022.corpseorigin.character;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
+import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.kaiweinai.ChrysanthemumShieldSkill;
 import xiaoshi2022.corpseorigin.skill.kaiweinai.DogEyeCannonSkill;
@@ -10,6 +14,9 @@ import java.util.List;
 
 /**
  * 开胃奶 - 拥有黑骑士体质的白小飞表弟。
+ * <p>
+ * 选中即尸兄化，并走 {@link PlayerCorpseComponent#VARIANT_NIUNAIX} 变种：不长通用尸眼骨骼，
+ * 改在背后挂 {@code niunaix} 那套（触角 / 捆仙索 / 菊花盾），原版模型与盔甲照常渲染。
  */
 public class KaiWeiNai implements ICharacter {
 
@@ -62,5 +69,27 @@ public class KaiWeiNai implements ICharacter {
     @Override
     public float getInfectionMultiplier() {
         return 0.4f;
+    }
+
+    @Override
+    public void onAcquire(Player player) {
+        // 选中即尸兄化，走「背挂」变种：算尸兄、不长通用尸眼骨骼，外观交给 niunaix 背挂
+        PlayerCorpseComponent.setPlayerAsCorpse(player, PlayerCorpseComponent.TYPE_NORMAL,
+                PlayerCorpseComponent.VARIANT_NIUNAIX);
+
+        // 玩家角色要保留意识，否则一换角色就变成只会本能行动的怪物
+        PlayerCorpseComponent comp = PlayerCorpseComponent.get(player);
+        comp.restoreConsciousness();
+
+        // restoreConsciousness 不会触发同步，补一次；
+        // 必须广播：尸兄外观是别的玩家看你时才渲染的。
+        if (player instanceof ServerPlayer serverPlayer) {
+            CorpseNetwork.broadcastPlayerCorpseSync(serverPlayer);
+        }
+    }
+
+    @Override
+    public void onLose(Player player) {
+        PlayerCorpseComponent.removeCorpseState(player);
     }
 }

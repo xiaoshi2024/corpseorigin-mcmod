@@ -129,6 +129,11 @@ public class CorpseOrigin implements ModInitializer {
 		APSComboHandler.register();
 		APSGreatSwordInterceptor.register();
 		LimbEvents.register();
+		// ★ 开胃奶菊花盾（正面格挡 + 反弹箭矢）排在这一组最后：
+		//   它会 return false 直接取消伤害，而 ALLOW_DAMAGE 一旦被取消就中断后续监听器 ——
+		//   排在前面的话，被盾挡下的那一下会让后面的规则（断肢、尸族互伤之类）整个看不到。
+		//   盾本来就是要"整下挡掉"，所以让它在最后收尾。
+		KaiWeiNaiEventHandler.register();
 		SkillUnlockEvents.register();
 
 		// ✅ 11. 命令

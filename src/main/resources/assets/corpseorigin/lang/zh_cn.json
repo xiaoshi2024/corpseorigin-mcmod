@@ -176,7 +176,7 @@
   "character.corpseorigin.kaiweinai.trait3": "关键剧情角色：以自身牺牲唤醒黑小飞人性",
 
   "character.corpseorigin.xiaoyanzi": "小言子",
-  "character.corpseorigin.xiaoyanzi.desc": "白小飞的发小。尸巢之战中负责保护小鹿，定位辅助/逃生位。",
+  "character.corpseorigin.xiaoyanzi.desc": "白小飞救出来的人。尸巢之战中负责保护小鹿，定位辅助/逃生位。",
   "character.corpseorigin.xiaoyanzi.trait1": "哈姆：召唤喷火蜥蜴哈姆协助作战",
   "character.corpseorigin.xiaoyanzi.trait2": "跑路被动：附近有队友时自身速度 +1",
   "character.corpseorigin.xiaoyanzi.trait3": "辅助/逃生位：船上留守线的关键人物",
@@ -345,7 +345,8 @@
   "skill.corpseorigin.ground_burrow": "地遁突袭",
   "skill.corpseorigin.ground_burrow.desc": "潜入地下后从玩家脚下破土冲出，造成高额伤害。冷却 20 秒。",
   "skill.corpseorigin.chrysanthemum_shield": "菊花盾·开",
-  "skill.corpseorigin.chrysanthemum_shield.desc": "展开正面无敌盾，持续 5 秒，期间无法攻击。冷却 20 秒。",
+  "skill.corpseorigin.chrysanthemum_shield.desc": "背后菊花盾张开 5 秒：正面来的伤害整下挡掉，迎面箭矢会被弹回给射手。冷却 20 秒。",
+  "skill.corpseorigin.chrysanthemum_shield.activate": "菊花盾展开！%s 秒内正面格挡并反弹箭矢",
   "skill.corpseorigin.dog_eye_cannon": "狗眼炮",
   "skill.corpseorigin.dog_eye_cannon.desc": "发射哈姆造成混乱与爆炸伤害。冷却 12 秒。",
   "skill.corpseorigin.ham_summon": "哈姆召唤",

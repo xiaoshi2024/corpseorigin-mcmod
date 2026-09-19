@@ -16,6 +16,8 @@ import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.render.layer.ExoskeletonRenderLayer;
 import xiaoshi2022.corpseorigin.client.renderer.player.CorpsePlayerGeoRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.player.ZuoGuardianBodyRenderer;
 import xiaoshi2022.corpseorigin.registry.ModModelLayers;
 
@@ -56,6 +58,13 @@ public abstract class AvatarRendererMixin {
         } catch (Exception e) {
             CorpseOrigin.LOGGER.error("❌ 创建左护法变异体渲染器失败: {}", e.getMessage(), e);
         }
+
+        // ✅ 开胃奶背挂渲染器（单例，在玩家背后补画一层 niunaix）
+        try {
+            NiunaiXRenderer.createIfAbsent(context);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("❌ 创建开胃奶背挂渲染器失败: {}", e.getMessage(), e);
+        }
     }
 
     /**
@@ -95,6 +104,12 @@ public abstract class AvatarRendererMixin {
         }
         // 不在变异体形态：清掉日志标记，下次再变进来会重新打一条动画状态
         ZuoGuardianBodyRenderer.forget(player.getUUID());
+
+        // 开胃奶背挂：与断肢那套互不相干（骨骼、动画、贴图都是另一套），可以同时存在
+        if (NiunaiXRenderData.isNiunaiX(player)) {
+            NiunaiXRenderer.writeRenderData(state, player, partialTick);
+        }
+
         CorpsePlayerGeoRenderer.writeLimbRenderData(state, player, partialTick);
     }
 }

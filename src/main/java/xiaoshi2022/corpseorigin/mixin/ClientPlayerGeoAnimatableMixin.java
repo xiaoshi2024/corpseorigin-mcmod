@@ -15,6 +15,7 @@ import xiaoshi2022.corpseorigin.client.limb.LimbRenderData;
 import xiaoshi2022.corpseorigin.client.limb.PlayerGeoAnimatable;
 import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyAnimations;
 import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderData;
 import xiaoshi2022.corpseorigin.limb.LimbSlots;
 
 /**
@@ -53,6 +54,16 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
     private static final RawAnimation CORPSEORIGIN$REGROW_HEAD =
             RawAnimation.begin().thenPlay("regrow_head");
 
+    // ==================== 开胃奶背挂（niunaix） ====================
+    // 这套骨骼跟 corpse_player 的重名（都有 idle / attack），靠 NiunaiXRenderData.ACTIVE 门控隔开：
+    // 不是开胃奶背挂形态就整条停掉，免得动画名泄漏到别的模型上刷日志。
+    /** 收拢隐藏（贴在背后）——只有一帧的静态姿态，循环播即可 */
+    private static final RawAnimation CORPSEORIGIN$NIUNAI_IDLE = RawAnimation.begin().thenLoop("idle");
+    /** 尖刺：每次挥击从头播一遍 */
+    private static final RawAnimation CORPSEORIGIN$NIUNAI_ATTACK = RawAnimation.begin().thenPlay("attack");
+    /** 格挡：播一次停在末帧（花瓣张开成盾的姿态），整个菊花盾窗口都维持这个姿势 */
+    private static final RawAnimation CORPSEORIGIN$NIUNAI_PARRY = RawAnimation.begin().thenPlay("parry");
+
     @Unique
     private AnimatableInstanceCache corpseorigin$animatableCache;
 
@@ -89,6 +100,26 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
     @Unique
     private boolean corpseorigin$mutantSneaking;
 
+    /** 开胃奶背挂：上一帧是否在挥击 —— 抓"挥击开始"的上升沿重播 */
+    @Unique
+    private boolean corpseorigin$niunaiAttacking;
+
+    /**
+     * attack 这条 clip 比原版那一下挥击长得多，所以不能只按 {@code attackTime > 0} 判断。
+     * <p>
+     * 原版 {@code attackTime}（{@code swingTime / getCurrentSwingDuration()}）只覆盖挥击本身
+     * （玩家约 6 tick），而 {@code niunaix.animation.json} 的 {@code attack} 有 1 秒 ——
+     * 按 attackTime 切的话尖刺会在刚伸出去的时候被切回收拢姿态，看着像抽一下。
+     * 所以这里记下<b>本次挥击的起点</b>，往后撑满这条 clip 再切回 idle。
+     * <p>
+     * 单位是实体年龄（tick），-1 = 当前没有在撑的那一次。
+     */
+    @Unique
+    private float corpseorigin$niunaiSwingStart = -1.0F;
+
+    /** 尖刺要播满的时长（tick）：{@code attack} 是 1 秒，给 21 让末帧也走完 */
+    private static final float NIUNAI_ATTACK_TICKS = 21.0F;
+
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         // 四肢的摆动走 corpse_player 自己的 JSON 动画（idle / walk / attack）；
@@ -109,6 +140,70 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
         // ★ 左护法变异体专属控制器：放在最后注册，让它出的骨骼值盖在这几条之上；
         //   变异体形态下 movement / attack 会主动让开（见各自方法开头）。
         controllers.add(new AnimationController<PlayerGeoAnimatable>("mutant_body", 0, this::corpseorigin$mutantBody));
+
+        // ★ 开胃奶背挂（niunaix）：同样放最后。
+        //   ⚠️ 只能开**一条**控制器：这套骨骼里 idle 动的是 petal / group*，attack 动的是 petal*2，
+        //   两条一起播会各写一套花瓣的旋转与缩放，姿态直接混掉。所以三段是"切换"关系，不同时播。
+        controllers.add(new AnimationController<PlayerGeoAnimatable>("niunai", 0, this::corpseorigin$niunai));
+    }
+
+    /**
+     * 开胃奶背挂的唯一控制器：<b>三段互相切换</b>，任何时刻只有一条在播。
+     * <p>
+     * 优先级 {@code parry}（菊花盾）&gt; {@code attack}（尖刺）&gt; {@code idle}（收拢隐藏）。
+     * 这里不能像断肢那样"打底 + 覆盖"地分多条控制器 —— 这套骨骼里 idle 动的是
+     * {@code petal} / {@code group*}，attack 动的是 {@code petal*2}，两条同时播会各写一套花瓣的
+     * 旋转与缩放，张开的花盾会被 idle 的收拢姿态拉回去，姿态直接混掉。
+     */
+    @Unique
+    private PlayState corpseorigin$niunai(AnimationTest<PlayerGeoAnimatable> test) {
+        Boolean active = test.getDataOrDefault(NiunaiXRenderData.ACTIVE, null);
+        if (active == null) {
+            // ★ 不是我的回合（盔甲 / 断肢 / 变异体那条管线拿同一个 animatable 求值，
+            //   那份 render state 上没有我们的 ticket）→ 原样返回、不碰任何内部状态。
+            return PlayState.CONTINUE;
+        }
+        if (!active) {
+            corpseorigin$niunaiAttacking = false;
+            corpseorigin$niunaiSwingStart = -1.0F;
+            return PlayState.STOP;   // 不是背挂形态：整条停掉，免得动画名泄漏到别的模型上刷日志
+        }
+
+        // ① 菊花盾最高：盾在就不播别的（盾期间本来就该一直张着）
+        if (Boolean.TRUE.equals(test.getDataOrDefault(NiunaiXRenderData.PARRYING, Boolean.FALSE))) {
+            corpseorigin$niunaiAttacking = false;
+            corpseorigin$niunaiSwingStart = -1.0F;
+            return test.setAndContinue(CORPSEORIGIN$NIUNAI_PARRY);
+        }
+
+        // ② 尖刺：挥击期间播，并且要"播完再切"（见 corpseorigin$niunaiSwingStart 的注释）
+        float now = test.getDataOrDefault(NiunaiXRenderData.AGE_TICKS, 0.0F);
+        boolean attacking = Boolean.TRUE.equals(
+                test.getDataOrDefault(NiunaiXRenderData.ATTACKING, Boolean.FALSE));
+        if (attacking) {
+            corpseorigin$niunaiSwingStart = now;
+        }
+        boolean swinging = attacking
+                || (corpseorigin$niunaiSwingStart >= 0.0F
+                    // now < 起点 = 时钟被重置了（挥击那一下死了、重生换了新实体，ageInTicks 归零），
+                    // 不加这道判断的话差值恒为负数、尖刺会一直卡在张开姿态
+                    && now >= corpseorigin$niunaiSwingStart
+                    && now - corpseorigin$niunaiSwingStart < NIUNAI_ATTACK_TICKS);
+
+        if (swinging) {
+            boolean newSwing = attacking && !corpseorigin$niunaiAttacking;
+            corpseorigin$niunaiAttacking = attacking;
+            test.setAndContinue(CORPSEORIGIN$NIUNAI_ATTACK);
+            if (newSwing) {
+                test.controller().setAnimationTime(0.0D);
+            }
+            return PlayState.CONTINUE;
+        }
+
+        // ③ 打底：收拢贴在背后（"hidden behind the back"）
+        corpseorigin$niunaiAttacking = false;
+        corpseorigin$niunaiSwingStart = -1.0F;
+        return test.setAndContinue(CORPSEORIGIN$NIUNAI_IDLE);
     }
 
     /**

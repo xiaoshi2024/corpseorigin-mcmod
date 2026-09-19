@@ -161,7 +161,7 @@
   "character.corpseorigin.kaiweinai.trait3": "Key Story Character: Sacrifices himself to awaken Hei Xiaofei's humanity",
 
   "character.corpseorigin.xiaoyanzi": "Xiao Yanzi",
-  "character.corpseorigin.xiaoyanzi.desc": "Bai Xiaofei's childhood friend. During the Corpse Nest War he protects Xiao Lu, filling the support and escape role.",
+  "character.corpseorigin.xiaoyanzi.desc": "Bai Xiaofei's friend. During the Corpse Nest War he protects Xiao Lu, filling the support and escape role.",
   "character.corpseorigin.xiaoyanzi.trait1": "Ham: Summons the fire-breathing lizard Ham to fight alongside",
   "character.corpseorigin.xiaoyanzi.trait2": "Run Away Passive: +1 speed while allies are nearby",
   "character.corpseorigin.xiaoyanzi.trait3": "Support / Escape Role: A key figure of the ship's guard line",
@@ -330,7 +330,8 @@
   "skill.corpseorigin.ground_burrow": "Ground Burrow",
   "skill.corpseorigin.ground_burrow.desc": "Burrow underground and burst out beneath a player for heavy damage. Cooldown 20s.",
   "skill.corpseorigin.chrysanthemum_shield": "Chrysanthemum Shield · Open",
-  "skill.corpseorigin.chrysanthemum_shield.desc": "Raise an invincible frontal shield for 5s, during which you cannot attack. Cooldown 20s.",
+  "skill.corpseorigin.chrysanthemum_shield.desc": "The shield on your back blooms for 5s: frontal damage is fully blocked, and incoming arrows are deflected back at the shooter. Cooldown 20s.",
+  "skill.corpseorigin.chrysanthemum_shield.activate": "Chrysanthemum Shield open! Frontal blocking and arrow deflection for %s seconds",
   "skill.corpseorigin.dog_eye_cannon": "Dog Eye Cannon",
   "skill.corpseorigin.dog_eye_cannon.desc": "Fire Ham to inflict confusion and explosive damage. Cooldown 12s.",
   "skill.corpseorigin.ham_summon": "Ham Summon",

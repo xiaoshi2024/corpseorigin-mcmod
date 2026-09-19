@@ -2,6 +2,7 @@ package xiaoshi2022.corpseorigin.component;
 
 import net.minecraft.world.entity.player.Player;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.KaiWeiNai;
 import xiaoshi2022.corpseorigin.character.ZuoHuFa;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
 
@@ -49,14 +50,17 @@ public final class MutantForm {
     }
 
     /**
-     * 形态自洽修正：<b>蛟龙身体只属于左护法角色</b>。
+     * 形态自洽修正：<b>专属外观只属于对应角色</b>。
      * <p>
      * 尸兄的"外观变种"跟着<b>身体</b>走，而角色跟着<b>意识</b>走 —— 两者在换身这类路径上会打架：
      * 克隆仓培育出来的身体角色会被清成凡人，尸兄数据却是从本体整个复制的，
      * 于是出现「凡人却长着蛟龙身体」（换进这具身体的人明明不是左护法）。
      * <p>
      * 所以在"身体被应用到玩家身上"的汇合点（{@code ServerPlayerShellMixin#apply}）和登录时各修一次：
-     * 变种是蛟龙、角色却不是左护法 → 降级回普通尸兄那套外观。
+     * <ul>
+     *   <li>变种是蛟龙、角色却不是左护法 → 降级回普通尸兄那套外观；</li>
+     *   <li>变种是开胃奶背挂、角色却不是开胃奶 → 同上。</li>
+     * </ul>
      * <p>
      * 只改数据、不发包：调用方紧跟着就会广播（换身 {@code apply} 末尾、登录补发），
      * 让它顺手带上修正后的数据即可。
@@ -67,13 +71,18 @@ public final class MutantForm {
         if (player == null || player.level().isClientSide()) {
             return false;   // 判定与修正都在服务端做，客户端只认同步下来的数据
         }
-        if (!PlayerCorpseComponent.isMutantVariant(player)) {
-            return false;
+        String characterId = CharacterManager.getInstance().getPlayerCharacterId(player);
+
+        if (PlayerCorpseComponent.isMutantVariant(player)
+                && !ZuoHuFa.ID.equals(characterId)) {
+            PlayerCorpseComponent.get(player).setVariant(0);
+            return true;
         }
-        if (ZuoHuFa.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(player))) {
-            return false;   // 本来就是左护法，蛟龙身体是对的，别动
+        if (PlayerCorpseComponent.isNiunaiVariant(player)
+                && !KaiWeiNai.ID.equals(characterId)) {
+            PlayerCorpseComponent.get(player).setVariant(0);
+            return true;
         }
-        PlayerCorpseComponent.get(player).setVariant(0);
-        return true;
+        return false;
     }
 }

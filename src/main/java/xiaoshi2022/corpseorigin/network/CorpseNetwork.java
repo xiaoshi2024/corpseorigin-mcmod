@@ -107,6 +107,11 @@ public final class CorpseNetwork {
                 CorpsePayloads.AntennaBlockSyncS2C.TYPE,
                 CorpsePayloads.AntennaBlockSyncS2C.CODEC);
 
+        // ✅ 开胃奶「菊花盾」格挡窗口（S2C）
+        PayloadTypeRegistry.clientboundPlay().register(
+                CorpsePayloads.NiunaiParrySyncS2C.TYPE,
+                CorpsePayloads.NiunaiParrySyncS2C.CODEC);
+
 
         // ✅ 学习技能（C2S）
         PayloadTypeRegistry.serverboundPlay().register(
@@ -527,6 +532,24 @@ public final class CorpseNetwork {
     public static void broadcastAntennaBlock(ServerPlayer player, int durationTicks) {
         CorpsePayloads.AntennaBlockSyncS2C packet =
                 new CorpsePayloads.AntennaBlockSyncS2C(player.getUUID(), durationTicks);
+        MinecraftServer server = player.level().getServer();
+        if (server != null) {
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                ServerPlayNetworking.send(p, packet);
+            }
+        } else {
+            ServerPlayNetworking.send(player, packet);
+        }
+    }
+
+    /**
+     * ✅ 广播"这位开胃奶正在用菊花盾格挡"，让背后的 niunaix 背挂播 parry（花瓣张开成盾）。
+     * <p>
+     * 窗口覆盖整个持续时间；反弹判定全在服务端（{@code KaiWeiNaiEventHandler}）。
+     */
+    public static void broadcastNiunaiParry(ServerPlayer player, int durationTicks) {
+        CorpsePayloads.NiunaiParrySyncS2C packet =
+                new CorpsePayloads.NiunaiParrySyncS2C(player.getUUID(), durationTicks);
         MinecraftServer server = player.level().getServer();
         if (server != null) {
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {
