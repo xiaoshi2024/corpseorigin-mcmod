@@ -11,10 +11,12 @@ import com.geckolib.util.GeckoLibUtil;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -42,6 +44,7 @@ import xiaoshi2022.corpseorigin.character.ZuoHuFa;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
 
 import java.util.EnumSet;
+import java.util.UUID;
 
 /**
  * 尸蛟龙（{@code zuo_flood_long}）—— 左护法用「脱离」把身上那条蛟龙蜕下来之后，
@@ -54,8 +57,9 @@ import java.util.EnumSet;
  * <ul>
  *   <li><b>听从本体</b>：跟着主人跑，打主人刚打的人、以及刚打主人的人；护主时会自己冲上去；</li>
  *   <li><b>不伤自己人</b>：走 {@link ZombieKin#canAttack} 那套判定（尸族不互殴、更不敢动尸王）；</li>
- *   <li><b>不持久</b>：只跟在本维度里，主人离太远（>64 格）会自己盘回身边；
- *       主人掉线 / 死亡 / 换了角色 / 跑去别的维度，它就直接消散；</li>
+ *   <li><b>半持久</b>：只跟在本维度里，主人离太远（>64 格）会自己盘回身边；
+ *       主人掉线 / 退出游戏<b>不会消散</b> —— 实体随区块存盘，主人回到同维度再上线会自动认主；
+ *       只有主人死亡 / 换了角色 / 跑去别的维度，它才直接消散；</li>
  *   <li>主人自己打它不掉血（射线也跳过它），免得误伤自己的宠物。</li>
  * </ul>
  * 模型直接用它的专属资源 {@code zuo_flood_long}（纯龙、没有骑手骨），
@@ -82,9 +86,13 @@ public class ZuoFloodLongEntity extends PathfinderMob implements GeoEntity, Zomb
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    /** 主人实体；只在服务端有值（它是被技能召唤出来的，不存档） */
+    /** 主人实体引用；只在服务端有值，主人掉线后失效，再上线时按 {@link #ownerUuid} 重新认主 */
     @Nullable
     private Player owner;
+
+    /** 主人 UUID：随实体一起存进 NBT —— 退游戏再上来蛟龙还在，就靠它把主人找回来 */
+    @Nullable
+    private UUID ownerUuid;
 
     public ZuoFloodLongEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
@@ -149,6 +157,7 @@ public class ZuoFloodLongEntity extends PathfinderMob implements GeoEntity, Zomb
     public void setOwner(Player owner) {
         this.owner = owner;
         if (owner != null) {
+            this.ownerUuid = owner.getUUID();
             this.entityData.set(DATA_OWNER_UUID, owner.getUUID().toString());
         }
     }
@@ -332,10 +341,27 @@ public class ZuoFloodLongEntity extends PathfinderMob implements GeoEntity, Zomb
         }
 
         Player owner = ownerPlayer();
-        // 主人没了 / 换了角色 / 跑到别的维度 → 消散（它是"脱离"技能放出来的临时神宠，不跨维度跟随）
-        if (owner == null
-                || !ZuoHuFa.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(owner))
-                || owner.level() != this.level()) {
+        if (owner == null) {
+            // 缓存的主人实体引用失效了（掉线 / 区块重载后实体引用还没接上）：
+            // 拿存档 UUID 去在线玩家里重新认主
+            ServerPlayer online = this.ownerUuid == null ? null
+                    : ((ServerLevel) this.level()).getServer().getPlayerList().getPlayer(this.ownerUuid);
+            if (online == null) {
+                // 主人真的掉线 / 退游戏了：原地守候，等他回到这个维度再上线
+                // （实体随区块存盘，不会消失；AI 目标全空，自然进入待机）
+                return;
+            }
+            // 人还在线但已经死亡 / 去了别的维度 → 按原设定消散（神宠不跨维度跟随）
+            if (!online.isAlive() || online.level() != this.level()) {
+                this.discard();
+                return;
+            }
+            setOwner(online);
+            owner = online;
+        }
+
+        // 换了角色 → 消散
+        if (!ZuoHuFa.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(owner))) {
             this.discard();
             return;
         }
@@ -390,15 +416,23 @@ public class ZuoFloodLongEntity extends PathfinderMob implements GeoEntity, Zomb
 
     @Override
     public boolean shouldBeSaved() {
-        return false;   // 非持久：主人没了它就该没了
+        return true;   // 随区块存盘：主人退出游戏后蛟龙留在原地，再上线还在
     }
 
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
+        this.ownerUuid = input.read("Owner", UUIDUtil.CODEC).orElse(null);
+        if (this.ownerUuid != null) {
+            // 同步串也补回去：客户端"跳过自己宠物碰撞箱"和 findOwned 在重新认主前都靠它
+            this.entityData.set(DATA_OWNER_UUID, this.ownerUuid.toString());
+        }
     }
 
     @Override
     protected void addAdditionalSaveData(ValueOutput output) {
+        if (this.ownerUuid != null) {
+            output.store("Owner", UUIDUtil.CODEC, this.ownerUuid);
+        }
     }
 
     /** 免掉"尸族不敢动你"那套之外的多余交互 */

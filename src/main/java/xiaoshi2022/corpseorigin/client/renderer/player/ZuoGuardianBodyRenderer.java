@@ -4,6 +4,8 @@ import com.geckolib.constant.DataTickets;
 import com.geckolib.animation.state.AnimationPoint;
 import com.geckolib.animation.state.ControllerState;
 import com.geckolib.renderer.GeoReplacedEntityRenderer;
+import com.geckolib.renderer.layer.GeoRenderLayer;
+import com.geckolib.renderer.layer.builtin.ItemInHandGeoLayer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.player.AbstractClientPlayer;
@@ -55,6 +57,16 @@ public class ZuoGuardianBodyRenderer
         // 第三个参数传 null：见类注释，真正的宿主在 fillRenderState 里换
         super(context, new ZuoGuardianBodyModel(), null);
         this.shadowRadius = 0.7F;   // 巨蛇体型比玩家宽，影子给大一点
+
+        // 手持物品渲染层（模型骨骼名须为 RightHandItem / LeftHandItem）。
+        // ⚠️ 内置层把泛型约束成 "<T extends LivingEntity & GeoAnimatable>"，替换渲染器的 T
+        //    在编译期只是 PlayerGeoAnimatable 接口，直接 new 会推断失败；但运行时传到层里的 T
+        //    就是 AbstractClientPlayer 本人（mixin 让玩家实现了 PlayerGeoAnimatable，
+        //    见 ClientPlayerGeoAnimatableMixin），强转成立，所以用裸类型桥接编译期约束。
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        GeoRenderLayer<PlayerGeoAnimatable, AbstractClientPlayer, AvatarRenderState> handLayer =
+                (GeoRenderLayer) new ItemInHandGeoLayer(context, this);
+        this.withRenderLayer(handLayer);
     }
 
     /** 已初始化好的单例；AvatarRenderer 还没建过时为 null */
