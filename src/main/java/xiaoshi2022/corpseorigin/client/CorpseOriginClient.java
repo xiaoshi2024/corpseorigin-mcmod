@@ -117,6 +117,27 @@ public class CorpseOriginClient implements ClientModInitializer {
     }
 
     /**
+     * ✅ 开胃奶「拦腰斩断」窗口：玩家 UUID → 剩余 tick（服务端广播过来的，只影响表现）。
+     * <p>
+     * 窗口内整身模型换成 {@code niunai_link_player}：先播 {@code broken_off}（拦腰斩断）并保持，
+     * 最后 {@link xiaoshi2022.corpseorigin.character.KaiWeiNai#NIUNAI_LINK_RESTORE_TICKS} 那段播
+     * {@code link}（接回）。不死判定全在服务端。
+     */
+    public static final Map<UUID, Integer> niunaiLinks = new ConcurrentHashMap<>();
+
+    /** 这位玩家现在是否处于拦腰斩断窗口内（渲染时读它决定要不要整身换模型） */
+    public static boolean isNiunaiLink(UUID uuid) {
+        Integer ticks = uuid == null ? null : niunaiLinks.get(uuid);
+        return ticks != null && ticks > 0;
+    }
+
+    /** 拦腰斩断还剩多少 tick（-1 = 不在窗口内） */
+    public static int niunaiLinkRemaining(UUID uuid) {
+        Integer ticks = uuid == null ? null : niunaiLinks.get(uuid);
+        return ticks == null || ticks <= 0 ? -1 : ticks;
+    }
+
+    /**
      * 取「正在被这位玩家吸食的目标实体」，没有 / 不在客户端（未加载、已死）时返回 null。
      * <p>
      * 盔甲渲染要靠它算触手转向的角度，所以这里只做解析，不做任何逻辑判定。
@@ -357,6 +378,16 @@ public class CorpseOriginClient implements ClientModInitializer {
                     }
                 }));
 
+        // ✅ 开胃奶「拦腰斩断」表现窗口（0 及以下 = 立刻结束）
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.NiunaiLinkSyncS2C.TYPE, (payload, context) ->
+                context.client().execute(() -> {
+                    if (payload.durationTicks() <= 0) {
+                        niunaiLinks.remove(payload.playerUuid());
+                    } else {
+                        niunaiLinks.put(payload.playerUuid(), payload.durationTicks());
+                    }
+                }));
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (CorpseKeyBindings.openSkillWheel.consumeClick()) {
                 // 1. 周围有克隆仓 → 打开克隆仓 UI
@@ -412,6 +443,12 @@ public class CorpseOriginClient implements ClientModInitializer {
             if (!niunaiParries.isEmpty()) {
                 niunaiParries.replaceAll((k, v) -> v - 1);
                 niunaiParries.entrySet().removeIf(e -> e.getValue() <= 0);
+            }
+
+            // ✅ 开胃奶拦腰斩断窗口计时自减（减到 0 就自然切回普通模型）
+            if (!niunaiLinks.isEmpty()) {
+                niunaiLinks.replaceAll((k, v) -> v - 1);
+                niunaiLinks.entrySet().removeIf(e -> e.getValue() <= 0);
             }
         });
 

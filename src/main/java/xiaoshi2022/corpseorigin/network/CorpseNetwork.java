@@ -112,6 +112,11 @@ public final class CorpseNetwork {
                 CorpsePayloads.NiunaiParrySyncS2C.TYPE,
                 CorpsePayloads.NiunaiParrySyncS2C.CODEC);
 
+        // ✅ 开胃奶「拦腰斩断」表现窗口（S2C）
+        PayloadTypeRegistry.clientboundPlay().register(
+                CorpsePayloads.NiunaiLinkSyncS2C.TYPE,
+                CorpsePayloads.NiunaiLinkSyncS2C.CODEC);
+
 
         // ✅ 学习技能（C2S）
         PayloadTypeRegistry.serverboundPlay().register(
@@ -550,6 +555,25 @@ public final class CorpseNetwork {
     public static void broadcastNiunaiParry(ServerPlayer player, int durationTicks) {
         CorpsePayloads.NiunaiParrySyncS2C packet =
                 new CorpsePayloads.NiunaiParrySyncS2C(player.getUUID(), durationTicks);
+        MinecraftServer server = player.level().getServer();
+        if (server != null) {
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                ServerPlayNetworking.send(p, packet);
+            }
+        } else {
+            ServerPlayNetworking.send(player, packet);
+        }
+    }
+
+    /**
+     * ✅ 广播"这位开胃奶被拦腰斩断 / 已接回"，让所有人把他的模型换成 {@code niunai_link_player}。
+     * <p>
+     * 窗口覆盖断开的 {@code broken_off} + 保持 + 接回的 {@code link}；不死判定全在服务端
+     * （{@code KaiWeiNaiEventHandler}）。{@code durationTicks <= 0} 表示立刻结束（真的死了之类）。
+     */
+    public static void broadcastNiunaiLink(ServerPlayer player, int durationTicks) {
+        CorpsePayloads.NiunaiLinkSyncS2C packet =
+                new CorpsePayloads.NiunaiLinkSyncS2C(player.getUUID(), durationTicks);
         MinecraftServer server = player.level().getServer();
         if (server != null) {
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {

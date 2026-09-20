@@ -142,6 +142,24 @@ public final class CorpsePayloads {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
+    /**
+     * 开胃奶「拦腰斩断」的表现窗口（S2C）。
+     * <p>
+     * 受到致命一击时，服务端不让他死、改为拦腰斩断，并广播一条覆盖整个过程的窗口
+     * （断开的 {@code broken_off} + 保持 + 接回的 {@code link}，总时长见
+     * {@code KaiWeiNai.NIUNAI_LINK_TOTAL_TICKS}）。客户端据此把玩家模型整身换成
+     * {@code niunai_link_player} 并播这两条动画；{@code durationTicks <= 0} 表示立刻结束。
+     * 与菊花盾一样，这条只管表现，不死判定全在服务端。
+     */
+    public record NiunaiLinkSyncS2C(UUID playerUuid, int durationTicks) implements CustomPacketPayload {
+        public static final Type<NiunaiLinkSyncS2C> TYPE = new Type<>(id("niunai_link_sync"));
+        public static final StreamCodec<ByteBuf, NiunaiLinkSyncS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, p -> p.playerUuid().toString(),
+                ByteBufCodecs.INT, NiunaiLinkSyncS2C::durationTicks,
+                (s, t) -> new NiunaiLinkSyncS2C(UUID.fromString(s), t));
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
     // ==================== ✅ 玩家尸兄数据同步（用 UUID） ====================
     public record PlayerCorpseSyncS2C(
             UUID playerUuid,       // ✅ 改为 UUID

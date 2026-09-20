@@ -15,6 +15,7 @@ import xiaoshi2022.corpseorigin.client.limb.LimbRenderData;
 import xiaoshi2022.corpseorigin.client.limb.PlayerGeoAnimatable;
 import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyAnimations;
 import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderData;
 import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderData;
 import xiaoshi2022.corpseorigin.limb.LimbSlots;
 
@@ -63,6 +64,21 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
     private static final RawAnimation CORPSEORIGIN$NIUNAI_ATTACK = RawAnimation.begin().thenPlay("attack");
     /** 格挡：播一次停在末帧（花瓣张开成盾的姿态），整个菊花盾窗口都维持这个姿势 */
     private static final RawAnimation CORPSEORIGIN$NIUNAI_PARRY = RawAnimation.begin().thenPlay("parry");
+    /**
+     * 腰斩期间（玩家被斩成两截）—— 菊花盾 / 捆仙索也整段播它自己的 {@code link}：
+     * 这条 clip 有 61 秒，正好覆盖整个腰斩窗口，播完停在末帧等待窗口结束。
+     */
+    private static final RawAnimation CORPSEORIGIN$NIUNAI_LINK =
+            RawAnimation.begin().thenPlayAndHold("link");
+
+    // ==================== 开胃奶「拦腰斩断」（niunai_link_player） ====================
+    // 这套骨骼是"原版玩家模型 + 接回绳子"，只有两条动画。
+    /** 拦腰斩断：播一次并<b>停在末帧</b>（上半个身子掉下去的截断姿态），整段保持期都维持这个姿势 */
+    private static final RawAnimation CORPSEORIGIN$NIUNAI_LINK_BROKEN =
+            RawAnimation.begin().thenPlayAndHold("broken_off");
+    /** 接回：播一次并停在末帧（复原的完整姿态），播完整个窗口也正好结束、切回普通模型 */
+    private static final RawAnimation CORPSEORIGIN$NIUNAI_LINK_RESTORE =
+            RawAnimation.begin().thenPlayAndHold("link");
 
     @Unique
     private AnimatableInstanceCache corpseorigin$animatableCache;
@@ -93,6 +109,24 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
     /** 上一帧是否在挥击 —— 用来抓"挥击开始"的上升沿 */
     @Unique
     private boolean corpseorigin$attacking;
+
+    /**
+     * 停掉一条控制器，并把它手里那份动画点<b>清干净</b>。
+     * <p>
+     * ⚠️ 不能只 {@code return PlayState.STOP}：GeckoLib 的 {@code isAnimatingBones()} 只看
+     * {@code animationPoint != null && timeline != null}，而 STOP <b>不会</b>清掉这两样 ——
+     * 于是停掉的控制器照样会把上一条动画报进 {@code ANIMATION_CONTROLLER_STATES}，
+     * 别的形态（左护法变异体）求值时也读得到它，看着就像"感染"了别人的模型。
+     * {@code reset()} 会把动画点、时间轴、当前 RawAnimation 一起清掉，这条控制器就真的不参与了。
+     * <p>
+     * 只在"明确不是我的形态"（ticket 写成 false）时用；ticket 读不到（别人的求值趟）仍然必须
+     * 原样 CONTINUE，绝不能碰状态。
+     */
+    @Unique
+    private static PlayState corpseorigin$stopAndClear(AnimationTest<PlayerGeoAnimatable> test) {
+        test.controller().reset();
+        return PlayState.STOP;
+    }
 
     /** 变异体：上一帧是否在挥击 / 潜行 —— 这两条都是"播一次停在末帧"，靠上升沿重播 */
     @Unique
@@ -145,12 +179,54 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
         //   ⚠️ 只能开**一条**控制器：这套骨骼里 idle 动的是 petal / group*，attack 动的是 petal*2，
         //   两条一起播会各写一套花瓣的旋转与缩放，姿态直接混掉。所以三段是"切换"关系，不同时播。
         controllers.add(new AnimationController<PlayerGeoAnimatable>("niunai", 0, this::corpseorigin$niunai));
+
+        // ★ 开胃奶「拦腰斩断」（niunai_link_player）：同样放最后。
+        //   这套模型只有 broken_off / link 两条动画，形态期间上面几条全部让开（见各自方法开头）。
+        controllers.add(new AnimationController<PlayerGeoAnimatable>("niunai_link", 0, this::corpseorigin$niunaiLink));
     }
 
     /**
-     * 开胃奶背挂的唯一控制器：<b>三段互相切换</b>，任何时刻只有一条在播。
+     * 开胃奶「拦腰斩断」的唯一控制器：整段只有"断开 → 接回"两步，按窗口剩余时间切换。
      * <p>
-     * 优先级 {@code parry}（菊花盾）&gt; {@code attack}（尖刺）&gt; {@code idle}（收拢隐藏）。
+     * 两条都是 {@code thenPlayAndHold}（播一次钉在末帧）：{@code broken_off} 播完停在"被斩成两截"的姿态，
+     * 一直保持到该接回时才换 {@code link}，{@code link} 播完停在复原姿态、整个窗口也正好结束。
+     * <p>
+     * ⚠️ 只在"身体那趟"求值里干活：背挂（niunaix）那趟共用同一份控制器，而 {@code broken_off} / {@code link}
+     * 在 niunaix 模型里解析不到 —— 让它在那趟也去解析的话，GeckoLib 会把"解析失败"的空时间轴
+     * 一直留在控制器上（动画名不变就不再重建），连身体那趟也一起废掉。
+     */
+    @Unique
+    private PlayState corpseorigin$niunaiLink(AnimationTest<PlayerGeoAnimatable> test) {
+        Boolean active = test.getDataOrDefault(NiunaiLinkRenderData.ACTIVE, null);
+        if (active == null) {
+            // ticket 都没有 = 别人的回合（盔甲那条管线拿同一个 animatable 又求一遍值）
+            // → 原样返回、不碰状态
+            return PlayState.CONTINUE;
+        }
+        if (!active) {
+            // ★ 不是腰斩形态（变异体 / 别的角色 / 凡人）：停掉并<b>清干净</b>。
+            //   这里必须 reset()：只 STOP 的话 animationPoint / timeline 还在，
+            //   GeckoLib 的快照照样会把上一条 link 报出去，别的模型求值时读得到它
+            //   （左护法变异体的动画列表里混进 link 就是这么来的）。
+            return corpseorigin$stopAndClear(test);
+        }
+
+        // 是腰斩形态：只在"身体那趟"解析动画名（背挂那趟用 niunaix 模型，这两条解析不到）
+        if (!Boolean.TRUE.equals(test.getDataOrDefault(NiunaiLinkRenderData.BODY_PASS, null))) {
+            return PlayState.CONTINUE;
+        }
+
+        if (Boolean.TRUE.equals(test.getDataOrDefault(NiunaiLinkRenderData.LINKING, Boolean.FALSE))) {
+            return test.setAndContinue(CORPSEORIGIN$NIUNAI_LINK_RESTORE);
+        }
+        return test.setAndContinue(CORPSEORIGIN$NIUNAI_LINK_BROKEN);
+    }
+
+    /**
+     * 开胃奶背挂的唯一控制器：<b>四段互相切换</b>，任何时刻只有一条在播。
+     * <p>
+     * 优先级 {@code link}（腰斩期间"接回"）&gt; {@code parry}（菊花盾）&gt;
+     * {@code attack}（尖刺）&gt; {@code idle}（收拢隐藏）。
      * 这里不能像断肢那样"打底 + 覆盖"地分多条控制器 —— 这套骨骼里 idle 动的是
      * {@code petal} / {@code group*}，attack 动的是 {@code petal*2}，两条同时播会各写一套花瓣的
      * 旋转与缩放，张开的花盾会被 idle 的收拢姿态拉回去，姿态直接混掉。
@@ -161,22 +237,43 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
         if (active == null) {
             // ★ 不是我的回合（盔甲 / 断肢 / 变异体那条管线拿同一个 animatable 求值，
             //   那份 render state 上没有我们的 ticket）→ 原样返回、不碰任何内部状态。
+            //
+            //   例外：腰斩形态下连背挂 ticket 都没写（角色/变种已经不是开胃奶了）——
+            //   这时必须显式停掉并清干净，否则会 CONTINUE 着上一条 idle，
+            //   别的形态求值时也读得到它。
+            if (Boolean.TRUE.equals(test.getDataOrDefault(NiunaiLinkRenderData.ACTIVE, null))) {
+                corpseorigin$niunaiAttacking = false;
+                corpseorigin$niunaiSwingStart = -1.0F;
+                return corpseorigin$stopAndClear(test);
+            }
             return PlayState.CONTINUE;
         }
         if (!active) {
             corpseorigin$niunaiAttacking = false;
             corpseorigin$niunaiSwingStart = -1.0F;
-            return PlayState.STOP;   // 不是背挂形态：整条停掉，免得动画名泄漏到别的模型上刷日志
+            // 不是背挂形态（变异体 / 别的角色 / 凡人）：整条停掉并清干净 ——
+            // 只 STOP 的话上一条 idle / attack / parry 会一直挂在快照里被别人读到
+            return corpseorigin$stopAndClear(test);
         }
 
-        // ① 菊花盾最高：盾在就不播别的（盾期间本来就该一直张着）
+        // ① 腰斩形态最高：玩家被斩成两截的整段时间里，菊花盾 / 捆仙索都播自己那条 link（"接回"），
+        //    比 idle / attack / parry 都优先 —— 这段时间它就该一直做这一件事。
+        //    ⚠️ 这里读的 ACTIVE 由 AvatarRendererMixin 每帧写，所以"背挂那趟"求值也能看到；
+        //    而这条 clip 只存在于 niunaix 模型里，正好由背挂那趟解析（见 BODY_PASS 的说明）。
+        if (Boolean.TRUE.equals(test.getDataOrDefault(NiunaiLinkRenderData.ACTIVE, Boolean.FALSE))) {
+            corpseorigin$niunaiAttacking = false;
+            corpseorigin$niunaiSwingStart = -1.0F;
+            return test.setAndContinue(CORPSEORIGIN$NIUNAI_LINK);
+        }
+
+        // ② 菊花盾最高：盾在就不播别的（盾期间本来就该一直张着）
         if (Boolean.TRUE.equals(test.getDataOrDefault(NiunaiXRenderData.PARRYING, Boolean.FALSE))) {
             corpseorigin$niunaiAttacking = false;
             corpseorigin$niunaiSwingStart = -1.0F;
             return test.setAndContinue(CORPSEORIGIN$NIUNAI_PARRY);
         }
 
-        // ② 尖刺：挥击期间播，并且要"播完再切"（见 corpseorigin$niunaiSwingStart 的注释）
+        // ③ 尖刺：挥击期间播，并且要"播完再切"（见 corpseorigin$niunaiSwingStart 的注释）
         float now = test.getDataOrDefault(NiunaiXRenderData.AGE_TICKS, 0.0F);
         boolean attacking = Boolean.TRUE.equals(
                 test.getDataOrDefault(NiunaiXRenderData.ATTACKING, Boolean.FALSE));
@@ -200,7 +297,7 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
             return PlayState.CONTINUE;
         }
 
-        // ③ 打底：收拢贴在背后（"hidden behind the back"）
+        // ④ 打底：收拢贴在背后（"hidden behind the back"）
         corpseorigin$niunaiAttacking = false;
         corpseorigin$niunaiSwingStart = -1.0F;
         return test.setAndContinue(CORPSEORIGIN$NIUNAI_IDLE);
@@ -257,9 +354,14 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
 
     @Unique
     private PlayState corpseorigin$movement(AnimationTest<PlayerGeoAnimatable> test) {
-        // 变异体形态交给 mutant_body 那条控制器，这里让开（两套一起出会互相盖骨头）
+        // 变异体形态交给 mutant_body 那条控制器，这里让开（两套一起出会互相盖骨头）——
+        // 要连着动画点一起清掉，否则上一条 walk / idle 会留在快照里被变异体读到
         if (Boolean.TRUE.equals(test.getDataOrDefault(MutantBodyRenderData.ACTIVE, null))) {
-            return PlayState.STOP;
+            return corpseorigin$stopAndClear(test);
+        }
+        // 拦腰斩断形态整身换成 niunai_link_player（那套模型没有 walk / idle），同样让开
+        if (Boolean.TRUE.equals(test.getDataOrDefault(NiunaiLinkRenderData.ACTIVE, null))) {
+            return corpseorigin$stopAndClear(test);
         }
         Boolean moving = test.getDataOrDefault(LimbRenderData.MOVING, null);
         if (moving == null) {
@@ -282,14 +384,21 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
      */
     @Unique
     private PlayState corpseorigin$attack(AnimationTest<PlayerGeoAnimatable> test) {
+        // 拦腰斩断形态整身换成 niunai_link_player（那套模型没有 attack），先让开 ——
+        // 必须排在下面的 null 判断之前：这段读的 ATTACKING ticket 在腰斩期间是空的
+        if (Boolean.TRUE.equals(test.getDataOrDefault(NiunaiLinkRenderData.ACTIVE, null))) {
+            corpseorigin$attacking = false;
+            return corpseorigin$stopAndClear(test);
+        }
         Boolean attackingData = test.getDataOrDefault(LimbRenderData.ATTACKING, null);
         if (attackingData == null) {
             return PlayState.CONTINUE;   // 别人的回合（盔甲那条管线），不碰状态
         }
-        // 变异体形态交给 mutant_body 那条控制器（它按对应表播 riderx_attack），这里让开
+        // 变异体形态交给 mutant_body 那条控制器（它按对应表播 riderx_attack），这里让开 ——
+        // 同上，要连动画点一起清掉，别留在快照里
         if (Boolean.TRUE.equals(test.getDataOrDefault(MutantBodyRenderData.ACTIVE, null))) {
             corpseorigin$attacking = false;
-            return PlayState.STOP;
+            return corpseorigin$stopAndClear(test);
         }
         boolean attacking = attackingData;
         if (!attacking) {
@@ -338,6 +447,12 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
     @Unique
     private PlayState corpseorigin$regrow(AnimationTest<PlayerGeoAnimatable> test,
                                          RawAnimation animation, DataTicket<Float> progressTicket, int slot) {
+        // 变异体 / 腰斩形态整身都换掉了，再生动画一起让开（并清掉动画点，别留在快照里）；
+        // 同样必须排在 null 判断之前 —— 这两个形态下断肢那套根本没写 ticket。
+        if (Boolean.TRUE.equals(test.getDataOrDefault(MutantBodyRenderData.ACTIVE, null))
+                || Boolean.TRUE.equals(test.getDataOrDefault(NiunaiLinkRenderData.ACTIVE, null))) {
+            return corpseorigin$stopAndClear(test);
+        }
         Float progressData = test.getDataOrDefault(progressTicket, null);
         if (progressData == null) {
             // ★ 关键：这次求值不是"玩家身体"那条管线。

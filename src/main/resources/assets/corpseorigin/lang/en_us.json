@@ -332,6 +332,7 @@
   "skill.corpseorigin.chrysanthemum_shield": "Chrysanthemum Shield · Open",
   "skill.corpseorigin.chrysanthemum_shield.desc": "The shield on your back blooms for 5s: frontal damage is fully blocked, and incoming arrows are deflected back at the shooter. Cooldown 20s.",
   "skill.corpseorigin.chrysanthemum_shield.activate": "Chrysanthemum Shield open! Frontal blocking and arrow deflection for %s seconds",
+  "corpseorigin.kaiweinai.link.trigger": "Black Knight physique! You were cut in half — reconnecting in %s seconds",
   "skill.corpseorigin.dog_eye_cannon": "Dog Eye Cannon",
   "skill.corpseorigin.dog_eye_cannon.desc": "Fire Ham to inflict confusion and explosive damage. Cooldown 12s.",
   "skill.corpseorigin.ham_summon": "Ham Summon",

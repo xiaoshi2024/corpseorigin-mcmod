@@ -98,7 +98,7 @@
 				{
 					"name": "group8",
 					"parent": "group7",
-					"pivot": [3.8, 19.3, 5.5],
+					"pivot": [4.8, 25.3, 5.5],
 					"cubes": [
 						{
 							"origin": [5, 25.3, 6.5],

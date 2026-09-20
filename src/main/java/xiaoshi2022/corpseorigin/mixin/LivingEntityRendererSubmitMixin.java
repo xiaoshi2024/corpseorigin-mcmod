@@ -15,6 +15,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import xiaoshi2022.corpseorigin.client.limb.LimbRenderData;
 import xiaoshi2022.corpseorigin.client.renderer.player.CorpsePlayerGeoRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderData;
 import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.player.ZuoGuardianBodyRenderer;
@@ -102,14 +104,69 @@ public abstract class LivingEntityRendererSubmitMixin {
         ci.cancel();
     }
 
+    /**
+     * 开胃奶「拦腰斩断」形态：<b>整体替换</b>玩家 —— 原版模型、盔甲、披风、外骨骼等层全部不画，
+     * 只提交 {@code niunai_link_player}（那具被斩成两截、带接回绳子的身体）。
+     * <p>
+     * 唯一的例外是<b>菊花盾背挂</b>：它长在背后、和身体是两套独立骨骼，所以和这具身体同时出画
+     * （见下方手动补画的那一层）。
+     * <p>
+     * 同变异体，在 HEAD 接管并 {@code cancel}。模型骨骼就是原版玩家那套绝对坐标
+     * （脚底 0 / 肩 24 / 头顶 32），理论上零点齐平，所以 {@link #NIUNAI_LINK_Y_OFFSET} 是 0，
+     * 万一整体偏高/偏低只改这一个数即可。
+     */
+    @Inject(method = "submit", at = @At("HEAD"), cancellable = true)
+    private void corpseorigin$submitNiunaiLinkBody(LivingEntityRenderState state, PoseStack poseStack,
+                                                   SubmitNodeCollector collector, CameraRenderState camera,
+                                                   CallbackInfo ci) {
+        if (!(state instanceof AvatarRenderState avatarState)) {
+            return;
+        }
+        if (!((Object) this instanceof AvatarRenderer<?>)) {
+            return;
+        }
+        // ticket 是 AvatarRendererMixin 每帧写的；不是 true = 不在腰斩形态 → 完全走原版渲染
+        if (!Boolean.TRUE.equals(avatarState.getGeckolibData(NiunaiLinkRenderData.ACTIVE))) {
+            return;
+        }
+        // 这一帧不画原版模型，所以名字牌之类也一并没了（同变异体那套的取舍）
+
+        NiunaiLinkRenderer renderer = NiunaiLinkRenderer.get();
+        if (renderer == null) {
+            return;
+        }
+
+        poseStack.pushPose();
+        poseStack.translate(0.0, NIUNAI_LINK_Y_OFFSET, 0.0);
+        // 原版是在 submit 内部才 scale(state.scale)，我们在 HEAD 就画了，这一步得自己补
+        float scale = avatarState.scale;
+        if (scale != 1.0F) {
+            poseStack.scale(scale, scale, scale);
+        }
+        renderer.submit(avatarState, poseStack, collector, camera);
+
+        // ★ 菊花盾背挂和这具被斩成两截的身体同时存在。
+        //   因为下面把原版 submit 整个 cancel 了，{@code corpseorigin$submitNiunaiBackMount}
+        //   那条 TAIL 注入不会跑 —— 所以在这里手动补画一层（两套模型用的是同一套绝对坐标，变换直接复用）。
+        NiunaiXRenderer backMount = NiunaiXRenderer.get();
+        if (backMount != null
+                && Boolean.TRUE.equals(avatarState.getGeckolibData(NiunaiXRenderData.ACTIVE))) {
+            backMount.submit(avatarState, poseStack, collector, camera);
+        }
+
+        poseStack.popPose();
+
+        ci.cancel();
+    }
+
+    /** 开胃奶「拦腰斩断」模型的垂直校准值（格）；骨骼与原版玩家同一套坐标，所以是 0 */
+    private static final double NIUNAI_LINK_Y_OFFSET = 0.0;
+
     @Inject(method = "submit", at = @At("TAIL"))
     private void corpseorigin$submitLimbModel(LivingEntityRenderState state, PoseStack poseStack,
                                               SubmitNodeCollector collector, CameraRenderState camera,
                                               CallbackInfo ci) {
         if (!(state instanceof AvatarRenderState avatarState)) {
-            return;
-        }
-        if (!((Object) this instanceof AvatarRenderer<?>)) {
             return;
         }
 
@@ -183,8 +240,9 @@ public abstract class LivingEntityRendererSubmitMixin {
         if (!((Object) this instanceof AvatarRenderer<?>)) {
             return;
         }
-        // ticket 是 AvatarRendererMixin 写进去的；为空 = 不是背挂形态 → 完全走原版渲染
-        if (avatarState.getGeckolibData(NiunaiXRenderData.ACTIVE) == null) {
+        // ticket 是 AvatarRendererMixin 每帧写的（不是背挂形态时写 false）；
+        // 不是 true = 这一帧不该出背挂 → 完全走原版渲染
+        if (!Boolean.TRUE.equals(avatarState.getGeckolibData(NiunaiXRenderData.ACTIVE))) {
             return;
         }
 

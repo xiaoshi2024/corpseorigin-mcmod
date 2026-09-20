@@ -94,6 +94,12 @@ public class CorpsePlayerGeoRenderer
             return;
         }
 
+        // 开胃奶「拦腰斩断」同理：整身都换成了 niunai_link_player，断肢那套不参与 ——
+        // 挡不住的话动画快照会被 walk / regrow_* 覆盖，而那套模型里没有这些动画。
+        if (NiunaiLinkRenderData.isNiunaiLink(player)) {
+            return;
+        }
+
         ClientLimbCache.Entry limbs = ClientLimbCache.get(player);
         if (limbs == null) {
             return;   // 四肢完好 → 照原版玩家渲染，不碰 GeckoLib

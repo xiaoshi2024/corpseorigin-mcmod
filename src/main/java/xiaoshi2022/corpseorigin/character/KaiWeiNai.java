@@ -22,6 +22,21 @@ public class KaiWeiNai implements ICharacter {
 
     public static final String ID = "kaiweinai";
 
+    // ==================== 「拦腰斩断」（黑骑士体质）时轴 ====================
+    // 三条时长都定在这里：服务端用它算广播窗口，客户端用它算"现在该播哪一段"。
+    // 前两条动画各 2 秒（见 geckolib/animations/entity/niunai_link_player.animation.json）。
+
+    /** 断开动画 {@code broken_off} 的时长（tick）：2 秒 */
+    public static final int NIUNAI_LINK_BREAK_TICKS = 40;
+    /** 断开后保持截断姿态的时长（tick）：1 分钟，之后才开始接回 */
+    public static final int NIUNAI_LINK_HOLD_TICKS = 1200;
+    /** 接回动画 {@code link} 的时长（tick）：2 秒 */
+    public static final int NIUNAI_LINK_RESTORE_TICKS = 40;
+
+    /** 整个「拦腰斩断」过程的时长（tick）—— 服务端就广播这个数 */
+    public static final int NIUNAI_LINK_TOTAL_TICKS =
+            NIUNAI_LINK_BREAK_TICKS + NIUNAI_LINK_HOLD_TICKS + NIUNAI_LINK_RESTORE_TICKS;
+
     private static final List<ISkill> SKILLS = List.of(
             new ChrysanthemumShieldSkill(),
             new DogEyeCannonSkill()

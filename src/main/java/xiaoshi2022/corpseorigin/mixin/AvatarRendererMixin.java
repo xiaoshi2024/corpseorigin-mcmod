@@ -16,6 +16,8 @@ import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.render.layer.ExoskeletonRenderLayer;
 import xiaoshi2022.corpseorigin.client.renderer.player.CorpsePlayerGeoRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderData;
 import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.player.ZuoGuardianBodyRenderer;
@@ -65,6 +67,13 @@ public abstract class AvatarRendererMixin {
         } catch (Exception e) {
             CorpseOrigin.LOGGER.error("❌ 创建开胃奶背挂渲染器失败: {}", e.getMessage(), e);
         }
+
+        // ✅ 开胃奶「拦腰斩断」渲染器（单例，整身换成 niunai_link_player）
+        try {
+            NiunaiLinkRenderer.createIfAbsent(context);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("❌ 创建开胃奶拦腰斩断渲染器失败: {}", e.getMessage(), e);
+        }
     }
 
     /**
@@ -97,6 +106,15 @@ public abstract class AvatarRendererMixin {
         if (!(avatar instanceof AbstractClientPlayer player)) {
             return;
         }
+
+        // ★ 每帧先把两套开胃奶形态的门控显式写成 false。
+        //   下面那些分支（尤其是变异体那条早退）不一定会写它们，而控制器一旦读到 null 就会
+        //   "原样 CONTINUE"——于是上一条动画会一直挂在控制器上，被别的角色 / 形态的模型也读到
+        //   （表现：左护法变异体的动画列表里混进了开胃奶的 link，像是"感染"了别的模型）。
+        //   显式 false 能让它们整条停掉，不再泄漏。
+        state.addGeckolibData(NiunaiXRenderData.ACTIVE, false);
+        state.addGeckolibData(NiunaiLinkRenderData.ACTIVE, false);
+
         // 左护法变异体形态：整身换成 zuo_guardian，断肢那套不参与（身体都不是同一具了）
         if (MutantBodyRenderData.isMutantBody(player)) {
             ZuoGuardianBodyRenderer.writeBodyRenderData(state, player, partialTick);
@@ -105,9 +123,28 @@ public abstract class AvatarRendererMixin {
         // 不在变异体形态：清掉日志标记，下次再变进来会重新打一条动画状态
         ZuoGuardianBodyRenderer.forget(player.getUUID());
 
-        // 开胃奶背挂：与断肢那套互不相干（骨骼、动画、贴图都是另一套），可以同时存在
+        // ==================== 开胃奶（背挂 / 拦腰斩断） ====================
+        // ★ 两套模型共用玩家这一份动画控制器，而 GeckoLib 一帧内只有**先求值**的那个模型能决定
+        //   动画名怎么解析（动画没变时它直接推进旧时间轴，不会为新模型重新解析）——
+        //   所以这里固定按「① 背挂（niunaix）→ ② 腰斩身体（niunai_link_player）」两趟来，
+        //   并用 NiunaiLinkRenderData.BODY_PASS 标出每趟是谁，两条控制器各认各的动画名。
+        boolean severed = NiunaiLinkRenderData.isNiunaiLink(player);
+        if (severed) {
+            // 上面统一写的 false 在这里翻成 true：既决定这一帧要不要整身替换，
+            // 也是"腰斩中"给两条控制器看的门控
+            state.addGeckolibData(NiunaiLinkRenderData.ACTIVE, true);
+        }
+
+        // ① 背后的菊花盾：idle / attack / parry / link 只有它自己认得。
+        //    腰斩期间它照常出画，还要播自己那条 link（见 ClientPlayerGeoAnimatableMixin）。
         if (NiunaiXRenderData.isNiunaiX(player)) {
+            state.addGeckolibData(NiunaiLinkRenderData.BODY_PASS, false);
             NiunaiXRenderer.writeRenderData(state, player, partialTick);
+        }
+
+        // ② 腰斩的身体：broken_off / link 在这一趟解析
+        if (severed) {
+            NiunaiLinkRenderer.writeRenderData(state, player, partialTick);
         }
 
         CorpsePlayerGeoRenderer.writeLimbRenderData(state, player, partialTick);
