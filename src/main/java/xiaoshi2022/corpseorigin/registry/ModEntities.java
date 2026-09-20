@@ -129,15 +129,15 @@ public final class ModEntities {
     /**
      * 尸蛟龙（{@code zuo_flood_long}）—— 左护法用「脱离」蜕下来的那条蛟龙，独立的宠物 BOSS。
      * <p>
-     * {@code noSummon}：不给刷怪蛋 / 指令召唤（只能由技能放出来）；{@code noSave}：不写进存档
-     * （非持久宠物，主人没了就该没了）；尺寸给的是"未缩放"的基准，实际大小按配置缩放（见实体里的 getDimensions）。
+     * {@code noSummon}：不给刷怪蛋（只能由技能放出来）。
+     * <b>不加 {@code noSave}</b>：蛟龙是持久宠物，主人退出游戏 / 关服后要随区块存档，
+     * 主人 UUID 存于实体 NBT（见 {@link ZuoFloodLongEntity}），再上线自动认主；
+     * 只有它被打死、或主人用「合体」技能收回时才会消失。尺寸给的是"未缩放"的基准，实际大小按配置缩放（见实体里的 getDimensions）。
      */
     public static final EntityType<ZuoFloodLongEntity> ZUO_FLOOD_LONG = register(
             "zuo_flood_long",
             EntityType.Builder.<ZuoFloodLongEntity>of(ZuoFloodLongEntity::new, MobCategory.MISC)
                     .sized(3.0F, 5.0F)
-                    .noSummon()
-                    .noSave()
                     .clientTrackingRange(10)
                     .updateInterval(2)
     );

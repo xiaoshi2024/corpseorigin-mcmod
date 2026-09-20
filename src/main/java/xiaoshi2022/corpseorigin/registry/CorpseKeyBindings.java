@@ -25,6 +25,7 @@ public final class CorpseKeyBindings {
     public static KeyMapping openSkillTree;
     /** 切换 HUD 显示 */
     public static KeyMapping toggleHud;
+    public static final KeyMapping[] quickSkills = new KeyMapping[3];
 
     public static void register() {
         openSkillWheel = KeyMappingHelper.registerKeyMapping(new KeyMapping(
@@ -42,5 +43,12 @@ public final class CorpseKeyBindings {
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_H,
                 CATEGORY));
+        for (int i = 0; i < quickSkills.length; i++) {
+            quickSkills[i] = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+                    "key.corpseorigin.quick_skill_" + (i + 1),
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_1 + i,
+                    CATEGORY));
+        }
     }
 }

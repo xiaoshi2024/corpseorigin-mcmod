@@ -520,5 +520,12 @@
   "message.corpseorigin.clone_chamber.no_empty_chamber": "附近没有空的克隆仓",
   "message.corpseorigin.clone_chamber.entity_cloned": "生物基因已复制到附近克隆仓培育",
 
-  "key.corpseorigin.toggle_hud": "切换 HUD"
+  "key.corpseorigin.toggle_hud": "切换 HUD",
+  "key.corpseorigin.quick_skill_1": "释放快捷技能 1",
+  "key.corpseorigin.quick_skill_2": "释放快捷技能 2",
+  "key.corpseorigin.quick_skill_3": "释放快捷技能 3",
+  "hud.corpseorigin.skill_slot.empty": "未绑定",
+  "hud.corpseorigin.skill_slot.cooldown": "冷却 %s 秒",
+  "hud.corpseorigin.skill_slot.bind_hint": "按 1 / 2 / 3 绑定",
+  "hud.corpseorigin.skill_slot.bound": "已将 %2$s 绑定到技能槽 %1$s"
 }

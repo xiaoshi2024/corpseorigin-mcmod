@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
+import xiaoshi2022.corpseorigin.entity.ZuoFloodLongEntity;
 
 /**
  * 尸王威严：尸族生物不敢对龙右不敬。
@@ -29,6 +30,12 @@ public class MobZombieKingRespectMixin {
     @Inject(method = "canAttack(Lnet/minecraft/world/entity/LivingEntity;)Z",
             at = @At("HEAD"), cancellable = true)
     private void corpseorigin$respectCorpseKing(LivingEntity target, CallbackInfoReturnable<Boolean> cir) {
+        // 例外：左护法的尸蛟龙（神宠打手）—— 主人砍谁它就咬谁，哪怕目标是尸王
+        // （它仍 implements ZombieKin，所以尸族不会主动围殴它，只是它自己不敬尸王）
+        // this 经 Object 过渡：mixin 编译期 this 是 Mob，与 ZuoFloodLongEntity 是不可直接转换的兄弟类型
+        if ((Object) this instanceof ZuoFloodLongEntity) {
+            return;
+        }
         if (this instanceof ZombieKin && ZombieKin.isZombieKing(target)) {
             cir.setReturnValue(false);
         }

@@ -39,8 +39,6 @@ import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
-import xiaoshi2022.corpseorigin.character.CharacterManager;
-import xiaoshi2022.corpseorigin.character.ZuoHuFa;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
 
 import java.util.EnumSet;
@@ -55,11 +53,13 @@ import java.util.UUID;
  * <p>
  * 行为（服务端）：
  * <ul>
- *   <li><b>听从本体</b>：跟着主人跑，打主人刚打的人、以及刚打主人的人；护主时会自己冲上去；</li>
- *   <li><b>不伤自己人</b>：走 {@link ZombieKin#canAttack} 那套判定（尸族不互殴、更不敢动尸王）；</li>
- *   <li><b>半持久</b>：只跟在本维度里，主人离太远（>64 格）会自己盘回身边；
- *       主人掉线 / 退出游戏<b>不会消散</b> —— 实体随区块存盘，主人回到同维度再上线会自动认主；
- *       只有主人死亡 / 换了角色 / 跑去别的维度，它才直接消散；</li>
+ *   <li><b>听从本体</b>：跟着主人跑，<b>主人砍谁它就咬谁</b>（哪怕是同类尸兄、甚至尸王），
+ *       其次才咬刚打主人的家伙；护主时会自己冲上去；</li>
+ *   <li><b>只认主人</b>：唯一不能碰的是主人本人（主人打它也不掉血）；</li>
+ *   <li><b>永不自行消散</b>：只跟在本维度里，主人离太远（>64 格）会自己盘回身边；
+ *       主人掉线 / 退出游戏 / 死亡 / 换角色 / 跑去别的维度<b>都不会消失</b> ——
+ *       实体随区块存盘，主人回到同维度再上线会自动认主。它只有两条正常消失途径：
+ *       自己被打死，或主人用「合体」技能把它收回身上（{@code MergeGuardianSkill} 主动 discard）；</li>
  *   <li>主人自己打它不掉血（射线也跳过它），免得误伤自己的宠物。</li>
  * </ul>
  * 模型直接用它的专属资源 {@code zuo_flood_long}（纯龙、没有骑手骨），
@@ -294,9 +294,10 @@ public class ZuoFloodLongEntity extends PathfinderMob implements GeoEntity, Zomb
             if (owner == null) {
                 return false;
             }
-            LivingEntity target = owner.getLastHurtByMob();
+            // 优先打主人亲手打的目标（用户要求：主人打谁它就打谁），其次才替主人报仇
+            LivingEntity target = owner.getLastHurtMob();
             if (target == null || !target.isAlive()) {
-                target = owner.getLastHurtMob();
+                target = owner.getLastHurtByMob();
             }
             if (target == null || !target.isAlive() || target == owner || target == ZuoFloodLongEntity.this) {
                 return false;
@@ -315,12 +316,12 @@ public class ZuoFloodLongEntity extends PathfinderMob implements GeoEntity, Zomb
         }
     }
 
-    /** 尸族规则：不互殴、不碰尸王、更不打主人 */
+    /**
+     * 唯一的禁忌：不能咬主人本人（引用 + UUID 双保险，重连后引用刷新期间也挡得住）。
+     * 除此之外<b>任何目标都打</b> —— 不管是不是同类 / 尸兄 / 尸王，主人砍谁它就咬谁。
+     */
     private boolean canAttackTarget(LivingEntity target) {
-        if (target == this.owner) {
-            return false;
-        }
-        return ZombieKin.canAttack(this, target);
+        return target != this.owner && !isOwnedBy(target);
     }
 
     @Override
@@ -347,22 +348,17 @@ public class ZuoFloodLongEntity extends PathfinderMob implements GeoEntity, Zomb
             ServerPlayer online = this.ownerUuid == null ? null
                     : ((ServerLevel) this.level()).getServer().getPlayerList().getPlayer(this.ownerUuid);
             if (online == null) {
-                // 主人真的掉线 / 退游戏了：原地守候，等他回到这个维度再上线
-                // （实体随区块存盘，不会消失；AI 目标全空，自然进入待机）
-                return;
-            }
-            // 人还在线但已经死亡 / 去了别的维度 → 按原设定消散（神宠不跨维度跟随）
-            if (!online.isAlive() || online.level() != this.level()) {
-                this.discard();
+                // 主人真的掉线 / 退游戏了：原地守候（实体随区块存盘，不会消失；AI 目标全空，自然待机）
                 return;
             }
             setOwner(online);
             owner = online;
         }
 
-        // 换了角色 → 消散
-        if (!ZuoHuFa.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(owner))) {
-            this.discard();
+        // 主人在别的维度：留在原维度守候，不跨维度传送（跨维度 distanceToSqr 无意义，
+        // 直接 teleportTo 会把蛟龙拽进别的维度坐标）；主人回到本维度后自动恢复跟随。
+        // ★ 任何情况下都不在此 discard —— 蛟龙只有"被打死"一条消失途径。
+        if (owner.level() != this.level()) {
             return;
         }
 

@@ -34,6 +34,7 @@ public class SkillWheelScreen extends Screen {
     private float innerRadius;
     private float outerRadius;
     private float stepDeg;       // 每个扇区占的角度（度）
+    private int hoveredSlot = -1;
 
     public SkillWheelScreen() {
         super(Component.translatable("gui.corpseorigin.skill_wheel"));
@@ -73,6 +74,7 @@ public class SkillWheelScreen extends Screen {
         }
 
         int hovered = sectorAt(mouseX, mouseY);
+        hoveredSlot = hovered;
 
         // ✅ 画扇区：每个扇区用 SECTOR_SEGMENTS 个旋转矩形拼
         for (int i = 0; i < slots.size(); i++) {
@@ -133,6 +135,9 @@ public class SkillWheelScreen extends Screen {
             } else {
                 graphics.centeredText(font, "\u5c31\u7eea", centerX, centerY + 4, 0xFF55FF55);
             }
+            graphics.centeredText(font,
+                    Component.translatable("hud.corpseorigin.skill_slot.bind_hint"),
+                    centerX, centerY + 16, 0xFFBBBBBB);
         } else {
             graphics.centeredText(font, title, centerX, centerY - 8, 0xFFFFFFAA);
             graphics.centeredText(font,
@@ -241,6 +246,18 @@ public class SkillWheelScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (event.key() >= org.lwjgl.glfw.GLFW.GLFW_KEY_1
+                && event.key() <= org.lwjgl.glfw.GLFW.GLFW_KEY_3
+                && hoveredSlot >= 0 && hoveredSlot < slots.size()) {
+            int quickSlot = event.key() - org.lwjgl.glfw.GLFW.GLFW_KEY_1;
+            ISkill skill = slots.get(hoveredSlot).skill();
+            SkillHotbarState.bind(quickSlot, skill);
+            if (minecraft != null && minecraft.player != null) {
+                minecraft.player.sendOverlayMessage(Component.translatable(
+                        "hud.corpseorigin.skill_slot.bound", quickSlot + 1, skill.getName()));
+            }
+            return true;
+        }
         if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
             this.onClose();
             return true;

@@ -32,6 +32,7 @@ import xiaoshi2022.corpseorigin.client.camera.PersistentCameraEntityGoal;
 import xiaoshi2022.corpseorigin.client.gui.CameraBlackoutScreen;
 import xiaoshi2022.corpseorigin.client.gui.CloneChamberScreen;
 import xiaoshi2022.corpseorigin.client.hud.InfectionHudOverlay;
+import xiaoshi2022.corpseorigin.client.hud.SkillHotbarOverlay;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.render.laser.BloodLotusLaserManager;
 import xiaoshi2022.corpseorigin.client.render.thunder.ThunderFxManager;
@@ -211,6 +212,7 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         // ✅ 注册 HUD
         InfectionHudOverlay.register();
+        SkillHotbarOverlay.register();
 
         // 6. 网络接收
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.CharacterSyncS2C.TYPE, (payload, context) -> {
@@ -417,6 +419,18 @@ public class CorpseOriginClient implements ClientModInitializer {
                                     ? "hud.corpseorigin.toggle.on"
                                     : "hud.corpseorigin.toggle.off")
                     );
+                }
+            }
+
+            for (int slot = 0; slot < CorpseKeyBindings.quickSkills.length; slot++) {
+                while (CorpseKeyBindings.quickSkills[slot].consumeClick()) {
+                    if (client.gui.screen() == null && client.player != null) {
+                        var skill = SkillHotbarState.getSkill(slot);
+                        if (skill != null) {
+                            ClientPlayNetworking.send(new CorpsePayloads.ActivateSkillC2S(
+                                    skill.getId().getPath()));
+                        }
+                    }
                 }
             }
 

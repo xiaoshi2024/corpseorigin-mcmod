@@ -23,7 +23,8 @@ import xiaoshi2022.corpseorigin.skill.SkillType;
  * 蛟龙实体消失、玩家外观变种切回蛟龙（{@link PlayerCorpseComponent#VARIANT_ZUO_GUARDIAN}），
  * 多段碰撞箱会自动跟着回来。冷却 10 秒。
  * <p>
- * 万一蛟龙已经消散（主人死亡 / 换角色 / 换维度），重新选一次左护法角色也能回到蛟龙形态。
+ * 万一蛟龙不在身边（在别的维度 / 离得太远），走到它附近再合体即可；
+ * 蛟龙现在是永久宠物，只有被打死才会消失。
  */
 public class MergeGuardianSkill implements ISkill {
 
