@@ -7,6 +7,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.BlockPos;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 
 import java.util.UUID;
@@ -18,6 +19,14 @@ public final class CorpsePayloads {
 
     private static Identifier id(String path) {
         return Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, path);
+    }
+
+    public record CorpseNestTeleportC2S(BlockPos targetPos) implements CustomPacketPayload {
+        public static final Type<CorpseNestTeleportC2S> TYPE = new Type<>(id("corpse_nest_teleport"));
+        public static final StreamCodec<ByteBuf, CorpseNestTeleportC2S> CODEC =
+                CustomPacketPayload.codec((p, buf) -> buf.writeLong(p.targetPos().asLong()),
+                        buf -> new CorpseNestTeleportC2S(BlockPos.of(buf.readLong())));
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
     // ==================== 角色选择 ====================

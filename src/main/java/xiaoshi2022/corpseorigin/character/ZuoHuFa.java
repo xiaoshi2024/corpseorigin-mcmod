@@ -153,6 +153,8 @@ public class ZuoHuFa implements ICharacter {
     public static final double MERGED_KNOCKBACK = 0.45;
     /** 水下移动效率：0 = 普通人（被水阻拖），1 = 水生物（原版海豚同档） */
     public static final double MERGED_WATER_EFFICIENCY = 1.0;
+    /** 合体青龙的实体体型；原版 SCALE 会同步碰撞箱、眼高与第一人称相机。 */
+    public static final float MERGED_SCALE = 3.0F;
 
     private static final Identifier HEALTH_MODIFIER = CorpseOrigin.id("zuohufa_health");
     private static final Identifier ARMOR_MODIFIER = CorpseOrigin.id("zuohufa_armor");
@@ -160,6 +162,7 @@ public class ZuoHuFa implements ICharacter {
     private static final Identifier SPEED_MODIFIER = CorpseOrigin.id("zuohufa_speed");
     private static final Identifier KNOCKBACK_MODIFIER = CorpseOrigin.id("zuohufa_knockback");
     private static final Identifier WATER_MODIFIER = CorpseOrigin.id("zuohufa_water_efficiency");
+    private static final Identifier SCALE_MODIFIER = CorpseOrigin.id("zuohufa_scale");
 
     /** 这具身体是不是"左护法身体"（认角色，不认账号） */
     public static boolean isZuoHuFaBody(LivingEntity entity) {
@@ -194,6 +197,12 @@ public class ZuoHuFa implements ICharacter {
         // 水生物只在合体档：人形那边回到普通人的 0（这项是 [0,1] 的效率值，拉满就是海豚那档）
         setAttribute(entity, Attributes.WATER_MOVEMENT_EFFICIENCY, WATER_MODIFIER,
                 merged ? MERGED_WATER_EFFICIENCY : 0.0D);
+        if (merged) {
+            setAttribute(entity, Attributes.SCALE, SCALE_MODIFIER, MERGED_SCALE);
+        } else {
+            removeAttribute(entity, Attributes.SCALE, SCALE_MODIFIER);
+        }
+        entity.refreshDimensions();
     }
 
     /** 摘掉左护法的数值加成（换角色 / 不再是左护法身体时用） */
@@ -204,6 +213,8 @@ public class ZuoHuFa implements ICharacter {
         removeAttribute(entity, Attributes.MOVEMENT_SPEED, SPEED_MODIFIER);
         removeAttribute(entity, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_MODIFIER);
         removeAttribute(entity, Attributes.WATER_MOVEMENT_EFFICIENCY, WATER_MODIFIER);
+        removeAttribute(entity, Attributes.SCALE, SCALE_MODIFIER);
+        entity.refreshDimensions();
     }
 
     private static void setAttribute(LivingEntity entity, Holder<Attribute> attribute,

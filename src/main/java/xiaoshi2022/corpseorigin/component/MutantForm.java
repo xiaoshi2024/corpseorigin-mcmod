@@ -46,7 +46,8 @@ public final class MutantForm {
      * 关掉碰撞箱就等于回到老行为（本体照样能被打到），不会出现"打不到人"的死角。
      */
     public static boolean isMutantWithHitboxes(Player player) {
-        return CorpseConfig.get().mutantBody.hitboxes.enabled && isMutant(player);
+        // 合体形态已使用 SCALE 放大的玩家主碰撞箱；旧分节箱会造成重复命中与准星抢占。
+        return false;
     }
 
     /**

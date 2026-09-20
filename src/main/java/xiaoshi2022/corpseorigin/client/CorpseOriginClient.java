@@ -188,10 +188,6 @@ public class CorpseOriginClient implements ClientModInitializer {
                 CloneChamberRenderer::new
         );
         // 尸兄肉块（GeckoLib 动画方块）
-        BlockEntityRendererRegistry.register(
-                ModBlockEntities.ZBR_FLESH,
-                xiaoshi2022.corpseorigin.client.renderer.blockentity.ZBRFleshRenderer::new
-        );
         
         // 3. 模型层注册
         ModModelLayers.register();
@@ -412,6 +408,12 @@ public class CorpseOriginClient implements ClientModInitializer {
                 client.gui.setScreen(new SkillTreeScreen());
             }
             while (CorpseKeyBindings.toggleHud.consumeClick()) {
+                if (client.player != null && client.hitResult instanceof net.minecraft.world.phys.BlockHitResult hit
+                        && client.level != null
+                        && client.level.getBlockState(hit.getBlockPos()).is(xiaoshi2022.corpseorigin.registry.ModBlocks.ZBR_FLESH)) {
+                    ClientPlayNetworking.send(new CorpsePayloads.CorpseNestTeleportC2S(hit.getBlockPos()));
+                    continue;
+                }
                 ClientState.hudVisible = !ClientState.hudVisible;
                 if (Minecraft.getInstance().player != null) {
                     Minecraft.getInstance().player.sendOverlayMessage(

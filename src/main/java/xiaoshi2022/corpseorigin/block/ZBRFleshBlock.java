@@ -11,6 +11,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.InsideBlockEffectApplier;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -28,10 +30,15 @@ import xiaoshi2022.corpseorigin.block.entity.ZBRFleshBlockEntity;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 import xiaoshi2022.corpseorigin.registry.ModBlocks;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.ShiChaoZhiZi;
+import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
+import xiaoshi2022.corpseorigin.skill.longyou.CorpseNestDimension;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.ArrayDeque;
 
 /**
  * 尸兄肉块 —— 尸巢的基本建筑方块。
@@ -70,7 +77,9 @@ public class ZBRFleshBlock extends Block implements EntityBlock {
     @Override
     protected RenderShape getRenderShape(BlockState state) {
         // 26.2 没有 ENTITYBLOCK_ANIMATED 了：不画原版模型，全部交给 GeckoLib 的 BER
-        return RenderShape.INVISIBLE;
+        // Corpse nests can contain thousands of these blocks. The baked model is
+        // chunk-batched instead of animating and drawing every block separately.
+        return RenderShape.MODEL;
     }
 
     @Override
@@ -81,6 +90,59 @@ public class ZBRFleshBlock extends Block implements EntityBlock {
     @Override
     protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return FULL_CUBE;
+    }
+
+    /** 尸巢之子主动吸食相连的尸巢结构，每块计作一位尸兄。 */
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                               Player player, BlockHitResult hitResult) {
+        if (!level.isClientSide() && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer
+                && level.getBlockEntity(pos) instanceof ZBRFleshBlockEntity flesh
+                && flesh.isCorpseNestGateway()) {
+            CorpseNestDimension.enter(serverPlayer);
+            return InteractionResult.SUCCESS;
+        }
+        if (level.isClientSide() || !player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+        // Only the Young Cult Leader (Son of the Corpse Nest) can absorb flesh blocks.
+        if (!ShiChaoZhiZi.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(player))) {
+            return InteractionResult.PASS;
+        }
+
+        PlayerCorpseComponent corpse = PlayerCorpseComponent.get(player);
+        int remaining = Math.max(0, 1000 - corpse.getKills());
+        boolean preserveBlocks = level.dimension().equals(CorpseNestDimension.KEY);
+        int absorbed = absorbConnectedFlesh((ServerLevel) level, pos, remaining, !preserveBlocks);
+        corpse.addKills(absorbed);
+        player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
+                "message.corpseorigin.shichaozhizi.absorb_progress",
+                corpse.getKills(), 1000));
+        ((ServerLevel) level).sendParticles(ParticleTypes.DAMAGE_INDICATOR,
+                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                Math.min(80, absorbed), 1.5, 1.5, 1.5, 0.08);
+        level.playSound(null, pos, SoundEvents.WARDEN_ROAR, SoundSource.PLAYERS, 1.0F, 0.7F);
+        return InteractionResult.SUCCESS;
+    }
+
+    private static int absorbConnectedFlesh(ServerLevel level, BlockPos start, int limit, boolean removeBlocks) {
+        if (limit <= 0) return 0;
+        ArrayDeque<BlockPos> pending = new ArrayDeque<>();
+        Set<BlockPos> visited = new HashSet<>();
+        pending.add(start.immutable());
+        int absorbed = 0;
+
+        while (!pending.isEmpty() && absorbed < limit) {
+            BlockPos current = pending.removeFirst();
+            if (!visited.add(current) || !level.getBlockState(current).is(ModBlocks.ZBR_FLESH)) continue;
+            if (removeBlocks) level.destroyBlock(current, false);
+            absorbed++;
+            for (var direction : net.minecraft.core.Direction.values()) {
+                BlockPos next = current.relative(direction);
+                if (!visited.contains(next)) pending.addLast(next.immutable());
+            }
+        }
+        return absorbed;
     }
 
     @Override

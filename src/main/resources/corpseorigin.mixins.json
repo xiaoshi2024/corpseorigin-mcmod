@@ -11,7 +11,6 @@
     "MobPeacefulMixin",
     "MobPickupMixin",
     "MobZombieKingRespectMixin",
-    "PlayerPickableMixin",
     "ProjectileOwnBodyMixin",
     "ServerPlayerShellMixin",
     "SpawnPlacementsInvoker"

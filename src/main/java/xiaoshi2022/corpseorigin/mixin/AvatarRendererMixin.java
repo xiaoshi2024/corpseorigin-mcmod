@@ -21,6 +21,8 @@ import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderData;
 import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.player.ZuoGuardianBodyRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.player.ShiChaoBodyRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.ShiChaoZhiZiBodyRenderer;
 import xiaoshi2022.corpseorigin.registry.ModModelLayers;
 
 @Mixin(AvatarRenderer.class)
@@ -59,6 +61,12 @@ public abstract class AvatarRendererMixin {
             ZuoGuardianBodyRenderer.createIfAbsent(context);
         } catch (Exception e) {
             CorpseOrigin.LOGGER.error("❌ 创建左护法变异体渲染器失败: {}", e.getMessage(), e);
+        }
+
+        try {
+            ShiChaoZhiZiBodyRenderer.createIfAbsent(context);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("Failed to create Shi Chao Zhi Zi body renderer", e);
         }
 
         // ✅ 开胃奶背挂渲染器（单例，在玩家背后补画一层 niunaix）
@@ -114,6 +122,12 @@ public abstract class AvatarRendererMixin {
         //   显式 false 能让它们整条停掉，不再泄漏。
         state.addGeckolibData(NiunaiXRenderData.ACTIVE, false);
         state.addGeckolibData(NiunaiLinkRenderData.ACTIVE, false);
+        state.addGeckolibData(ShiChaoBodyRenderData.ACTIVE, false);
+
+        if (ShiChaoBodyRenderData.isActive(player)) {
+            ShiChaoZhiZiBodyRenderer.writeRenderData(state, player, partialTick);
+            return;
+        }
 
         // 左护法变异体形态：整身换成 zuo_guardian，断肢那套不参与（身体都不是同一具了）
         if (MutantBodyRenderData.isMutantBody(player)) {

@@ -34,6 +34,9 @@ import xiaoshi2022.corpseorigin.shell.ShellState;
 import xiaoshi2022.corpseorigin.shell.TransferredBody;
 import xiaoshi2022.corpseorigin.skill.SkillManager;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager;
+import xiaoshi2022.corpseorigin.skill.longyou.CorpseNestDimension;
+import xiaoshi2022.corpseorigin.block.entity.ZBRFleshBlockEntity;
+import xiaoshi2022.corpseorigin.registry.ModBlocks;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -62,6 +65,18 @@ public final class CorpseNetwork {
     }
 
     public static void register() {
+        PayloadTypeRegistry.serverboundPlay().register(CorpsePayloads.CorpseNestTeleportC2S.TYPE,
+                CorpsePayloads.CorpseNestTeleportC2S.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(CorpsePayloads.CorpseNestTeleportC2S.TYPE, (payload, context) -> {
+            ServerPlayer player = context.player();
+            context.server().execute(() -> {
+                if (!player.blockPosition().closerThan(payload.targetPos(), 8.0)
+                        || !player.level().getBlockState(payload.targetPos()).is(ModBlocks.ZBR_FLESH)
+                        || !(player.level().getBlockEntity(payload.targetPos()) instanceof ZBRFleshBlockEntity flesh)
+                        || !flesh.isCorpseNestGateway()) return;
+                CorpseNestDimension.enter(player);
+            });
+        });
         // ==================== 角色选择系统 ====================
         PayloadTypeRegistry.serverboundPlay().register(CorpsePayloads.SelectCharacterC2S.TYPE, CorpsePayloads.SelectCharacterC2S.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.CharacterSyncS2C.TYPE, CorpsePayloads.CharacterSyncS2C.CODEC);

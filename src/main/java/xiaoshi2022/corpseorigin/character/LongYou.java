@@ -42,6 +42,7 @@ public class LongYou implements ICharacter {
             new BallLightningSkill(),
             new CorpseKingInfrasoundSkill(),
             new WaterPollutionSkill(),
+            new CorpseBrotherRallySkill(),
             // 换身体的两手：缩进原体 / 重塑一具新身体（旧身体都会蜕成分身）
             new GoldenCicadaShellSkill(),
             new FleshReshapeSkill()

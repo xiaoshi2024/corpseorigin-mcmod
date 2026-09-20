@@ -1,0 +1,124 @@
+package xiaoshi2022.corpseorigin.skill.longyou;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.phys.AABB;
+import xiaoshi2022.corpseorigin.block.entity.ZBRFleshBlockEntity;
+import xiaoshi2022.corpseorigin.entity.ZombieKin;
+import xiaoshi2022.corpseorigin.registry.ModBlocks;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+public final class CorpseNestConstructionHandler {
+    public static final int SIZE = 14;
+    private static final int RADIUS = 64;
+    private static final int REQUIRED_CORPSES = 8;
+    private static final Map<UUID, Job> JOBS = new ConcurrentHashMap<>();
+
+    private CorpseNestConstructionHandler() {}
+
+    public static Component canStart(ServerPlayer player) {
+        if (JOBS.containsKey(player.getUUID())) {
+            return Component.translatable("skill.corpseorigin.corpse_brother_rally.active");
+        }
+        int count = findCorpses(player).size();
+        return count < REQUIRED_CORPSES
+                ? Component.translatable("skill.corpseorigin.corpse_brother_rally.need_corpses",
+                    count, REQUIRED_CORPSES)
+                : null;
+    }
+
+    public static void start(ServerPlayer player) {
+        List<Mob> corpses = findCorpses(player);
+        if (corpses.size() < REQUIRED_CORPSES) return;
+        BlockPos center = player.blockPosition().relative(player.getDirection(), 8);
+        JOBS.put(player.getUUID(), new Job((ServerLevel) player.level(), center,
+                corpses.stream().map(Mob::getUUID).toList()));
+        player.sendOverlayMessage(Component.translatable("skill.corpseorigin.corpse_brother_rally.started"));
+    }
+
+    public static void tick(MinecraftServer server) {
+        JOBS.entrySet().removeIf(entry -> tickJob(server, entry.getValue()));
+    }
+
+    private static boolean tickJob(MinecraftServer server, Job job) {
+        ServerLevel level = server.getLevel(job.level.dimension());
+        if (level == null) return true;
+        job.age++;
+        int alive = 0;
+        for (UUID id : job.corpses) {
+            if (!(level.getEntity(id) instanceof Mob mob) || !mob.isAlive()) continue;
+            alive++;
+            mob.setTarget(null);
+            mob.getNavigation().moveTo(job.center.getX() + 0.5, job.center.getY(), job.center.getZ() + 0.5, 1.25);
+            if (mob.distanceToSqr(job.center.getX() + .5, job.center.getY() + .5,
+                    job.center.getZ() + .5) <= 9.0) {
+                mob.discard();
+                job.consumed++;
+                level.sendParticles(ParticleTypes.DAMAGE_INDICATOR,
+                        job.center.getX() + .5, job.center.getY() + 1, job.center.getZ() + .5,
+                        16, 1, 1, 1, .08);
+            }
+        }
+
+        int targetStage = job.consumed >= REQUIRED_CORPSES ? 3 : job.consumed >= 4 ? 2 : job.consumed >= 1 ? 1 : 0;
+        if (targetStage > job.stage) {
+            job.stage = targetStage;
+            buildStage(level, job.center, targetStage);
+            level.playSound(null, job.center, SoundEvents.WITHER_SPAWN, SoundSource.BLOCKS,
+                    1.4F, 1.2F - targetStage * .15F);
+        }
+        return job.stage == 3 || (alive == 0 && job.age > 200) || job.age > 2400;
+    }
+
+    private static List<Mob> findCorpses(ServerPlayer player) {
+        return ((ServerLevel) player.level()).getEntitiesOfClass(Mob.class,
+                new AABB(player.blockPosition()).inflate(RADIUS),
+                mob -> mob instanceof ZombieKin && mob.isAlive());
+    }
+
+    private static void buildStage(ServerLevel level, BlockPos center, int stage) {
+        List<BlockPos> shell = shell(center);
+        int amount = stage == 1 ? shell.size() / 4 : stage == 2 ? shell.size() * 3 / 5 : shell.size();
+        for (int i = 0; i < amount; i++) level.setBlock(shell.get(i), ModBlocks.ZBR_FLESH.defaultBlockState(), 3);
+
+        if (stage == 3) {
+            BlockPos gateway = center.offset(-7, -1, 0);
+            level.setBlock(gateway, ModBlocks.ZBR_FLESH.defaultBlockState(), 3);
+            if (level.getBlockEntity(gateway) instanceof ZBRFleshBlockEntity flesh) {
+                flesh.setCorpseNestGateway(true);
+            }
+        }
+    }
+
+    private static List<BlockPos> shell(BlockPos center) {
+        List<BlockPos> result = new ArrayList<>();
+        for (int x = -7; x <= 6; x++) for (int y = -1; y <= 12; y++) for (int z = -7; z <= 6; z++) {
+            if (x == -7 || x == 6 || y == -1 || y == 12 || z == -7 || z == 6) {
+                result.add(center.offset(x, y, z));
+            }
+        }
+        result.sort(Comparator.comparingInt(BlockPos::getY));
+        return result;
+    }
+
+    private static final class Job {
+        final ServerLevel level;
+        final BlockPos center;
+        final List<UUID> corpses;
+        int age;
+        int consumed;
+        int stage;
+        Job(ServerLevel level, BlockPos center, List<UUID> corpses) {
+            this.level = level; this.center = center.immutable(); this.corpses = corpses;
+        }
+    }
+}

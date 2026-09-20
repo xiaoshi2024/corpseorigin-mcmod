@@ -20,7 +20,11 @@ import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderData;
 import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.player.ZuoGuardianBodyRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.player.ShiChaoBodyRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.ShiChaoZhiZiBodyRenderer;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
+import xiaoshi2022.corpseorigin.character.ShiChaoZhiZi;
+import xiaoshi2022.corpseorigin.character.ZuoHuFa;
 
 /**
  * 断肢形态下用 Geolib 模型替换玩家"身体"。
@@ -41,6 +45,25 @@ import xiaoshi2022.corpseorigin.config.CorpseConfig;
  */
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererSubmitMixin {
+
+    @Inject(method = "submit", at = @At("HEAD"), cancellable = true)
+    private void corpseorigin$submitShiChaoBody(LivingEntityRenderState state, PoseStack poseStack,
+                                                SubmitNodeCollector collector, CameraRenderState camera,
+                                                CallbackInfo ci) {
+        if (!(state instanceof AvatarRenderState avatarState)
+                || !((Object) this instanceof AvatarRenderer<?>)) return;
+        if (!Boolean.TRUE.equals(avatarState.getGeckolibData(ShiChaoBodyRenderData.ACTIVE))) return;
+        ShiChaoZhiZiBodyRenderer renderer = ShiChaoZhiZiBodyRenderer.get();
+        if (renderer == null) return;
+
+        poseStack.pushPose();
+        // 实体 SCALE 已把眼高、碰撞箱和相机放大；这里抵消一次，保持资源模型原有的巨人体量。
+        float scale = avatarState.scale * (0.32F / ShiChaoZhiZi.SECOND_FORM_SCALE);
+        poseStack.scale(scale, scale, scale);
+        renderer.submit(avatarState, poseStack, collector, camera);
+        poseStack.popPose();
+        ci.cancel();
+    }
 
     /**
      * 尸体模型的垂直校准值（格）。
@@ -94,7 +117,8 @@ public abstract class LivingEntityRendererSubmitMixin {
 
         poseStack.pushPose();
         poseStack.translate(0.0, config.yOffset, 0.0);
-        float scale = avatarState.scale * config.scale;
+        // 实体 SCALE 负责真实眼高和碰撞箱；抵消一次，维持配置中原有的青龙视觉尺寸。
+        float scale = avatarState.scale * (config.scale / ZuoHuFa.MERGED_SCALE);
         if (scale != 1.0F) {
             poseStack.scale(scale, scale, scale);
         }

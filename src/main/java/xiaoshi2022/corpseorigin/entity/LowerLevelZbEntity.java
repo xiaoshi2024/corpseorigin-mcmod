@@ -323,7 +323,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty,
                                         EntitySpawnReason reason, SpawnGroupData spawnGroupData) {
-        if (usesNamedSkin() && reason == EntitySpawnReason.NATURAL && getPlayerSkinName().isEmpty()) {
+        // Keep every ordinary spawn path consistent with /summonzb. Explicitly assigned
+        // skins are preserved, while spawn eggs and /summon receive a random skin too.
+        if (usesNamedSkin() && getPlayerSkinName().isEmpty()) {
             setPlayerSkinName(ZbNameGenerator.random(this.getRandom()));
         }
         return super.finalizeSpawn(level, difficulty, reason, spawnGroupData);

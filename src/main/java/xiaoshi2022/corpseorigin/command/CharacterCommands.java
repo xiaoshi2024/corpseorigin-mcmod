@@ -12,6 +12,8 @@ import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.ICharacter;
 import xiaoshi2022.corpseorigin.skill.SkillManager;
+import xiaoshi2022.corpseorigin.character.ShiChaoZhiZi;
+import xiaoshi2022.corpseorigin.skill.shichaozhizi.SonOfCorpseNestSkill;
 
 import java.util.Collection;
 
@@ -24,6 +26,9 @@ public final class CharacterCommands {
     }
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+        dispatcher.register(Commands.literal("shichaoform")
+                .executes(ctx -> toggleShiChaoForm(ctx.getSource())));
+
         dispatcher.register(Commands.literal("character")
                 // 直接 /character 等同于查看当前角色
                 .executes(ctx -> showCurrent(ctx.getSource()))
@@ -99,6 +104,20 @@ public final class CharacterCommands {
                                                         StringArgumentType.getString(ctx, "segment"),
                                                         StringArgumentType.getString(ctx, "field"),
                                                         FloatArgumentType.getFloat(ctx, "value"))))))));
+    }
+
+    private static int toggleShiChaoForm(CommandSourceStack source) throws CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        if (!ShiChaoZhiZi.ID.equals(
+                CharacterManager.getInstance().getPlayerCharacterId(player))) {
+            source.sendFailure(Component.translatable(
+                    "command.corpseorigin.shichaoform.wrong_character"));
+            return 0;
+        }
+        new SonOfCorpseNestSkill().onActivate(player);
+        source.sendSuccess(() -> Component.translatable(
+                "command.corpseorigin.shichaoform.toggled"), false);
+        return 1;
     }
 
     // ==================== 蛟龙节碰撞箱微调 ====================

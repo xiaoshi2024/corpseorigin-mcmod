@@ -1,6 +1,7 @@
 package xiaoshi2022.corpseorigin.event;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.ChatFormatting;
@@ -11,6 +12,9 @@ import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.item.CharacterBookItem;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.player.Player;
+import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 
 import java.util.UUID;
 
@@ -23,6 +27,15 @@ public final class ServerEvents {
     }
 
     public static void register() {
+        ServerLivingEntityEvents.AFTER_DEATH.register((victim, source) -> {
+            if (!(source.getEntity() instanceof ServerPlayer killer) || victim == killer) return;
+            boolean corpseBrother = BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType())
+                    .getNamespace().equals(CorpseOrigin.MOD_ID);
+            if (victim instanceof Player player) {
+                corpseBrother |= PlayerCorpseComponent.isCorpse(player);
+            }
+            if (corpseBrother) PlayerCorpseComponent.get(killer).addKill();
+        });
         // 重生 → 同步角色
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
             CharacterManager.getInstance().syncToClient(newPlayer);
@@ -30,6 +43,7 @@ public final class ServerEvents {
             xiaoshi2022.corpseorigin.character.LongYou.applyIfLongYou(newPlayer);
             // 左护法同理：新实体上要按当前形态（合体 / 分离）重套一遍基础数值
             xiaoshi2022.corpseorigin.character.ZuoHuFa.applyIfZuoHuFa(newPlayer);
+            xiaoshi2022.corpseorigin.character.ShiChaoZhiZi.reconcileSecondForm(newPlayer);
             // ★ 体型也要复位：死在"拇指原体"里重生，SCALE 属性会被一起带过来，
             //   不复位的话人会一直是个小人儿
             xiaoshi2022.corpseorigin.character.LongYou.resetBodySize(newPlayer);
@@ -46,6 +60,7 @@ public final class ServerEvents {
             xiaoshi2022.corpseorigin.character.LongYou.applyIfLongYou(player);
             // 左护法：登录时按当前形态补一次基础数值（老存档 / 上次异常退出的兜底）
             xiaoshi2022.corpseorigin.character.ZuoHuFa.applyIfZuoHuFa(player);
+            xiaoshi2022.corpseorigin.character.ShiChaoZhiZi.reconcileSecondForm(player);
             // ★ 把在线其他玩家的尸兄状态补给刚进来的玩家。
             //   尸兄数据平时只在"发生变化"时广播，新玩家错过那些包的话，
             //   在他眼里别人就都是普通人（看不到多眼/外骨骼）。
@@ -76,12 +91,11 @@ public final class ServerEvents {
         ServerTickEvents.END_SERVER_TICK.register(
                 xiaoshi2022.corpseorigin.skill.longyou.ThunderStrikeHandler::tick);
 
+        ServerTickEvents.END_SERVER_TICK.register(
+                xiaoshi2022.corpseorigin.skill.longyou.CorpseNestConstructionHandler::tick);
+
         // 金蝉脱壳后：右键旧身体穿回去（只在缩在原体里的时候接管）
         xiaoshi2022.corpseorigin.skill.longyou.BodyTransplantHandler.register();
-
-        // 每 tick 维护左护法变异体的"蛟龙节碰撞箱"（生成 / 摆位 / 清理）
-        ServerTickEvents.END_SERVER_TICK.register(
-                xiaoshi2022.corpseorigin.event.MutantHitboxHandler::tick);
 
         // 退出 → 清理
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {

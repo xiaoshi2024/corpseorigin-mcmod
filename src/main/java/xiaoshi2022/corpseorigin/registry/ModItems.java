@@ -171,6 +171,11 @@ public final class ModItems {
             new SpawnEggItem(spawnEggProperties("miku_zb_spawn_egg", ModEntities.MIKU_ZB))
     );
 
+    public static final Item LOWER_LEVEL_ZB_SPAWN_EGG = register(
+            "lower_level_zb_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("lower_level_zb_spawn_egg", ModEntities.LOWER_LEVEL_ZB))
+    );
+
     /** 尸兄虫 - 可食用，也是企鹅变尸兄的引子 */
     public static final Item ZB_WORM_ITEM = register(
             "zb_worm_item",
@@ -210,6 +215,7 @@ public final class ModItems {
                 output.accept(UNCLE_SPAWN_EGG);
                 output.accept(ZB_WORM_SPAWN_EGG);
                 output.accept(MIKU_ZB_SPAWN_EGG);
+                output.accept(LOWER_LEVEL_ZB_SPAWN_EGG);
                 output.accept(ZB_WORM_ITEM);
                 output.accept(LEEK);
             })

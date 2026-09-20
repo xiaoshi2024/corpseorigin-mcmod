@@ -17,6 +17,7 @@ import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyAnimations;
 import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
 import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderData;
 import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.ShiChaoBodyRenderData;
 import xiaoshi2022.corpseorigin.limb.LimbSlots;
 
 /**
@@ -174,6 +175,7 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
         // ★ 左护法变异体专属控制器：放在最后注册，让它出的骨骼值盖在这几条之上；
         //   变异体形态下 movement / attack 会主动让开（见各自方法开头）。
         controllers.add(new AnimationController<PlayerGeoAnimatable>("mutant_body", 0, this::corpseorigin$mutantBody));
+        controllers.add(new AnimationController<PlayerGeoAnimatable>("shichao_body", 0, this::corpseorigin$shichaoBody));
 
         // ★ 开胃奶背挂（niunaix）：同样放最后。
         //   ⚠️ 只能开**一条**控制器：这套骨骼里 idle 动的是 petal / group*，attack 动的是 petal*2，
@@ -183,6 +185,21 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
         // ★ 开胃奶「拦腰斩断」（niunai_link_player）：同样放最后。
         //   这套模型只有 broken_off / link 两条动画，形态期间上面几条全部让开（见各自方法开头）。
         controllers.add(new AnimationController<PlayerGeoAnimatable>("niunai_link", 0, this::corpseorigin$niunaiLink));
+    }
+
+    @Unique
+    private PlayState corpseorigin$shichaoBody(AnimationTest<PlayerGeoAnimatable> test) {
+        Boolean active = test.getData(ShiChaoBodyRenderData.ACTIVE);
+        if (!Boolean.TRUE.equals(active)) {
+            test.controller().reset();
+            return PlayState.STOP;
+        }
+        boolean attacking = Boolean.TRUE.equals(test.getData(LimbRenderData.ATTACKING));
+        boolean moving = Boolean.TRUE.equals(test.getData(MutantBodyRenderData.MOVING));
+        test.setAndContinue(attacking
+                ? RawAnimation.begin().thenPlay("attck")
+                : RawAnimation.begin().thenLoop(moving ? "walk" : "idle"));
+        return PlayState.CONTINUE;
     }
 
     /**

@@ -61,6 +61,8 @@ public class PlayerCorpseComponent {
      * 触角 / 捆仙索 / 菊花盾（见 {@code NiunaiXRenderer}）。原版玩家模型、盔甲照常渲染。
      */
     public static final int VARIANT_NIUNAIX = 4;
+    /** 尸巢之子吸收千名尸兄后主动开启的第二形态。 */
+    public static final int VARIANT_SHICHAOZHIZI = 5;
 
     /** 进化等级上限 */
     public static final int MAX_EVOLUTION_LEVEL = 5;
@@ -218,8 +220,13 @@ public class PlayerCorpseComponent {
     }
 
     public void addKill() {
+        addKills(1);
+    }
+
+    public void addKills(int amount) {
+        if (amount <= 0) return;
         CompoundTag tag = getData();
-        tag.putInt(KEY_KILLS, getKills() + 1);
+        tag.putInt(KEY_KILLS, getKills() + amount);
         setData(tag);
     }
 
@@ -456,7 +463,8 @@ public class PlayerCorpseComponent {
     public static boolean hasExoskeleton(int variant) {
         return variant != VARIANT_NO_EXOSKELETON
                 && variant != VARIANT_ZUO_GUARDIAN
-                && variant != VARIANT_NIUNAIX;
+                && variant != VARIANT_NIUNAIX
+                && variant != VARIANT_SHICHAOZHIZI;
     }
 
     /**
