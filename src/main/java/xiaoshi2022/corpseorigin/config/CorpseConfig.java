@@ -37,10 +37,20 @@ public final class CorpseConfig {
     public Skin skin = new Skin();
     /** 左护法变异体（玩家整身换成 zuo_guardian 模型） */
     public MutantBody mutantBody = new MutantBody();
+    /** Infected-water behavior. */
+    public InfectedWater infectedWater = new InfectedWater();
     /** 与其他模组的软联动 */
     public Compat compat = new Compat();
 
     /** 自然生成的权重与"尸水泉聚集"参数。权重参照原版僵尸 = 100 */
+    public static final class InfectedWater {
+        /**
+         * Ticks before infected water touching seawater is diluted back into water.
+         * 24000 ticks is one Minecraft day; 0 disables ocean dilution.
+         */
+        public int oceanDilutionTicks = 24000;
+    }
+
     public static final class Spawn {
         public int lowerLevelZbWeight = 2;
         public int aotumanZbWeight = 2;
@@ -234,6 +244,8 @@ public final class CorpseConfig {
                 CorpseConfig config = GSON.fromJson(Files.readString(path, StandardCharsets.UTF_8), CorpseConfig.class);
                 if (config != null) {
                     config.sanitize();
+                    // Keep existing config files discoverable when new options are introduced.
+                    Files.writeString(path, GSON.toJson(config), StandardCharsets.UTF_8);
                     CorpseOrigin.LOGGER.info("已加载配置文件：{}", path);
                     return config;
                 }
@@ -267,6 +279,10 @@ public final class CorpseConfig {
         if (mutantBody == null) {
             mutantBody = new MutantBody();
         }
+        if (infectedWater == null) {
+            infectedWater = new InfectedWater();
+        }
+        infectedWater.oceanDilutionTicks = Math.max(0, infectedWater.oceanDilutionTicks);
         if (compat == null) {
             compat = new Compat();
         }

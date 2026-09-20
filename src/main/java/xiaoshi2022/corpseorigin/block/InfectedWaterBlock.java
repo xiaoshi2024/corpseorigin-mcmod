@@ -1,6 +1,9 @@
 package xiaoshi2022.corpseorigin.block;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BiomeTags;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -13,9 +16,11 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.Fluids;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.LongYou;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
+import xiaoshi2022.corpseorigin.config.CorpseConfig;
 import xiaoshi2022.corpseorigin.registry.ModEffects;
 import xiaoshi2022.corpseorigin.registry.ModFluids;
 
@@ -95,7 +100,38 @@ public class InfectedWaterBlock extends LiquidBlock {
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
         if (!level.isClientSide()) {
+            scheduleOceanDilution(level, pos);
             CorpseOrigin.LOGGER.debug("尸水方块放置于: {}", pos);
         }
+    }
+
+    @Override
+    protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        super.tick(state, level, pos, random);
+
+        int delay = CorpseConfig.get().infectedWater.oceanDilutionTicks;
+        if (delay <= 0 || !isInOcean(level, pos)) {
+            return;
+        }
+        level.setBlock(pos, Fluids.WATER.defaultFluidState().createLegacyBlock(),
+                net.minecraft.world.level.block.Block.UPDATE_ALL);
+    }
+
+    @Override
+    protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        if (!level.getBlockTicks().hasScheduledTick(pos, this)) {
+            scheduleOceanDilution(level, pos);
+        }
+    }
+
+    private void scheduleOceanDilution(Level level, BlockPos pos) {
+        int delay = CorpseConfig.get().infectedWater.oceanDilutionTicks;
+        if (delay > 0 && isInOcean(level, pos)) {
+            level.scheduleTick(pos, this, delay);
+        }
+    }
+
+    private boolean isInOcean(Level level, BlockPos pos) {
+        return level.getBiome(pos).is(BiomeTags.IS_OCEAN);
     }
 }

@@ -38,6 +38,7 @@ public final class ModFluids {
                             .noLootTable()
                             .replaceable()
                             .liquid()
+                            .randomTicks()
                             .pushReaction(PushReaction.DESTROY)
                             .setId(blockKey("infected_water_block"))  // ✅ 必须设置 ID！
             )
