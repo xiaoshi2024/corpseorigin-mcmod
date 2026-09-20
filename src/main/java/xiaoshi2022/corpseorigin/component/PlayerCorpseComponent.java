@@ -484,6 +484,23 @@ public class PlayerCorpseComponent {
     }
 
     /**
+     * 轻量判定：这具身体现在是不是「尸巢之子第二形态」（尸兄 + 非伪装 + 变种 5）。
+     * <p>
+     * 与 {@link #isMutantVariant} 同样直接读附件、不做 NBT 副本 —— 这个方法会被
+     * {@code PlayerDimensionsMixin} 每次取碰撞箱时调用。判定条件与客户端那份缓存
+     * （{@code ShiChaoBodyRenderData}）保持一致。
+     */
+    public static boolean isShiChaoVariant(Player player) {
+        CompoundTag tag = player.getAttached(ModDataAttachments.PLAYER_CORPSE);
+        if (tag == null) {
+            return false;
+        }
+        return tag.getBoolean(KEY_IS_CORPSE).orElse(false)
+                && !tag.getBoolean(KEY_IS_DISGUISED).orElse(false)
+                && tag.getInt(KEY_VARIANT).orElse(0) == VARIANT_SHICHAOZHIZI;
+    }
+
+    /**
      * ✅ 一次性写入所有数据（避免多次 setData）
      */
     public static void setPlayerAsCorpse(Player player, int corpseType) {

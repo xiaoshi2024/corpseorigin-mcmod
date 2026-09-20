@@ -197,7 +197,7 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
         boolean attacking = Boolean.TRUE.equals(test.getData(LimbRenderData.ATTACKING));
         boolean moving = Boolean.TRUE.equals(test.getData(MutantBodyRenderData.MOVING));
         test.setAndContinue(attacking
-                ? RawAnimation.begin().thenPlay("attck")
+                ? RawAnimation.begin().thenPlay("attack")
                 : RawAnimation.begin().thenLoop(moving ? "walk" : "idle"));
         return PlayState.CONTINUE;
     }

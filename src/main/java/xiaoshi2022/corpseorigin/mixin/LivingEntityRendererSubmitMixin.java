@@ -46,32 +46,6 @@ import xiaoshi2022.corpseorigin.character.ZuoHuFa;
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererSubmitMixin {
 
-    private static boolean corpseorigin$isGiantSecondForm(LivingEntityRenderState state) {
-        return state instanceof AvatarRenderState avatarState
-                && avatarState.scale >= ShiChaoZhiZi.SECOND_FORM_SCALE * 0.8F;
-    }
-
-    @Inject(method = "submit", at = @At("HEAD"))
-    private void corpseorigin$shichaoRenderCompensation(LivingEntityRenderState state, PoseStack poseStack,
-                                                        SubmitNodeCollector collector, CameraRenderState camera,
-                                                        CallbackInfo ci) {
-        if (corpseorigin$isGiantSecondForm(state)) {
-            // SCALE remains giant for hitbox/camera, but the visible player layers stay compact.
-            float visualScale = 1.0F / ShiChaoZhiZi.SECOND_FORM_SCALE;
-            poseStack.pushPose();
-            poseStack.scale(visualScale, visualScale, visualScale);
-        }
-    }
-
-    @Inject(method = "submit", at = @At("TAIL"))
-    private void corpseorigin$popShichaoRenderCompensation(LivingEntityRenderState state, PoseStack poseStack,
-                                                           SubmitNodeCollector collector, CameraRenderState camera,
-                                                           CallbackInfo ci) {
-        if (corpseorigin$isGiantSecondForm(state)) {
-            poseStack.popPose();
-        }
-    }
-
     @Inject(method = "submit", at = @At("HEAD"), cancellable = true)
     private void corpseorigin$submitShiChaoBody(LivingEntityRenderState state, PoseStack poseStack,
                                                 SubmitNodeCollector collector, CameraRenderState camera,
@@ -83,13 +57,11 @@ public abstract class LivingEntityRendererSubmitMixin {
         if (renderer == null) return;
 
         poseStack.pushPose();
-        // 实体 SCALE 已把眼高、碰撞箱和相机放大；这里抵消一次，保持资源模型原有的巨人体量。
-        float scale = avatarState.scale * 0.32F;
+        // 资源模型本体就有 646 个模型像素 ≈ 40 格高，所以这里必须整体缩一次。
+        // 倍率写在 ShiChaoZhiZi.SECOND_FORM_MODEL_SCALE（唯一开关），视高也跟着它换算。
+        float scale = avatarState.scale * ShiChaoZhiZi.SECOND_FORM_MODEL_SCALE;
         poseStack.scale(scale, scale, scale);
         renderer.submit(avatarState, poseStack, collector, camera);
-        poseStack.popPose();
-        // The submit call is cancelled below, so the outer compensation injection
-        // will not reach TAIL and must be balanced here.
         poseStack.popPose();
         ci.cancel();
     }

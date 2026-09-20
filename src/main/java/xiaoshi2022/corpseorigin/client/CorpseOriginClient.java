@@ -21,6 +21,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
@@ -310,6 +311,14 @@ public class CorpseOriginClient implements ClientModInitializer {
                         payload.corpseData()
                 );
                 corpseDataCache.put(payload.playerUuid(), data);  // ✅ 用 UUID
+                // ★ 尸巢之子二阶段的 30 格碰撞箱是覆写 Player#getDimensions 得到的（见 PlayerDimensionsMixin），
+                //   客户端也读这份缓存判定，所以形态一变就得让箱子重算一次，否则客户端还停在 1.8 格。
+                if (Minecraft.getInstance().level != null) {
+                    Player synced = Minecraft.getInstance().level.getPlayerByUUID(payload.playerUuid());
+                    if (synced != null) {
+                        synced.refreshDimensions();
+                    }
+                }
                 CorpseOrigin.LOGGER.debug("收到玩家尸兄数据: uuid={}, isCorpse={}",
                         payload.playerUuid(), payload.isCorpse());
             });
