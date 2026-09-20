@@ -21,7 +21,7 @@ public final class CorpseNestDimension {
     public static final ResourceKey<Level> KEY = ResourceKey.create(
             Registries.DIMENSION, CorpseOrigin.id("corpse_nest"));
     private static final BlockPos ARRIVAL = new BlockPos(0, 65, 0);
-    private static final int STRUCTURE_VERSION = 1;
+    private static final int STRUCTURE_VERSION = 3;
     private static final int RADIUS = 24;
     private static final int FLOOR_Y = 64;
     private static final int CEILING_Y = 72;
@@ -68,9 +68,9 @@ public final class CorpseNestDimension {
             }
         }
 
-        // Remove the high ceiling left by the original chamber in existing worlds.
-        for (int x = -RADIUS; x <= RADIUS; x++) {
-            for (int z = -RADIUS; z <= RADIUS; z++) {
+        // Remove blocks above the current ceiling left by older chamber versions.
+        for (int x = -24; x <= 24; x++) {
+            for (int z = -24; z <= 24; z++) {
                 for (int y = CEILING_Y + 1; y <= 88; y++) {
                     level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 2);
                 }
@@ -114,8 +114,8 @@ public final class CorpseNestDimension {
                         || visited[nextX][nextZ]) continue;
                 visited[nextX][nextZ] = true;
                 carveCell(passages, nextX, nextZ);
-                int worldX = -22 + current[0] * 2 + direction[0];
-                int worldZ = -22 + current[1] * 2 + direction[1];
+                int worldX = -(CELL_COUNT - 1) + current[0] * 2 + direction[0];
+                int worldZ = -(CELL_COUNT - 1) + current[1] * 2 + direction[1];
                 passages[worldX + RADIUS][worldZ + RADIUS] = true;
                 stack.push(new int[]{nextX, nextZ});
                 advanced = true;
@@ -127,8 +127,8 @@ public final class CorpseNestDimension {
     }
 
     private static void carveCell(boolean[][] passages, int cellX, int cellZ) {
-        int worldX = -22 + cellX * 2;
-        int worldZ = -22 + cellZ * 2;
+        int worldX = -(CELL_COUNT - 1) + cellX * 2;
+        int worldZ = -(CELL_COUNT - 1) + cellZ * 2;
         passages[worldX + RADIUS][worldZ + RADIUS] = true;
     }
 }

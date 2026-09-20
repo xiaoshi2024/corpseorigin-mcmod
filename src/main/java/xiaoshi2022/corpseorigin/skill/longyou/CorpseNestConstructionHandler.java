@@ -18,7 +18,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class CorpseNestConstructionHandler {
-    public static final int SIZE = 14;
+    /** Mature rally nest footprint. 10^3 - 8^3 = 488 shell blocks, below 1000. */
+    public static final int SIZE = 10;
     private static final int RADIUS = 64;
     private static final int REQUIRED_CORPSES = 8;
     private static final Map<UUID, Job> JOBS = new ConcurrentHashMap<>();
@@ -91,7 +92,7 @@ public final class CorpseNestConstructionHandler {
         for (int i = 0; i < amount; i++) level.setBlock(shell.get(i), ModBlocks.ZBR_FLESH.defaultBlockState(), 3);
 
         if (stage == 3) {
-            BlockPos gateway = center.offset(-7, -1, 0);
+            BlockPos gateway = center.offset(-5, -1, 0);
             level.setBlock(gateway, ModBlocks.ZBR_FLESH.defaultBlockState(), 3);
             if (level.getBlockEntity(gateway) instanceof ZBRFleshBlockEntity flesh) {
                 flesh.setCorpseNestGateway(true);
@@ -101,8 +102,8 @@ public final class CorpseNestConstructionHandler {
 
     private static List<BlockPos> shell(BlockPos center) {
         List<BlockPos> result = new ArrayList<>();
-        for (int x = -7; x <= 6; x++) for (int y = -1; y <= 12; y++) for (int z = -7; z <= 6; z++) {
-            if (x == -7 || x == 6 || y == -1 || y == 12 || z == -7 || z == 6) {
+        for (int x = -5; x <= 4; x++) for (int y = -1; y <= 8; y++) for (int z = -5; z <= 4; z++) {
+            if (x == -5 || x == 4 || y == -1 || y == 8 || z == -5 || z == 4) {
                 result.add(center.offset(x, y, z));
             }
         }

@@ -26,7 +26,10 @@ import java.util.List;
 public class ShiChaoZhiZi implements ICharacter {
 
     public static final String ID = "shichaozhizi";
-    public static final float SECOND_FORM_SCALE = 4.0F;
+    /** A normal player is 1.8 blocks tall, so this produces a true 30-block body. */
+    public static final float SECOND_FORM_SCALE = 30.0F / 1.8F;
+    /** Clears a 16-block wall after allowing for gravity and air drag. */
+    public static final double SECOND_FORM_JUMP_STRENGTH = 1.9;
     public static final double SECOND_FORM_HEALTH = 500.0;
     public static final double SECOND_FORM_ARMOR = 20.0;
 
@@ -34,6 +37,7 @@ public class ShiChaoZhiZi implements ICharacter {
     private static final Identifier ARMOR_MODIFIER = CorpseOrigin.id("shichao_second_form_armor");
     private static final Identifier KNOCKBACK_MODIFIER = CorpseOrigin.id("shichao_second_form_knockback");
     private static final Identifier SCALE_MODIFIER = CorpseOrigin.id("shichao_second_form_scale");
+    private static final Identifier JUMP_MODIFIER = CorpseOrigin.id("shichao_second_form_jump");
 
     private static final List<ISkill> SKILLS = List.of(
             new SonOfCorpseNestSkill(),
@@ -112,6 +116,7 @@ public class ShiChaoZhiZi implements ICharacter {
         setTarget(entity, Attributes.ARMOR, ARMOR_MODIFIER, SECOND_FORM_ARMOR);
         setTarget(entity, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_MODIFIER, 1.0);
         setTarget(entity, Attributes.SCALE, SCALE_MODIFIER, SECOND_FORM_SCALE);
+        setTarget(entity, Attributes.JUMP_STRENGTH, JUMP_MODIFIER, SECOND_FORM_JUMP_STRENGTH);
         entity.refreshDimensions();
     }
 
@@ -120,6 +125,7 @@ public class ShiChaoZhiZi implements ICharacter {
         remove(entity, Attributes.ARMOR, ARMOR_MODIFIER);
         remove(entity, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_MODIFIER);
         remove(entity, Attributes.SCALE, SCALE_MODIFIER);
+        remove(entity, Attributes.JUMP_STRENGTH, JUMP_MODIFIER);
         entity.refreshDimensions();
         if (entity.getHealth() > entity.getMaxHealth()) entity.setHealth(entity.getMaxHealth());
     }

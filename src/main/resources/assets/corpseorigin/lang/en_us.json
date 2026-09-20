@@ -162,7 +162,7 @@
   "skill.corpseorigin.son_of_corpse_nest.on": "Second form enabled",
   "skill.corpseorigin.son_of_corpse_nest.off": "Second form disabled",
   "skill.corpseorigin.corpse_brother_rally": "Corpse Brother Rally",
-  "skill.corpseorigin.corpse_brother_rally.desc": "Costs 100 evolution points. Rally nearby Corpse Brothers to devour one another and grow a complete hollow 14x14x14 Corpse Nest through three stages.",
+  "skill.corpseorigin.corpse_brother_rally.desc": "Costs 100 evolution points. Rally nearby Corpse Brothers to devour one another and grow a complete hollow 10x10x10 Corpse Nest (488 flesh blocks) through three stages.",
   "skill.corpseorigin.corpse_brother_rally.active": "The Corpse Nest is already growing",
   "skill.corpseorigin.corpse_brother_rally.need_corpses": "Not enough controlled Corpse Brothers nearby: %1$s / %2$s",
   "skill.corpseorigin.corpse_brother_rally.started": "The Corpse Brothers gather and begin devouring one another",

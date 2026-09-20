@@ -177,7 +177,7 @@
   "skill.corpseorigin.son_of_corpse_nest.on": "尸巢之子第二形态已启用",
   "skill.corpseorigin.son_of_corpse_nest.off": "尸巢之子第二形态已关闭",
   "skill.corpseorigin.corpse_brother_rally": "尸兄召集",
-  "skill.corpseorigin.corpse_brother_rally.desc": "消耗100进化点解锁。召集附近受尸王威压的尸兄互相吞噬，经历初始、成长、成熟三阶段，形成14×14×14完整空心尸巢。",
+  "skill.corpseorigin.corpse_brother_rally.desc": "消耗100进化点解锁。召集附近受尸王威压的尸兄互相吞噬，经历初始、成长、成熟三阶段，形成10×10×10完整空心尸巢（488块肉块）。",
   "skill.corpseorigin.corpse_brother_rally.active": "尸巢正在成长",
   "skill.corpseorigin.corpse_brother_rally.need_corpses": "附近受控尸兄不足：%1$s / %2$s",
   "skill.corpseorigin.corpse_brother_rally.started": "尸兄开始聚集并互相吞噬",

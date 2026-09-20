@@ -9257,7 +9257,7 @@
 				}
 			}
 		},
-		"attck": {
+		"attack": {
 			"animation_length": 1.3,
 			"bones": {
 				"arm_right": {

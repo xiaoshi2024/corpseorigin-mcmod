@@ -35,7 +35,6 @@ import xiaoshi2022.corpseorigin.shell.TransferredBody;
 import xiaoshi2022.corpseorigin.skill.SkillManager;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager;
 import xiaoshi2022.corpseorigin.skill.longyou.CorpseNestDimension;
-import xiaoshi2022.corpseorigin.block.entity.ZBRFleshBlockEntity;
 import xiaoshi2022.corpseorigin.registry.ModBlocks;
 
 import java.nio.charset.StandardCharsets;
@@ -71,9 +70,7 @@ public final class CorpseNetwork {
             ServerPlayer player = context.player();
             context.server().execute(() -> {
                 if (!player.blockPosition().closerThan(payload.targetPos(), 8.0)
-                        || !player.level().getBlockState(payload.targetPos()).is(ModBlocks.ZBR_FLESH)
-                        || !(player.level().getBlockEntity(payload.targetPos()) instanceof ZBRFleshBlockEntity flesh)
-                        || !flesh.isCorpseNestGateway()) return;
+                        || !player.level().getBlockState(payload.targetPos()).is(ModBlocks.ZBR_FLESH)) return;
                 CorpseNestDimension.enter(player);
             });
         });
