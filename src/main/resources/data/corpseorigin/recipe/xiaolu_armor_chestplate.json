@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "W": "minecraft:yellow_wool",
+    "N": "minecraft:netherite_ingot",
+    "B": "minecraft:blue_ice"
+  },
+  "pattern": [
+    "W W",
+    "WNW",
+    "WBW"
+  ],
+  "result": {
+    "id": "corpseorigin:xiaolu_armor_chestplate",
+    "count": 1
+  }
+}

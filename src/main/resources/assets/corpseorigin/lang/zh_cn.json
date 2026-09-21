@@ -1,4 +1,7 @@
 {
+  "item.corpseorigin.xiaolu_armor_helmet": "小鹿头饰",
+  "item.corpseorigin.xiaolu_armor_chestplate": "小鹿上衣",
+  "item.corpseorigin.xiaolu_armor_leggings": "小鹿护腿",
   "skill.corpseorigin.nest_sense": "尸巢感知",
   "skill.corpseorigin.nest_sense.desc": "感知128格内肉块附近的入侵者。雷达选择目标，召唤尸巢巨手吞噬或诛杀。肉块抵御爆炸并拦截投射物。",
   "gui.corpseorigin.nest.digest": "吞噬",

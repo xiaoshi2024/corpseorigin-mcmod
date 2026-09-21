@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "W": "minecraft:yellow_wool",
+    "N": "minecraft:netherite_ingot",
+    "B": "minecraft:blue_ice"
+  },
+  "pattern": [
+    "WNW",
+    "W W",
+    "B B"
+  ],
+  "result": {
+    "id": "corpseorigin:xiaolu_armor_leggings",
+    "count": 1
+  }
+}

@@ -2,6 +2,10 @@ package xiaoshi2022.corpseorigin.character;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import xiaoshi2022.corpseorigin.registry.ModItems;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.xiaolu.OsmiumGoldSkill;
 import xiaoshi2022.corpseorigin.skill.xiaolu.OsmiumIceSpikeSkill;
@@ -14,6 +18,22 @@ import java.util.List;
 public class XiaoLu implements ICharacter {
 
     public static final String ID = "xiaolu";
+
+    @Override
+    public void onAcquire(Player player) {
+        EquipmentSlot[] slots = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS};
+        ItemStack[] pieces = {
+                new ItemStack(ModItems.XIAOLU_ARMOR_HELMET.get()),
+                new ItemStack(ModItems.XIAOLU_ARMOR_CHESTPLATE.get()),
+                new ItemStack(ModItems.XIAOLU_ARMOR_LEGGINGS.get())
+        };
+        for (int i = 0; i < slots.length; i++) {
+            ItemStack worn = player.getItemBySlot(slots[i]);
+            if (worn.is(pieces[i].getItem())) continue;
+            player.setItemSlot(slots[i], pieces[i]);
+            if (!worn.isEmpty()) player.getInventory().placeItemBackInInventory(worn);
+        }
+    }
 
     private static final List<ISkill> SKILLS = List.of(
             new OsmiumGoldSkill(),

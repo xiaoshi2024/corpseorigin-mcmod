@@ -1,4 +1,7 @@
 {
+  "item.corpseorigin.xiaolu_armor_helmet": "Xiaolu Headdress",
+  "item.corpseorigin.xiaolu_armor_chestplate": "Xiaolu Tunic",
+  "item.corpseorigin.xiaolu_armor_leggings": "Xiaolu Leggings",
   "skill.corpseorigin.nest_sense": "Nest Perception",
   "skill.corpseorigin.nest_sense.desc": "Sense intruders near flesh within 128 blocks. Select a radar target to devour or execute with a giant hand. Flesh resists explosions and intercepts projectiles.",
   "gui.corpseorigin.nest.digest": "Devour",
