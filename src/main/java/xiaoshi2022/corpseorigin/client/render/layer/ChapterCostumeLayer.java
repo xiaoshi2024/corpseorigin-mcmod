@@ -45,10 +45,10 @@ public class ChapterCostumeLayer extends RenderLayer<AvatarRenderState,PlayerMod
         var entity=level.getEntity(state.id);if(entity==null)return;
         String role=entity.getAttachedOrCreate(ChapterActorState.ROLE), condition=entity.getAttachedOrCreate(ChapterScenes.CONDITION);
         var model=getParentModel();
-        if(role.equals("siyangyuan_zb") || role.equals("kuaidiyuan_zb") || role.equals("zhaoritian")){
-            String texture=role.equals("siyangyuan_zb")?"keeper":role.equals("kuaidiyuan_zb")?"courier":"hero";
+        if(role.equals("siyangyuan_zb") || role.equals("kuaidiyuan_zb")){
+            String texture=role.equals("siyangyuan_zb")?"keeper":"courier";
             draw(vest,model.body,texture,poses,collector,light);
-            if(!role.equals("zhaoritian"))draw(cap,model.head,texture,poses,collector,light);
+            draw(cap,model.head,texture,poses,collector,light);
         }
         if(role.equals("k"))draw(cloak,model.body,"cloak",poses,collector,light);
         if(condition.equals("injured")) {

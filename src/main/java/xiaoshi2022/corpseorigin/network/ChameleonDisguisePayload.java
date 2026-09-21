@@ -38,6 +38,13 @@ public final class ChameleonDisguisePayload {
     private static void reply(ServerPlayer p,String error){ServerPlayNetworking.send(p,new Result(error));}
     public static void select(ServerPlayer p,String input){
         if(input.equals("#cancel")){PENDING.remove(p.getUUID());return;}
+        if(input.equals("#restore")){
+            p.setAttached(ChapterActorState.DISGUISE,"");
+            p.setAttached(ChapterActorState.DISGUISE_UNTIL,0L);
+            p.removeAttached(ChapterActorState.DISGUISE_PROFILE);
+            reply(p,"");
+            return;
+        }
         if(!p.isAlive() || p.isSpectator() || !"bianselong_zb".equals(CharacterManager.getInstance().getPlayerCharacterId(p))){reply(p,"unavailable");return;}
         if(!xiaoshi2022.corpseorigin.character.PlayerCharacterData.get(p).hasLearned(p.getUUID(),"chameleon_disguise")
                 || SkillManager.snapshotRemaining(p).containsKey("chameleon_disguise")){reply(p,"unavailable");return;}

@@ -1,1 +1,15 @@
-{"format_version":"1.8.0","animations":{"idle":{"loop":true,"animation_length":1,"bones":{}}}}
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"idle": {
+			"animation_length": 0.1667,
+			"bones": {
+				"ship": {
+					"scale": {
+						"vector": [1, 1, 1]
+					}
+				}
+			}
+		}
+	}
+}

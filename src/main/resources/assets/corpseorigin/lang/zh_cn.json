@@ -1,4 +1,8 @@
 {
+  "item.corpseorigin.medusa_eye.not_xiaolu": "只有小鹿才能食用美杜莎之眼",
+  "item.corpseorigin.medusa_eye.already": "你已经领悟过美杜莎之力了",
+  "item.corpseorigin.medusa_eye.learned": "你领悟了美杜莎之力",
+  "item.corpseorigin.medusa_eye.tooltip": "小鹿食用后，可觉醒异能",
   "gui.corpseorigin.disguise.title": "选择伪装",
   "gui.corpseorigin.disguise.type": "伪装类型",
   "gui.corpseorigin.disguise.xiaohui": "小惠（默认）",
@@ -6,6 +10,7 @@
   "gui.corpseorigin.disguise.id": "玩家 ID / UUID",
   "gui.corpseorigin.disguise.confirm": "确认伪装",
   "gui.corpseorigin.disguise.loading": "正在读取皮肤…",
+  "gui.corpseorigin.disguise.restore": "恢复本体",
   "gui.corpseorigin.disguise.error.invalid": "玩家 ID 格式不正确",
   "gui.corpseorigin.disguise.error.not_found": "未找到玩家，或皮肤服务暂不可用",
   "gui.corpseorigin.disguise.error.unavailable": "技能未解锁、冷却中或角色不可用",

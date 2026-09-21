@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "corpseorigin_chapter_test",
+  "version": "1.0.0",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": ["xiaoshi2022.corpseorigin.test.ChapterClientTest", "xiaoshi2022.corpseorigin.test.ChameleonClientTest", "xiaoshi2022.corpseorigin.test.SkillDemoTest"]
+  }
+}

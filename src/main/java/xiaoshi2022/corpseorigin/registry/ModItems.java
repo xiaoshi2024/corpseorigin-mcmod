@@ -13,10 +13,7 @@ import net.minecraft.world.item.equipment.ArmorType;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.ICharacter;
-import xiaoshi2022.corpseorigin.item.ByWaterBottleItem;
-import xiaoshi2022.corpseorigin.item.ByWaterBucketItem;
-import xiaoshi2022.corpseorigin.item.CharacterBookItem;
-import xiaoshi2022.corpseorigin.item.ZbWormItem;
+import xiaoshi2022.corpseorigin.item.*;
 import xiaoshi2022.corpseorigin.item.armor.AntennaZBRitem;
 import xiaoshi2022.corpseorigin.item.armor.LongYouClothItem;
 import xiaoshi2022.corpseorigin.item.armor.XiaoluArmorItem;
@@ -31,8 +28,16 @@ public final class ModItems {
     public static final Item BILLIARD_EIGHT = register("billiard_eight",new Item(new Item.Properties().setId(itemKey("billiard_eight"))));
     public static final Item BLOOD_WING_BLADE = register("blood_wing_blade",
             new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,3f,-2.4f).setId(itemKey("blood_wing_blade"))));
+
     public static final Item MEDUSA_EYE = register("medusa_eye",
-            new Item(new Item.Properties().setId(itemKey("medusa_eye"))));
+            new MedusaEyeItem(new Item.Properties()
+                    .setId(itemKey("medusa_eye"))
+                    .food(new net.minecraft.world.food.FoodProperties.Builder()
+                            .nutrition(0)
+                            .saturationModifier(0f)
+                            .alwaysEdible()
+                            .build())));
+
     public static final Item MAGICIAN_RABBIT = register("magician_rabbit",
             new xiaoshi2022.corpseorigin.item.MagicianRabbitItem(
                     new Item.Properties().stacksTo(16).setId(itemKey("magician_rabbit"))));

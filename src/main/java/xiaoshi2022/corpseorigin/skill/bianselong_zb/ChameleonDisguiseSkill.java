@@ -22,6 +22,6 @@ public class ChameleonDisguiseSkill extends AbstractSkill {
     @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
         p.removeAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE_PROFILE);
         p.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE,xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.XIAOHUI);
-        p.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE_UNTIL,p.level().getGameTime()+600);
+        p.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE_UNTIL,Long.MAX_VALUE);
     }
 }

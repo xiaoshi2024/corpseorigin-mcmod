@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import xiaoshi2022.corpseorigin.network.ChameleonDisguisePayload;
 import xiaoshi2022.corpseorigin.network.CorpsePayloads;
+import xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState;
 
 public final class ChameleonDisguiseScreen extends Screen {
     private boolean other,waiting;
@@ -34,6 +35,18 @@ public final class ChameleonDisguiseScreen extends Screen {
             ClientPlayNetworking.send(new ChameleonDisguisePayload.Select(other?playerId.getValue().strip():""));
         }).bounds(x,y+98,w/2-3,20).build());
         addRenderableWidget(Button.builder(Component.translatable("gui.cancel"),b->onClose()).bounds(x+w/2+3,y+98,w/2-3,20).build());
+        String current = Minecraft.getInstance().player != null
+                ? Minecraft.getInstance().player.getAttachedOrCreate(ChapterActorState.DISGUISE)
+                : "";
+        if (!current.isEmpty()) {
+            addRenderableWidget(Button.builder(
+                    Component.translatable("gui.corpseorigin.disguise.restore"),
+                    b -> {
+                        waiting = true;
+                        status = Component.translatable("gui.corpseorigin.disguise.loading");
+                        ClientPlayNetworking.send(new ChameleonDisguisePayload.Select("#restore"));
+                    }).bounds(x, y + 124, w, 20).build());
+        }
     }
     public void result(String error){
         if(error.isEmpty()){waiting=false;onClose();return;}

@@ -1,7 +1,12 @@
 package xiaoshi2022.corpseorigin.skill.bianyi_guiyu;
 
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.skill.AbstractSkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+import xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState;
+import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
 
 /**
  * 变异鲑鱼·水战撕咬 —— 水下突袭撕咬。
@@ -24,13 +29,16 @@ public class WaterBiteSkill extends AbstractSkill {
         return xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,4)==null
                 ? net.minecraft.network.chat.Component.translatable("skill.corpseorigin.chapter.need_target") : null;
     }
-    @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
-        var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,4);
-        if(target==null) return;
-        p.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.BITE_UNTIL,p.level().getGameTime()+12);
-        target.hurtServer((net.minecraft.server.level.ServerLevel)p.level(),p.damageSources().playerAttack(p),8);
-        p.setDeltaMovement(p.getLookAngle().scale(.8)); p.hurtMarked=true;
-        ((net.minecraft.server.level.ServerLevel)p.level()).sendParticles(net.minecraft.core.particles.ParticleTypes.BUBBLE,
-                p.getX(),p.getY()+.5,p.getZ(),20,.5,.3,.5,.03);
+    @Override
+    public void onActivate(ServerPlayer p) {
+        var target = ChapterCombat.aim(p, 4);
+        if (target == null) return;
+        boolean inWater = p.isInWater();
+        p.setAttached(ChapterActorState.BITE_UNTIL, p.level().getGameTime() + 12);
+        target.hurtServer((ServerLevel) p.level(), p.damageSources().playerAttack(p), inWater ? 8 : 5);
+        p.setDeltaMovement(p.getLookAngle().scale(inWater ? .8 : .4));
+        p.hurtMarked = true;
+        ((ServerLevel) p.level()).sendParticles(ParticleTypes.BUBBLE,
+                p.getX(), p.getY() + .5, p.getZ(), inWater ? 20 : 8, .5, .3, .5, .03);
     }
 }
