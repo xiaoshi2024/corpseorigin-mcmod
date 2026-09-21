@@ -20,6 +20,8 @@ public final class ModAttributes {
      * 在模组初始化时调用
      */
     public static void register() {
+        FabricDefaultAttributeRegistry.register(ModEntities.HAM, HamEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.VAMPIRE_BAT, net.minecraft.world.entity.ambient.Bat.createAttributes());
         // 注册低级尸兄的属性
         FabricDefaultAttributeRegistry.register(
                 ModEntities.LOWER_LEVEL_ZB,

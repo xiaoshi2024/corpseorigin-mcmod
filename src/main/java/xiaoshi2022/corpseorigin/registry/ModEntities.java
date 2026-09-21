@@ -11,6 +11,21 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.entity.*;
 
 public final class ModEntities {
+    public static final EntityType<GreatTenguEntity> GREAT_TENGU = register("great_tengu",EntityType.Builder.<GreatTenguEntity>of(GreatTenguEntity::new,MobCategory.MISC)
+            .sized(6,2).clientTrackingRange(12).updateInterval(3));
+    public static final EntityType<xiaoshi2022.corpseorigin.entity.ChapterBombEntity> CHAPTER_BOMB = register("chapter_bomb",
+            EntityType.Builder.<xiaoshi2022.corpseorigin.entity.ChapterBombEntity>of(xiaoshi2022.corpseorigin.entity.ChapterBombEntity::new,MobCategory.MISC)
+                    .sized(.3f,.3f).clientTrackingRange(8).updateInterval(1));
+    public static final EntityType<xiaoshi2022.corpseorigin.entity.VampireBatEntity> VAMPIRE_BAT = register("vampire_bat",
+            EntityType.Builder.<xiaoshi2022.corpseorigin.entity.VampireBatEntity>of(xiaoshi2022.corpseorigin.entity.VampireBatEntity::new, MobCategory.MISC)
+                    .sized(.5f,.9f).clientTrackingRange(8).updateInterval(2));
+    public static final EntityType<CorpseFishEggEntity> CORPSE_FISH_EGG = register("corpse_fish_egg",
+            EntityType.Builder.<CorpseFishEggEntity>of(CorpseFishEggEntity::new, MobCategory.MISC)
+                    .sized(.24f,.24f).clientTrackingRange(8).updateInterval(1));
+
+    public static final EntityType<HamEntity> HAM = register("ham",
+            EntityType.Builder.<HamEntity>of(HamEntity::new, MobCategory.CREATURE)
+                    .sized(0.65f, 1.1f).clientTrackingRange(8));
 
     public static final EntityType<LowerLevelZbEntity> LOWER_LEVEL_ZB = register(
             "lower_level_zb",

@@ -54,6 +54,9 @@ public class CharacterManager {
         // ==================== 二级优先级（关键剧情推动角色） ====================
         registerCharacter(new TuShu());
         registerCharacter(new MuXi());
+        registerCharacter(new FiveElementsMember("metal"));
+        registerCharacter(new FiveElementsMember("water"));
+        registerCharacter(new FiveElementsMember("earth"));
         registerCharacter(new YanYan());
         registerCharacter(new FengMoHuiTaiLang());
         registerCharacter(new DarkCouncilK());
@@ -65,6 +68,8 @@ public class CharacterManager {
 
         // ==================== 三级优先级（合并简化的辅助 / 杂兵角色） ====================
         registerCharacter(new HeiAnHuiSuiCong());
+        registerCharacter(new CouncilRetainer(false));
+        registerCharacter(new CouncilRetainer(true));
         registerCharacter(new XiongXingZb());
         registerCharacter(new ChongQun());
         registerCharacter(new SiYangYuanZb());
@@ -126,6 +131,10 @@ public class CharacterManager {
 
         // 应用新角色
         data.setCharacterId(player.getUUID(), character.getId());
+        player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE,character.getId());
+        player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.CONDITION,"");
+        player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.ACTION,"");
+        player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.UNTIL,0L);
         character.onAcquire(player);
 
         // ✅ 角色切换后重置内力（上线即满 / 切换角色满内力）

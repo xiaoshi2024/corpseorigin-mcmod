@@ -15,6 +15,8 @@ public class YanYan implements ICharacter {
     public static final String ID = "yanyan";
 
     private static final List<ISkill> SKILLS = List.of(
+            new xiaoshi2022.corpseorigin.skill.yanyan.SwallowNestSkill(),
+            new xiaoshi2022.corpseorigin.skill.yanyan.FlameStrikeSkill(),
             new ReverseFormationFireballSkill()
     );
 
@@ -61,4 +63,5 @@ public class YanYan implements ICharacter {
     public float getInfectionMultiplier() {
         return 0.5f;
     }
+    @Override public int getMaxInnerPower() { return 100; }
 }

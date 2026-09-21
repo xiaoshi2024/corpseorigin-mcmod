@@ -19,4 +19,8 @@ public class TenguDivineArraySkill extends AbstractSkill {
     public TenguDivineArraySkill() {
         super(PATH, SkillType.ULTIMATE, 1800);
     }
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer p){
+        var ship=new xiaoshi2022.corpseorigin.entity.GreatTenguEntity(xiaoshi2022.corpseorigin.registry.ModEntities.GREAT_TENGU,p.level());
+        ship.setOwner(p);ship.setPos(p.position().add(0,5,0));ship.setYRot(p.getYRot());p.level().addFreshEntity(ship);
+    }
 }

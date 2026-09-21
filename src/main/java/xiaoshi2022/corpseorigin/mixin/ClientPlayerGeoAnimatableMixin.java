@@ -157,6 +157,15 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<PlayerGeoAnimatable>("mutant_salmon", 2, test -> {
+            var active=test.getData(xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.ACTIVE);
+            if(active==null) return PlayState.CONTINUE;
+            if(!active) return corpseorigin$stopAndClear(test);
+            boolean biting=Boolean.TRUE.equals(test.getData(xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.BITING));
+            boolean swimming=Boolean.TRUE.equals(test.getData(xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.SWIMMING));
+            return test.setAndContinue(biting ? RawAnimation.begin().thenPlay("fish_bite")
+                    : RawAnimation.begin().thenLoop(swimming ? "fish_swim" : "fish_idle"));
+        }));
         // 四肢的摆动走 corpse_player 自己的 JSON 动画（idle / walk / attack）；
         // 躯干与头则由 CorpsePlayerGeoRenderer 每帧对齐到原版骨架（盔甲才贴得住）。
         controllers.add(new AnimationController<PlayerGeoAnimatable>("movement", 5, this::corpseorigin$movement));
@@ -341,6 +350,7 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
      */
     @Unique
     private PlayState corpseorigin$mutantBody(AnimationTest<PlayerGeoAnimatable> test) {
+        if(Boolean.TRUE.equals(test.getData(xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.ACTIVE))) return corpseorigin$stopAndClear(test);
         Boolean active = test.getDataOrDefault(MutantBodyRenderData.ACTIVE, null);
         if (active == null) {
             return PlayState.CONTINUE;   // 别人的回合（盔甲 / 断肢管线），不碰状态
@@ -376,6 +386,7 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
 
     @Unique
     private PlayState corpseorigin$movement(AnimationTest<PlayerGeoAnimatable> test) {
+        if(Boolean.TRUE.equals(test.getData(xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.ACTIVE))) return corpseorigin$stopAndClear(test);
         // 变异体形态交给 mutant_body 那条控制器，这里让开（两套一起出会互相盖骨头）——
         // 要连着动画点一起清掉，否则上一条 walk / idle 会留在快照里被变异体读到
         if (Boolean.TRUE.equals(test.getDataOrDefault(MutantBodyRenderData.ACTIVE, null))) {
@@ -406,6 +417,7 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
      */
     @Unique
     private PlayState corpseorigin$attack(AnimationTest<PlayerGeoAnimatable> test) {
+        if(Boolean.TRUE.equals(test.getData(xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.ACTIVE))) return corpseorigin$stopAndClear(test);
         // 拦腰斩断形态整身换成 niunai_link_player（那套模型没有 attack），先让开 ——
         // 必须排在下面的 null 判断之前：这段读的 ATTACKING ticket 在腰斩期间是空的
         if (Boolean.TRUE.equals(test.getDataOrDefault(NiunaiLinkRenderData.ACTIVE, null))) {
@@ -469,6 +481,7 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
     @Unique
     private PlayState corpseorigin$regrow(AnimationTest<PlayerGeoAnimatable> test,
                                          RawAnimation animation, DataTicket<Float> progressTicket, int slot) {
+        if(Boolean.TRUE.equals(test.getData(xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.ACTIVE))) return corpseorigin$stopAndClear(test);
         // 变异体 / 腰斩形态整身都换掉了，再生动画一起让开（并清掉动画点，别留在快照里）；
         // 同样必须排在 null 判断之前 —— 这两个形态下断肢那套根本没写 ticket。
         if (Boolean.TRUE.equals(test.getDataOrDefault(MutantBodyRenderData.ACTIVE, null))

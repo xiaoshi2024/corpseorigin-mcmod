@@ -13,6 +13,10 @@ import java.util.List;
 public class ZhaoRiTian implements ICharacter {
 
     public static final String ID = "zhaoritian";
+    @Override public void onAcquire(net.minecraft.world.entity.player.Player player){
+        if(player instanceof net.minecraft.server.level.ServerPlayer p)
+            xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.action(p,"entrance",30);
+    }
 
     private static final List<ISkill> SKILLS = List.of(
             new PowerStrikeSkill()

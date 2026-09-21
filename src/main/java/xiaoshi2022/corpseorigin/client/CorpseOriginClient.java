@@ -192,6 +192,16 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.CLONE_AVATAR,
                 context -> new CloneAvatarRenderer(context, false));
         EntityRendererRegistry.register(ModEntities.COCO_PENGUIN, CocoPenguinRenderer::new);
+        EntityRendererRegistry.register(ModEntities.HAM, HamRenderer::new);
+        ChapterCinematics.register();
+        ClientPlayNetworking.registerGlobalReceiver(xiaoshi2022.corpseorigin.network.ChameleonDisguisePayload.Result.TYPE,(payload,context)->context.client().execute(()->{
+            if(context.client().gui.screen() instanceof ChameleonDisguiseScreen screen)screen.result(payload.error());
+        }));
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.DISCONNECT.register((handler,client)->xiaoshi2022.corpseorigin.client.skin.ChameleonSkins.clear());
+        EntityRendererRegistry.register(ModEntities.VAMPIRE_BAT, net.minecraft.client.renderer.entity.BatRenderer::new);
+        EntityRendererRegistry.register(ModEntities.CHAPTER_BOMB, net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GREAT_TENGU, xiaoshi2022.corpseorigin.client.renderer.entity.GreatTenguRenderer::new);
+        EntityRendererRegistry.register(ModEntities.CORPSE_FISH_EGG, CorpseFishEggRenderer::new);
         EntityRendererRegistry.register(ModEntities.COCO_ZOMBIE, CocoZombieRenderer::new);
         EntityRendererRegistry.register(ModEntities.COCO_ZOMBIE_X, CocoZombieXRenderer::new);
         EntityRendererRegistry.register(ModEntities.UNCLE, UncleRenderer::new);
@@ -468,8 +478,7 @@ public class CorpseOriginClient implements ClientModInitializer {
                     if (client.gui.screen() == null && client.player != null) {
                         var skill = SkillHotbarState.getSkill(slot);
                         if (skill != null) {
-                            ClientPlayNetworking.send(new CorpsePayloads.ActivateSkillC2S(
-                                    skill.getId().getPath()));
+                            ChameleonDisguiseScreen.activate(skill.getId().getPath());
                         }
                     }
                 }

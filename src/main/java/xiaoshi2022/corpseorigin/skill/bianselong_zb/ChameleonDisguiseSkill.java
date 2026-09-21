@@ -10,7 +10,7 @@ import xiaoshi2022.corpseorigin.skill.SkillType;
  * <p>
  * 特效：外观模型切换。
  * <p>
- * TODO 实装：切换显示模型/皮肤 + 伪装期间的名称与碰撞表现。
+ * 默认小惠；玩家皮肤由选择请求在服务端校验成功后替换。
  */
 public class ChameleonDisguiseSkill extends AbstractSkill {
 
@@ -18,5 +18,10 @@ public class ChameleonDisguiseSkill extends AbstractSkill {
 
     public ChameleonDisguiseSkill() {
         super(PATH, SkillType.UTILITY, 600);
+    }
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
+        p.removeAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE_PROFILE);
+        p.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE,xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.XIAOHUI);
+        p.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE_UNTIL,p.level().getGameTime()+600);
     }
 }

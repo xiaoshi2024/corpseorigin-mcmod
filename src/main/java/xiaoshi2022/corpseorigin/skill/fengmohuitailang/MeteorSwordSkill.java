@@ -19,4 +19,16 @@ public class MeteorSwordSkill extends AbstractSkill {
     public MeteorSwordSkill() {
         super(PATH, SkillType.COMBAT, 600);
     }
+    @Override public net.minecraft.network.chat.Component checkUsable(net.minecraft.server.level.ServerPlayer p){
+        if(!p.getMainHandItem().is(xiaoshi2022.corpseorigin.registry.ModItems.RED_METEOR_SWORD))return net.minecraft.network.chat.Component.translatable("skill.corpseorigin.meteor_sword.need_weapon");
+        return xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,12)==null?net.minecraft.network.chat.Component.translatable("skill.corpseorigin.chapter.need_target"):null;
+    }
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer p){
+        var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,12);if(target==null)return;
+        var level=(net.minecraft.server.level.ServerLevel)p.level();
+        for(int i=0;i<24;i++)xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.dust(level,p.getEyePosition().lerp(target.getEyePosition(),i/24.0),0xeb3349,1.5f);
+        target.hurtServer(level,p.damageSources().playerAttack(p),10);
+        p.getMainHandItem().hurtAndBreak(1,p,net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+        p.swing(net.minecraft.world.InteractionHand.MAIN_HAND,true);
+    }
 }

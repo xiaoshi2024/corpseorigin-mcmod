@@ -26,6 +26,21 @@ import xiaoshi2022.corpseorigin.item.weapon.BloodLotusLamp;
 import java.util.function.Supplier;
 
 public final class ModItems {
+    public static final Item RED_METEOR_SWORD = register("red_meteor_sword",new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,3,-2.4f).setId(itemKey("red_meteor_sword"))));
+    public static final Item PARCEL_BOMB = register("parcel_bomb",new Item(new Item.Properties().setId(itemKey("parcel_bomb"))));
+    public static final Item BILLIARD_EIGHT = register("billiard_eight",new Item(new Item.Properties().setId(itemKey("billiard_eight"))));
+    public static final Item BLOOD_WING_BLADE = register("blood_wing_blade",
+            new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,3f,-2.4f).setId(itemKey("blood_wing_blade"))));
+    public static final Item MEDUSA_EYE = register("medusa_eye",
+            new Item(new Item.Properties().setId(itemKey("medusa_eye"))));
+    public static final Item MAGICIAN_RABBIT = register("magician_rabbit",
+            new xiaoshi2022.corpseorigin.item.MagicianRabbitItem(
+                    new Item.Properties().stacksTo(16).setId(itemKey("magician_rabbit"))));
+    public static final Item DOG_CAGE = register("dog_cage",
+            new xiaoshi2022.corpseorigin.item.DogCageItem(new Item.Properties().stacksTo(1).setId(itemKey("dog_cage"))));
+
+    public static final Item HAM_SPAWN_EGG = register("ham_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("ham_spawn_egg", ModEntities.HAM)));
 
     private ModItems() {
     }
@@ -204,6 +219,10 @@ public final class ModItems {
                 output.accept(BYWATER_BUCKET);
                 output.accept(BYWATER_BOTTLE);
                 output.accept(JUQUE_TW);
+                output.accept(BLOOD_WING_BLADE);
+                output.accept(RED_METEOR_SWORD);
+                output.accept(PARCEL_BOMB);
+                output.accept(BILLIARD_EIGHT);
                 output.accept(BLOOD_LOTUS_LAMP);
                 output.accept(CLONE_CHAMBER);
                 output.accept(ZBR_FLESH);
@@ -217,6 +236,10 @@ public final class ModItems {
                 output.accept(XIAOLU_ARMOR_CHESTPLATE.get());
                 output.accept(XIAOLU_ARMOR_LEGGINGS.get());
                 output.accept(COCO_PENGUIN_SPAWN_EGG);
+                output.accept(HAM_SPAWN_EGG);
+                output.accept(DOG_CAGE);
+                output.accept(MAGICIAN_RABBIT);
+                output.accept(MEDUSA_EYE);
                 output.accept(COCO_ZOMBIE_SPAWN_EGG);
                 output.accept(COCO_ZOMBIE_X_SPAWN_EGG);
                 output.accept(UNCLE_SPAWN_EGG);

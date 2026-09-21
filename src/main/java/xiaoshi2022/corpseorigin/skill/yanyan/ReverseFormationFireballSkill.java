@@ -17,6 +17,12 @@ public class ReverseFormationFireballSkill extends AbstractSkill {
     public static final String PATH = "reverse_formation_fireball";
 
     public ReverseFormationFireballSkill() {
-        super(PATH, SkillType.ULTIMATE, 600);
+        super(PATH, SkillType.ULTIMATE, 600, 20);
+    }
+    @Override public net.minecraft.network.chat.Component checkUsable(net.minecraft.server.level.ServerPlayer p) {
+        return xiaoshi2022.corpseorigin.skill.chapter.FiveElementsCombat.chargeError(p);
+    }
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
+        xiaoshi2022.corpseorigin.skill.chapter.FiveElementsCombat.charge(p);
     }
 }

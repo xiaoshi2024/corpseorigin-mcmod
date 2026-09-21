@@ -234,8 +234,7 @@ public class SkillWheelScreen extends Screen {
             int index = sectorAt(mouseX, mouseY);
             if (index >= 0 && index < slots.size()) {
                 ISkill skill = slots.get(index).skill();
-                ClientPlayNetworking.send(new CorpsePayloads.ActivateSkillC2S(
-                        skill.getId().getPath()));
+                ChameleonDisguiseScreen.activate(skill.getId().getPath());
                 // ❌ 不 onClose：让外层 tick 的"松开关闭"统一处理
                 return true;
             }

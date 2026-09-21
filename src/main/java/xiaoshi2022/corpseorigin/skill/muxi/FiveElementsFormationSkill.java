@@ -17,6 +17,9 @@ public class FiveElementsFormationSkill extends AbstractSkill {
     public static final String PATH = "five_elements_formation";
 
     public FiveElementsFormationSkill() {
-        super(PATH, SkillType.ULTIMATE, 600);
+        super(PATH, SkillType.ULTIMATE, 600, 15);
+    }
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer player) {
+        xiaoshi2022.corpseorigin.skill.chapter.FiveElementsCombat.formation(player);
     }
 }

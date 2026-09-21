@@ -45,6 +45,19 @@ import xiaoshi2022.corpseorigin.character.ZuoHuFa;
  */
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererSubmitMixin {
+    @Inject(method = "submit", at = @At("HEAD"), cancellable = true)
+    private void corpseorigin$submitSalmon(LivingEntityRenderState state, PoseStack poses,
+                                         SubmitNodeCollector collector, CameraRenderState camera, CallbackInfo ci) {
+        if (!(state instanceof AvatarRenderState avatar) || !((Object)this instanceof AvatarRenderer<?>)) return;
+        if (!Boolean.TRUE.equals(avatar.getGeckolibData(xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.ACTIVE))) return;
+        var renderer=xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.get();
+        if(renderer==null) return;
+        poses.pushPose();
+        poses.scale(avatar.scale,avatar.scale,avatar.scale);
+        renderer.submit(avatar,poses,collector,camera);
+        poses.popPose();
+        ci.cancel();
+    }
 
     @Inject(method = "submit", at = @At("HEAD"), cancellable = true)
     private void corpseorigin$submitShiChaoBody(LivingEntityRenderState state, PoseStack poseStack,

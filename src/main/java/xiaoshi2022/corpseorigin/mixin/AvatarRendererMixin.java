@@ -32,6 +32,9 @@ public abstract class AvatarRendererMixin {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onInit(EntityRendererProvider.Context context, boolean slimSteve, CallbackInfo ci) {
         AvatarRenderer self = (AvatarRenderer) (Object) this;
+        xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.create(context);
+        ((LivingEntityRendererMixin)self).callAddLayer(new xiaoshi2022.corpseorigin.client.render.layer.ChameleonHeadLayer(self));
+        ((LivingEntityRendererMixin)self).callAddLayer(new xiaoshi2022.corpseorigin.client.render.layer.ChapterCostumeLayer(self));
 
         try {
             var modelSet = Minecraft.getInstance().getEntityModels();
@@ -114,6 +117,17 @@ public abstract class AvatarRendererMixin {
         if (!(avatar instanceof AbstractClientPlayer player)) {
             return;
         }
+        String disguise=player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE);
+        if(!disguise.isEmpty()) {
+            if(disguise.equals(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.XIAOHUI))state.skin=xiaoshi2022.corpseorigin.client.skin.ChameleonSkins.XIAOHUI;
+            else try {
+                var profile=player.getAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE_PROFILE);
+                state.skin=profile!=null && profile.id().toString().equals(disguise)
+                        ? xiaoshi2022.corpseorigin.client.skin.ChameleonSkins.resolve(profile)
+                        : xiaoshi2022.corpseorigin.client.skin.clone.ClientSkinCache.resolve(java.util.UUID.fromString(disguise));
+            }
+            catch(IllegalArgumentException ignored) { }
+        }
 
         // ★ 每帧先把两套开胃奶形态的门控显式写成 false。
         //   下面那些分支（尤其是变异体那条早退）不一定会写它们，而控制器一旦读到 null 就会
@@ -123,6 +137,7 @@ public abstract class AvatarRendererMixin {
         state.addGeckolibData(NiunaiXRenderData.ACTIVE, false);
         state.addGeckolibData(NiunaiLinkRenderData.ACTIVE, false);
         state.addGeckolibData(ShiChaoBodyRenderData.ACTIVE, false);
+        if (xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.extract(player,state,partialTick)) return;
 
         if (ShiChaoBodyRenderData.isActive(player)) {
             ShiChaoZhiZiBodyRenderer.writeRenderData(state, player, partialTick);

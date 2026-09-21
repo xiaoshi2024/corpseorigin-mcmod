@@ -17,6 +17,15 @@ public class BatCloakSkill extends AbstractSkill {
     public static final String PATH = "bat_cloak";
 
     public BatCloakSkill() {
-        super(PATH, SkillType.UTILITY, 300);
+        super(PATH, SkillType.UTILITY, 300, 15);
+    }
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer player) {
+        for (int i=0;i<5;i++) {
+            var bat = new xiaoshi2022.corpseorigin.entity.VampireBatEntity(
+                    xiaoshi2022.corpseorigin.registry.ModEntities.VAMPIRE_BAT,player.level());
+            bat.setOwner(player);
+            bat.setPos(player.getEyePosition().add(Math.cos(i*Math.PI*2/5),.3,Math.sin(i*Math.PI*2/5)));
+            player.level().addFreshEntity(bat);
+        }
     }
 }

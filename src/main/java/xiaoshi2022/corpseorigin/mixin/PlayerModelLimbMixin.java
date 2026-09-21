@@ -29,6 +29,22 @@ public abstract class PlayerModelLimbMixin {
     )
     private void corpseorigin$hideSeveredLimbs(AvatarRenderState state, CallbackInfo ci) {
         PlayerModel self = (PlayerModel) (Object) this;
+        var level=net.minecraft.client.Minecraft.getInstance().level;
+        var actor=level==null?null:level.getEntity(state.id);
+        if(actor!=null) {
+            String action=actor.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.ACTION);
+            if(actor.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.UNTIL)>level.getGameTime()) {
+                float phase=(float)Math.sin(state.ageInTicks*.35);
+                switch(action) {
+                    case "drain" -> {self.head.xRot=.5f;self.body.xRot=.15f;self.rightArm.zRot=.18f+phase*.05f;self.leftArm.zRot=-.18f-phase*.05f;}
+                    case "knockback" -> {self.head.xRot=-.5f;self.rightArm.xRot=-1.4f;self.leftArm.xRot=-1.4f;self.rightLeg.xRot=.7f;self.leftLeg.xRot=.5f;}
+                    case "entrance" -> {self.rightArm.xRot=-1.6f;self.leftArm.zRot=-.35f;self.head.xRot=-.15f;}
+                    case "charge" -> {self.rightArm.xRot=-2.2f;self.leftArm.xRot=-2.2f;self.rightArm.zRot=.4f;self.leftArm.zRot=-.4f;}
+                    case "release" -> {self.rightArm.xRot=-1.6f;self.leftArm.xRot=-1.6f;}
+                    case "ambush" -> {self.rightArm.xRot=-1.7f;self.body.yRot=-.35f;}
+                }
+            }
+        }
         Integer mask = state.getGeckolibData(LimbRenderData.LIMB_MASK);
         int severed = mask == null ? 0 : (mask & LimbSlots.MASK_ALL);
 

@@ -13,7 +13,7 @@ public class SiYangYuanZb implements ICharacter {
 
     public static final String ID = "siyangyuan_zb";
 
-    private static final List<ISkill> SKILLS = List.of();
+    private static final List<ISkill> SKILLS = List.of(new xiaoshi2022.corpseorigin.skill.chapter.KeeperMeleeSkill());
 
     @Override
     public String getId() {

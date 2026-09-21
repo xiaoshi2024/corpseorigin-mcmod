@@ -19,4 +19,7 @@ public class ParcelBombSkill extends AbstractSkill {
     public ParcelBombSkill() {
         super(PATH, SkillType.COMBAT, 200);
     }
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer player) {
+        xiaoshi2022.corpseorigin.entity.ChapterBombEntity.launch(player,xiaoshi2022.corpseorigin.registry.ModItems.PARCEL_BOMB);
+    }
 }

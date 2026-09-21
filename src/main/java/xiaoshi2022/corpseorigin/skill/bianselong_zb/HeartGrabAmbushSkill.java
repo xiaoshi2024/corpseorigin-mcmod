@@ -19,4 +19,19 @@ public class HeartGrabAmbushSkill extends AbstractSkill {
     public HeartGrabAmbushSkill() {
         super(PATH, SkillType.COMBAT, 1200);
     }
+    @Override public net.minecraft.network.chat.Component checkUsable(net.minecraft.server.level.ServerPlayer p) {
+        var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,3);
+        if(target==null) return net.minecraft.network.chat.Component.translatable("skill.corpseorigin.chapter.need_target");
+        var toAttacker=p.position().subtract(target.position()).normalize();
+        return target.getLookAngle().dot(toAttacker)>-.25 ? net.minecraft.network.chat.Component.translatable("skill.corpseorigin.heart_grab_ambush.need_back") : null;
+    }
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
+        var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,3); if(target==null)return;
+        p.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE,"");
+        xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.action(p,"ambush",12);
+        target.hurtServer((net.minecraft.server.level.ServerLevel)p.level(),p.damageSources().playerAttack(p),14);
+        p.swing(net.minecraft.world.InteractionHand.MAIN_HAND,true);
+        ((net.minecraft.server.level.ServerLevel)p.level()).sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT,
+                target.getX(),target.getY()+1,target.getZ(),25,.3,.4,.3,.1);
+    }
 }

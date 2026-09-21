@@ -15,6 +15,7 @@ public class BianYiGuiYu implements ICharacter {
     public static final String ID = "bianyi_guiyu";
 
     private static final List<ISkill> SKILLS = List.of(
+            new xiaoshi2022.corpseorigin.skill.bianyi_guiyu.FishEggSkill(),
             new WaterBiteSkill()
     );
 

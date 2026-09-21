@@ -165,6 +165,7 @@ public final class CorpseNetwork {
             context.server().execute(() ->
                     SkillManager.activate(player, payload.skillPath()));
         });
+        ChameleonDisguisePayload.register();
 
         // ==================== 皮肤更新系统 ====================
         PayloadTypeRegistry.serverboundPlay().register(ZbSkinUpdatePacket.TYPE, ZbSkinUpdatePacket.CODEC);
