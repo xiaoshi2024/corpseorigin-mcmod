@@ -109,6 +109,8 @@ public final class ServerEvents {
             // 空实现
         });
 
+        BianSeLongZbEventHandler.register();
+
         CorpseOrigin.LOGGER.info("CorpseOrigin server events registered");
     }
 
