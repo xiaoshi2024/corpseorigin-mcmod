@@ -1,0 +1,9 @@
+{
+  "structures": [{ "structure": "corpseorigin:h_city_library", "weight": 1 }],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 24,
+    "separation": 12,
+    "salt": 20416081
+  }
+}

@@ -76,7 +76,7 @@ public class ZbSkinIntegration {
                 if (skinOptional.isPresent()) {
                     PlayerSkin skin = skinOptional.get();
                     Identifier texturePath = skin.body().texturePath();
-                    LOGGER.info("📥 SkinManager 加载皮肤: {} -> {}", username, texturePath);
+//                    LOGGER.info("📥 SkinManager 加载皮肤: {} -> {}", username, texturePath);
                     return texturePath;
                 }
 

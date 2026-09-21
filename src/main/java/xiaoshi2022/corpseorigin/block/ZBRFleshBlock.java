@@ -96,12 +96,6 @@ public class ZBRFleshBlock extends Block implements EntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hitResult) {
-        if (!level.isClientSide() && player instanceof net.minecraft.server.level.ServerPlayer serverPlayer
-                && level.getBlockEntity(pos) instanceof ZBRFleshBlockEntity flesh
-                && flesh.isCorpseNestGateway()) {
-            CorpseNestDimension.enter(serverPlayer);
-            return InteractionResult.SUCCESS;
-        }
         if (level.isClientSide() || !player.isShiftKeyDown()) {
             return InteractionResult.PASS;
         }

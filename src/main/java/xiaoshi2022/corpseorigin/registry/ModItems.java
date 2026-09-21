@@ -19,6 +19,7 @@ import xiaoshi2022.corpseorigin.item.CharacterBookItem;
 import xiaoshi2022.corpseorigin.item.ZbWormItem;
 import xiaoshi2022.corpseorigin.item.armor.AntennaZBRitem;
 import xiaoshi2022.corpseorigin.item.armor.LongYouClothItem;
+import xiaoshi2022.corpseorigin.item.armor.XiaoluArmorItem;
 import xiaoshi2022.corpseorigin.item.sword.JuQue;
 import xiaoshi2022.corpseorigin.item.weapon.BloodLotusLamp;
 
@@ -170,6 +171,9 @@ public final class ModItems {
             "miku_zb_spawn_egg",
             new SpawnEggItem(spawnEggProperties("miku_zb_spawn_egg", ModEntities.MIKU_ZB))
     );
+    public static final Supplier<XiaoluArmorItem> XIAOLU_ARMOR_HELMET = register("xiaolu_armor_helmet", () -> new XiaoluArmorItem(ArmorMaterialRegistry.LONGYOU_ARMOR_MATERIAL, ArmorType.HELMET, new Item.Properties().setId(itemKey("xiaolu_armor_helmet"))));
+    public static final Supplier<XiaoluArmorItem> XIAOLU_ARMOR_CHESTPLATE = register("xiaolu_armor_chestplate", () -> new XiaoluArmorItem(ArmorMaterialRegistry.LONGYOU_ARMOR_MATERIAL, ArmorType.CHESTPLATE, new Item.Properties().setId(itemKey("xiaolu_armor_chestplate"))));
+    public static final Supplier<XiaoluArmorItem> XIAOLU_ARMOR_LEGGINGS = register("xiaolu_armor_leggings", () -> new XiaoluArmorItem(ArmorMaterialRegistry.LONGYOU_ARMOR_MATERIAL, ArmorType.LEGGINGS, new Item.Properties().setId(itemKey("xiaolu_armor_leggings"))));
 
     public static final Item LOWER_LEVEL_ZB_SPAWN_EGG = register(
             "lower_level_zb_spawn_egg",
@@ -209,6 +213,9 @@ public final class ModItems {
                 output.accept(LONGYOU_CLOTH_HELMET.get());
                 output.accept(LONGYOU_CLOTH_CHESTPLATE.get());
                 output.accept(LONGYOU_CLOTH_LEGGINGS.get());
+                output.accept(XIAOLU_ARMOR_HELMET.get());
+                output.accept(XIAOLU_ARMOR_CHESTPLATE.get());
+                output.accept(XIAOLU_ARMOR_LEGGINGS.get());
                 output.accept(COCO_PENGUIN_SPAWN_EGG);
                 output.accept(COCO_ZOMBIE_SPAWN_EGG);
                 output.accept(COCO_ZOMBIE_X_SPAWN_EGG);

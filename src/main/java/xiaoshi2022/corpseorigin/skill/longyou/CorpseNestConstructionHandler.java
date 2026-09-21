@@ -92,6 +92,11 @@ public final class CorpseNestConstructionHandler {
         for (int i = 0; i < amount; i++) level.setBlock(shell.get(i), ModBlocks.ZBR_FLESH.defaultBlockState(), 3);
 
         if (stage == 3) {
+            for (BlockPos pos : shell) {
+                if (level.getBlockEntity(pos) instanceof ZBRFleshBlockEntity flesh) {
+                    flesh.setRallyNestCenter(center);
+                }
+            }
             BlockPos gateway = center.offset(-5, -1, 0);
             level.setBlock(gateway, ModBlocks.ZBR_FLESH.defaultBlockState(), 3);
             if (level.getBlockEntity(gateway) instanceof ZBRFleshBlockEntity flesh) {
@@ -109,6 +114,22 @@ public final class CorpseNestConstructionHandler {
         }
         result.sort(Comparator.comparingInt(BlockPos::getY));
         return result;
+    }
+
+    public static boolean isMatureNestSurface(ServerLevel level, BlockPos pos) {
+        if (!level.dimension().equals(net.minecraft.world.level.Level.OVERWORLD)
+                || !(level.getBlockEntity(pos) instanceof ZBRFleshBlockEntity flesh)) return false;
+        BlockPos center = flesh.getRallyNestCenter();
+        if (center == null || !center.closerThan(pos, SIZE * 2)) return false;
+        List<BlockPos> surface = shell(center);
+        if (!surface.contains(pos)) return false;
+        // A surviving single block or a rebuilt shell is not a complete rally nest.
+        for (BlockPos part : surface) {
+            if (!level.hasChunkAt(part) || !level.getBlockState(part).is(ModBlocks.ZBR_FLESH)
+                    || !(level.getBlockEntity(part) instanceof ZBRFleshBlockEntity member)
+                    || !center.equals(member.getRallyNestCenter())) return false;
+        }
+        return true;
     }
 
     private static final class Job {

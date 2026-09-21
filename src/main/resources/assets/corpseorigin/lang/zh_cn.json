@@ -1,4 +1,11 @@
 {
+  "skill.corpseorigin.nest_sense": "尸巢感知",
+  "skill.corpseorigin.nest_sense.desc": "感知128格内肉块附近的入侵者。雷达选择目标，召唤尸巢巨手吞噬或诛杀。肉块抵御爆炸并拦截投射物。",
+  "gui.corpseorigin.nest.digest": "吞噬",
+  "gui.corpseorigin.nest.kill": "诛杀",
+  "gui.corpseorigin.nest.empty": "暂无入侵目标",
+  "gui.corpseorigin.nest.contacts": "感知目标：%s · 128格",
+  "message.corpseorigin.nest_alarm": "尸巢警报：%s 正在挖掘肉块",
   "itemGroup.corpseorigin.main": "尸源",
   "itemGroup.corpseorigin.character_books": "尸兄·角色选择书",
 
@@ -181,7 +188,8 @@
   "skill.corpseorigin.corpse_brother_rally.active": "尸巢正在成长",
   "skill.corpseorigin.corpse_brother_rally.need_corpses": "附近受控尸兄不足：%1$s / %2$s",
   "skill.corpseorigin.corpse_brother_rally.started": "尸兄开始聚集并互相吞噬",
-  "dimension.corpseorigin.corpse_nest": "尸巢维度",
+  "dimension.corpseorigin.corpse_nest": "尸巢：沦陷的H市",
+  "dimension.corpseorigin.h_city.failed": "H市图书馆生成失败，请稍后重试",
   "dimension.corpseorigin.corpse_nest.missing": "尸巢维度尚未加载",
   "message.corpseorigin.shichaozhizi.absorb_progress": "尸巢吸食进度：%1$s / %2$s",
 
@@ -360,6 +368,10 @@
   "skill.corpseorigin.blood_lotus_armor.desc": "被动：血条过半进入二阶段，攻防全面提升。",
   "skill.corpseorigin.ground_burrow": "地遁突袭",
   "skill.corpseorigin.ground_burrow.desc": "潜入地下后从玩家脚下破土冲出，造成高额伤害。冷却 20 秒。",
+  "skill.corpseorigin.thousand_eyes": "千眼万目",
+  "skill.corpseorigin.thousand_eyes.desc": "第二形态专属：展开万千魔瞳的凝视。正看着你的生物与玩家会被麻木定身，站在原地动不了（转头或躲到墙后就解除）。冷却 30 秒。",
+  "skill.corpseorigin.thousand_eyes.on": "千眼万目·凝视展开",
+  "skill.corpseorigin.thousand_eyes.need_second_form": "需要在尸巢之子第二形态下才能发动千眼万目",
   "skill.corpseorigin.chrysanthemum_shield": "菊花盾·开",
   "skill.corpseorigin.chrysanthemum_shield.desc": "背后菊花盾张开 5 秒：正面来的伤害整下挡掉，迎面箭矢会被弹回给射手。冷却 20 秒。",
   "skill.corpseorigin.chrysanthemum_shield.activate": "菊花盾展开！%s 秒内正面格挡并反弹箭矢",

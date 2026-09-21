@@ -169,6 +169,22 @@ public final class CorpsePayloads {
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 
+    /**
+     * 尸巢之子「千眼万目」的凝视窗口（S2C）。
+     * <p>
+     * 施展时发一条覆盖整段 {@code special} 动画（3.2 秒）的窗口，客户端据此让整具尸巢之子身体
+     * 改播 {@code special}；{@code durationTicks <= 0} 表示立刻结束。
+     * 与其它表现类包一样，这条只管动画，定身判定全在服务端（{@code ThousandEyesHandler}）。
+     */
+    public record ShiChaoSpecialSyncS2C(UUID playerUuid, int durationTicks) implements CustomPacketPayload {
+        public static final Type<ShiChaoSpecialSyncS2C> TYPE = new Type<>(id("shichao_special_sync"));
+        public static final StreamCodec<ByteBuf, ShiChaoSpecialSyncS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8, p -> p.playerUuid().toString(),
+                ByteBufCodecs.INT, ShiChaoSpecialSyncS2C::durationTicks,
+                (s, t) -> new ShiChaoSpecialSyncS2C(UUID.fromString(s), t));
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
+
     // ==================== ✅ 玩家尸兄数据同步（用 UUID） ====================
     public record PlayerCorpseSyncS2C(
             UUID playerUuid,       // ✅ 改为 UUID

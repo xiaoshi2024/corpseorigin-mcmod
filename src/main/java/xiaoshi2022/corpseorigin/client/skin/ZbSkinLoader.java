@@ -39,7 +39,7 @@ public class ZbSkinLoader {
                         entity.setSkinTexture(skin);
                         entity.setSkinState(ZbSkinState.LOADED);
                         ZbSkinCache.put(username, skin);
-                        LOGGER.info("✅ 皮肤加载成功: {} -> {}", username, skin);  // ← info（首次）
+//                        LOGGER.info("✅ 皮肤加载成功: {} -> {}", username, skin);  // ← info（首次）
                     } else {
                         LOGGER.warn("⚠️ 皮肤加载失败，使用默认: {}", username);
                         setDefaultSkin(entity, username);

@@ -108,6 +108,8 @@ public final class ModEntities {
                     .clientTrackingRange(4)
                     .updateInterval(2)
     );
+    public static final EntityType<OsmiumIceSpearEntity> OSMIUM_ICE_SPEAR = register("osmium_ice_spear",
+            EntityType.Builder.<OsmiumIceSpearEntity>of(OsmiumIceSpearEntity::new, MobCategory.MISC).sized(.35f, 1.2f).clientTrackingRange(8).updateInterval(1));
 
     /**
      * 左护法「蛟龙」的一节碰撞箱（隐形实体，伤害转给主人玩家）。

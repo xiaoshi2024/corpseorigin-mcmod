@@ -64,6 +64,12 @@ public final class CorpseNetwork {
     }
 
     public static void register() {
+        PayloadTypeRegistry.clientboundPlay().register(NestRadarPayload.TYPE, NestRadarPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(NestRadarPayload.Action.TYPE, NestRadarPayload.Action.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(NestRadarPayload.Action.TYPE, (payload, context) ->
+                context.server().execute(() -> xiaoshi2022.corpseorigin.skill.longyou.NestDefense.action(
+                        context.player(), payload.target(), payload.mode())));
+        xiaoshi2022.corpseorigin.skill.longyou.NestDefense.register();
         PayloadTypeRegistry.serverboundPlay().register(CorpsePayloads.CorpseNestTeleportC2S.TYPE,
                 CorpsePayloads.CorpseNestTeleportC2S.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(CorpsePayloads.CorpseNestTeleportC2S.TYPE, (payload, context) -> {
@@ -71,6 +77,13 @@ public final class CorpseNetwork {
             context.server().execute(() -> {
                 if (!player.blockPosition().closerThan(payload.targetPos(), 8.0)
                         || !player.level().getBlockState(payload.targetPos()).is(ModBlocks.ZBR_FLESH)) return;
+                var hit = player.pick(8.0, 1.0F, false);
+                if (!(hit instanceof net.minecraft.world.phys.BlockHitResult blockHit)
+                        || hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK
+                        || !blockHit.getBlockPos().equals(payload.targetPos())) return;
+                if (!player.level().dimension().equals(CorpseNestDimension.KEY)
+                        && !xiaoshi2022.corpseorigin.skill.longyou.CorpseNestConstructionHandler
+                        .isMatureNestSurface(player.level(), payload.targetPos())) return;
                 CorpseNestDimension.enter(player);
             });
         });
@@ -128,6 +141,11 @@ public final class CorpseNetwork {
         PayloadTypeRegistry.clientboundPlay().register(
                 CorpsePayloads.NiunaiLinkSyncS2C.TYPE,
                 CorpsePayloads.NiunaiLinkSyncS2C.CODEC);
+
+        // ✅ 尸巢之子「千眼万目」凝视窗口（S2C）
+        PayloadTypeRegistry.clientboundPlay().register(
+                CorpsePayloads.ShiChaoSpecialSyncS2C.TYPE,
+                CorpsePayloads.ShiChaoSpecialSyncS2C.CODEC);
 
 
         // ✅ 学习技能（C2S）
@@ -586,6 +604,25 @@ public final class CorpseNetwork {
     public static void broadcastNiunaiLink(ServerPlayer player, int durationTicks) {
         CorpsePayloads.NiunaiLinkSyncS2C packet =
                 new CorpsePayloads.NiunaiLinkSyncS2C(player.getUUID(), durationTicks);
+        MinecraftServer server = player.level().getServer();
+        if (server != null) {
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                ServerPlayNetworking.send(p, packet);
+            }
+        } else {
+            ServerPlayNetworking.send(player, packet);
+        }
+    }
+
+    /**
+     * ✅ 广播"这位尸巢之子正在放千眼万目"，让整具身体改播 {@code special} 动画。
+     * <p>
+     * 窗口覆盖整段动画（见 {@code ThousandEyesSkill.DURATION}）；谁是"被定住的"、
+     * 定多久，全在服务端算（{@code ThousandEyesHandler}），客户端只负责播这条动画。
+     */
+    public static void broadcastShiChaoSpecial(ServerPlayer player, int durationTicks) {
+        CorpsePayloads.ShiChaoSpecialSyncS2C packet =
+                new CorpsePayloads.ShiChaoSpecialSyncS2C(player.getUUID(), durationTicks);
         MinecraftServer server = player.level().getServer();
         if (server != null) {
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {

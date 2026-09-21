@@ -16,6 +16,10 @@ public final class ShiChaoBodyRenderData {
     public static final DataTicket<Identifier> BODY_TEXTURE =
             DataTicket.create("shichao_body_texture", Identifier.class);
 
+    /** 这一帧是不是正在放「千眼万目」—— 动画控制器据此整段改播 {@code special} */
+    public static final DataTicket<Boolean> SPECIAL =
+            DataTicket.create("shichao_body_special", Boolean.class);
+
     private ShiChaoBodyRenderData() {}
 
     public static boolean isActive(UUID uuid) {

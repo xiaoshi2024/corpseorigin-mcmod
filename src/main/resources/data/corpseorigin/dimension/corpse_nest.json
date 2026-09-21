@@ -3,11 +3,16 @@
   "generator": {
     "type": "minecraft:flat",
     "settings": {
-      "biome": "minecraft:the_void",
+      "biome": "corpseorigin:corpse_nest_plain",
       "features": false,
       "lakes": false,
-      "layers": [],
-      "structure_overrides": []
+      "layers": [
+        { "height": 1, "block": "minecraft:bedrock" },
+        { "height": 60, "block": "minecraft:stone" },
+        { "height": 3, "block": "minecraft:dirt" },
+        { "height": 1, "block": "minecraft:grass_block" }
+      ],
+      "structure_overrides": ["corpseorigin:h_city_library", "corpseorigin:h_city_ruins"]
     }
   }
 }

@@ -1,0 +1,15 @@
+{
+  "has_precipitation": false,
+  "temperature": 0.8,
+  "downfall": 0.4,
+  "attributes": { "minecraft:visual/sky_color": "#bb8290" },
+  "effects": { "water_color": "#3f76e4" },
+  "carvers": [],
+  "features": [],
+  "spawn_costs": {},
+  "spawners": {
+    "monster": [
+      { "type": "corpseorigin:lower_level_zb", "weight": 100, "minCount": 2, "maxCount": 4 }
+    ]
+  }
+}

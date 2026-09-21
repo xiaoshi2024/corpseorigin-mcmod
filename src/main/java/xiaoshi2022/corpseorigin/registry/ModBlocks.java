@@ -30,7 +30,7 @@ public final class ModBlocks {
     public static final Block ZBR_FLESH = register(
             "zbr_flesh",
             new ZBRFleshBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SLIME_BLOCK)
-                    .strength(2.0F, 4.0F)
+                    .strength(2.0F, 3600000.0F)
                     .mapColor(MapColor.COLOR_RED)
                     .noOcclusion()
                     .randomTicks()

@@ -53,7 +53,6 @@ public class CombinedSkinBuilder {
                     if (size() > MAX_CACHE_SIZE && eldest.getValue().refCount <= 0) {
                         // ✅ 引用计数为 0 才释放
                         releaseTexture(eldest.getValue().texture);
-                        LOGGER.info("🗑️ LRU 释放纹理: {}", eldest.getValue().texture);
                         return true;
                     }
                     return false;
@@ -114,7 +113,6 @@ public class CombinedSkinBuilder {
         try {
             Identifier combined = buildCombinedSkin(skinTexture, variant);
             CACHE.put(cacheKey, new CacheEntry(combined));
-            LOGGER.info("✅ 组合纹理已创建: {} (variant={}) -> {} (ref=1)", skinTexture, variant, combined);
             return combined;
         } catch (Exception e) {
             LOGGER.error("❌ 创建组合纹理失败: {}", cacheKey, e);
@@ -159,7 +157,6 @@ public class CombinedSkinBuilder {
         CacheEntry entry = CACHE.remove(cacheKey(skinTexture, variant));
         if (entry != null) {
             releaseTexture(entry.texture);
-            LOGGER.info("🗑️ 强制释放组合纹理: {}", entry.texture);
         }
     }
 
@@ -238,10 +235,8 @@ public class CombinedSkinBuilder {
                 "skins/zb_combined_" + hash
         );
 
-        // ✅ 如果已存在同名纹理，先释放（避免泄漏）
-        if (textureManager.getTexture(location) != null) {
-            textureManager.release(location);
-        }
+        // register replaces and closes an existing texture. getTexture would instead
+        // try loading this generated identifier from disk and emit missing-resource warnings.
 
         DynamicTexture texture = new DynamicTexture(
                 () -> location.toString(),
@@ -434,7 +429,6 @@ public class CombinedSkinBuilder {
 
         try {
             defaultCombined = buildCombinedSkin(DEFAULT_SKIN, 0);
-            LOGGER.info("✅ 默认组合纹理已创建");
             return defaultCombined;
         } catch (Exception e) {
             LOGGER.error("❌ 创建默认组合纹理失败", e);

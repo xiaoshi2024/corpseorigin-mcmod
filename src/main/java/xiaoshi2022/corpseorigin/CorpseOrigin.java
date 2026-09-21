@@ -112,6 +112,7 @@ public class CorpseOrigin implements ModInitializer {
 
 		// ✅ 9. 网络
 		CorpseNetwork.register();
+        xiaoshi2022.corpseorigin.skill.longyou.CorpseNestLighting.register();
 
 		// ✅ 10. 事件
 		ByWaterEventHandler.register();

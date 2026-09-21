@@ -17,6 +17,7 @@ import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.shichaozhizi.BloodLotusArmorSkill;
 import xiaoshi2022.corpseorigin.skill.shichaozhizi.GroundBurrowSkill;
 import xiaoshi2022.corpseorigin.skill.shichaozhizi.SonOfCorpseNestSkill;
+import xiaoshi2022.corpseorigin.skill.shichaozhizi.ThousandEyesSkill;
 
 import java.util.List;
 
@@ -75,16 +76,20 @@ public class ShiChaoZhiZi implements ICharacter {
     public static final double SECOND_FORM_JUMP_STRENGTH = 0.7;
     public static final double SECOND_FORM_HEALTH = 500.0;
     public static final double SECOND_FORM_ARMOR = 20.0;
+    public static final double SECOND_FORM_ATTACK_RANGE = SECOND_FORM_EYE_HEIGHT + 2.0;
 
     private static final Identifier HEALTH_MODIFIER = CorpseOrigin.id("shichao_second_form_health");
     private static final Identifier ARMOR_MODIFIER = CorpseOrigin.id("shichao_second_form_armor");
     private static final Identifier KNOCKBACK_MODIFIER = CorpseOrigin.id("shichao_second_form_knockback");
     private static final Identifier JUMP_MODIFIER = CorpseOrigin.id("shichao_second_form_jump");
+    private static final Identifier REACH_MODIFIER = CorpseOrigin.id("shichao_second_form_reach");
 
     private static final List<ISkill> SKILLS = List.of(
             new SonOfCorpseNestSkill(),
+            new xiaoshi2022.corpseorigin.skill.longyou.NestSenseSkill(),
             new BloodLotusArmorSkill(),
-            new GroundBurrowSkill()
+            new GroundBurrowSkill(),
+            new ThousandEyesSkill()
     );
 
     @Override
@@ -158,6 +163,7 @@ public class ShiChaoZhiZi implements ICharacter {
         setTarget(entity, Attributes.ARMOR, ARMOR_MODIFIER, SECOND_FORM_ARMOR);
         setTarget(entity, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_MODIFIER, 1.0);
         setTarget(entity, Attributes.JUMP_STRENGTH, JUMP_MODIFIER, SECOND_FORM_JUMP_STRENGTH);
+        setTarget(entity, Attributes.ENTITY_INTERACTION_RANGE, REACH_MODIFIER, SECOND_FORM_ATTACK_RANGE);
         entity.refreshDimensions();
     }
 
@@ -166,6 +172,7 @@ public class ShiChaoZhiZi implements ICharacter {
         remove(entity, Attributes.ARMOR, ARMOR_MODIFIER);
         remove(entity, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_MODIFIER);
         remove(entity, Attributes.JUMP_STRENGTH, JUMP_MODIFIER);
+        remove(entity, Attributes.ENTITY_INTERACTION_RANGE, REACH_MODIFIER);
         entity.refreshDimensions();
         if (entity.getHealth() > entity.getMaxHealth()) entity.setHealth(entity.getMaxHealth());
     }

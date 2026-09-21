@@ -194,6 +194,11 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
             test.controller().reset();
             return PlayState.STOP;
         }
+        // 「千眼万目」：凝视窗口内整段改播 special（一次性 3.2 秒，窗口与它等长）
+        if (Boolean.TRUE.equals(test.getData(ShiChaoBodyRenderData.SPECIAL))) {
+            test.setAndContinue(RawAnimation.begin().thenPlay("special"));
+            return PlayState.CONTINUE;
+        }
         boolean attacking = Boolean.TRUE.equals(test.getData(LimbRenderData.ATTACKING));
         boolean moving = Boolean.TRUE.equals(test.getData(MutantBodyRenderData.MOVING));
         test.setAndContinue(attacking

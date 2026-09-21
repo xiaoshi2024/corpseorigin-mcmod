@@ -10,6 +10,7 @@ import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+import xiaoshi2022.corpseorigin.entity.OsmiumIceSpearEntity;
 
 import java.util.List;
 import java.util.Optional;
@@ -80,8 +81,7 @@ public class OsmiumIceSpikeSkill implements ISkill {
             }
         }
 
-        if (closest != null) {
-            closest.hurt(serverLevel.damageSources().playerAttack(player), DAMAGE);
-        }
+        Vec3 impact = closest != null ? closest.position().add(0, closest.getBbHeight() + 8, 0) : endPos.add(0, 8, 0);
+        serverLevel.addFreshEntity(OsmiumIceSpearEntity.create(serverLevel, player, impact, new Vec3(0, -0.65, 0)));
     }
 }

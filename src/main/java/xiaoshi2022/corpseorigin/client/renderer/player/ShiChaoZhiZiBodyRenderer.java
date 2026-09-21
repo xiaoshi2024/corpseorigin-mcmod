@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.client.CorpseOriginClient;
 import xiaoshi2022.corpseorigin.client.limb.LimbRenderData;
 import xiaoshi2022.corpseorigin.client.limb.PlayerGeoAnimatable;
 import xiaoshi2022.corpseorigin.client.model.entity.ShiChaoZhiZiBodyModel;
@@ -41,6 +42,9 @@ public final class ShiChaoZhiZiBodyRenderer
         state.addGeckolibData(ShiChaoBodyRenderData.BODY_TEXTURE,
                 bodyTexture != null ? bodyTexture : TEXTURE);
         state.addGeckolibData(ShiChaoBodyRenderData.ACTIVE, true);
+        // 「千眼万目」的凝视窗口一到，控制器就整段改播 special（见 ClientPlayerGeoAnimatableMixin）
+        state.addGeckolibData(ShiChaoBodyRenderData.SPECIAL,
+                CorpseOriginClient.isShiChaoSpecial(player.getUUID()));
         state.addGeckolibData(MutantBodyRenderData.MOVING, state.walkAnimationSpeed > 0.02F);
         state.addGeckolibData(LimbRenderData.ATTACKING, state.attackTime > 0.0F);
         state.addGeckolibData(DataTickets.PACKED_LIGHT, state.lightCoords);

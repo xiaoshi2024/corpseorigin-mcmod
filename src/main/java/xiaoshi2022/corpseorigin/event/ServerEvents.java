@@ -94,6 +94,13 @@ public final class ServerEvents {
         ServerTickEvents.END_SERVER_TICK.register(
                 xiaoshi2022.corpseorigin.skill.longyou.CorpseNestConstructionHandler::tick);
 
+        // 每 tick 推进尸巢之子的「千眼万目」凝视场（把正在看他的生物 / 玩家定住）
+        ServerTickEvents.END_SERVER_TICK.register(
+                xiaoshi2022.corpseorigin.skill.shichaozhizi.ThousandEyesHandler::tick);
+
+        ServerTickEvents.END_SERVER_TICK.register(
+                xiaoshi2022.corpseorigin.skill.shichaozhizi.GiantStompHandler::tick);
+
         // 金蝉脱壳后：右键旧身体穿回去（只在缩在原体里的时候接管）
         xiaoshi2022.corpseorigin.skill.longyou.BodyTransplantHandler.register();
 

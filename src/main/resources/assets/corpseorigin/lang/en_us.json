@@ -1,4 +1,11 @@
 {
+  "skill.corpseorigin.nest_sense": "Nest Perception",
+  "skill.corpseorigin.nest_sense.desc": "Sense intruders near flesh within 128 blocks. Select a radar target to devour or execute with a giant hand. Flesh resists explosions and intercepts projectiles.",
+  "gui.corpseorigin.nest.digest": "Devour",
+  "gui.corpseorigin.nest.kill": "Execute",
+  "gui.corpseorigin.nest.empty": "No intruders detected",
+  "gui.corpseorigin.nest.contacts": "Contacts: %s | 128 blocks",
+  "message.corpseorigin.nest_alarm": "Nest alarm: %s is mining flesh",
   "itemGroup.corpseorigin.main": "Corpse Origin",
   "itemGroup.corpseorigin.character_books": "Corpse Origin · Character Books",
 
@@ -166,7 +173,8 @@
   "skill.corpseorigin.corpse_brother_rally.active": "The Corpse Nest is already growing",
   "skill.corpseorigin.corpse_brother_rally.need_corpses": "Not enough controlled Corpse Brothers nearby: %1$s / %2$s",
   "skill.corpseorigin.corpse_brother_rally.started": "The Corpse Brothers gather and begin devouring one another",
-  "dimension.corpseorigin.corpse_nest": "Corpse Nest Dimension",
+  "dimension.corpseorigin.corpse_nest": "Corpse Nest: Fallen H City",
+  "dimension.corpseorigin.h_city.failed": "Could not generate H City Library. Please try again later.",
   "dimension.corpseorigin.corpse_nest.missing": "The Corpse Nest dimension is not loaded",
   "message.corpseorigin.shichaozhizi.absorb_progress": "Corpse Nest absorption: %1$s / %2$s",
 
@@ -345,6 +353,10 @@
   "skill.corpseorigin.blood_lotus_armor.desc": "Passive: Below half health he enters phase two with greatly boosted attack and defense.",
   "skill.corpseorigin.ground_burrow": "Ground Burrow",
   "skill.corpseorigin.ground_burrow.desc": "Burrow underground and burst out beneath a player for heavy damage. Cooldown 20s.",
+  "skill.corpseorigin.thousand_eyes": "Myriad Eyes",
+  "skill.corpseorigin.thousand_eyes.desc": "Second form only: unleash the gaze of a thousand demon eyes. Creatures and players looking at you are numbed and rooted in place (looking away or hiding behind a wall frees them). Cooldown 30s.",
+  "skill.corpseorigin.thousand_eyes.on": "Myriad Eyes: the gaze is open",
+  "skill.corpseorigin.thousand_eyes.need_second_form": "Myriad Eyes can only be used in the second form",
   "skill.corpseorigin.chrysanthemum_shield": "Chrysanthemum Shield · Open",
   "skill.corpseorigin.chrysanthemum_shield.desc": "The shield on your back blooms for 5s: frontal damage is fully blocked, and incoming arrows are deflected back at the shooter. Cooldown 20s.",
   "skill.corpseorigin.chrysanthemum_shield.activate": "Chrysanthemum Shield open! Frontal blocking and arrow deflection for %s seconds",

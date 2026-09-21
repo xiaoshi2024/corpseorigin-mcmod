@@ -40,6 +40,7 @@ public class ZBRFleshBlockEntity extends BlockEntity implements GeoBlockEntity {
     private UUID owner;
     private boolean corpseNestGateway;
     private int structureVersion;
+    private BlockPos rallyNestCenter;
 
     public ZBRFleshBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ZBR_FLESH, pos, state);
@@ -95,6 +96,15 @@ public class ZBRFleshBlockEntity extends BlockEntity implements GeoBlockEntity {
         return this.structureVersion;
     }
 
+    public BlockPos getRallyNestCenter() {
+        return rallyNestCenter;
+    }
+
+    public void setRallyNestCenter(BlockPos center) {
+        rallyNestCenter = center.immutable();
+        setChanged();
+    }
+
     public void setStructureVersion(int version) {
         this.structureVersion = version;
         setChanged();
@@ -112,6 +122,7 @@ public class ZBRFleshBlockEntity extends BlockEntity implements GeoBlockEntity {
         }
         out.putBoolean("CorpseNestGateway", this.corpseNestGateway);
         out.putInt("StructureVersion", this.structureVersion);
+        if (rallyNestCenter != null) out.putLong("RallyNestCenter", rallyNestCenter.asLong());
     }
 
     @Override
@@ -120,6 +131,7 @@ public class ZBRFleshBlockEntity extends BlockEntity implements GeoBlockEntity {
         this.kills = in.getIntOr("Kills", 0);
         this.corpseNestGateway = in.getBooleanOr("CorpseNestGateway", false);
         this.structureVersion = in.getIntOr("StructureVersion", 0);
+        this.rallyNestCenter = in.getLong("RallyNestCenter").map(BlockPos::of).orElse(null);
 
         String owner = in.getString("Owner").orElse("");
         if (!owner.isEmpty()) {

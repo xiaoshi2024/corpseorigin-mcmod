@@ -155,6 +155,8 @@ public class ZuoHuFa implements ICharacter {
     public static final double MERGED_WATER_EFFICIENCY = 1.0;
     /** 合体青龙的实体体型；原版 SCALE 会同步碰撞箱、眼高与第一人称相机。 */
     public static final float MERGED_SCALE = 3.0F;
+    // Reach is measured from the eyes, which are roughly 4.9 blocks above the ground.
+    public static final double MERGED_ATTACK_RANGE = 6.0;
 
     private static final Identifier HEALTH_MODIFIER = CorpseOrigin.id("zuohufa_health");
     private static final Identifier ARMOR_MODIFIER = CorpseOrigin.id("zuohufa_armor");
@@ -163,6 +165,7 @@ public class ZuoHuFa implements ICharacter {
     private static final Identifier KNOCKBACK_MODIFIER = CorpseOrigin.id("zuohufa_knockback");
     private static final Identifier WATER_MODIFIER = CorpseOrigin.id("zuohufa_water_efficiency");
     private static final Identifier SCALE_MODIFIER = CorpseOrigin.id("zuohufa_scale");
+    private static final Identifier REACH_MODIFIER = CorpseOrigin.id("zuohufa_reach");
 
     /** 这具身体是不是"左护法身体"（认角色，不认账号） */
     public static boolean isZuoHuFaBody(LivingEntity entity) {
@@ -199,8 +202,10 @@ public class ZuoHuFa implements ICharacter {
                 merged ? MERGED_WATER_EFFICIENCY : 0.0D);
         if (merged) {
             setAttribute(entity, Attributes.SCALE, SCALE_MODIFIER, MERGED_SCALE);
+            setAttribute(entity, Attributes.ENTITY_INTERACTION_RANGE, REACH_MODIFIER, MERGED_ATTACK_RANGE);
         } else {
             removeAttribute(entity, Attributes.SCALE, SCALE_MODIFIER);
+            removeAttribute(entity, Attributes.ENTITY_INTERACTION_RANGE, REACH_MODIFIER);
         }
         entity.refreshDimensions();
     }
@@ -214,6 +219,7 @@ public class ZuoHuFa implements ICharacter {
         removeAttribute(entity, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_MODIFIER);
         removeAttribute(entity, Attributes.WATER_MOVEMENT_EFFICIENCY, WATER_MODIFIER);
         removeAttribute(entity, Attributes.SCALE, SCALE_MODIFIER);
+        removeAttribute(entity, Attributes.ENTITY_INTERACTION_RANGE, REACH_MODIFIER);
         entity.refreshDimensions();
     }
 

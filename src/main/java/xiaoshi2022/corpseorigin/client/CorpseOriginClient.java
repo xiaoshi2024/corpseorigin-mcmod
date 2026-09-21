@@ -140,6 +140,20 @@ public class CorpseOriginClient implements ClientModInitializer {
     }
 
     /**
+     * 尸巢之子「千眼万目」的凝视窗口（剩余 tick）。
+     * <p>
+     * 由 {@code ShiChaoSpecialSyncS2C} 写入，渲染时读它决定要不要改播 {@code special} 动画；
+     * 谁是"被定住的"是服务端算的（{@code ThousandEyesHandler}），客户端只看动画。
+     */
+    public static final Map<UUID, Integer> shiChaoSpecials = new ConcurrentHashMap<>();
+
+    /** 这位玩家现在是否正在放千眼万目（渲染时读它切动画） */
+    public static boolean isShiChaoSpecial(UUID uuid) {
+        Integer ticks = uuid == null ? null : shiChaoSpecials.get(uuid);
+        return ticks != null && ticks > 0;
+    }
+
+    /**
      * 取「正在被这位玩家吸食的目标实体」，没有 / 不在客户端（未加载、已死）时返回 null。
      * <p>
      * 盔甲渲染要靠它算触手转向的角度，所以这里只做解析，不做任何逻辑判定。
@@ -164,6 +178,11 @@ public class CorpseOriginClient implements ClientModInitializer {
     public void onInitializeClient() {
         // 1. 按键绑定
         CorpseKeyBindings.register();
+        ClientPlayNetworking.registerGlobalReceiver(NestRadarPayload.TYPE, (payload, context) ->
+                context.client().execute(() -> {
+                    if (payload.open()) context.client().gui.setScreen(new NestRadarScreen(payload.contacts()));
+                    else if (context.client().gui.screen() instanceof NestRadarScreen radar) radar.update(payload.contacts());
+                }));
 
         // 2. 实体渲染器
         EntityRendererRegistry.register(ModEntities.LOWER_LEVEL_ZB, LowerLevelZbRenderer::new);
@@ -179,6 +198,7 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.ZB_WORM, ZbWormRenderer::new);
         EntityRendererRegistry.register(ModEntities.MIKU_ZB, MikuZbRenderer::new);
         EntityRendererRegistry.register(ModEntities.LEEK_PROJECTILE, LeekProjectileRenderer::new);
+        EntityRendererRegistry.register(ModEntities.OSMIUM_ICE_SPEAR, OsmiumIceSpearRenderer::new);
         // 左护法蛟龙的节碰撞箱：隐形实体，只需要一个"什么都不画"的绘制器
         EntityRendererRegistry.register(ModEntities.GUARDIAN_PART, GuardianPartRenderer::new);
         // 尸蛟龙（左护法"脱离"后放出来的宠物 BOSS）
@@ -395,6 +415,16 @@ public class CorpseOriginClient implements ClientModInitializer {
                     }
                 }));
 
+        // ✅ 尸巢之子「千眼万目」凝视窗口（0 及以下 = 立刻结束）
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.ShiChaoSpecialSyncS2C.TYPE, (payload, context) ->
+                context.client().execute(() -> {
+                    if (payload.durationTicks() <= 0) {
+                        shiChaoSpecials.remove(payload.playerUuid());
+                    } else {
+                        shiChaoSpecials.put(payload.playerUuid(), payload.durationTicks());
+                    }
+                }));
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (CorpseKeyBindings.openSkillWheel.consumeClick()) {
                 // 1. 周围有克隆仓 → 打开克隆仓 UI
@@ -474,6 +504,12 @@ public class CorpseOriginClient implements ClientModInitializer {
             if (!niunaiLinks.isEmpty()) {
                 niunaiLinks.replaceAll((k, v) -> v - 1);
                 niunaiLinks.entrySet().removeIf(e -> e.getValue() <= 0);
+            }
+
+            // ✅ 尸巢之子千眼万目窗口计时自减（减到 0 就切回 idle / walk）
+            if (!shiChaoSpecials.isEmpty()) {
+                shiChaoSpecials.replaceAll((k, v) -> v - 1);
+                shiChaoSpecials.entrySet().removeIf(e -> e.getValue() <= 0);
             }
         });
 

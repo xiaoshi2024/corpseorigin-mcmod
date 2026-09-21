@@ -134,7 +134,8 @@ public final class ModSpawns {
         if (!Monster.checkMonsterSpawnRules(type, level, reason, pos, random)) {
             return false;
         }
-        if (reason != EntitySpawnReason.NATURAL) {
+        if (reason != EntitySpawnReason.NATURAL || level.getLevel().dimension().equals(
+                xiaoshi2022.corpseorigin.skill.longyou.CorpseNestDimension.KEY)) {
             return true;
         }
         return corpseorigin$nearBywater(level, pos) || random.nextFloat() < farFromLakeChance;

@@ -1,0 +1,7 @@
+{
+  "structures": [{ "structure": "corpseorigin:h_city_ruins", "weight": 1 }],
+  "placement": {
+    "type": "minecraft:random_spread", "spacing": 3, "separation": 1, "salt": 20416082,
+    "exclusion_zone": { "other_set": "corpseorigin:h_city_library", "chunk_count": 2 }
+  }
+}
