@@ -35,8 +35,6 @@ public final class TianGangCombat {
         if(Set.of(Form.JI,Form.LI,Form.YU,Form.SHEN).contains(form)){
             removeAura(p);int ticks=form==Form.YU?300:600;
             AURAS.put(p.getUUID(),new Aura(p,level,form,p.tickCount+ticks));p.setAttached(SHEN_ACTIVE,form==Form.SHEN);apply(p,form);
-            if(form==Form.SHEN) xiaoshi2022.corpseorigin.entity.SkillConstructEntity.spawn(p,
-                    xiaoshi2022.corpseorigin.registry.ModEntities.TIANGANG_HALO,p,600);
             ChapterScenes.action(p,"charge",20);return;
         }
         if(form==Form.POGANG || form==Form.WU){

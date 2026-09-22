@@ -14,15 +14,7 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.client.model.ExoskeletonModel;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.render.layer.ExoskeletonRenderLayer;
-import xiaoshi2022.corpseorigin.client.renderer.player.CorpsePlayerGeoRenderer;
-import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
-import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderData;
-import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderer;
-import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderData;
-import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderer;
-import xiaoshi2022.corpseorigin.client.renderer.player.ZuoGuardianBodyRenderer;
-import xiaoshi2022.corpseorigin.client.renderer.player.ShiChaoBodyRenderData;
-import xiaoshi2022.corpseorigin.client.renderer.player.ShiChaoZhiZiBodyRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.player.*;
 import xiaoshi2022.corpseorigin.registry.ModModelLayers;
 
 @Mixin(AvatarRenderer.class)
@@ -51,6 +43,12 @@ public abstract class AvatarRendererMixin {
             CorpseOrigin.LOGGER.info("✅ 外骨骼渲染层已添加到 AvatarRenderer: {}", self);
         } catch (Exception e) {
             CorpseOrigin.LOGGER.error("❌ 添加外骨骼渲染层失败: {}", e.getMessage(), e);
+        }
+
+        try {
+            TianGangHaloRenderer.createIfAbsent(context);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.error("❌ 创建天罡光环渲染器失败: {}", e.getMessage(), e);
         }
 
         // ✅ 断肢玩家渲染器（无状态单例，submit 时由 LivingEntityRendererSubmitMixin 调用）
@@ -118,7 +116,6 @@ public abstract class AvatarRendererMixin {
         if (!(avatar instanceof AbstractClientPlayer player)) {
             return;
         }
-        TianGangHaloRenderer.createIfAbsent(context);
         String disguise=player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE);
         String possessedSkin = player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.BodyPossession.SKIN);
         if (!possessedSkin.isEmpty()) {

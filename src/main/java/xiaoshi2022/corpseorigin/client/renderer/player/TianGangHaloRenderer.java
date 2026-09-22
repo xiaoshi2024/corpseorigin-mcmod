@@ -15,7 +15,10 @@ public final class TianGangHaloRenderer extends GeoReplacedEntityRenderer<Player
         super(context,new com.geckolib.model.DefaultedEntityGeoModel<>(CorpseOrigin.id("tiangang_halo")),null);
         shadowRadius=0;
     }
-    public static void createIfAbsent(EntityRendererProvider.Context context){if(instance==null)instance=new TianGangHaloRenderer(context);}
+    public static void createIfAbsent(EntityRendererProvider.Context context){
+        if(instance==null)
+            instance=new TianGangHaloRenderer(context);
+    }
     public static TianGangHaloRenderer get(){return instance;}
     public static void writeRenderData(AvatarRenderState state,AbstractClientPlayer player,float partialTick){
         if(instance==null)return;
