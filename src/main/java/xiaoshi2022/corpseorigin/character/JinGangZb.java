@@ -4,6 +4,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.jingang_zb.IronBodySkill;
+import xiaoshi2022.corpseorigin.skill.jingang_zb.MuscleRageSkill;
 import xiaoshi2022.corpseorigin.skill.jingang_zb.PounceComboSkill;
 
 import java.util.List;
@@ -17,6 +18,7 @@ public class JinGangZb implements ICharacter {
 
     private static final List<ISkill> SKILLS = List.of(
             new IronBodySkill(),
+            new MuscleRageSkill(),
             new PounceComboSkill()
     );
 

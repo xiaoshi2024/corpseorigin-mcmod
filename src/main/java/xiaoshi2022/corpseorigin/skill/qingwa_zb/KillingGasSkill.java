@@ -13,6 +13,9 @@ import xiaoshi2022.corpseorigin.skill.SkillType;
  * TODO 实装：范围气体区域 → 范围内目标获得杀势/狂暴增益 + 毒气粒子。
  */
 public class KillingGasSkill extends AbstractSkill {
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
+        xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.gas(p);
+    }
 
     public static final String PATH = "killing_gas";
 

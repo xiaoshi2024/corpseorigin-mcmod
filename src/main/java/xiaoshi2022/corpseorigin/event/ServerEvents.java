@@ -103,6 +103,7 @@ public final class ServerEvents {
 
         // 金蝉脱壳后：右键旧身体穿回去（只在缩在原体里的时候接管）
         xiaoshi2022.corpseorigin.skill.longyou.BodyTransplantHandler.register();
+        xiaoshi2022.corpseorigin.skill.longyou.UndeadBodyState.register();
 
         // 退出 → 清理
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {

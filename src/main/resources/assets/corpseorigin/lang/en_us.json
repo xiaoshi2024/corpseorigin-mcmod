@@ -1,4 +1,11 @@
 {
+  "skill.corpseorigin.muscle_rage": "Advanced Rage",
+  "skill.corpseorigin.muscle_rage.desc": "Eight seconds of strength and speed, exposing the chest and disabling iron protection.",
+  "skill.corpseorigin.muscle_rage.weakpoint": "Rage: chest exposed; iron protection disabled!",
+  "skill.corpseorigin.killing_gas.amplified": "Killing intent amplified: allies gain strength; enemies become disoriented and weak.",
+  "scene.corpseorigin.hujie.threat": "Fox Sister: Come no closer... my tail is watching you.",
+  "entity.corpseorigin.red_fire_ant": "Red Fire Ant",
+  "entity.corpseorigin.bullet_ant": "Giant Bullet Ant",
   "skill.corpseorigin.chameleon_disguise.revealed": "Your disguise was shattered, revealing your true form",
   "item.corpseorigin.medusa_eye.not_xiaolu": "Only Xiaolu can consume the Medusa's Eye",
   "item.corpseorigin.medusa_eye.already": "You have already awakened the power of the Medusa",
@@ -565,5 +572,17 @@
   "entity.corpseorigin.great_tengu": "Great Tengu Airship",
   "skill.corpseorigin.meteor_sword.need_weapon": "Hold the Red Meteor Sword in your main hand.",
   "skill.corpseorigin.keeper_melee": "Keeper Strike",
-  "skill.corpseorigin.keeper_melee.desc": "Strike a nearby target."
+  "skill.corpseorigin.keeper_melee.desc": "Strike a nearby target.",
+  "skill.corpseorigin.xuanwu_body": "玄武甲",
+  "skill.corpseorigin.xuanwu_body.desc": "Wrap yourself in a full tortoise shell of Xuanwu armor. Use again to toggle it off.",
+  "body.corpseorigin.sealed": "The undying skeleton body is pinned and sealed by the Red Meteor Sword",
+  "skill.corpseorigin.peel_shell": "Peel Off the Outer Skin",
+  "skill.corpseorigin.peel_shell.desc": "Peel off the outer skin of the sealed undying skeleton body and return to your human form",
+  "skill.corpseorigin.peel_shell.done": "You peeled off the outer skin and returned to your human form",
+  "skill.corpseorigin.flesh_abandon": "Flesh Abandonment",
+  "skill.corpseorigin.flesh_abandon.desc": "Abandon the current shell and create an undead body that can be possessed.",
+  "skill.corpseorigin.flesh_abandon.original": "The original body is hidden inside the shell",
+  "skill.corpseorigin.flesh_abandon.done": "The flesh shell was abandoned",
+  "skill.corpseorigin.flesh_abandon.possessed": "You entered the undead body",
+  "entity.corpseorigin.abandoned_body": "Undead Body"
 }

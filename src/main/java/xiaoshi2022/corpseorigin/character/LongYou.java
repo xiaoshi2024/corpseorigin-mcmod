@@ -46,7 +46,8 @@ public class LongYou implements ICharacter {
             new NestSenseSkill(),
             // 换身体的两手：缩进原体 / 重塑一具新身体（旧身体都会蜕成分身）
             new GoldenCicadaShellSkill(),
-            new FleshReshapeSkill()
+            new FleshReshapeSkill(),
+            new FleshAbandonSkill(), new XuanwuBodySkill()
     );
 
     @Override

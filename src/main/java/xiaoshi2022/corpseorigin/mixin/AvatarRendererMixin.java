@@ -33,6 +33,7 @@ public abstract class AvatarRendererMixin {
     private void onInit(EntityRendererProvider.Context context, boolean slimSteve, CallbackInfo ci) {
         AvatarRenderer self = (AvatarRenderer) (Object) this;
         xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.create(context);
+        xiaoshi2022.corpseorigin.client.renderer.player.CreaturePlayerRenderer.create(context);
         ((LivingEntityRendererMixin)self).callAddLayer(new xiaoshi2022.corpseorigin.client.render.layer.ChameleonHeadLayer(self));
         ((LivingEntityRendererMixin)self).callAddLayer(new xiaoshi2022.corpseorigin.client.render.layer.ChapterCostumeLayer(self));
 
@@ -118,7 +119,24 @@ public abstract class AvatarRendererMixin {
             return;
         }
         String disguise=player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE);
+        String possessedSkin = player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.BodyPossession.SKIN);
+        if (!possessedSkin.isEmpty()) {
+            try { state.skin = xiaoshi2022.corpseorigin.client.skin.clone.ClientSkinCache.resolve(java.util.UUID.fromString(possessedSkin)); }
+            catch (IllegalArgumentException ignored) { }
+        }
+        if("xiaohui".equals(player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE)))state.skin=xiaoshi2022.corpseorigin.client.skin.ChameleonSkins.XIAOHUI;
         if(!disguise.isEmpty()) {
+            // Replace only a visible overhead label; keep vanilla team/distance visibility rules.
+            if (state.nameTag != null) {
+                if (disguise.equals(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.XIAOHUI)) {
+                    state.nameTag = net.minecraft.network.chat.Component.literal("xiaohui");
+                } else {
+                    var disguiseProfile = player.getAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE_PROFILE);
+                    if (disguiseProfile != null && disguiseProfile.id().toString().equals(disguise)) {
+                        state.nameTag = net.minecraft.network.chat.Component.literal(disguiseProfile.name());
+                    }
+                }
+            }
             if(disguise.equals(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.XIAOHUI))state.skin=xiaoshi2022.corpseorigin.client.skin.ChameleonSkins.XIAOHUI;
             else try {
                 var profile=player.getAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE_PROFILE);
@@ -137,6 +155,7 @@ public abstract class AvatarRendererMixin {
         state.addGeckolibData(NiunaiXRenderData.ACTIVE, false);
         state.addGeckolibData(NiunaiLinkRenderData.ACTIVE, false);
         state.addGeckolibData(ShiChaoBodyRenderData.ACTIVE, false);
+        if (xiaoshi2022.corpseorigin.client.renderer.player.CreaturePlayerRenderer.extract(player,state,partialTick)) return;
         if (xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.extract(player,state,partialTick)) return;
 
         if (ShiChaoBodyRenderData.isActive(player)) {

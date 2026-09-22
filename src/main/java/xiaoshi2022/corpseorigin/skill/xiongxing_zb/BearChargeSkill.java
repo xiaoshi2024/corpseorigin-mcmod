@@ -13,6 +13,9 @@ import xiaoshi2022.corpseorigin.skill.SkillType;
  * TODO 实装：冲刺位移 + 路径碰撞伤害与击退。
  */
 public class BearChargeSkill extends AbstractSkill {
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
+        xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.rush(p,false);
+    }
 
     public static final String PATH = "bear_charge";
 

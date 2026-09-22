@@ -21,6 +21,8 @@ public final class ModAttributes {
      */
     public static void register() {
         FabricDefaultAttributeRegistry.register(ModEntities.HAM, HamEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.RED_FIRE_ANT, xiaoshi2022.corpseorigin.entity.CorpseAntEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.BULLET_ANT, xiaoshi2022.corpseorigin.entity.CorpseAntEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.VAMPIRE_BAT, net.minecraft.world.entity.ambient.Bat.createAttributes());
         // 注册低级尸兄的属性
         FabricDefaultAttributeRegistry.register(

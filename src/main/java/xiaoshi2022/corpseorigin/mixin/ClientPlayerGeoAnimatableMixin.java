@@ -157,7 +157,16 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<PlayerGeoAnimatable>("creature",2,test->{
+            String model=test.getData(xiaoshi2022.corpseorigin.client.renderer.player.CreaturePlayerRenderer.MODEL);
+            if(model==null)return PlayState.CONTINUE;
+            if(model.isEmpty())return corpseorigin$stopAndClear(test);
+            String clip=test.getData(xiaoshi2022.corpseorigin.client.renderer.player.CreaturePlayerRenderer.CLIP);
+            return test.setAndContinue(RawAnimation.begin().thenLoop(clip==null?"idle":clip));
+        }));
         controllers.add(new AnimationController<PlayerGeoAnimatable>("mutant_salmon", 2, test -> {
+            String creature=test.getData(xiaoshi2022.corpseorigin.client.renderer.player.CreaturePlayerRenderer.MODEL);
+            if(creature!=null && !creature.isEmpty())return corpseorigin$stopAndClear(test);
             var active=test.getData(xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.ACTIVE);
             if(active==null) return PlayState.CONTINUE;
             if(!active) return corpseorigin$stopAndClear(test);

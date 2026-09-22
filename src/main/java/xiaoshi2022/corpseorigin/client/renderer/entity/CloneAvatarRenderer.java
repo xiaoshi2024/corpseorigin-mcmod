@@ -63,7 +63,7 @@ public class CloneAvatarRenderer
         this.copyPlayerLayers();
 
         super.extractRenderState(entity, state, partialTick);
-        state.skin = ClientSkinCache.resolve(entity.getOwnerUuid());   // ★ 改这里
+        state.skin = ClientSkinCache.resolve(entity.getSkinUuid());
         // ★ AvatarRenderState.id 是原版 AvatarRenderer 自己填的，我们是 LivingEntityRenderer 子类，
         //   不填的话尸兄外骨骼层拿不到实体（getEntityUuid(state.id) 会查不到），外骨骼就不渲染
         state.id = entity.getId();

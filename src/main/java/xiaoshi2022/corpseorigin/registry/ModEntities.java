@@ -11,6 +11,8 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.entity.*;
 
 public final class ModEntities {
+    public static final EntityType<CorpseAntEntity> RED_FIRE_ANT=register("red_fire_ant",EntityType.Builder.<CorpseAntEntity>of(CorpseAntEntity::new,MobCategory.MONSTER).sized(.7f,.65f).clientTrackingRange(8));
+    public static final EntityType<CorpseAntEntity> BULLET_ANT=register("bullet_ant",EntityType.Builder.<CorpseAntEntity>of(CorpseAntEntity::new,MobCategory.MONSTER).sized(1.1f,.85f).clientTrackingRange(8));
     public static final EntityType<GreatTenguEntity> GREAT_TENGU = register("great_tengu",EntityType.Builder.<GreatTenguEntity>of(GreatTenguEntity::new,MobCategory.MISC)
             .sized(6,2).clientTrackingRange(12).updateInterval(3));
     public static final EntityType<xiaoshi2022.corpseorigin.entity.ChapterBombEntity> CHAPTER_BOMB = register("chapter_bomb",

@@ -193,6 +193,8 @@ public class CorpseOriginClient implements ClientModInitializer {
                 context -> new CloneAvatarRenderer(context, false));
         EntityRendererRegistry.register(ModEntities.COCO_PENGUIN, CocoPenguinRenderer::new);
         EntityRendererRegistry.register(ModEntities.HAM, HamRenderer::new);
+        EntityRendererRegistry.register(ModEntities.RED_FIRE_ANT, c->new xiaoshi2022.corpseorigin.client.renderer.entity.CorpseAntRenderer(c,"red_fire_ant"));
+        EntityRendererRegistry.register(ModEntities.BULLET_ANT, c->new xiaoshi2022.corpseorigin.client.renderer.entity.CorpseAntRenderer(c,"bullet_ant"));
         ChapterCinematics.register();
         ClientPlayNetworking.registerGlobalReceiver(xiaoshi2022.corpseorigin.network.ChameleonDisguisePayload.Result.TYPE,(payload,context)->context.client().execute(()->{
             if(context.client().gui.screen() instanceof ChameleonDisguiseScreen screen)screen.result(payload.error());

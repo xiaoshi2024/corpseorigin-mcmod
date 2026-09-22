@@ -12,6 +12,10 @@ import xiaoshi2022.corpseorigin.skill.SkillType;
  * TODO 实装：近身捕获目标 → 禁锢状态 + 持续毒伤 + 布袋道具表现。
  */
 public class BagCaptureSkill extends AbstractSkill {
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
+        xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.capture(p);
+    }
+    @Override public net.minecraft.network.chat.Component checkUsable(net.minecraft.server.level.ServerPlayer p) { return xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.targetError(p); }
 
     public static final String PATH = "bag_capture";
 

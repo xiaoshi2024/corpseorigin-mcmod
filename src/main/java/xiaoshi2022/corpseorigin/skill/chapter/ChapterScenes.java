@@ -29,7 +29,7 @@ public final class ChapterScenes {
     public static void register(){
         CommandRegistrationCallback.EVENT.register((dispatcher,registry,environment)->{
             var root=Commands.literal("corpse_scene").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS));
-            for(String cue:new String[]{"injured","parasitized","drain","poisoned","knockback","entrance","clear"})
+            for(String cue:new String[]{"injured","parasitized","drain","poisoned","knockback","entrance","threat","bound","fear","black_general","infant","adult","clear"})
                 root.then(Commands.literal(cue).then(Commands.argument("players",EntityArgument.players()).executes(ctx->{
                     int count=0;
                     for(ServerPlayer p:EntityArgument.getPlayers(ctx,"players")) {
@@ -40,13 +40,18 @@ public final class ChapterScenes {
                             case "drain" -> role.equals("tushu");
                             case "poisoned","knockback" -> role.equals("k");
                             case "entrance" -> role.equals("zhaoritian");
+                            case "threat" -> role.equals("hujie");
+                            case "bound","fear","black_general" -> role.equals("bianselong_zb") && p.getAttachedOrCreate(ChapterActorState.DISGUISE).equals("xiaohui");
+                            case "infant","adult" -> role.equals("jingang_zb");
                             default -> true;
                         };
                         if(!valid)continue;
-                        if(cue.equals("clear")){p.setAttached(CONDITION,"");p.setAttached(ACTION,"");p.setAttached(UNTIL,0L);}
-                        else if(Set.of("injured","parasitized","poisoned").contains(cue))p.setAttached(CONDITION,cue);
+                        if(cue.equals("infant") || cue.equals("adult")){p.setAttached(CreatureAbilities.INFANT,cue.equals("infant"));action(p,"transform",32);}
+                        else if(cue.equals("clear")){p.setAttached(CONDITION,"");p.setAttached(ACTION,"");p.setAttached(UNTIL,0L);}
+                        else if(Set.of("injured","parasitized","poisoned","bound","fear","black_general").contains(cue))p.setAttached(CONDITION,cue);
                         else {
                             action(p,cue,cue.equals("drain")?80:30);
+                            if(cue.equals("threat"))p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("scene.corpseorigin.hujie.threat"));
                             if(cue.equals("knockback")){p.setDeltaMovement(p.getLookAngle().scale(-1.1).add(0,.45,0));p.hurtMarked=true;}
                         }
                         count++;
@@ -65,6 +70,10 @@ public final class ChapterScenes {
                     p.setAttached(CONDITION,"");p.setAttached(ACTION,"");continue;
                 }
                 if(!action.isEmpty() && p.level().getGameTime()>=p.getAttachedOrCreate(UNTIL))p.setAttached(ACTION,"");
+                if(Set.of("bound","fear","black_general").contains(condition)
+                        && (!role.equals("bianselong_zb") || !p.getAttachedOrCreate(ChapterActorState.DISGUISE).equals("xiaohui"))) {
+                    p.setAttached(CONDITION,"");continue;
+                }
                 if(p.tickCount%10!=0)continue;
                 var level=(ServerLevel)p.level();
                 if(condition.equals("parasitized")) {

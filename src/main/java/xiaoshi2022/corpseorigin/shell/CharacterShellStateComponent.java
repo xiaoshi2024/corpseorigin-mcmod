@@ -18,6 +18,8 @@ public class CharacterShellStateComponent extends ShellStateComponent {
     public CharacterShellStateComponent(ServerPlayer player) {
         this.playerUuid = player.getUUID();
         this.data = PlayerCharacterData.get(player).writeNbt(player.getUUID());
+        this.data.putBoolean("JingangInfant",player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.INFANT));
+        this.data.putInt("BearArms",player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.BEAR_ARMS));
     }
 
     @Override
@@ -77,6 +79,8 @@ public class CharacterShellStateComponent extends ShellStateComponent {
             return;
         }
         PlayerCharacterData.get(player).readNbt(this.playerUuid, this.data);
+        player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.INFANT,this.data.getBooleanOr("JingangInfant",false));
+        player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.BEAR_ARMS,Math.max(0,Math.min(6,this.data.getIntOr("BearArms",0))));
     }
 
     /**

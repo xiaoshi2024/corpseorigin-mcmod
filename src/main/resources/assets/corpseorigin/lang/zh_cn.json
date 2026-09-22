@@ -1,4 +1,11 @@
 {
+  "skill.corpseorigin.muscle_rage": "进阶狂暴",
+  "skill.corpseorigin.muscle_rage.desc": "血肉狂暴8秒，力量与速度提升，暂时失去刀枪防护。",
+  "skill.corpseorigin.muscle_rage.weakpoint": "狂暴：胸前弱点暴露，刀枪防护暂时失效！",
+  "skill.corpseorigin.killing_gas.amplified": "杀势增幅：气体范围内自身和队友获得力量，敌人致幻虚弱。",
+  "scene.corpseorigin.hujie.threat": "狐姐：别再往前了……我的尾巴可都在看着你。",
+  "entity.corpseorigin.red_fire_ant": "红火蚁",
+  "entity.corpseorigin.bullet_ant": "巨大子弹蚁",
   "skill.corpseorigin.chameleon_disguise.revealed": "伪装被击碎，你现出了原形",
   "item.corpseorigin.medusa_eye.not_xiaolu": "只有小鹿才能食用美杜莎之眼",
   "item.corpseorigin.medusa_eye.already": "你已经领悟过美杜莎之力了",
@@ -565,5 +572,17 @@
   "entity.corpseorigin.great_tengu": "大天狗号",
   "skill.corpseorigin.meteor_sword.need_weapon": "需要主手持有红陨石剑。",
   "skill.corpseorigin.keeper_melee": "饲养员扑击",
-  "skill.corpseorigin.keeper_melee.desc": "近距离攻击目标。"
+  "skill.corpseorigin.keeper_melee.desc": "近距离攻击目标。",
+  "skill.corpseorigin.xuanwu_body": "玄武甲",
+  "skill.corpseorigin.xuanwu_body.desc": "展开全身龟甲，获得玄武鳞甲防护。再次使用可关闭。",
+  "body.corpseorigin.sealed": "不死髅体被红陨石之剑钉住，封印了",
+  "skill.corpseorigin.peel_shell": "剥下外皮",
+  "skill.corpseorigin.peel_shell.desc": "从被封印的不死髅体上剥下外皮，恢复人身",
+  "skill.corpseorigin.peel_shell.done": "你剥下了外皮，恢复了人身",
+  "skill.corpseorigin.flesh_abandon": "血肉抛弃",
+  "skill.corpseorigin.flesh_abandon.desc": "抛弃当前外皮，生成可供少教主夺舍的不死髅体。",
+  "skill.corpseorigin.flesh_abandon.original": "原体已藏入外皮",
+  "skill.corpseorigin.flesh_abandon.done": "血肉外皮已抛弃",
+  "skill.corpseorigin.flesh_abandon.possessed": "已进入不死髅体",
+  "entity.corpseorigin.abandoned_body": "不死髅体"
 }

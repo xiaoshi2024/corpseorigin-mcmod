@@ -42,6 +42,11 @@ public final class SkillManager {
                 break;
             }
         }
+// ★ 动态技能：少教主进入不死髅体后临时获得的躯体技能
+        if (skill == null) {
+            skill = xiaoshi2022.corpseorigin.skill.longyou.UndeadBodyState
+                    .getDynamicSkill(player, skillPath);
+        }
         if (skill == null) {
             CorpseOrigin.LOGGER.warn("玩家 {} 尝试激活不存在的技能: {}",
                     player.getName().getString(), skillPath);

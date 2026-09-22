@@ -44,6 +44,7 @@ public final class LimbRegenTickHandler {
     }
 
     private static void tickPlayer(MinecraftServer server, ServerPlayer player) {
+        if (xiaoshi2022.corpseorigin.skill.longyou.UndeadBodyState.sealed(player)) return;
         if (!LimbAccess.canDismember(player)) {
             return;
         }

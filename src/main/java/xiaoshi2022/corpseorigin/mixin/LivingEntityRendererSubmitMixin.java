@@ -50,7 +50,8 @@ public abstract class LivingEntityRendererSubmitMixin {
                                          SubmitNodeCollector collector, CameraRenderState camera, CallbackInfo ci) {
         if (!(state instanceof AvatarRenderState avatar) || !((Object)this instanceof AvatarRenderer<?>)) return;
         if (!Boolean.TRUE.equals(avatar.getGeckolibData(xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.ACTIVE))) return;
-        var renderer=xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.get();
+        var creature=xiaoshi2022.corpseorigin.client.renderer.player.CreaturePlayerRenderer.get(avatar);
+        var renderer=creature!=null?creature:xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.get();
         if(renderer==null) return;
         poses.pushPose();
         poses.scale(avatar.scale,avatar.scale,avatar.scale);

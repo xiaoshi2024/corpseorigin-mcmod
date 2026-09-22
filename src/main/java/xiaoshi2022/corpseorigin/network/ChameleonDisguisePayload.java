@@ -54,6 +54,11 @@ public final class ChameleonDisguisePayload {
         LAST_REQUEST.put(p.getUUID(),now);
         String value=input.strip();
         if(value.isEmpty()){finish(p,null);return;}
+        // 小惠是变色龙伪装的固定剧情皮肤；允许界面或命令直接输入 xiaohui。
+        if(value.equalsIgnoreCase("xiaohui") || value.equalsIgnoreCase("小惠")){
+            finish(p,null);
+            return;
+        }
         UUID id=null;
         try{id=UUID.fromString(value);}catch(IllegalArgumentException ignored){}
         if(id==null && !value.matches("[A-Za-z0-9_]{1,16}")){reply(p,"invalid");return;}

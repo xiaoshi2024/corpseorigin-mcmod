@@ -21,7 +21,7 @@ public final class ChapterCinematics {
         ClientTickEvents.END_CLIENT_TICK.register(client->{
             var p=client.player;
             boolean scene=p!=null && p.isAlive() && p.level().getGameTime()<p.getAttachedOrCreate(ChapterScenes.UNTIL)
-                    && Set.of("drain","knockback","entrance","ambush").contains(p.getAttachedOrCreate(ChapterScenes.ACTION));
+                    && Set.of("drain","knockback","entrance","ambush","threat","transform").contains(p.getAttachedOrCreate(ChapterScenes.ACTION));
             if(!scene){restore(client);return;}
             if(previousCamera==null){
                 previousCamera=client.options.getCameraType();previousFov=client.options.fov().get();

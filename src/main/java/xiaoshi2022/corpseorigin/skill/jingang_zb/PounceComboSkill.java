@@ -13,6 +13,9 @@ import xiaoshi2022.corpseorigin.skill.SkillType;
  * TODO 实装：三段位移扑击 + 命中流血 + 拖影粒子。
  */
 public class PounceComboSkill extends AbstractSkill {
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
+        xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.rush(p,true);
+    }
 
     public static final String PATH = "pounce_combo";
 

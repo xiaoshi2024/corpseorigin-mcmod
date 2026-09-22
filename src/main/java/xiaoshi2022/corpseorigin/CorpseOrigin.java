@@ -121,6 +121,7 @@ public class CorpseOrigin implements ModInitializer {
         FishEggInteraction.register();
         xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.register();
         xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.register();
+        xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.register();
 		// ⚠️ 天线宝宝必须排在其他 ALLOW_DAMAGE 监听器之前：
 		//   Fabric 的 ALLOW_DAMAGE 一旦有人 return false 就会中断后续监听器，
 		//   而"穿戴套装的生物攻击时发动吸食"挂在这个事件上 ——

@@ -12,6 +12,9 @@ import xiaoshi2022.corpseorigin.skill.SkillType;
  * TODO 实装：召唤若干虫群实体 → 群体近战 + 毒素/爆炸伤害 + 生成特效。
  */
 public class SummonSwarmSkill extends AbstractSkill {
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
+        xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.summon(p);
+    }
 
     public static final String PATH = "summon_swarm";
 

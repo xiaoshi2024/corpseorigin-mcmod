@@ -57,6 +57,19 @@ import java.util.UUID;
  * </ul>
  */
 public class CloneAvatarEntity extends PathfinderMob implements TransferredBody {
+    private boolean abandonedBody;
+    public void setAbandonedBody(boolean value) { abandonedBody = value; }
+    public boolean isAbandonedBody() { return abandonedBody; }
+    private static final EntityDataAccessor<String> ABANDONED_SKIN =
+            SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.STRING);
+
+    public void setAbandonedSkin(UUID uuid) { this.entityData.set(ABANDONED_SKIN, uuid.toString()); }
+
+    public UUID getSkinUuid() {
+        String skin = this.entityData.get(ABANDONED_SKIN);
+        try { return skin.isEmpty() ? getOwnerUuid() : UUID.fromString(skin); }
+        catch (IllegalArgumentException ignored) { return getOwnerUuid(); }
+    }
 
     /** 同步到客户端的 owner UUID */
     private static final EntityDataAccessor<String> DATA_OWNER_UUID =
@@ -104,6 +117,7 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
+        builder.define(ABANDONED_SKIN, "");
         builder.define(DATA_OWNER_UUID, "");
         builder.define(DATA_ACTIVE, false);
         builder.define(DATA_PROGRESS, 0.0F);
@@ -526,6 +540,8 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     @Override
     protected void addAdditionalSaveData(ValueOutput out) {
         super.addAdditionalSaveData(out);
+        out.putBoolean("AbandonedBody", abandonedBody);
+        out.putString("AbandonedSkin", this.entityData.get(ABANDONED_SKIN));
         UUID owner = this.getOwnerUuid();
         if (owner != null) {
             out.putString("Owner", owner.toString());
@@ -543,6 +559,8 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     @Override
     protected void readAdditionalSaveData(ValueInput in) {
         super.readAdditionalSaveData(in);
+        this.abandonedBody = in.getBooleanOr("AbandonedBody", false);
+        this.entityData.set(ABANDONED_SKIN, in.getStringOr("AbandonedSkin", ""));
         in.getString("Owner").ifPresent(s -> {
             try {
                 this.setOwnerUuid(UUID.fromString(s));
@@ -623,6 +641,7 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     @Override
     public void tick() {
         super.tick();
+        if (abandonedBody) return;
         if (this.level().isClientSide() || !this.isActive()) {
             return;
         }
@@ -656,7 +675,8 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
      * 具体 apply 逻辑放在 ServerShell 里，这里只提供数据。
      */
     public boolean canBeTransferred() {
-        return this.isActive() && this.bodyState != null;
+        return this.isActive() && this.bodyState != null
+                && !abandonedBody;
     }
 
     /**

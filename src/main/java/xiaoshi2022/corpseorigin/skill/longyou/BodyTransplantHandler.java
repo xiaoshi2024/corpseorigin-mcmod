@@ -57,6 +57,9 @@ public final class BodyTransplantHandler {
             if (!(player instanceof ServerPlayer caster) || !(entity instanceof CloneAvatarEntity body)) {
                 return InteractionResult.PASS;
             }
+            if (body.isAbandonedBody()) {
+                return BodyPossession.possess(caster, body) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+            }
             if (!isInOriginalBody(caster) || !caster.getUUID().equals(body.getOwnerUuid())) {
                 return InteractionResult.PASS;
             }
@@ -107,6 +110,7 @@ public final class BodyTransplantHandler {
      * @return true = 换身已排队（镜头播完才真正执行）
      */
     public static boolean shedIntoOriginalBody(ServerPlayer player) {
+        if (UndeadBodyState.sealed(player)) return false;
         if (!(player.level() instanceof ServerLevel)) {
             return false;
         }
@@ -150,6 +154,7 @@ public final class BodyTransplantHandler {
      * @return true = 换身已排队（镜头播完才真正换；太饿则直接 false）
      */
     public static boolean reshapeBody(ServerPlayer player) {
+        if (UndeadBodyState.sealed(player)) return false;
         if (!(player.level() instanceof ServerLevel)) {
             return false;
         }
@@ -180,6 +185,40 @@ public final class BodyTransplantHandler {
         ServerShell.of(player).apply(buildOwnBody(player, 1.0F, true));
         player.sendOverlayMessage(Component.translatable(
                 "skill.corpseorigin." + FleshReshapeSkill.PATH + ".done"));
+    }
+
+    /** An unowned, empty shell; inventory stays with the living original body. */
+    public static void abandonBody(ServerPlayer player) {
+        if (UndeadBodyState.sealed(player)) return;
+        if (!LongYou.ID.equals(PlayerCharacterData.get(player).getCharacterId(player.getUUID()))) return;
+        if (isInOriginalBody(player)) {
+            player.sendOverlayMessage(Component.translatable("skill.corpseorigin.flesh_abandon.original"));
+            return;
+        }
+        CorpseNetwork.playTransferCutscene(player, player.blockPosition(), player.getDirection(),
+                player.level().dimension().identifier(), p -> {
+                    if (!p.isAlive() || isInOriginalBody(p)
+                            || !LongYou.ID.equals(PlayerCharacterData.get(p).getCharacterId(p.getUUID()))) return;
+                    ServerLevel level = (ServerLevel)p.level();
+                    ShellState empty = buildOwnBody(p, 1.0F, false);
+                    CloneAvatarEntity body = new CloneAvatarEntity(ModEntities.CLONE_AVATAR, level);
+                    body.setBodyState(empty);
+                    body.setOwnerUuid(null);
+                    body.setAbandonedSkin(p.getUUID());
+                    body.setAbandonedBody(true);
+                    body.setNoAi(true);
+                    body.setPersistenceRequired();
+                    body.setActive(true);
+                    body.setProgress(1.0F);
+                    body.setCustomName(Component.translatable("entity.corpseorigin.abandoned_body"));
+                    body.setCustomNameVisible(true);
+                    body.setPos(p.getX(), p.getY(), p.getZ());
+                    body.setYRot(p.getYRot());
+                    if (!level.addFreshEntity(body)) return;
+                    ServerShell.of(p).apply(buildOwnBody(p, LongYou.ORIGINAL_BODY_SCALE, true));
+                    grantReshapeFallback(p);
+                    p.sendOverlayMessage(Component.translatable("skill.corpseorigin.flesh_abandon.done"));
+                });
     }
 
     // ==================== 技能不随换身丢失 ====================
