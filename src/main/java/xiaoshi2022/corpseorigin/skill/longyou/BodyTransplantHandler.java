@@ -86,9 +86,9 @@ public final class BodyTransplantHandler {
         // ★ 真过场：镜头播完（见 CorpseNetwork#playTransferCutscene）才真正穿回去，
         //   终点是那具旧身体所在的位置/维度，所以镜头会朝它甩出去
         CorpseNetwork.playTransferCutscene(player,
-                state.getPos() == null ? body.blockPosition() : state.getPos(),
+                body.blockPosition(),
                 player.getDirection(),
-                state.getWorld() == null ? body.level().dimension().identifier() : state.getWorld(),
+                body.level().dimension().identifier(),
                 p -> doReturnToBody(p, body));
         return true;
     }
@@ -96,11 +96,22 @@ public final class BodyTransplantHandler {
     /** 过场结束后的实际动作：取下快照 → 移除分身（remove() 会顺手清掉身体索引）→ 写回玩家 */
     private static void doReturnToBody(ServerPlayer player, CloneAvatarEntity body) {
         ShellState state = body.getBodyState();
-        if (state == null) {
+        if (state == null || !body.isAlive() || body.isRemoved()
+                || !player.getUUID().equals(body.getOwnerUuid()) || !isInOriginalBody(player)) {
             return;   // 过场这几秒里身体被取走了
         }
+        // The shell can move during the cutscene; its saved snapshot is not a live location.
+        var destination = body.position();
+        float yaw = body.getYRot();
+        float pitch = body.getXRot();
+        state.setPos(body.blockPosition());
+        state.setWorld(body.level().dimension().identifier());
         body.discard();
         ServerShell.of(player).apply(state);
+        // ShellState stores block coordinates; preserve the body's exact position and facing.
+        player.teleportTo(destination.x, destination.y, destination.z);
+        player.setYRot(yaw);
+        player.setXRot(pitch);
     }
 
     /**
@@ -160,6 +171,12 @@ public final class BodyTransplantHandler {
         }
 
         FoodData food = player.getFoodData();
+        if (LongYou.ID.equals(PlayerCharacterData.get(player).getCharacterId(player.getUUID()))) {
+            if (!BloodReserve.spend(player)) return false;
+            CorpseNetwork.playTransferCutscene(player, player.blockPosition(), player.getDirection(),
+                    player.level().dimension().identifier(), BodyTransplantHandler::doReshapeBody);
+            return true;
+        }
         // 脱身保底：人正缩在原体里的话，饿着也得放得出来（代价自然只剩"没什么可扣的"），
         // 不然被饿死/困在拇指身体里就真出不来了
         boolean fallback = isInOriginalBody(player);

@@ -45,8 +45,7 @@ public final class UndeadBodyState {
      * 不在这个状态就返回 null —— SkillManager 会当成“找不到技能定义”处理。
      */
     public static ISkill getDynamicSkill(ServerPlayer p, String path) {
-        if (!eligible(p)) return null;
-        if (p.getAttachedOrCreate(STATE) != 1) return null;
+        if (p.getAttachedOrCreate(BodyPossession.SKIN).isEmpty()) return null;
         return switch (path) {
             case "xuanwu_body" -> XUANWU_BODY;
             case "peel_shell" -> PEEL_SHELL;
@@ -66,9 +65,6 @@ public final class UndeadBodyState {
             data.learnSkill(p.getUUID(), "peel_shell");
         } else {
             removeXuanwuAttributes(p);                   // ★ 脱甲：摘数值
-            data.getLearnedSkills(p.getUUID()).remove("xuanwu_body");
-            data.getLearnedSkills(p.getUUID()).remove("peel_shell");
-            data.setDirty();
         }
         CorpseNetwork.sendEvolutionSync(p);
     }
@@ -111,14 +107,14 @@ public final class UndeadBodyState {
     private static final double XUANWU_ARMOR_VALUE     = 18.0;
     private static final double XUANWU_TOUGHNESS_VALUE = 8.0;
     private static final double XUANWU_KNOCKBACK_VALUE = 0.6;
-    private static final double XUANWU_SPEED_PENALTY   = -0.02;
 
     /** 披上玄武鳞甲：套数值加成。重复调用安全（同 id 原地替换）。 */
     public static void applyXuanwuAttributes(LivingEntity e) {
         setAttr(e, Attributes.ARMOR,               XUANWU_ARMOR,     XUANWU_ARMOR_VALUE);
         setAttr(e, Attributes.ARMOR_TOUGHNESS,     XUANWU_TOUGHNESS, XUANWU_TOUGHNESS_VALUE);
         setAttr(e, Attributes.KNOCKBACK_RESISTANCE,XUANWU_KNOCKBACK, XUANWU_KNOCKBACK_VALUE);
-        setAttr(e, Attributes.MOVEMENT_SPEED,      XUANWU_SPEED,     XUANWU_SPEED_PENALTY);
+        // Clear the persisted movement penalty from older versions, even while armored.
+        removeAttr(e, Attributes.MOVEMENT_SPEED, XUANWU_SPEED);
     }
 
     /** 脱掉玄武鳞甲：摘掉数值加成。 */

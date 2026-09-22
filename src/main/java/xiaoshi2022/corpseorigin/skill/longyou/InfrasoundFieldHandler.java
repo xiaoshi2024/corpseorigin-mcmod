@@ -277,7 +277,7 @@ public final class InfrasoundFieldHandler {
             if (!(level.getEntity(uuid) instanceof Mob mob) || !mob.isAlive()) {
                 continue;
             }
-            if (casterTarget != null) {
+            if (casterTarget != null && casterTarget != mob) {
                 mob.setTarget(casterTarget);
                 mob.getNavigation().moveTo(casterTarget, 1.2D);
             } else {

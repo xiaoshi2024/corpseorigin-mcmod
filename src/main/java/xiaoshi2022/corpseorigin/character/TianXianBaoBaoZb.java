@@ -88,7 +88,6 @@ public class TianXianBaoBaoZb implements ICharacter {
 
         // 玩家角色要保留意识，否则一换角色就变成只会本能行动的怪物
         PlayerCorpseComponent comp = PlayerCorpseComponent.get(player);
-        comp.restoreConsciousness();
 
         equipArmor(player);
 

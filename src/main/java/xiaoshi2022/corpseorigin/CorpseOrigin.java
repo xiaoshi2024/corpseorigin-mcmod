@@ -88,6 +88,9 @@ public class CorpseOrigin implements ModInitializer {
 
 		// ✅ 注册 DataAttachment（必须在网络之前）
 		ModDataAttachments.init();
+		xiaoshi2022.corpseorigin.event.ConsciousnessInteractions.register();
+		xiaoshi2022.corpseorigin.skill.longyou.BloodReserve.init();
+		xiaoshi2022.corpseorigin.skill.longyou.BodyPossession.init();
 
 		ShellStateComponentRegistry.getInstance().register(
 				CorpseShellStateComponent::new,

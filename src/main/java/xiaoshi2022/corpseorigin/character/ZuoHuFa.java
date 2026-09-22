@@ -106,7 +106,6 @@ public class ZuoHuFa implements ICharacter {
         }
 
         // 玩家角色要保留意识，否则一换角色就变成只会本能行动的怪物
-        comp.restoreConsciousness();
 
         // 基础数值：拿到角色就是蛟龙合体形态那一档（必须在变种设好之后调，它按形态取档）
         applyIfZuoHuFa(player);

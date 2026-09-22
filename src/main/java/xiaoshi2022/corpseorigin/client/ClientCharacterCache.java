@@ -20,17 +20,37 @@ public final class ClientCharacterCache {
         if (character == null || character.isPassive()) {
             return new ArrayList<>();
         }
-        return character.getSkills();
+        List<ISkill> skills = new ArrayList<>(character.getSkills());
+        if (!"longyou".equals(character.getId()))
+            skills.removeIf(s -> isBodySkill(s.getId().getPath()));
+        if (hasBorrowedBody()) {
+            if (skills.stream().noneMatch(s -> s.getId().getPath().equals("xuanwu_body")))
+                skills.add(new xiaoshi2022.corpseorigin.skill.longyou.XuanwuBodySkill());
+            if (skills.stream().noneMatch(s -> s.getId().getPath().equals("peel_shell")))
+                skills.add(new xiaoshi2022.corpseorigin.skill.jingang_zb.PeelShellSkill());
+        }
+        return skills;
     }
 
     /** 已学习且可主动释放的技能（轮盘用） */
     public static List<ISkill> getActivatableSkills() {
         List<ISkill> result = new ArrayList<>();
         for (ISkill skill : getCharacterSkills()) {
-            if (skill.isActivatable() && ClientState.hasLearned(skill.getId().getPath())) {
+            if (skill.isActivatable() && (ClientState.hasLearned(skill.getId().getPath())
+                    || (hasBorrowedBody() && isBodySkill(skill.getId().getPath())))) {
                 result.add(skill);
             }
         }
         return result;
+    }
+
+    private static boolean hasBorrowedBody() {
+        var player = net.minecraft.client.Minecraft.getInstance().player;
+        return player != null && !player.getAttachedOrCreate(
+                xiaoshi2022.corpseorigin.skill.longyou.BodyPossession.SKIN).isEmpty();
+    }
+
+    private static boolean isBodySkill(String path) {
+        return path.equals("xuanwu_body") || path.equals("peel_shell");
     }
 }

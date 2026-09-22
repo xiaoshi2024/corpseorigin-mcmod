@@ -23,6 +23,7 @@ import xiaoshi2022.corpseorigin.item.weapon.BloodLotusLamp;
 import java.util.function.Supplier;
 
 public final class ModItems {
+    public static final Item DR_MU_EYE = register("dr_mu_eye", new Item(new Item.Properties().setId(itemKey("dr_mu_eye"))));
     public static final Item RED_METEOR_SWORD = register("red_meteor_sword",new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,3,-2.4f).setId(itemKey("red_meteor_sword"))));
     public static final Item PARCEL_BOMB = register("parcel_bomb",new Item(new Item.Properties().setId(itemKey("parcel_bomb"))));
     public static final Item BILLIARD_EIGHT = register("billiard_eight",new Item(new Item.Properties().setId(itemKey("billiard_eight"))));
@@ -245,6 +246,7 @@ public final class ModItems {
                 output.accept(DOG_CAGE);
                 output.accept(MAGICIAN_RABBIT);
                 output.accept(MEDUSA_EYE);
+                output.accept(DR_MU_EYE);
                 output.accept(COCO_ZOMBIE_SPAWN_EGG);
                 output.accept(COCO_ZOMBIE_X_SPAWN_EGG);
                 output.accept(UNCLE_SPAWN_EGG);

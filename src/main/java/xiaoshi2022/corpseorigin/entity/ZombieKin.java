@@ -77,6 +77,9 @@ public interface ZombieKin {
 
         // ✅ 尸王：尸族不敢对他不敬 —— 主动攻击、被打了还手，一律不允许
         if (isZombieKing(target)) return false;
+        if (attacker instanceof net.minecraft.world.entity.Mob mob
+                && mob.entityTags().contains(xiaoshi2022.corpseorigin.skill.longyou.InfrasoundFieldHandler.CONTROL_TAG)
+                && mob.getTarget() == target) return true;
 
         // 目标不是尸族 → 可以攻击
         if (!isZombieKin(target)) {

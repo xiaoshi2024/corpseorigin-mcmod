@@ -27,6 +27,9 @@ public final class BodyPossession {
     public static final String CAPABLE = "corpseorigin:can_possess";
     private BodyPossession() {}
 
+    /** Register synchronized attachments on both sides before joining a world. */
+    public static void init() {}
+
     public static boolean canPossess(LivingEntity actor) {
         if (!(actor instanceof ServerPlayer player)) return false;
         String role = CharacterManager.getInstance().getPlayerCharacterId(player);

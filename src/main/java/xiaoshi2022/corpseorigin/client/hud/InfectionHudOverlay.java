@@ -39,6 +39,12 @@ public final class InfectionHudOverlay {
         int barWidth = 182;
         int x = graphics.guiWidth() - barWidth - 10;
         int y = 10;
+        if ("longyou".equals(mc.player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE))) {
+            int blood = mc.player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.BloodReserve.VALUE);
+            graphics.fill(x, 78, x + barWidth, 83, 0x88000000);
+            graphics.fill(x, 78, x + barWidth * blood / 600, 83, 0xFFCC2244);
+            graphics.text(mc.font, Component.literal("气血 " + blood + " / 600 · 恢复消耗 200"), x, 85, 0xFFFF8899, true);
+        }
 
         // ✅ 判断是不是尸兄玩家
         boolean isCorpse = false;

@@ -141,6 +141,8 @@ public final class LongYouEventHandler {
             if (!LongYou.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(caster))) {
                 return;
             }
+            xiaoshi2022.corpseorigin.skill.longyou.BloodReserve.add(caster,
+                    Math.max(1, (int)Math.ceil(damageTaken)));
             if (caster.getHealth() >= caster.getMaxHealth()) {
                 return;
             }

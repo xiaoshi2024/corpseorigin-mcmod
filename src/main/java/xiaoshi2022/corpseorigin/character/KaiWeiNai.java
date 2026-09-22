@@ -94,7 +94,6 @@ public class KaiWeiNai implements ICharacter {
 
         // 玩家角色要保留意识，否则一换角色就变成只会本能行动的怪物
         PlayerCorpseComponent comp = PlayerCorpseComponent.get(player);
-        comp.restoreConsciousness();
 
         // restoreConsciousness 不会触发同步，补一次；
         // 必须广播：尸兄外观是别的玩家看你时才渲染的。

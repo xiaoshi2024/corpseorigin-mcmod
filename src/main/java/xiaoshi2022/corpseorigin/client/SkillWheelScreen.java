@@ -64,6 +64,11 @@ public class SkillWheelScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
+        var currentSkills = ClientCharacterCache.getActivatableSkills();
+        if (!slots.stream().map(s -> s.skill().getId()).toList().equals(
+                currentSkills.stream().map(ISkill::getId).toList())) {
+            init();
+        }
         // 半透明背景
         graphics.fill(0, 0, this.width, this.height, 0x66000000);
 

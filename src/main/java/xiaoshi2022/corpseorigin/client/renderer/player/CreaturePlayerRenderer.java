@@ -24,7 +24,9 @@ public final class CreaturePlayerRenderer extends GeoReplacedEntityRenderer<Play
     }
     public static CreaturePlayerRenderer get(AvatarRenderState state){return RENDERERS.get(state.getGeckolibData(MODEL));}
     public static boolean extract(AbstractClientPlayer p,AvatarRenderState state,float partial){
-        if (p.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.BodyPossession.HUMAN)) {
+        String currentRole = p.getAttachedOrCreate(ChapterActorState.ROLE);
+        if ((currentRole.equals("jingang_zb") || currentRole.equals("shichaozhizi"))
+                && p.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.BodyPossession.HUMAN)) {
             state.addGeckolibData(MODEL, "");
             return false;
         }

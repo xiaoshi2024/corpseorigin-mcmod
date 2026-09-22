@@ -58,7 +58,8 @@ public final class SkillManager {
 
         // 校验已学习（「原体保底」例外见 isOriginalBodyFallback）
         PlayerCharacterData data = PlayerCharacterData.get(player);
-        if (!data.hasLearned(player.getUUID(), skillPath) && !isOriginalBodyFallback(player, skillPath)) {
+        if (!data.hasLearned(player.getUUID(), skillPath) && !isOriginalBodyFallback(player, skillPath)
+                && xiaoshi2022.corpseorigin.skill.longyou.UndeadBodyState.getDynamicSkill(player, skillPath) == null) {
             CorpseOrigin.LOGGER.warn("玩家 {} 尝试激活未学习的技能: {}",
                     player.getName().getString(), skillPath);
             return false;
