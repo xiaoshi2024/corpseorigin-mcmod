@@ -128,6 +128,10 @@ public class CharacterManager {
         // 清理旧角色
         ICharacter old = getCharacter(oldId);
         old.onLose(player);
+        // Some roles have no onLose override. Never carry the previous body's
+        // infection/identity into a newly selected human role.
+        if (!CorpseBrother.ID.equals(character.getId()))
+            xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.removeCorpseState(player);
 
         // 应用新角色
         data.setCharacterId(player.getUUID(), character.getId());
@@ -196,6 +200,8 @@ public class CharacterManager {
     public void syncToClient(ServerPlayer player) {
         String characterId = getPlayerCharacterId(player);
         CorpseNetwork.sendCharacterSync(player, characterId);
+        CorpseNetwork.sendInfectionSync(player);
+        CorpseNetwork.broadcastPlayerCorpseSync(player);
         // ✅ 同步进化状态 + 已学技能
         CorpseNetwork.sendEvolutionSync(player);
         // ✅ 同步内力：HUD 只认这个包，而内力表在退出时会被清掉，

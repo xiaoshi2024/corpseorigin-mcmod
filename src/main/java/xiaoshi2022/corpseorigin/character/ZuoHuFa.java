@@ -97,6 +97,7 @@ public class ZuoHuFa implements ICharacter {
     @Override
     public void onAcquire(Player player) {
         PlayerCorpseComponent comp = PlayerCorpseComponent.get(player);
+        comp.restoreConsciousness();
         if (comp.isCorpse()) {
             // 本来就是尸兄（感染 / 别的尸兄角色转过来）→ 只改外观变种，别把已有的类型、进化等级、饥饱抹掉
             comp.setVariant(PlayerCorpseComponent.VARIANT_ZUO_GUARDIAN);

@@ -1,4 +1,5 @@
 {
+  "skill.corpseorigin.golden_cicada_shell.already_original": "You are already in your original body and cannot shed another shell.",
   "item.corpseorigin.dr_mu_eye": "Dr. Mu's Eye",
   "skill.corpseorigin.muscle_rage": "Advanced Rage",
   "skill.corpseorigin.muscle_rage.desc": "Eight seconds of strength and speed, exposing the chest and disabling iron protection.",
@@ -203,8 +204,8 @@
   "character.corpseorigin.jingang_zb.trait2": "Advanced Frenzy: After being worn down in stage one, it evolves, clearing debuffs and healing 50%",
   "character.corpseorigin.jingang_zb.trait3": "Siege Foe: Killed by a headshot from Hei Xiaofei in the original story",
   "character.corpseorigin.xiaohui": "Xiao Hui",
-  "character.corpseorigin.xiaohui.desc": "The central hostage of the Life-and-Death Chess Game, used by Long You as the black general piece. A story NPC with no combat ability.",
-  "character.corpseorigin.xiaohui.trait1": "Central Hostage: Used as the black general piece in the chess game",
+  "character.corpseorigin.xiaohui.desc": "True Xiao Hui, protected by LongYou",
+  "character.corpseorigin.xiaohui.trait1": "The reincarnation of Long You's former lover",
   "character.corpseorigin.xiaohui.trait2": "No Combat Ability: Only drives the plot forward",
   "character.corpseorigin.xiaohui.trait3": "Story-prop NPC: Needs a base model and frightened idle animation",
   "character.corpseorigin.tushu": "Uncle Tu",

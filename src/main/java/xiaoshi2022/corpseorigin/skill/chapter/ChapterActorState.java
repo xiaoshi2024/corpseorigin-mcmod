@@ -34,7 +34,11 @@ public final class ChapterActorState {
                                 xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.TYPE_NORMAL,
                                 xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.VARIANT_NO_EXOSKELETON);
                     }
-                    if (comp.getInfection() != 100) {
+                    // Repair existing saves as well as freshly selected advanced/animal roles.
+                    boolean restored = !xiaoshi2022.corpseorigin.event.ConsciousnessInteractions.requiresRecovery(role)
+                            && !comp.hasConsciousness();
+                    if (restored) comp.restoreConsciousness();
+                    if (comp.getInfection() != 100 || restored) {
                         comp.setInfection(100);
                         xiaoshi2022.corpseorigin.network.CorpseNetwork.sendInfectionSync(player);
                         xiaoshi2022.corpseorigin.network.CorpseNetwork.broadcastPlayerCorpseSync(player);

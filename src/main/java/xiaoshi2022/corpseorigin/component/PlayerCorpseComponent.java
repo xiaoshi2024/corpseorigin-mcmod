@@ -553,6 +553,9 @@ public class PlayerCorpseComponent {
     public static void removeCorpseState(Player player) {
         player.setAttached(ModDataAttachments.PLAYER_CORPSE, new CompoundTag());
         syncToClient(player);
+        if (player instanceof ServerPlayer serverPlayer) {
+            CorpseNetwork.sendInfectionSync(serverPlayer);
+        }
     }
 
     private static void syncToClient(Player player) {

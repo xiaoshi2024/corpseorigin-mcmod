@@ -26,7 +26,11 @@ public abstract class LivingEntityBreatheMixin {
 
     @Inject(method = "canBreatheUnderwater", at = @At("HEAD"), cancellable = true)
     private void corpseorigin$mutantBreathesUnderwater(CallbackInfoReturnable<Boolean> cir) {
-        if ((Object) this instanceof Player player && MutantForm.isMutant(player)) {
+        if ((Object) this instanceof Player player && (MutantForm.isMutant(player)
+                || xiaoshi2022.corpseorigin.character.BianYiGuiYu.ID.equals(
+                    player.level().isClientSide()
+                        ? player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE)
+                        : xiaoshi2022.corpseorigin.character.CharacterManager.getInstance().getPlayerCharacterId(player)))) {
             cir.setReturnValue(true);
         }
     }

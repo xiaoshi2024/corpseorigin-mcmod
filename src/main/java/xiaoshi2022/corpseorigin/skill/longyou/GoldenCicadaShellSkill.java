@@ -25,6 +25,15 @@ public class GoldenCicadaShellSkill extends AbstractSkill {
     }
 
     @Override
+    public net.minecraft.network.chat.Component checkUsable(ServerPlayer player) {
+        if (BodyTransplantHandler.isInOriginalBody(player))
+            return net.minecraft.network.chat.Component.translatable("skill.corpseorigin.golden_cicada_shell.already_original");
+        if (UndeadBodyState.sealed(player))
+            return net.minecraft.network.chat.Component.translatable("body.corpseorigin.sealed");
+        return null;
+    }
+
+    @Override
     public void onActivate(ServerPlayer player) {
         // 换身由 BodyTransplantHandler 排队执行：镜头过场播完才真正脱壳，
         // 完成提示也在那时候发 —— 现在发会被过场的黑场盖掉。

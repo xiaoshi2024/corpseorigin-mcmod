@@ -121,7 +121,11 @@ public final class BodyTransplantHandler {
      * @return true = 换身已排队（镜头播完才真正执行）
      */
     public static boolean shedIntoOriginalBody(ServerPlayer player) {
-        if (UndeadBodyState.sealed(player)) return false;
+        if (UndeadBodyState.sealed(player) || isInOriginalBody(player)) {
+            if (isInOriginalBody(player))
+                player.sendOverlayMessage(Component.translatable("skill.corpseorigin.golden_cicada_shell.already_original"));
+            return false;
+        }
         if (!(player.level() instanceof ServerLevel)) {
             return false;
         }
@@ -133,7 +137,8 @@ public final class BodyTransplantHandler {
     }
 
     private static void doShedIntoOriginalBody(ServerPlayer player) {
-        if (!(player.level() instanceof ServerLevel level)) {
+        if (!(player.level() instanceof ServerLevel level) || isInOriginalBody(player)
+                || UndeadBodyState.sealed(player)) {
             return;
         }
         ShellState original = buildOwnBody(player, LongYou.ORIGINAL_BODY_SCALE, false);
