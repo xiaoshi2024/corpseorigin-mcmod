@@ -39,6 +39,10 @@ public abstract class HumanoidModelLimbArmorMixin {
         HumanoidModel<?> self = (HumanoidModel<?>) (Object) this;
         Integer mask = avatar.getGeckolibData(LimbRenderData.LIMB_MASK);
         int severedMask = mask == null ? 0 : (mask & LimbSlots.MASK_ALL);
+        var level=net.minecraft.client.Minecraft.getInstance().level;
+        var actor=level==null?null:level.getEntity(avatar.id);
+        if(actor!=null && xiaoshi2022.corpseorigin.skill.chapter.BodySkillState.missingForearm(actor))
+            severedMask |= 1 << LimbSlots.RIGHT_ARM;
 
         for (int slot = 0; slot < LimbSlots.COUNT; slot++) {
             int bit = 1 << slot;

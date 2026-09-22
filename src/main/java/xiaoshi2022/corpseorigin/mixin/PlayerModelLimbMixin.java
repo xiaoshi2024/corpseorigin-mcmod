@@ -36,6 +36,10 @@ public abstract class PlayerModelLimbMixin {
             if(actor.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.UNTIL)>level.getGameTime()) {
                 float phase=(float)Math.sin(state.ageInTicks*.35);
                 switch(action) {
+                    case "round_dance" -> {self.rightArm.zRot=1.1f;self.leftArm.zRot=-1.1f;self.rightLeg.xRot=-.7f;self.leftLeg.xRot=.7f;}
+                    case "tiangang_right","tiangang_combo" -> {self.rightArm.xRot=-1.6f;self.body.yRot=-.3f;}
+                    case "tiangang_left" -> {self.leftArm.xRot=-1.6f;self.body.yRot=.3f;}
+                    case "tiangang_slam" -> {self.rightArm.xRot=-2.8f;self.leftArm.xRot=-2.8f;self.rightLeg.xRot=-.6f;self.leftLeg.xRot=-.6f;}
                     case "drain" -> {self.head.xRot=.5f;self.body.xRot=.15f;self.rightArm.zRot=.18f+phase*.05f;self.leftArm.zRot=-.18f-phase*.05f;}
                     case "knockback" -> {self.head.xRot=-.5f;self.rightArm.xRot=-1.4f;self.leftArm.xRot=-1.4f;self.rightLeg.xRot=.7f;self.leftLeg.xRot=.5f;}
                     case "entrance" -> {self.rightArm.xRot=-1.6f;self.leftArm.zRot=-.35f;self.head.xRot=-.15f;}
@@ -52,7 +56,8 @@ public abstract class PlayerModelLimbMixin {
         self.head.visible = !head;
         self.hat.visible = !head;
 
-        boolean rightArm = severed(severed, LimbSlots.RIGHT_ARM);
+        boolean rightArm = severed(severed, LimbSlots.RIGHT_ARM)
+                || (actor!=null && xiaoshi2022.corpseorigin.skill.chapter.BodySkillState.missingForearm(actor));
         self.rightArm.visible = !rightArm;
         self.rightSleeve.visible = !rightArm;
 

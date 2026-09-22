@@ -23,6 +23,8 @@ import xiaoshi2022.corpseorigin.item.weapon.BloodLotusLamp;
 import java.util.function.Supplier;
 
 public final class ModItems {
+    public static final Item BEE_WHEEL=register("bee_wheel",new BeeWheelItem(new Item.Properties()
+            .sword(ToolMaterial.DIAMOND,8,-2.4f).stacksTo(1).setId(itemKey("bee_wheel"))));
     public static final Item DR_MU_EYE = register("dr_mu_eye", new Item(new Item.Properties().setId(itemKey("dr_mu_eye"))));
     public static final Item RED_METEOR_SWORD = register("red_meteor_sword",new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,3,-2.4f).setId(itemKey("red_meteor_sword"))));
     public static final Item PARCEL_BOMB = register("parcel_bomb",new Item(new Item.Properties().setId(itemKey("parcel_bomb"))));
@@ -226,6 +228,7 @@ public final class ModItems {
                 output.accept(BYWATER_BOTTLE);
                 output.accept(JUQUE_TW);
                 output.accept(BLOOD_WING_BLADE);
+                output.accept(BEE_WHEEL);
                 output.accept(RED_METEOR_SWORD);
                 output.accept(PARCEL_BOMB);
                 output.accept(BILLIARD_EIGHT);

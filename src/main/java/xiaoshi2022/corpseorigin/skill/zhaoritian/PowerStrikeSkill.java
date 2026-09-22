@@ -26,8 +26,8 @@ public class PowerStrikeSkill extends AbstractSkill {
     @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
         var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,4); if(target==null)return;
         boolean story=!(target instanceof net.minecraft.world.entity.player.Player) && target.entityTags().contains("corpseorigin_story_execution");
-        target.hurtServer((net.minecraft.server.level.ServerLevel)p.level(),p.damageSources().playerAttack(p),story?target.getHealth()*20+100:12);
-        p.swing(net.minecraft.world.InteractionHand.MAIN_HAND,true);
+        target.hurtServer((net.minecraft.server.level.ServerLevel)p.level(),p.damageSources().playerAttack(p),story?target.getHealth()*20+100:80);
+        xiaoshi2022.corpseorigin.skill.chapter.ImpactTerrain.launch(p,target,3);p.swing(net.minecraft.world.InteractionHand.MAIN_HAND,true);
         ((net.minecraft.server.level.ServerLevel)p.level()).sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION,
                 target.getX(),target.getY()+1,target.getZ(),1,0,0,0,0);
     }

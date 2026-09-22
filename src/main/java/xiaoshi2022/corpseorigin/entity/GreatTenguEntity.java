@@ -19,12 +19,15 @@ public class GreatTenguEntity extends Entity implements GeoEntity {
     private int remaining=200;
     private int phase;
     private boolean laserCalled;
+    private UUID laserTarget;
+    private int laserCooldown;
     private final AnimatableInstanceCache cache=GeckoLibUtil.createInstanceCache(this);
     public GreatTenguEntity(EntityType<? extends GreatTenguEntity> type,Level level){super(type,level);setNoGravity(true);}
     public void setOwner(ServerPlayer player){owner=player.getUUID();}
     public boolean isOwnedBy(ServerPlayer player){return owner!=null && owner.equals(player.getUUID());}
     @Override public void tick(){
         super.tick(); if(!(level() instanceof ServerLevel level))return;
+        if(laserCooldown>0)laserCooldown--;
         if(--remaining<=0 || owner==null || !(level.getEntity(owner) instanceof ServerPlayer player)
                 || !player.isAlive() || !"fengmohuitailang".equals(xiaoshi2022.corpseorigin.character.CharacterManager.getInstance().getPlayerCharacterId(player))){discard();return;}
         if(phase==2){
@@ -35,11 +38,12 @@ public class GreatTenguEntity extends Entity implements GeoEntity {
         }
         if(laserCalled){
             laserCalled=false;
-            var target=level.getEntitiesOfClass(ServerPlayer.class,getBoundingBox().inflate(10),p->p!=player && p.isAlive()).stream().findFirst().orElse(null);
-            if(target!=null){
-                for(int i=0;i<18;i++) ChapterCombat.dust(level,target.getEyePosition().add(0,i*.25,0),0x21e6e6,2);
-                target.hurtServer(level,damageSources().generic(),8);
-                if(target.getHealth()<target.getMaxHealth()*.55){ UndeadBodyState.enterShip(target); phase=2; }
+            var entity=laserTarget==null?ChapterCombat.aim(player,64):level.getEntity(laserTarget);
+            laserTarget=null;
+            if(entity instanceof net.minecraft.world.entity.LivingEntity target && ChapterCombat.canHit(player,target)
+                    && player.distanceToSqr(target)<=4096 && player.hasLineOfSight(target)){
+                for(int i=0;i<48;i++) ChapterCombat.dust(level,position().lerp(target.getEyePosition(),i/48.0),0x21e6e6,2);
+                target.hurtServer(level,damageSources().playerAttack(player),48);
             }
         }
         if(remaining%10!=0)return;
@@ -60,7 +64,11 @@ public class GreatTenguEntity extends Entity implements GeoEntity {
     @Override protected void defineSynchedData(SynchedEntityData.Builder b){}
     @Override protected void addAdditionalSaveData(ValueOutput out){out.putString("Owner",owner==null?"":owner.toString());out.putInt("Remaining",remaining);out.putInt("Phase",phase);}
     /** Explicitly called by the ninja leader; no timed firing. */
-    public void callLaser() { if (phase == 0 || phase == 1) laserCalled = true; }
+    public void callLaser() { if ((phase == 0 || phase == 1) && laserCooldown==0) {laserCalled = true;laserCooldown=40;} }
+    public boolean callLaser(net.minecraft.world.entity.LivingEntity target) {
+        if(laserCooldown>0 || phase>1)return false;
+        laserTarget=target.getUUID();callLaser();return true;
+    }
     @Override protected void readAdditionalSaveData(ValueInput in){
         try{owner=UUID.fromString(in.getStringOr("Owner",""));}catch(IllegalArgumentException e){owner=null;}
         remaining=Math.min(200,in.getIntOr("Remaining",0)); phase=in.getIntOr("Phase",0);

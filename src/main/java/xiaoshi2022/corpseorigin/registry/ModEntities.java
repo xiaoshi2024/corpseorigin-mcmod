@@ -11,6 +11,17 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.entity.*;
 
 public final class ModEntities {
+    private static EntityType<SkillConstructEntity> construct(String id){
+        return register(id,EntityType.Builder.<SkillConstructEntity>of(SkillConstructEntity::new,MobCategory.MISC)
+                .sized(.5f,.5f).clientTrackingRange(12).updateInterval(1));
+    }
+    public static final EntityType<SkillConstructEntity> BLACK_GOLD_HEART=construct("black_gold_heart");
+    public static final EntityType<SkillConstructEntity> VINE_BIND=construct("vine_bind");
+    public static final EntityType<SkillConstructEntity> BLOOD_LOTUS_PETAL=construct("blood_lotus_petal");
+    public static final EntityType<SkillConstructEntity> BEE_WHEEL=construct("bee_wheel");
+    public static final EntityType<SkillConstructEntity> SLAUGHTER_INCARNATION=construct("slaughter_incarnation");
+    public static final EntityType<SkillConstructEntity> SEVERED_FOREARM=construct("severed_forearm");
+    public static final EntityType<SkillConstructEntity> TIANGANG_HALO=construct("tiangang_halo");
     public static final EntityType<CorpseAntEntity> RED_FIRE_ANT=register("red_fire_ant",EntityType.Builder.<CorpseAntEntity>of(CorpseAntEntity::new,MobCategory.MONSTER).sized(.7f,.65f).clientTrackingRange(8));
     public static final EntityType<CorpseAntEntity> BULLET_ANT=register("bullet_ant",EntityType.Builder.<CorpseAntEntity>of(CorpseAntEntity::new,MobCategory.MONSTER).sized(1.1f,.85f).clientTrackingRange(8));
     public static final EntityType<GreatTenguEntity> GREAT_TENGU = register("great_tengu",EntityType.Builder.<GreatTenguEntity>of(GreatTenguEntity::new,MobCategory.MISC)

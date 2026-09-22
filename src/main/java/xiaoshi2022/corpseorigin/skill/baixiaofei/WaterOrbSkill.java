@@ -18,4 +18,19 @@ public class WaterOrbSkill extends AbstractSkill {
     public WaterOrbSkill() {
         super(PATH, SkillType.COMBAT, 160);   // 8s
     }
+    @Override public net.minecraft.network.chat.Component checkUsable(net.minecraft.server.level.ServerPlayer p) {
+        return xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,20)==null
+                ? net.minecraft.network.chat.Component.translatable("skill.corpseorigin.chapter.need_target") : null;
+    }
+    @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
+        var t=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,20);if(t==null)return;
+        var level=(net.minecraft.server.level.ServerLevel)p.level();
+        for(int i=0;i<24;i++) {
+            var v=p.getEyePosition().lerp(t.getEyePosition(),i/24.0);
+            level.sendParticles(net.minecraft.core.particles.ParticleTypes.SPLASH,v.x,v.y,v.z,5,.15,.15,.15,.1);
+        }
+        t.hurtServer(level,p.damageSources().playerAttack(p),24);
+        xiaoshi2022.corpseorigin.skill.chapter.SkillRework.buff(t,net.minecraft.world.effect.MobEffects.SLOWNESS,80,2);
+        t.push(p.getLookAngle().x*1.5,.4,p.getLookAngle().z*1.5);t.hurtMarked=true;
+    }
 }

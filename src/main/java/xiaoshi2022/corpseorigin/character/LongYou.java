@@ -35,6 +35,12 @@ public class LongYou implements ICharacter {
     public static final String ID = "longyou";
 
     private static final List<ISkill> SKILLS = List.of(
+            new TianGangSkill(TianGangSkill.Form.ZHI), new TianGangSkill(TianGangSkill.Form.JI),
+            new TianGangSkill(TianGangSkill.Form.LI), new TianGangSkill(TianGangSkill.Form.YU),
+            new TianGangSkill(TianGangSkill.Form.QI), new TianGangSkill(TianGangSkill.Form.HUI),
+            new TianGangSkill(TianGangSkill.Form.MIE), new TianGangSkill(TianGangSkill.Form.WU),
+            new TianGangSkill(TianGangSkill.Form.SHEN), new TianGangSkill(TianGangSkill.Form.NIPO),
+            new TianGangSkill(TianGangSkill.Form.POGANG), new TianGangSkill(TianGangSkill.Form.TIANGANGPO),
             new UndyingChestSkill(),
             // 雷电系：吸收电鳗获得的「雷电之力」是基础，雷鳗与球状闪电都由它解锁
             new ThunderPowerSkill(),

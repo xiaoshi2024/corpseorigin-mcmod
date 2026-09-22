@@ -31,8 +31,33 @@ public final class SkillUnlockManager {
 
     /** 服务端 tick 入口：按间隔定期扫描（宠物、背包这类会自然变化的来源靠它兜底） */
     public static void tick(ServerPlayer player) {
+        applyBlackGoldHeartInfection(player);
         if (player.tickCount % SCAN_INTERVAL_TICKS == 0) {
             grantUnlocked(player, false);
+        }
+    }
+
+    /** Black Xiaofei remains human until the black-gold heart is actually implanted. */
+    private static void applyBlackGoldHeartInfection(ServerPlayer player) {
+        if (player.tickCount % SCAN_INTERVAL_TICKS != 0
+                || !xiaoshi2022.corpseorigin.character.HeiXiaoFei.ID.equals(
+                    CharacterManager.getInstance().getPlayerCharacterId(player))
+                || !xiaoshi2022.corpseorigin.component.PlayerRelicComponent.has(player,
+                    xiaoshi2022.corpseorigin.skill.heixiaofei.BlackGoldHeartSkill.RELIC_ID)) return;
+        var corpse = xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.get(player);
+        boolean changed = !corpse.isCorpse() || corpse.getInfection() != 100;
+        if (!corpse.isCorpse()) {
+            xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.setPlayerAsCorpse(player,
+                    xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.TYPE_ELITE,
+                    xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.VARIANT_NO_EXOSKELETON);
+            corpse = xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.get(player);
+        }
+        corpse.setInfection(100);
+        corpse.restoreConsciousness();
+        if (changed) {
+            CorpseNetwork.sendInfectionSync(player);
+            CorpseNetwork.broadcastPlayerCorpseSync(player);
+            player.sendOverlayMessage(Component.translatable("character.corpseorigin.heixiaofei.black_gold_infected"));
         }
     }
 

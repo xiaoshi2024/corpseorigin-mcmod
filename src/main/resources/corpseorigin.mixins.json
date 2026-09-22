@@ -25,6 +25,7 @@
     "requireAnnotations": true
   },
   "client": [
+    "SkillPoseMixin",
     "AvatarRendererMixin",
     "ClientPlayerGeoAnimatableMixin",
     "ClientPlayerInteractionManagerMixin",

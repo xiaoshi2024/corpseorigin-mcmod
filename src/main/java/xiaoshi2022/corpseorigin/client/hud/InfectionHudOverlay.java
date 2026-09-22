@@ -11,14 +11,37 @@ import xiaoshi2022.corpseorigin.client.ClientState;
 import xiaoshi2022.corpseorigin.client.CorpseOriginClient;
 import xiaoshi2022.corpseorigin.registry.ModEffects;
 import xiaoshi2022.corpseorigin.skill.EvolutionManager;
+import xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState;
+import xiaoshi2022.corpseorigin.skill.longyou.BloodReserve;
 
-/**
- * HUD 显示：感染度条 + 进化等级/点数（右上角）
- */
+/** Draws the compact status HUD in the top-right corner. */
 public final class InfectionHudOverlay {
 
     private static final Identifier HUD_ID =
             Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "infection_hud");
+
+    /*
+     * HUD appearance settings. Change these values to adjust the layout later.
+     * Colors use ARGB: 0xAARRGGBB.
+     */
+    private static final int RIGHT_MARGIN = 8;
+    private static final int TOP_MARGIN = 8;
+    private static final int BATTERY_WIDTH = 116;
+    private static final int BATTERY_HEIGHT = 13;
+    private static final int BATTERY_TIP_WIDTH = 2;
+    private static final int ROW_GAP = 3;
+    private static final int INNER_PADDING = 2;
+
+    private static final int BORDER_COLOR = 0xDDE4E8E8;
+    private static final int BACKGROUND_COLOR = 0xCC111617;
+    private static final int TIP_COLOR = 0xDDB7BDBD;
+    private static final int TEXT_COLOR = 0xFFFFFFFF;
+    private static final int EVOLUTION_TEXT_COLOR = 0xFFB8E6B8;
+    private static final int INFECTION_LOW_COLOR = 0xFF9B4CB0;
+    private static final int INFECTION_HIGH_COLOR = 0xFFD33D55;
+    private static final int INNER_POWER_COLOR = 0xFF279FE0;
+    private static final int BLOOD_COLOR = 0xFFC92F49;
+    private static final int BLOOD_MAX = 600;
 
     private InfectionHudOverlay() {
     }
@@ -27,7 +50,7 @@ public final class InfectionHudOverlay {
         HudElementRegistry.addLast(
                 HUD_ID,
                 (GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) -> render(graphics));
-        CorpseOrigin.LOGGER.debug("[HUD] 注册成功（addLast）");
+        CorpseOrigin.LOGGER.debug("[HUD] Compact battery HUD registered");
     }
 
     private static void render(GuiGraphicsExtractor graphics) {
@@ -36,65 +59,71 @@ public final class InfectionHudOverlay {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.player.isSpectator()) return;
 
-        int barWidth = 182;
-        int x = graphics.guiWidth() - barWidth - 10;
-        int y = 10;
-        if ("longyou".equals(mc.player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE))) {
-            int blood = mc.player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.BloodReserve.VALUE);
-            graphics.fill(x, 78, x + barWidth, 83, 0x88000000);
-            graphics.fill(x, 78, x + barWidth * blood / 600, 83, 0xFFCC2244);
-            graphics.text(mc.font, Component.literal("气血 " + blood + " / 600 · 恢复消耗 200"), x, 85, 0xFFFF8899, true);
-        }
+        int x = graphics.guiWidth() - BATTERY_WIDTH - BATTERY_TIP_WIDTH - RIGHT_MARGIN;
+        int y = TOP_MARGIN;
 
-        // ✅ 判断是不是尸兄玩家
+        int level = EvolutionManager.getLevel(ClientState.earnedPoints);
+        Component evolution = Component.translatable(
+                "hud.corpseorigin.evolution", level, ClientState.availablePoints);
+        graphics.centeredText(mc.font, evolution, x + BATTERY_WIDTH / 2, y, EVOLUTION_TEXT_COLOR);
+        y += mc.font.lineHeight + ROW_GAP;
+
         boolean isCorpse = false;
         var selfData = CorpseOriginClient.corpseDataCache.get(mc.player.getUUID());
         if (selfData != null && selfData.isCorpse) {
             isCorpse = true;
         }
 
-        // ===== 感染度条 =====
-        // 尸兄玩家直接 100%
-        int infection;
-        if (isCorpse) {
-            infection = 100;
-        } else {
-            infection = ClientState.infection;
-            boolean hasInfectionBuff = mc.player.hasEffect(ModEffects.QIANS);
-            if (infection <= 0 && hasInfectionBuff) {
-                infection = 1;
-            }
+        int infection = isCorpse ? 100 : ClientState.infection;
+        if (!isCorpse && infection <= 0 && mc.player.hasEffect(ModEffects.QIANS)) {
+            infection = 1;
+        }
+        infection = clamp(infection, 0, 100);
+        drawBattery(graphics, mc, x, y, infection, 100,
+                infection >= 60 ? INFECTION_HIGH_COLOR : INFECTION_LOW_COLOR,
+                Component.translatable("hud.corpseorigin.infection", infection));
+        y += BATTERY_HEIGHT + ROW_GAP;
+
+        int maxInnerPower = ClientState.maxInnerPower;
+        if (maxInnerPower > 0) {
+            int innerPower = clamp(ClientState.innerPower, 0, maxInnerPower);
+            drawBattery(graphics, mc, x, y, innerPower, maxInnerPower, INNER_POWER_COLOR,
+                    Component.translatable("hud.corpseorigin.inner_power", innerPower, maxInnerPower));
+            y += BATTERY_HEIGHT + ROW_GAP;
         }
 
-        int infectionWidth = (int) (barWidth * infection / 100.0);
-        graphics.fill(x, y, x + barWidth, y + 5, 0x88000000);
-        int color = infection >= 60 ? 0xFFCC2244 : 0xFF8844AA;
-        graphics.fill(x, y, x + infectionWidth, y + 5, color);
-        graphics.text(mc.font,
-                Component.translatable("hud.corpseorigin.infection", infection),
-                x, y + 6, 0xFFBB88CC, true);
-        y += 18;
-
-        // ===== 进化信息 =====
-        int level = EvolutionManager.getLevel(ClientState.earnedPoints);
-        graphics.text(mc.font,
-                Component.translatable("hud.corpseorigin.evolution",
-                        level, ClientState.availablePoints),
-                x, y + 8, 0xFF55FF55, true);
-        y += 18;
-
-        // ===== 内力条（仅拥有内力的角色显示） =====
-        int maxIp = ClientState.maxInnerPower;
-        if (maxIp > 0) {
-            int ip = Math.min(maxIp, Math.max(0, ClientState.innerPower));
-            int ipWidth = (int) (barWidth * ip / (double) maxIp);
-            graphics.fill(x, y, x + barWidth, y + 5, 0x88000000);
-            // 内力条：青蓝色渐变
-            graphics.fill(x, y, x + ipWidth, y + 5, 0xFF3399FF);
-            graphics.fill(x, y, x + ipWidth, y + 2, 0xFF66CCFF);
-            graphics.text(mc.font,
-                    Component.translatable("hud.corpseorigin.inner_power", ip, maxIp),
-                    x, y + 6, 0xFF88CCFF, true);
+        if ("longyou".equals(mc.player.getAttachedOrCreate(ChapterActorState.ROLE))) {
+            int blood = clamp(mc.player.getAttachedOrCreate(BloodReserve.VALUE), 0, BLOOD_MAX);
+            drawBattery(graphics, mc, x, y, blood, BLOOD_MAX, BLOOD_COLOR,
+                    Component.translatable("hud.corpseorigin.blood", blood, BLOOD_MAX));
         }
+    }
+
+    private static void drawBattery(GuiGraphicsExtractor graphics, Minecraft mc,
+                                    int x, int y, int value, int max, int fillColor,
+                                    Component label) {
+        graphics.fill(x, y, x + BATTERY_WIDTH, y + BATTERY_HEIGHT, BORDER_COLOR);
+        graphics.fill(x + 1, y + 1, x + BATTERY_WIDTH - 1, y + BATTERY_HEIGHT - 1,
+                BACKGROUND_COLOR);
+
+        int innerWidth = BATTERY_WIDTH - INNER_PADDING * 2;
+        int filledWidth = max <= 0 ? 0 : (int) Math.round(innerWidth * value / (double) max);
+        if (filledWidth > 0) {
+            graphics.fill(x + INNER_PADDING, y + INNER_PADDING,
+                    x + INNER_PADDING + filledWidth, y + BATTERY_HEIGHT - INNER_PADDING,
+                    fillColor);
+        }
+
+        int tipY = y + BATTERY_HEIGHT / 3;
+        graphics.fill(x + BATTERY_WIDTH, tipY,
+                x + BATTERY_WIDTH + BATTERY_TIP_WIDTH, y + BATTERY_HEIGHT - BATTERY_HEIGHT / 3,
+                TIP_COLOR);
+
+        String text = mc.font.plainSubstrByWidth(label.getString(), BATTERY_WIDTH - 6);
+        graphics.centeredText(mc.font, text, x + BATTERY_WIDTH / 2, y + 2, TEXT_COLOR);
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
     }
 }

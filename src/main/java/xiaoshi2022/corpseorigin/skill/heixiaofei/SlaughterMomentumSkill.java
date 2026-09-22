@@ -25,7 +25,7 @@ public class SlaughterMomentumSkill implements ISkill {
     public static final String PATH = "slaughter_momentum";
 
     /** 杀气状态持续时间（12 秒） */
-    private static final int DURATION = 240;
+    private static final int DURATION = 400;
     private static final int COOLDOWN = 1200;   // 60s
 
     @Override
@@ -76,10 +76,10 @@ public class SlaughterMomentumSkill implements ISkill {
 
         // ==================== 红甲杀气状态 ====================
         player.addEffect(new MobEffectInstance(MobEffects.STRENGTH, DURATION, 2, false, true, true));
-        player.addEffect(new MobEffectInstance(MobEffects.SPEED, DURATION, 1, false, true, true));
+        player.addEffect(new MobEffectInstance(MobEffects.SPEED, DURATION, 2, false, true, true));
         player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, DURATION, 1, false, true, true));
         player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, DURATION, 0, false, true, true));
-        player.addEffect(new MobEffectInstance(MobEffects.JUMP_BOOST, DURATION, 1, false, true, true));
+        player.addEffect(new MobEffectInstance(MobEffects.JUMP_BOOST, DURATION, 2, false, true, true));
 
         // ==================== 代价：杀气反噬饥饿 ====================
         player.addEffect(new MobEffectInstance(MobEffects.HUNGER, DURATION, 2, false, true, true));

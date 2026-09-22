@@ -48,7 +48,9 @@ public final class FiveElementsCombat {
         FORMATIONS.put(player.getUUID(), new Formation(player, (ServerLevel)player.level(), player.position(), player.level().getGameTime() + 200));
     }
     public static void bind(ServerPlayer player, LivingEntity target) {
-        BINDINGS.put(target.getUUID(), new Bound(player, target, target.position(), player.level().getGameTime() + 80));
+        xiaoshi2022.corpseorigin.entity.SkillConstructEntity.spawn(player,
+                xiaoshi2022.corpseorigin.registry.ModEntities.VINE_BIND,target,160);
+        BINDINGS.put(target.getUUID(), new Bound(player, target, target.position(), player.level().getGameTime() + 160));
     }
     public static void mark(ServerPlayer player, LivingEntity target) {
         MARKS.put(target.getUUID(), new Mark(player, target, player.level().getGameTime() + 200));
@@ -117,6 +119,7 @@ public final class FiveElementsCombat {
             if (b.owner.tickCount % 5 != 0) continue;
             b.target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 7, 6));
             ServerLevel level = (ServerLevel) b.target.level();
+            if (b.owner.tickCount % 20 == 0) b.target.hurtServer(level,b.owner.damageSources().playerAttack(b.owner),10);
             for (int i = 0; i < 12; i++) {
                 double angle = i * .95 + b.owner.tickCount * .08;
                 ChapterCombat.dust(level, b.target.position().add(Math.cos(angle)*.5, i*.13, Math.sin(angle)*.5), 0x368b40, 1.3f);

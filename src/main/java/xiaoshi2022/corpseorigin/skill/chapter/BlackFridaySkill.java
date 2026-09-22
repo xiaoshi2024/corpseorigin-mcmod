@@ -5,5 +5,7 @@ import xiaoshi2022.corpseorigin.entity.ChapterBombEntity;
 import xiaoshi2022.corpseorigin.registry.ModItems;
 public class BlackFridaySkill extends AbstractSkill {
     public BlackFridaySkill(){ super("black_friday_eight",SkillType.COMBAT,160); }
-    @Override public void onActivate(ServerPlayer player){ ChapterBombEntity.launch(player,ModItems.BILLIARD_EIGHT); }
+    @Override public void onActivate(ServerPlayer player){
+        for(int i=0;i<8;i++) ChapterBombEntity.launch(player,ModItems.BILLIARD_EIGHT);
+    }
 }

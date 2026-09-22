@@ -16,7 +16,7 @@ import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.jingang_zb.PeelShellSkill;
 import xiaoshi2022.corpseorigin.skill.shichaozhizi.BloodLotusArmorSkill;
-import xiaoshi2022.corpseorigin.skill.shichaozhizi.GroundBurrowSkill;
+
 import xiaoshi2022.corpseorigin.skill.shichaozhizi.SonOfCorpseNestSkill;
 import xiaoshi2022.corpseorigin.skill.shichaozhizi.ThousandEyesSkill;
 import xiaoshi2022.corpseorigin.skill.longyou.FleshAbandonSkill;
@@ -91,7 +91,7 @@ public class ShiChaoZhiZi implements ICharacter {
             new SonOfCorpseNestSkill(),
             new xiaoshi2022.corpseorigin.skill.longyou.NestSenseSkill(),
             new BloodLotusArmorSkill(),
-            new GroundBurrowSkill(),
+
             new ThousandEyesSkill()
             // 进入龙右不死髅体后解锁的躯体技能
 //            new XuanwuBodySkill(),

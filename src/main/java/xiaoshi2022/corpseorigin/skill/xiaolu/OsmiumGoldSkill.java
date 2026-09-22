@@ -46,7 +46,7 @@ public class OsmiumGoldSkill implements ISkill {
 
     @Override
     public void onActivate(ServerPlayer player) {
-        // 抗性 II，10 秒（200 ticks）
-        player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 200, 1, false, true, true));
+        player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.SkillRework.GOLD, player.level().getGameTime()+400);
+        player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 400, 3, false, true, true));
     }
 }

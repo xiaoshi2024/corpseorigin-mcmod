@@ -299,4 +299,15 @@ public abstract class LivingEntityRendererSubmitMixin {
         renderer.submit(avatarState, poseStack, collector, camera);
         poseStack.popPose();
     }
+
+    @Inject(method = "submit", at = @At("TAIL"))
+    private void corpseorigin$submitTianGangHalo(LivingEntityRenderState state, PoseStack poseStack,
+                                                  SubmitNodeCollector collector, CameraRenderState camera, CallbackInfo ci) {
+        if (!(state instanceof AvatarRenderState avatar) || !((Object)this instanceof AvatarRenderer<?>)) return;
+        if (!Boolean.TRUE.equals(avatar.getGeckolibData(TianGangHaloRenderData.ACTIVE))) return;
+        var renderer=TianGangHaloRenderer.get(); if(renderer==null)return;
+        poseStack.pushPose(); poseStack.translate(0,0.0,0.28);
+        if(avatar.scale!=1)poseStack.scale(avatar.scale,avatar.scale,avatar.scale);
+        renderer.submit(avatar,poseStack,collector,camera); poseStack.popPose();
+    }
 }

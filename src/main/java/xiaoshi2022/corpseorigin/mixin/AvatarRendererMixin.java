@@ -118,6 +118,7 @@ public abstract class AvatarRendererMixin {
         if (!(avatar instanceof AbstractClientPlayer player)) {
             return;
         }
+        TianGangHaloRenderer.createIfAbsent(context);
         String disguise=player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE);
         String possessedSkin = player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.BodyPossession.SKIN);
         if (!possessedSkin.isEmpty()) {
@@ -154,6 +155,7 @@ public abstract class AvatarRendererMixin {
         //   显式 false 能让它们整条停掉，不再泄漏。
         state.addGeckolibData(NiunaiXRenderData.ACTIVE, false);
         state.addGeckolibData(NiunaiLinkRenderData.ACTIVE, false);
+        state.addGeckolibData(TianGangHaloRenderData.ACTIVE, false);
         state.addGeckolibData(ShiChaoBodyRenderData.ACTIVE, false);
         if (xiaoshi2022.corpseorigin.client.renderer.player.CreaturePlayerRenderer.extract(player,state,partialTick)) return;
         if (xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.extract(player,state,partialTick)) return;
@@ -188,6 +190,10 @@ public abstract class AvatarRendererMixin {
         if (NiunaiXRenderData.isNiunaiX(player)) {
             state.addGeckolibData(NiunaiLinkRenderData.BODY_PASS, false);
             NiunaiXRenderer.writeRenderData(state, player, partialTick);
+        }
+        if (player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.TianGangCombat.SHEN_ACTIVE)) {
+            state.addGeckolibData(TianGangHaloRenderData.ACTIVE,true);
+            TianGangHaloRenderer.writeRenderData(state,player,partialTick);
         }
 
         // ② 腰斩的身体：broken_off / link 在这一趟解析

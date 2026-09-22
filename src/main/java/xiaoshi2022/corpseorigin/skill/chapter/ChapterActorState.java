@@ -24,7 +24,7 @@ public final class ChapterActorState {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             for (var player : server.getPlayerList().getPlayers()) {
                 String role = CharacterManager.getInstance().getPlayerCharacterId(player);
-                if (java.util.Set.of("longyou", "heixiaofei", "zuohufa", "kaiweinai", "tianxianbaobao_zb",
+                if (java.util.Set.of("longyou", "zuohufa", "kaiweinai", "tianxianbaobao_zb",
                         "jingang_zb", "shichaozhizi", "bianselong_zb", "qingwa_zb", "hujie", "chongmu",
                         "chongqun", "xiongxing_zb", "siyangyuan_zb", "kuaidiyuan_zb", "bianyi_guiyu",
                         "corpse_brother").contains(role)) {

@@ -203,6 +203,13 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.VAMPIRE_BAT, net.minecraft.client.renderer.entity.BatRenderer::new);
         EntityRendererRegistry.register(ModEntities.CHAPTER_BOMB, net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
         EntityRendererRegistry.register(ModEntities.GREAT_TENGU, xiaoshi2022.corpseorigin.client.renderer.entity.GreatTenguRenderer::new);
+        EntityRendererRegistry.register(ModEntities.BLACK_GOLD_HEART,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"black_gold_heart"));
+        EntityRendererRegistry.register(ModEntities.VINE_BIND,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"vine_bind"));
+        EntityRendererRegistry.register(ModEntities.BLOOD_LOTUS_PETAL,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"blood_lotus_petal"));
+        EntityRendererRegistry.register(ModEntities.BEE_WHEEL,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"bee_wheel"));
+        EntityRendererRegistry.register(ModEntities.SLAUGHTER_INCARNATION,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"slaughter_incarnation"));
+        EntityRendererRegistry.register(ModEntities.SEVERED_FOREARM,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"severed_forearm"));
+        EntityRendererRegistry.register(ModEntities.TIANGANG_HALO,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"tiangang_halo"));
         EntityRendererRegistry.register(ModEntities.CORPSE_FISH_EGG, CorpseFishEggRenderer::new);
         EntityRendererRegistry.register(ModEntities.COCO_ZOMBIE, CocoZombieRenderer::new);
         EntityRendererRegistry.register(ModEntities.COCO_ZOMBIE_X, CocoZombieXRenderer::new);
