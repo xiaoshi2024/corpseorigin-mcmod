@@ -24,6 +24,7 @@ public final class ShiChaoZhiZiBodyRenderer
 
     private ShiChaoZhiZiBodyRenderer(EntityRendererProvider.Context context) {
         super(context, new ShiChaoZhiZiBodyModel(), null);
+        PlayerHandLayers.attach(context, this);
         this.shadowRadius = 1.2F;
     }
 

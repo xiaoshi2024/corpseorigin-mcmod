@@ -605,6 +605,16 @@
 					]
 				},
 				{
+					"name": "RightHandItem",
+					"parent": "head",
+					"pivot": [0, 10, -13]
+				},
+				{
+					"name": "LeftHandItem",
+					"parent": "head",
+					"pivot": [0, 10, -13]
+				},
+				{
 					"name": "tail",
 					"parent": "body",
 					"pivot": [0, 11, 7],

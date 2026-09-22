@@ -39,6 +39,7 @@ public final class UndeadBodyState {
 
     private static final ISkill XUANWU_BODY = new XuanwuBodySkill();
     private static final ISkill PEEL_SHELL = new PeelShellSkill();
+    private static final ISkill JINGANG_INFANT = new JingangInfantConvergenceSkill();
 
     /**
      * 少教主进入龙右借给他的不死髅体（STATE == 1）后，临时获得这两个躯体技能。
@@ -49,6 +50,7 @@ public final class UndeadBodyState {
         return switch (path) {
             case "xuanwu_body" -> XUANWU_BODY;
             case "peel_shell" -> PEEL_SHELL;
+            case "jingang_infant_convergence" -> JINGANG_INFANT;
             default -> null;
         };
     }

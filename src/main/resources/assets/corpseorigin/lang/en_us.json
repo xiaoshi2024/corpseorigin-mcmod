@@ -1,4 +1,10 @@
 {
+  "skill.corpseorigin.jingang_infant_convergence": "Jingang Infant Convergence",
+  "skill.corpseorigin.jingang_infant_convergence.desc": "Recall the nearest Jingang infant within 64 blocks and sustain it through an umbilical link until it reaches stage two.",
+  "skill.corpseorigin.jingang_infant_convergence.no_target": "No Jingang infant player is available within 64 blocks",
+  "skill.corpseorigin.jingang_infant_convergence.done": "Recalled Jingang infant: %s",
+  "skill.corpseorigin.jingang_infant_convergence.linked": "You are linked to %s until reaching stage two",
+  "skill.corpseorigin.jingang_infant_convergence.grown": "You reached stage two and detached from the umbilical link",
   "skill.corpseorigin.golden_cicada_shell.already_original": "You are already in your original body and cannot shed another shell.",
   "item.corpseorigin.dr_mu_eye": "Dr. Mu's Eye",
   "skill.corpseorigin.muscle_rage": "Advanced Rage",

@@ -47,7 +47,7 @@ public class LongYou implements ICharacter {
             // 换身体的两手：缩进原体 / 重塑一具新身体（旧身体都会蜕成分身）
             new GoldenCicadaShellSkill(),
             new FleshReshapeSkill(),
-            new FleshAbandonSkill(), new XuanwuBodySkill()
+            new FleshAbandonSkill(), new XuanwuBodySkill(), new JingangInfantConvergenceSkill()
     );
 
     @Override

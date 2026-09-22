@@ -194,6 +194,11 @@
 					]
 				},
 				{
+					"name": "LeftHandItem",
+					"parent": "extra_arm_0_-1",
+					"pivot": [21.865, 23.345, 0.3]
+				},
+				{
 					"name": "extra_arm_1_-1",
 					"parent": "body",
 					"pivot": [6.44, 21.85, 2.3],
@@ -436,6 +441,11 @@
 							}
 						}
 					]
+				},
+				{
+					"name": "RightHandItem",
+					"parent": "extra_arm_0_1",
+					"pivot": [-18.175, 22.84, 1.3]
 				},
 				{
 					"name": "extra_arm_1_1",

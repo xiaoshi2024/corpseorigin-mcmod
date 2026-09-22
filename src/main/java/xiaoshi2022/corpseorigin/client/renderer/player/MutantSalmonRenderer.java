@@ -18,6 +18,7 @@ public class MutantSalmonRenderer extends GeoReplacedEntityRenderer<PlayerGeoAni
     private static MutantSalmonRenderer instance;
     public MutantSalmonRenderer(EntityRendererProvider.Context context) {
         super(context,new DefaultedEntityGeoModel<>(CorpseOrigin.id("mutant_salmon")),null);
+        PlayerHandLayers.attach(context, this);
         shadowRadius=.6f;
     }
     public static void create(EntityRendererProvider.Context context) { if(instance==null) instance=new MutantSalmonRenderer(context); }

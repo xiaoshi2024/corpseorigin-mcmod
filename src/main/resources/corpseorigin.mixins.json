@@ -8,6 +8,7 @@
     "ItemCooldownsAccessor",
     "ItemEntityMixin",
     "LivingEntityBreatheMixin",
+    "SwarmClimbMixin",
     "MobPeacefulMixin",
     "MobPickupMixin",
     "MobZombieKingRespectMixin",

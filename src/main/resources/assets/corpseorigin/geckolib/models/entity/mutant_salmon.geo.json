@@ -649,6 +649,17 @@
 					]
 				},
 				{
+					"name": "RightHandItem",
+					"parent": "fish_head",
+					"pivot": [0, 12, -17],
+					"rotation": [-90, 0, 0]
+				},
+				{
+					"name": "LeftHandItem",
+					"parent": "fish_head",
+					"pivot": [0, 12, -17]
+				},
+				{
 					"name": "fish_fin_-1_0",
 					"parent": "fish_body",
 					"pivot": [4, 10, -8],

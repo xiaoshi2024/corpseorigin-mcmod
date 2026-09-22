@@ -90,6 +90,7 @@ public class CorpseOrigin implements ModInitializer {
 		ModDataAttachments.init();
 		xiaoshi2022.corpseorigin.event.ConsciousnessInteractions.register();
 		xiaoshi2022.corpseorigin.skill.longyou.BloodReserve.init();
+		xiaoshi2022.corpseorigin.skill.longyou.JingangInfantLink.register();
 		xiaoshi2022.corpseorigin.skill.longyou.BodyPossession.init();
 
 		ShellStateComponentRegistry.getInstance().register(

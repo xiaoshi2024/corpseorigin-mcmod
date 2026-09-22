@@ -1063,6 +1063,11 @@
 					"pivot": [8, 10, -6]
 				},
 				{
+					"name": "LeftHandItem",
+					"parent": "arm_left",
+					"pivot": [5, 13, -11.1]
+				},
+				{
 					"name": "arm_right",
 					"parent": "body",
 					"pivot": [-5, 20, -6],
@@ -1178,6 +1183,11 @@
 					"name": "hand_right",
 					"parent": "elbow_right",
 					"pivot": [-8, 10, -6]
+				},
+				{
+					"name": "RightHandItem",
+					"parent": "arm_right",
+					"pivot": [-5, 12, -11]
 				},
 				{
 					"name": "tail_0",

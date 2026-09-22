@@ -40,6 +40,7 @@ public class NiunaiLinkRenderer
     public NiunaiLinkRenderer(EntityRendererProvider.Context context) {
         // 第三个参数传 null：见类注释，真正的宿主在 fillRenderState 里换
         super(context, new NiunaiLinkPlayerModel(), null);
+        PlayerHandLayers.attach(context, this);
         // 原版 submit 被 cancel 掉了，影子得由我们自己出，给回玩家默认值
         this.shadowRadius = 0.5F;
     }

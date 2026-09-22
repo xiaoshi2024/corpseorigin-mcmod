@@ -69,6 +69,11 @@
 					]
 				},
 				{
+					"name": "LeftHandItem",
+					"parent": "elbow_left",
+					"pivot": [5.8, 12.2, 0]
+				},
+				{
 					"name": "arm_right",
 					"parent": "body",
 					"pivot": [-5, 23, 0],
@@ -91,6 +96,11 @@
 					"cubes": [
 						{"origin": [-7.496, 12.6, -1.6], "size": [3.2, 2.4, 3.2], "uv": [100, 66]}
 					]
+				},
+				{
+					"name": "RightHandItem",
+					"parent": "elbow_right",
+					"pivot": [-5.8, 12.2, 0]
 				},
 				{
 					"name": "tail_0",

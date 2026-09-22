@@ -54,6 +54,7 @@ public final class BodyPossession {
             PlayerCharacterData data = PlayerCharacterData.get(player);
             data.learnSkill(player.getUUID(), "xuanwu_body");
             data.learnSkill(player.getUUID(), "peel_shell");
+            data.learnSkill(player.getUUID(), "jingang_infant_convergence");
             xiaoshi2022.corpseorigin.network.CorpseNetwork.sendEvolutionSync(player);
             player.sendOverlayMessage(Component.translatable("skill.corpseorigin.flesh_abandon.possessed"));
         }
@@ -78,6 +79,7 @@ public final class BodyPossession {
             PlayerCharacterData data = PlayerCharacterData.get(player);
             data.getLearnedSkills(player.getUUID()).remove("xuanwu_body");
             data.getLearnedSkills(player.getUUID()).remove("peel_shell");
+            data.getLearnedSkills(player.getUUID()).remove("jingang_infant_convergence");
             data.setDirty();
             xiaoshi2022.corpseorigin.network.CorpseNetwork.sendEvolutionSync(player);
             player.sendOverlayMessage(Component.translatable("skill.corpseorigin.peel_shell.done"));

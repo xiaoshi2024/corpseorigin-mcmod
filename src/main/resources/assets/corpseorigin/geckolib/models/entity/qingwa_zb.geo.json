@@ -221,12 +221,22 @@
 					]
 				},
 				{
+					"name": "RightHandItem",
+					"parent": "head",
+					"pivot": [1, 11, -16]
+				},
+				{
 					"name": "throat",
 					"parent": "head",
 					"pivot": [0, 10, -13],
 					"cubes": [
 						{"origin": [-8, 5, -15], "size": [16, 6.2, 9], "uv": [149, 34]}
 					]
+				},
+				{
+					"name": "LeftHandItem",
+					"parent": "head",
+					"pivot": [7, 23, -9]
 				}
 			]
 		}

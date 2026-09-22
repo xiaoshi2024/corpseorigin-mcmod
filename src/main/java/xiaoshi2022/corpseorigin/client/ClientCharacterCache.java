@@ -28,6 +28,8 @@ public final class ClientCharacterCache {
                 skills.add(new xiaoshi2022.corpseorigin.skill.longyou.XuanwuBodySkill());
             if (skills.stream().noneMatch(s -> s.getId().getPath().equals("peel_shell")))
                 skills.add(new xiaoshi2022.corpseorigin.skill.jingang_zb.PeelShellSkill());
+            if (skills.stream().noneMatch(s -> s.getId().getPath().equals("jingang_infant_convergence")))
+                skills.add(new xiaoshi2022.corpseorigin.skill.longyou.JingangInfantConvergenceSkill());
         }
         return skills;
     }
@@ -51,6 +53,7 @@ public final class ClientCharacterCache {
     }
 
     private static boolean isBodySkill(String path) {
-        return path.equals("xuanwu_body") || path.equals("peel_shell");
+        return path.equals("xuanwu_body") || path.equals("peel_shell")
+                || path.equals("jingang_infant_convergence");
     }
 }

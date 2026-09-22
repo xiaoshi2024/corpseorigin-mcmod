@@ -1,4 +1,10 @@
 {
+  "skill.corpseorigin.jingang_infant_convergence": "金刚尸婴凝聚",
+  "skill.corpseorigin.jingang_infant_convergence.desc": "召回64格内最近的金刚尸婴玩家，以脐带连接并维持幼体；成长到二阶后自动断脐。",
+  "skill.corpseorigin.jingang_infant_convergence.no_target": "64格内没有可召回的金刚尸婴玩家",
+  "skill.corpseorigin.jingang_infant_convergence.done": "已凝聚金刚尸婴：%s",
+  "skill.corpseorigin.jingang_infant_convergence.linked": "你被脐带连接至 %s，成长到二阶后可脱离",
+  "skill.corpseorigin.jingang_infant_convergence.grown": "你已成长为二阶金刚尸兄，脐带断开",
   "item.corpseorigin.dr_mu_eye": "穆博士的眼睛",
   "skill.corpseorigin.muscle_rage": "进阶狂暴",
   "skill.corpseorigin.muscle_rage.desc": "血肉狂暴8秒，力量与速度提升，暂时失去刀枪防护。",

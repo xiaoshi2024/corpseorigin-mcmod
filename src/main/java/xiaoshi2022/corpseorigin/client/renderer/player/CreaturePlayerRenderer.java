@@ -18,7 +18,7 @@ public final class CreaturePlayerRenderer extends GeoReplacedEntityRenderer<Play
     public static final DataTicket<Integer> ARMS=DataTicket.create("creature_arms",Integer.class);
     public static final DataTicket<Boolean> INFANT=DataTicket.create("creature_infant",Boolean.class);
     private static final Map<String,CreaturePlayerRenderer> RENDERERS=new HashMap<>();
-    private CreaturePlayerRenderer(EntityRendererProvider.Context context,String id){super(context,new DefaultedEntityGeoModel<>(CorpseOrigin.id(id)),null);shadowRadius=.7f;}
+    private CreaturePlayerRenderer(EntityRendererProvider.Context context,String id){super(context,new DefaultedEntityGeoModel<>(CorpseOrigin.id(id)),null);PlayerHandLayers.attach(context,this);shadowRadius=.7f;}
     public static void create(EntityRendererProvider.Context context){
         for(String id:List.of("qingwa_zb","hujie","chongmu","jingang_zb","jingang_infant","xiongxing_zb","red_fire_ant","bullet_ant","xiaohui_scene"))RENDERERS.put(id,new CreaturePlayerRenderer(context,id));
     }
