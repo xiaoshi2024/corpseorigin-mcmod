@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.client.renderer.RenderPipelines;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.client.ClientState;
 import xiaoshi2022.corpseorigin.client.CorpseOriginClient;
@@ -19,6 +20,9 @@ public final class InfectionHudOverlay {
 
     private static final Identifier HUD_ID =
             Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "infection_hud");
+    private static final Identifier BATTERY_FRAME = Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "textures/gui/battery_frame.png");
+    private static final Identifier BATTERY_FILL = Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "textures/gui/battery_fill.png");
+    private static final Identifier BATTERY_TIP = Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "textures/gui/battery_tip.png");
 
     /*
      * HUD appearance settings. Change these values to adjust the layout later.
@@ -32,9 +36,6 @@ public final class InfectionHudOverlay {
     private static final int ROW_GAP = 3;
     private static final int INNER_PADDING = 2;
 
-    private static final int BORDER_COLOR = 0xDDE4E8E8;
-    private static final int BACKGROUND_COLOR = 0xCC111617;
-    private static final int TIP_COLOR = 0xDDB7BDBD;
     private static final int TEXT_COLOR = 0xFFFFFFFF;
     private static final int EVOLUTION_TEXT_COLOR = 0xFFB8E6B8;
     private static final int INFECTION_LOW_COLOR = 0xFF9B4CB0;
@@ -102,22 +103,21 @@ public final class InfectionHudOverlay {
     private static void drawBattery(GuiGraphicsExtractor graphics, Minecraft mc,
                                     int x, int y, int value, int max, int fillColor,
                                     Component label) {
-        graphics.fill(x, y, x + BATTERY_WIDTH, y + BATTERY_HEIGHT, BORDER_COLOR);
-        graphics.fill(x + 1, y + 1, x + BATTERY_WIDTH - 1, y + BATTERY_HEIGHT - 1,
-                BACKGROUND_COLOR);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BATTERY_FRAME, x, y, 0, 0,
+                BATTERY_WIDTH, BATTERY_HEIGHT, BATTERY_WIDTH, BATTERY_HEIGHT);
 
         int innerWidth = BATTERY_WIDTH - INNER_PADDING * 2;
         int filledWidth = max <= 0 ? 0 : (int) Math.round(innerWidth * value / (double) max);
-        if (filledWidth > 0) {
-            graphics.fill(x + INNER_PADDING, y + INNER_PADDING,
-                    x + INNER_PADDING + filledWidth, y + BATTERY_HEIGHT - INNER_PADDING,
-                    fillColor);
-        }
+        if (filledWidth > 0)
+            graphics.blit(RenderPipelines.GUI_TEXTURED, BATTERY_FILL,
+                    x + INNER_PADDING, y + INNER_PADDING, 0, 0,
+                    filledWidth, BATTERY_HEIGHT - INNER_PADDING * 2,
+                    BATTERY_WIDTH - INNER_PADDING * 2, BATTERY_HEIGHT - INNER_PADDING * 2);
 
         int tipY = y + BATTERY_HEIGHT / 3;
-        graphics.fill(x + BATTERY_WIDTH, tipY,
-                x + BATTERY_WIDTH + BATTERY_TIP_WIDTH, y + BATTERY_HEIGHT - BATTERY_HEIGHT / 3,
-                TIP_COLOR);
+        graphics.blit(RenderPipelines.GUI_TEXTURED, BATTERY_TIP, x + BATTERY_WIDTH, tipY,
+                0, 0, BATTERY_TIP_WIDTH, BATTERY_HEIGHT - BATTERY_HEIGHT / 3 - BATTERY_HEIGHT / 3,
+                BATTERY_TIP_WIDTH, BATTERY_HEIGHT - BATTERY_HEIGHT / 3 - BATTERY_HEIGHT / 3);
 
         String text = mc.font.plainSubstrByWidth(label.getString(), BATTERY_WIDTH - 6);
         graphics.centeredText(mc.font, text, x + BATTERY_WIDTH / 2, y + 2, TEXT_COLOR);

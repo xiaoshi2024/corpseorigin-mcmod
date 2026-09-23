@@ -13,11 +13,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import xiaoshi2022.corpseorigin.client.limb.LimbRenderData;
 import xiaoshi2022.corpseorigin.client.limb.PlayerGeoAnimatable;
-import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyAnimations;
-import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
-import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderData;
-import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderData;
-import xiaoshi2022.corpseorigin.client.renderer.player.ShiChaoBodyRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.*;
 import xiaoshi2022.corpseorigin.limb.LimbSlots;
 
 /**
@@ -40,6 +36,10 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
     private static final RawAnimation CORPSEORIGIN$WALK = RawAnimation.begin().thenLoop("walk");
     /** 只播一次的攻击动画（每次挥击由上升沿把时间轴拉回 0 帧重播） */
     private static final RawAnimation CORPSEORIGIN$ATTACK = RawAnimation.begin().thenPlay("attack");
+
+    // ==================== 天罡光环（tiangang_halo） ====================
+    private static final RawAnimation CORPSEORIGIN$HALO_EYES = RawAnimation.begin().thenLoop("openeyeu");
+
     // 注意：左护法变异体（zuo_guardian）的动画不在这里 ——
     // 它那套名字（reptile / swim / raised / riderx_attack）走专属控制器 +
     // 配置化的对应表，见 MutantBodyAnimations。
@@ -203,6 +203,23 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
         // ★ 开胃奶「拦腰斩断」（niunai_link_player）：同样放最后。
         //   这套模型只有 broken_off / link 两条动画，形态期间上面几条全部让开（见各自方法开头）。
         controllers.add(new AnimationController<PlayerGeoAnimatable>("niunai_link", 0, this::corpseorigin$niunaiLink));
+
+        controllers.add(new AnimationController<PlayerGeoAnimatable>("tiangang_halo", 0, this::corpseorigin$halo));
+    }
+
+    @Unique
+    private PlayState corpseorigin$halo(AnimationTest<PlayerGeoAnimatable> test) {
+        Boolean active = test.getDataOrDefault(TianGangHaloRenderData.ACTIVE, null);
+        if (active == null) {
+            // 不是我的回合（盔甲 / 断肢 / 别的管线拿同一 animatable 求值），不碰状态
+            return PlayState.CONTINUE;
+        }
+        if (!active) {
+            // 不是九重形态：停掉并清干净，免得 openeye 泄漏到别的模型
+            return corpseorigin$stopAndClear(test);
+        }
+        test.setAndContinue(CORPSEORIGIN$HALO_EYES);
+        return PlayState.CONTINUE;
     }
 
     @Unique

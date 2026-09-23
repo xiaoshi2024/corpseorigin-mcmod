@@ -188,16 +188,14 @@ public abstract class AvatarRendererMixin {
             state.addGeckolibData(NiunaiLinkRenderData.BODY_PASS, false);
             NiunaiXRenderer.writeRenderData(state, player, partialTick);
         }
-        if (player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.TianGangCombat.SHEN_ACTIVE)) {
-            state.addGeckolibData(TianGangHaloRenderData.ACTIVE,true);
-            TianGangHaloRenderer.writeRenderData(state,player,partialTick);
-        }
-
         // ② 腰斩的身体：broken_off / link 在这一趟解析
         if (severed) {
             NiunaiLinkRenderer.writeRenderData(state, player, partialTick);
         }
 
         CorpsePlayerGeoRenderer.writeLimbRenderData(state, player, partialTick);
+        // Evaluate the halo last: all attached layers share the player's GeckoLib controller cache.
+        if (player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.TianGangCombat.SHEN_ACTIVE))
+            TianGangHaloRenderer.writeRenderData(state,player,partialTick);
     }
 }

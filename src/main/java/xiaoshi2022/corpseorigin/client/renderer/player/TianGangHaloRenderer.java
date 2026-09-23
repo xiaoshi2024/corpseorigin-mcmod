@@ -22,6 +22,8 @@ public final class TianGangHaloRenderer extends GeoReplacedEntityRenderer<Player
     public static TianGangHaloRenderer get(){return instance;}
     public static void writeRenderData(AvatarRenderState state,AbstractClientPlayer player,float partialTick){
         if(instance==null)return;
+        // This ticket must be present before GeckoLib evaluates the shared player controller.
+        state.addGeckolibData(TianGangHaloRenderData.ACTIVE,true);
         state.addGeckolibData(DataTickets.PACKED_LIGHT,state.lightCoords);
         instance.extractRenderState(player,state,partialTick);
     }

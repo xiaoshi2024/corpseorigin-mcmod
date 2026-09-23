@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.client.renderer.RenderPipelines;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.client.ClientState;
 import xiaoshi2022.corpseorigin.client.SkillHotbarState;
@@ -14,6 +15,9 @@ import xiaoshi2022.corpseorigin.skill.ISkill;
 public final class SkillHotbarOverlay {
     private static final Identifier HUD_ID =
             Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "skill_hotbar");
+    private static final Identifier SLOT_TEXTURE = Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "textures/gui/skill_slot.png");
+    private static final Identifier SLOT_STATUS = Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "textures/gui/skill_slot_status.png");
+    private static final Identifier SLOT_COOLDOWN = Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "textures/gui/skill_slot_cooldown.png");
     private static final int WIDTH = 104;
     private static final int HEIGHT = 28;
 
@@ -38,15 +42,17 @@ public final class SkillHotbarOverlay {
             int remaining = skill == null ? 0
                     : ClientState.getCooldownRemaining(skill.getId().getPath());
 
-            graphics.fill(x, y, x + WIDTH, y + HEIGHT, 0xCC101518);
-            graphics.fill(x, y, x + 3, y + HEIGHT,
-                    skill == null ? 0xFF555555 : remaining > 0 ? 0xFF9A4450 : 0xFF55B878);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, SLOT_TEXTURE, x, y, 0, 0,
+                    WIDTH, HEIGHT, WIDTH, HEIGHT);
+            int statusPart = skill == null ? 0 : remaining > 0 ? 1 : 2;
+            graphics.blit(RenderPipelines.GUI_TEXTURED, SLOT_STATUS, x, y, 0, statusPart * HEIGHT,
+                    3, HEIGHT, 3, HEIGHT * 3);
             if (skill != null && remaining > 0) {
                 int shadeWidth = Math.min(WIDTH - 3, 3 + remaining * (WIDTH - 3)
                         / Math.max(1, skill.getCooldownTicks()));
-                graphics.fill(x + 3, y, x + shadeWidth, y + HEIGHT, 0x66000000);
+                graphics.blit(RenderPipelines.GUI_TEXTURED, SLOT_COOLDOWN, x + 3, y, 0, 0,
+                        shadeWidth - 3, HEIGHT, WIDTH - 3, HEIGHT);
             }
-            graphics.fill(x + 6, y + 5, x + 24, y + 23, 0xFF252D31);
             graphics.centeredText(mc.font, Integer.toString(slot + 1), x + 15, y + 10,
                     0xFFFFFFFF);
 

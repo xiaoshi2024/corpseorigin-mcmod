@@ -12,6 +12,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import xiaoshi2022.corpseorigin.client.renderer.player.CorpsePlayerGeoRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
 import xiaoshi2022.corpseorigin.client.renderer.player.ZuoGuardianBodyRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderData;
+import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.player.TianGangHaloRenderer;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -60,5 +65,22 @@ public abstract class GeoArmorRendererCaptureMixin {
             return;
         }
         CorpsePlayerGeoRenderer.writeLimbRenderData(avatarState, player, partialTick);
+
+        // GeoArmorRenderer reuses the player's state for the helmet slot, then
+        // extracts the armor animatable into that same state. Re-apply every
+        // player-attached geo layer afterwards, otherwise its controller
+        // snapshot is replaced by the armor controller snapshot and the added
+        // bones appear frozen while armor is worn.
+        if (NiunaiXRenderData.isNiunaiX(player)) {
+            avatarState.addGeckolibData(NiunaiLinkRenderData.BODY_PASS, false);
+            NiunaiXRenderer.writeRenderData(avatarState, player, partialTick);
+        }
+        if (NiunaiLinkRenderData.isNiunaiLink(player)) {
+            avatarState.addGeckolibData(NiunaiLinkRenderData.ACTIVE, true);
+            NiunaiLinkRenderer.writeRenderData(avatarState, player, partialTick);
+        }
+        if (player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.TianGangCombat.SHEN_ACTIVE)) {
+            TianGangHaloRenderer.writeRenderData(avatarState, player, partialTick);
+        }
     }
 }
