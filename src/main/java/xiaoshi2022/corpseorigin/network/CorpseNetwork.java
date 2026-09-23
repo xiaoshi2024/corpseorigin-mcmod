@@ -64,6 +64,13 @@ public final class CorpseNetwork {
     }
 
     public static void register() {
+        PayloadTypeRegistry.serverboundPlay().register(TianGangSwingPayload.TYPE, TianGangSwingPayload.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(TianGangSwingPayload.TYPE, (payload, context) ->
+                context.server().execute(() -> xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.swingWeapon(context.player())));
+        PayloadTypeRegistry.serverboundPlay().register(TianGangBladePosePayload.TYPE, TianGangBladePosePayload.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(TianGangBladePosePayload.TYPE, (payload, context) ->
+                context.server().execute(() -> xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.acceptPose(context.player(), payload)));
+        PayloadTypeRegistry.clientboundPlay().register(QiAuraPayload.TYPE, QiAuraPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(NestRadarPayload.TYPE, NestRadarPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(NestRadarPayload.Action.TYPE, NestRadarPayload.Action.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NestRadarPayload.Action.TYPE, (payload, context) ->
@@ -288,6 +295,7 @@ public final class CorpseNetwork {
         PayloadTypeRegistry.clientboundPlay().register(
                 BloodLotusLaserMultiPayload.TYPE,
                 BloodLotusLaserMultiPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(TianGangBeamPayload.TYPE, TianGangBeamPayload.CODEC);
 
         PayloadTypeRegistry.clientboundPlay().register(
                 BloodLotusAuraPayload.TYPE,

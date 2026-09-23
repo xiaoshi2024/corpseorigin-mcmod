@@ -3,6 +3,8 @@
   "package": "xiaoshi2022.corpseorigin.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "HeartFeignPoseMixin",
+    "HeartFeignJumpMixin",
     "CooldownInstanceAccessor",
     "CorpseMixin",
     "ItemCooldownsAccessor",
@@ -25,6 +27,9 @@
     "requireAnnotations": true
   },
   "client": [
+    "TianGangControlsMixin",
+    "InventoryHeartPreviewMixin",
+    "QiFogMixin",
     "SkillPoseMixin",
     "AvatarRendererMixin",
     "ClientPlayerGeoAnimatableMixin",

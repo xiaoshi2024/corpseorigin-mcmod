@@ -119,6 +119,7 @@ public final class InnerPowerManager {
      * 服务端每 tick 调用：自然回复内力。
      */
     public static void tickRegen(ServerPlayer player) {
+        if (xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.isChanneling(player)) return;
         int max = getMaxInnerPower(player);
         if (max <= 0) {
             return;

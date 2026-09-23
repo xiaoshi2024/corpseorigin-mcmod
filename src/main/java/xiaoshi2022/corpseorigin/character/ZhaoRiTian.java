@@ -19,7 +19,9 @@ public class ZhaoRiTian implements ICharacter {
     }
 
     private static final List<ISkill> SKILLS = List.of(
-            new PowerStrikeSkill()
+            new PowerStrikeSkill(),
+            new xiaoshi2022.corpseorigin.skill.zhaoritian.CrimsonBloodSpearSkill(),
+            new xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill()
     );
 
     @Override

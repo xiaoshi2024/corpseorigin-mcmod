@@ -29,7 +29,8 @@ public class BloodWingBladeSkill extends AbstractSkill {
         var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(player,4);
         if(target==null) return;
         float before=target.getHealth();
-        if(target.hurtServer((net.minecraft.server.level.ServerLevel)player.level(),player.damageSources().playerAttack(player),10)) {
+        float damage = (float) player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) * 1.5f;
+        if(target.hurtServer((net.minecraft.server.level.ServerLevel)player.level(),player.damageSources().playerAttack(player),damage)) {
             player.heal(Math.min(4,Math.max(0,before-target.getHealth())*.4f));
             player.getMainHandItem().hurtAndBreak(1,player,net.minecraft.world.entity.EquipmentSlot.MAINHAND);
         }

@@ -73,10 +73,9 @@ public class ShiChaoZhiZi implements ICharacter {
     /**
      * 二阶段的起跳速度（原版玩家是 0.42）。
      * <p>
-     * 折算跳高 ≈ {@code 1.25 × (v / 0.42)²}：<b>0.7 ≈ 3.5 格</b>（约 2.8 倍玩家，平地上落地还不吃摔伤）。
-     * 之前给的 1.9 能跳 25 格往上，落下来直接把自己摔爆 —— 别再往上加了。
+     * 巨人形态使用强力起跳，并单独免疫摔落伤害；恢复人形时移除这两个修正。
      */
-    public static final double SECOND_FORM_JUMP_STRENGTH = 0.7;
+    public static final double SECOND_FORM_JUMP_STRENGTH = 1.9;
     public static final double SECOND_FORM_HEALTH = 500.0;
     public static final double SECOND_FORM_ARMOR = 20.0;
     public static final double SECOND_FORM_ATTACK_RANGE = SECOND_FORM_EYE_HEIGHT + 2.0;
@@ -85,6 +84,7 @@ public class ShiChaoZhiZi implements ICharacter {
     private static final Identifier ARMOR_MODIFIER = CorpseOrigin.id("shichao_second_form_armor");
     private static final Identifier KNOCKBACK_MODIFIER = CorpseOrigin.id("shichao_second_form_knockback");
     private static final Identifier JUMP_MODIFIER = CorpseOrigin.id("shichao_second_form_jump");
+    private static final Identifier FALL_MODIFIER = CorpseOrigin.id("shichao_second_form_fall");
     private static final Identifier REACH_MODIFIER = CorpseOrigin.id("shichao_second_form_reach");
 
     private static final List<ISkill> SKILLS = List.of(
@@ -169,6 +169,9 @@ public class ShiChaoZhiZi implements ICharacter {
         setTarget(entity, Attributes.ARMOR, ARMOR_MODIFIER, SECOND_FORM_ARMOR);
         setTarget(entity, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_MODIFIER, 1.0);
         setTarget(entity, Attributes.JUMP_STRENGTH, JUMP_MODIFIER, SECOND_FORM_JUMP_STRENGTH);
+        var fall=entity.getAttribute(Attributes.FALL_DAMAGE_MULTIPLIER);
+        if(fall!=null)fall.addOrReplacePermanentModifier(new AttributeModifier(
+                FALL_MODIFIER,-1,AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
         setTarget(entity, Attributes.ENTITY_INTERACTION_RANGE, REACH_MODIFIER, SECOND_FORM_ATTACK_RANGE);
         entity.refreshDimensions();
     }
@@ -178,6 +181,7 @@ public class ShiChaoZhiZi implements ICharacter {
         remove(entity, Attributes.ARMOR, ARMOR_MODIFIER);
         remove(entity, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_MODIFIER);
         remove(entity, Attributes.JUMP_STRENGTH, JUMP_MODIFIER);
+        remove(entity, Attributes.FALL_DAMAGE_MULTIPLIER, FALL_MODIFIER);
         remove(entity, Attributes.ENTITY_INTERACTION_RANGE, REACH_MODIFIER);
         entity.refreshDimensions();
         if (entity.getHealth() > entity.getMaxHealth()) entity.setHealth(entity.getMaxHealth());

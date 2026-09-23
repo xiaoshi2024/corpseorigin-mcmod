@@ -9,7 +9,6 @@ import net.minecraft.world.entity.ai.attributes.*;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.phys.*;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.core.particles.ParticleTypes;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.skill.chapter.*;
@@ -41,7 +40,7 @@ public final class TianGangCombat {
             var target=ChapterCombat.aim(p,form==Form.WU?6:4);if(target!=null) {
                 breakGuard(target);
                 target.hurtServer(level,p.damageSources().playerAttack(p),form==Form.WU?36:48);
-                level.sendParticles(ParticleTypes.CRIT,target.getX(),target.getY()+1,target.getZ(),24,.5,.5,.5,.1);
+                QiEffects.cloud(level,target.getBoundingBox().getCenter(),0x88aaff,1.6f,16);
             }
             ChapterScenes.action(p,"tiangang_left",16);p.swing(net.minecraft.world.InteractionHand.OFF_HAND,true);return;
         }
@@ -75,7 +74,7 @@ public final class TianGangCombat {
             for(var a:List.copyOf(AURAS.values())){
                 var p=a.player;if(!valid(p,a.level) || p.tickCount>=a.until){removeAura(p);continue;}
                 if(p.tickCount%5==0){
-                    ChapterCombat.ring(a.level,p.position(),1.1,a.form==Form.SHEN?0xffd779:0xe64136,20);
+                    QiEffects.aura(p,"tiangang",a.form==Form.SHEN?0xffd779:0x88aaff,2,12);
                     if(a.form==Form.YU || a.form==Form.SHEN)SkillRework.buff(p,MobEffects.RESISTANCE,6,a.form==Form.YU?3:2);
                 }
             }
@@ -93,7 +92,7 @@ public final class TianGangCombat {
                     if(!a.level.hasChunkAt(BlockPos.containing(end)))return true;
                     var block=a.level.clip(new ClipContext(start,end,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p));
                     end=block.getLocation();
-                    for(int i=0;i<8;i++)ChapterCombat.dust(a.level,start.lerp(end,i/8.0),0xeb1224,2);
+                    QiEffects.cloud(a.level,start.lerp(end,.5),0x88aaff,1.2f,12);
                     for(var target:a.level.getEntitiesOfClass(LivingEntity.class,new AABB(start,end).inflate(1))){
                         if(!ChapterCombat.canHit(p,target) || a.hits.contains(target.getUUID())
                                 || a.level.clip(new ClipContext(start,target.getEyePosition(),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p)).getType()!=HitResult.Type.MISS)continue;
@@ -113,7 +112,7 @@ public final class TianGangCombat {
                         if(budget<=0)break;
                         if(pos.distSqr(center)<=radius*radius && ImpactTerrain.breakBlock(p,pos,false))budget--;
                     }
-                    a.level.sendParticles(ParticleTypes.EXPLOSION_EMITTER,p.getX(),p.getY(),p.getZ(),1,0,0,0,0);
+                    QiEffects.cloud(a.level,p.position(),0xffd779,(float)radius,20);
                     ChapterScenes.action(p,"release",10);return true;
                 }
                 return true;

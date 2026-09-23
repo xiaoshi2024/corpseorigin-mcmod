@@ -18,6 +18,69 @@ import java.util.Random;
  */
 public class BloodLotusLaserRenderer {
 
+    /** One straight, thin rectangular blade. Every face shares the same two end planes. */
+    public static void submitCuttingBlade(PoseStack poses, SubmitNodeCollector collector,
+                                          Vec3 start, Vec3 end, Vec3 bladeAxis, float width) {
+        if (start.distanceToSqr(end) < 1.0E-8) return;
+        Vec3 forward = end.subtract(start).normalize();
+        Vec3 projected = bladeAxis.subtract(forward.scale(bladeAxis.dot(forward)));
+        Vec3 right = projected.lengthSqr() > 1.0E-6 ? projected.normalize() : getPerpendicular(forward);
+        Vec3 normal = forward.cross(right).normalize();
+        collector.submitCustomGeometry(poses, RenderTypes.lightning(), (pose, vertices) -> {
+            drawBlade(vertices, pose.pose(), start, end, right, normal, width * 1.3, .07, 55, 255, 5, 30);
+            drawBlade(vertices, pose.pose(), start, end, right, normal, width, .025, 210, 255, 20, 45);
+            drawBlade(vertices, pose.pose(), start, end, right, normal, width * .65, .012, 245, 255, 185, 185);
+        });
+    }
+
+    private static void drawBlade(VertexConsumer vertices, Matrix4f pose, Vec3 start, Vec3 end,
+                                   Vec3 right, Vec3 normal, double width, double thickness,
+                                   int alpha, int red, int green, int blue) {
+        Vec3 r = right.scale(width * .5), n = normal.scale(thickness * .5);
+        Vec3[] corners = {r.add(n), r.scale(-1).add(n), r.scale(-1).subtract(n), r.subtract(n)};
+        for (int i = 0; i < 4; i++) {
+            Vec3 a = corners[i], b = corners[(i + 1) % 4];
+            Vec3[] face = {start.add(a), end.add(a), end.add(b), start.add(b)};
+            for (Vec3 point : face)
+                vertices.addVertex(pose, (float) point.x, (float) point.y, (float) point.z).setColor(red, green, blue, alpha);
+            for (int j = 3; j >= 0; j--) {
+                Vec3 point = face[j];
+                vertices.addVertex(pose, (float) point.x, (float) point.y, (float) point.z).setColor(red, green, blue, alpha);
+            }
+        }
+    }
+
+    /** Straight emissive red column for Tian Gang Key. */
+    public static void submitStraightBeam(PoseStack poses, SubmitNodeCollector collector, Vec3 start, Vec3 end, float width) {
+        if (start.distanceToSqr(end) < 1.0E-8) return;
+        collector.submitCustomGeometry(poses, RenderTypes.lightning(), (pose, vertices) -> {
+            drawBeamTube(vertices, pose.pose(), start, end, width * 2.5f, 65, 220, 5, 35);
+            drawBeamTube(vertices, pose.pose(), start, end, width, 210, 255, 20, 45);
+            drawBeamTube(vertices, pose.pose(), start, end, width * .35f, 245, 255, 180, 180);
+        });
+    }
+
+    private static void drawBeamTube(VertexConsumer vertices, Matrix4f pose, Vec3 start, Vec3 end,
+                                     float width, int alpha, int red, int green, int blue) {
+        Vec3 forward = end.subtract(start).normalize();
+        Vec3 right = getPerpendicular(forward).scale(width * .5);
+        Vec3 up = forward.cross(right);
+        // LIGHTNING uses QUADS. An eight-sided tube stays visible from every camera angle.
+        for (int i = 0; i < 8; i++) {
+            double a = i * Math.PI / 4, b = (i + 1) * Math.PI / 4;
+            Vec3 sideA = right.scale(Math.cos(a)).add(up.scale(Math.sin(a)));
+            Vec3 sideB = right.scale(Math.cos(b)).add(up.scale(Math.sin(b)));
+            Vec3[] points = {start.add(sideA), end.add(sideA), end.add(sideB), start.add(sideB)};
+            for (Vec3 point : points)
+                vertices.addVertex(pose, (float) point.x, (float) point.y, (float) point.z).setColor(red, green, blue, alpha);
+            // Also emit the inner face for a camera inside the muzzle flare.
+            for (int j = points.length - 1; j >= 0; j--) {
+                Vec3 point = points[j];
+                vertices.addVertex(pose, (float) point.x, (float) point.y, (float) point.z).setColor(red, green, blue, alpha);
+            }
+        }
+    }
+
     private static final RenderType LASER_RENDER_TYPE = RenderTypes.lightning();
 
     // ==================== 双层颜色 ====================

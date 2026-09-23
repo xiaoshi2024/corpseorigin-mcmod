@@ -1,6 +1,7 @@
 package xiaoshi2022.corpseorigin.registry;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
+import net.minecraft.world.entity.PathfinderMob;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.entity.*;
 
@@ -24,6 +25,15 @@ public final class ModAttributes {
         FabricDefaultAttributeRegistry.register(ModEntities.RED_FIRE_ANT, xiaoshi2022.corpseorigin.entity.CorpseAntEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.BULLET_ANT, xiaoshi2022.corpseorigin.entity.CorpseAntEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.VAMPIRE_BAT, net.minecraft.world.entity.ambient.Bat.createAttributes());
+
+        FabricDefaultAttributeRegistry.register(ModEntities.BLACK_GOLD_HEART, SkillConstructEntity.createMobAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.VINE_BIND, SkillConstructEntity.createMobAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.BLOOD_LOTUS_PETAL, SkillConstructEntity.createMobAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.BEE_WHEEL, SkillConstructEntity.createMobAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.SLAUGHTER_INCARNATION, SkillConstructEntity.createMobAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.SEVERED_FOREARM, SkillConstructEntity.createMobAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.TIANGANG_HALO, SkillConstructEntity.createMobAttributes());
+
         // 注册低级尸兄的属性
         FabricDefaultAttributeRegistry.register(
                 ModEntities.LOWER_LEVEL_ZB,

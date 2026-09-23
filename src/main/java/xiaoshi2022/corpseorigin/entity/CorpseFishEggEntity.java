@@ -3,6 +3,8 @@ package xiaoshi2022.corpseorigin.entity;
 import com.geckolib.animatable.GeoEntity;
 import com.geckolib.animatable.instance.AnimatableInstanceCache;
 import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
 import com.geckolib.util.GeckoLibUtil;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.*;
@@ -24,6 +26,7 @@ import java.util.UUID;
 
 /** A separately removable parasite. Drain stops after three seconds even on players. */
 public class CorpseFishEggEntity extends Entity implements GeoEntity {
+    private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("idle");
     private static final EntityDataAccessor<String> HOST = SynchedEntityData.defineId(CorpseFishEggEntity.class, EntityDataSerializers.STRING);
     private UUID owner;
     private int age, attachedTicks, slot;
@@ -107,6 +110,8 @@ public class CorpseFishEggEntity extends Entity implements GeoEntity {
         entityData.set(HOST,in.getStringOr("Host","")); age=Math.max(0,in.getIntOr("Age",0));
         attachedTicks=Math.max(0,in.getIntOr("AttachedTicks",0)); slot=Math.floorMod(in.getIntOr("Slot",0),3);
     }
-    @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {}
+    @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<CorpseFishEggEntity>("idle",0,test->test.setAndContinue(IDLE)));
+    }
     @Override public AnimatableInstanceCache getAnimatableInstanceCache() { return cache; }
 }

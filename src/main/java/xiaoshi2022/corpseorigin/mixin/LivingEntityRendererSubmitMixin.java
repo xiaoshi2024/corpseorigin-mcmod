@@ -298,7 +298,10 @@ public abstract class LivingEntityRendererSubmitMixin {
         if (!(state instanceof AvatarRenderState avatar) || !((Object)this instanceof AvatarRenderer<?>)) return;
         if (!Boolean.TRUE.equals(avatar.getGeckolibData(TianGangHaloRenderData.ACTIVE))) return;
         var renderer=TianGangHaloRenderer.get(); if(renderer==null)return;
-        poseStack.pushPose(); poseStack.translate(0,0.0,0.28);
+        poseStack.pushPose();
+        // The geo already places the halo at [0, 25, 6] in player-local pixels.
+        // Do not add a world-Z offset before the renderer applies body yaw:
+        // that offset becomes sideways when the player turns, breaking alignment.
         if(avatar.scale!=1)poseStack.scale(avatar.scale,avatar.scale,avatar.scale);
         renderer.submit(avatar,poseStack,collector,camera); poseStack.popPose();
     }

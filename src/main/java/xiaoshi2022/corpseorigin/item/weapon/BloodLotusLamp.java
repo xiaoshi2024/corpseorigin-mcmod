@@ -179,11 +179,7 @@ public class BloodLotusLamp extends Item implements GeoItem {
         living.heal(cost * HEAL_PER_TICK);
 
         if (living instanceof Player && level.getGameTime() % 10 == 0) {
-            level.sendParticles(
-                    ParticleTypes.HEART,
-                    living.getX(), living.getY() + 1.5, living.getZ(),
-                    1, 0.3, 0.3, 0.3, 0.0
-            );
+            xiaoshi2022.corpseorigin.skill.chapter.QiEffects.aura(living,"lotus_heal",0xdd6688,1.5f,16);
         }
     }
 
@@ -237,17 +233,9 @@ public class BloodLotusLamp extends Item implements GeoItem {
 
         // 视觉
         if (level instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(
-                    ParticleTypes.DAMAGE_INDICATOR,
-                    player.getX(), player.getY() + 1.0, player.getZ(),
-                    20, 0.8, 0.8, 0.8, 0.1
-            );
+            xiaoshi2022.corpseorigin.skill.chapter.QiEffects.aura(player,"lotus_drain",0xcc184f,2,16);
             for (LivingEntity target : targets) {
-                serverLevel.sendParticles(
-                        ParticleTypes.DAMAGE_INDICATOR,
-                        target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-                        5, 0.3, 0.3, 0.3, 0.05
-                );
+                xiaoshi2022.corpseorigin.skill.chapter.QiEffects.aura(target,"lotus_drain_target",0x991d42,1.3f,16);
             }
         }
 

@@ -176,6 +176,7 @@ public class CorpseOriginClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        HeartRecoveryScreen.register();
         // 1. 按键绑定
         CorpseKeyBindings.register();
         ClientPlayNetworking.registerGlobalReceiver(NestRadarPayload.TYPE, (payload, context) ->
@@ -535,6 +536,7 @@ public class CorpseOriginClient implements ClientModInitializer {
         LevelRenderEvents.COLLECT_SUBMITS.register(context -> {
             PoseStack poseStack = context.poseStack();
             SubmitNodeCollector collector = context.submitNodeCollector();
+            xiaoshi2022.corpseorigin.client.render.QiAuraRenderer.render(poseStack,collector);
             BloodLotusLaserManager.getInstance().render(poseStack, collector);
             // ✅ 尸王雷电（紫色）
             ThunderFxManager.getInstance().render(poseStack, collector);
@@ -557,13 +559,16 @@ public class CorpseOriginClient implements ClientModInitializer {
                 );
             });
         });
+        ClientPlayNetworking.registerGlobalReceiver(TianGangBeamPayload.TYPE, (payload, context) ->
+                context.client().execute(() -> xiaoshi2022.corpseorigin.client.render.laser.TianGangBeamState.accept(payload)));
 
+        ClientPlayNetworking.registerGlobalReceiver(QiAuraPayload.TYPE,(payload,context)->context.client().execute(()->
+                xiaoshi2022.corpseorigin.client.render.QiAuraRenderer.accept(payload)));
         ClientPlayNetworking.registerGlobalReceiver(BloodLotusAuraPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
-                BloodLotusLaserManager.getInstance().addAura(
-                        payload.playerUuid(),
-                        payload.durationTicks()
-                );
+                var entity=context.client().level==null?null:context.client().level.getEntity(payload.playerUuid());
+                if(entity!=null)xiaoshi2022.corpseorigin.client.render.QiAuraRenderer.accept(new QiAuraPayload(
+                        entity.getId(),"lotus_lamp",entity.position(),0xcc184f,2,payload.durationTicks()));
             });
         });
 
@@ -600,6 +605,8 @@ public class CorpseOriginClient implements ClientModInitializer {
 // 每 tick 更新
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             BloodLotusLaserManager.getInstance().tick();
+            xiaoshi2022.corpseorigin.client.render.laser.TianGangBeamState.tick();
+            xiaoshi2022.corpseorigin.client.render.QiAuraRenderer.tick();
             ThunderFxManager.getInstance().tick();
         });
 

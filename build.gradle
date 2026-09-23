@@ -62,6 +62,35 @@ java {
 	targetCompatibility = JavaVersion.VERSION_25
 }
 
+sourceSets {
+    physicsTest {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+
+tasks.register('beeWheelPhysicsTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.entity.BeeWheelPhysicsTest'
+}
+
+tasks.named('check') { dependsOn beeWheelPhysicsTest }
+
+tasks.register('qiDensityTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.entity.QiDensityTest'
+}
+tasks.named('check') { dependsOn qiDensityTest }
+
+tasks.register('tianGangBladeSweepTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangBladeSweepTest'
+}
+tasks.named('check') { dependsOn tianGangBladeSweepTest }
+
 jar {
 	def projectName = project.name
 	inputs.property "projectName", projectName

@@ -28,6 +28,7 @@ public abstract class AvatarRendererMixin {
         xiaoshi2022.corpseorigin.client.renderer.player.CreaturePlayerRenderer.create(context);
         ((LivingEntityRendererMixin)self).callAddLayer(new xiaoshi2022.corpseorigin.client.render.layer.ChameleonHeadLayer(self));
         ((LivingEntityRendererMixin)self).callAddLayer(new xiaoshi2022.corpseorigin.client.render.layer.ChapterCostumeLayer(self));
+        ((LivingEntityRendererMixin)self).callAddLayer(new xiaoshi2022.corpseorigin.client.render.layer.QiCoatingLayer(self));
 
         try {
             var modelSet = Minecraft.getInstance().getEntityModels();

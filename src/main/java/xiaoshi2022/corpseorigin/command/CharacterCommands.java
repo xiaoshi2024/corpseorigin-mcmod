@@ -33,6 +33,17 @@ public final class CharacterCommands {
                 // 直接 /character 等同于查看当前角色
                 .executes(ctx -> showCurrent(ctx.getSource()))
                 .then(Commands.literal("current").executes(ctx -> showCurrent(ctx.getSource())))
+                .then(Commands.literal("unlock")
+                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .then(Commands.argument("skill", StringArgumentType.word())
+                                .suggests((ctx, builder) -> net.minecraft.commands.SharedSuggestionProvider.suggest(
+                                        CharacterManager.getInstance().getRegisteredCharacters().stream()
+                                                .flatMap(character -> character.getSkills().stream())
+                                                .map(skill -> skill.getId().getPath()).distinct(), builder))
+                                .then(Commands.argument("targets", EntityArgument.players())
+                                        .executes(ctx -> unlockSkills(ctx.getSource(),
+                                                StringArgumentType.getString(ctx, "skill"),
+                                                EntityArgument.getPlayers(ctx, "targets"))))))
                 .then(Commands.literal("list").executes(ctx -> {
                     StringBuilder list = new StringBuilder("===== ");
                     list.append(Component.translatable("command.corpseorigin.character.list_header").getString())
@@ -45,6 +56,7 @@ public final class CharacterCommands {
                     return 1;
                 }))
                 .then(Commands.literal("select")
+                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(Commands.argument("id", StringArgumentType.word())
                                 // ✅ 关键：注册 Tab 补全建议
                                 .suggests((ctx, builder) -> {
@@ -76,6 +88,7 @@ public final class CharacterCommands {
                 }))
                 // ✅ 作弊：一键解锁全部技能（默认作用于所有在线玩家）
                 .then(Commands.literal("unlockall")
+                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .executes(ctx -> unlockAll(ctx.getSource(),
                                 ctx.getSource().getServer().getPlayerList().getPlayers()))
                         .then(Commands.argument("targets", EntityArgument.players())
@@ -104,6 +117,35 @@ public final class CharacterCommands {
                                                         StringArgumentType.getString(ctx, "segment"),
                                                         StringArgumentType.getString(ctx, "field"),
                                                         FloatArgumentType.getFloat(ctx, "value"))))))));
+    }
+
+    /** Operator-only unlock; validate each selected player's own character. */
+    private static int unlockSkills(CommandSourceStack source, String requested, Collection<ServerPlayer> targets) {
+        int granted = 0;
+        for (ServerPlayer target : targets) granted += unlockSkill(source, requested, target);
+        return granted;
+    }
+
+    private static int unlockSkill(CommandSourceStack source, String requested, ServerPlayer player) {
+        var skill = CharacterManager.getInstance().getPlayerCharacter(player).getSkills().stream()
+                .filter(s -> s.getId().getPath().equals(requested) || s.getId().toString().equals(requested))
+                .findFirst().orElse(null);
+        if (skill == null) {
+            source.sendFailure(Component.translatable("command.corpseorigin.character.unlock_target_invalid", player.getName(), requested));
+            return 0;
+        }
+        var data = xiaoshi2022.corpseorigin.character.PlayerCharacterData.get(player);
+        String path = skill.getId().getPath();
+        if (data.hasLearned(player.getUUID(), path)) {
+            source.sendSuccess(() -> Component.translatable(
+                    "command.corpseorigin.character.unlock_target_known", player.getName(), skill.getName()), false);
+            return 0;
+        }
+        data.learnSkill(player.getUUID(), path);
+        xiaoshi2022.corpseorigin.network.CorpseNetwork.sendEvolutionSync(player);
+        source.sendSuccess(() -> Component.translatable(
+                "command.corpseorigin.skill.unlocked", player.getName(), path), false);
+        return 1;
     }
 
     private static int toggleShiChaoForm(CommandSourceStack source) throws CommandSyntaxException {

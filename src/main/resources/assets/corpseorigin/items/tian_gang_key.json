@@ -1,0 +1,7 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "corpseorigin:item/tian_gang_key",
+    "model": { "type": "geckolib:geckolib" }
+  }
+}

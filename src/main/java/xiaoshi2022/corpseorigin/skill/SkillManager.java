@@ -30,6 +30,13 @@ public final class SkillManager {
      * @return true 表示成功激活并发送冷却同步包
      */
     public static boolean activate(ServerPlayer player, String skillPath) {
+        if (xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.PATH.equals(skillPath)
+                && xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.isChanneling(player)) {
+            xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.cancel(player);
+            return true;
+        }
+        if (xiaoshi2022.corpseorigin.skill.heixiaofei.HeartImplant.active(player)) return false;
+        if(!player.isAlive() || player.isSpectator())return false;
         if (skillPath == null || skillPath.isEmpty()) {
             return false;
         }
@@ -66,6 +73,15 @@ public final class SkillManager {
         }
 
         // 校验冷却
+        // Existing constructs accept follow-up input without restarting the summon/launch cooldown.
+        if(skillPath.equals("tiger_claw_bee_wheel") && player.getMainHandItem().getItem() instanceof xiaoshi2022.corpseorigin.item.BeeWheelItem){
+            var wheel=xiaoshi2022.corpseorigin.entity.BeeWheelEntity.active(player);
+            if(wheel!=null){wheel.control(player);return true;}
+        }
+        if(skillPath.equals("killing_incarnation")){
+            var incarnation=xiaoshi2022.corpseorigin.entity.SkillConstructEntity.findOwned(player,"slaughter_incarnation");
+            if(incarnation!=null)return incarnation.activateSpecial(player);
+        }
         long now = System.currentTimeMillis();
         long end = getCooldownEnd(player.getUUID(), skillPath);
         if (end > now) {

@@ -77,23 +77,22 @@ public final class SkillRework {
                 if(!role.equals("shichaozhizi"))p.setAttached(LOTUS_ARMOR,0L);
                 if(role.equals("heixiaofei") && PlayerCharacterData.get(p).hasLearned(p.getUUID(),"black_gold_heart") && p.tickCount%20==0) {
                     p.heal(2);buff(p,MobEffects.REGENERATION,25,1);
-                    if(p.level().getEntitiesOfClass(xiaoshi2022.corpseorigin.entity.SkillConstructEntity.class,
-                            p.getBoundingBox().inflate(4),e->e.kind().equals("black_gold_heart") && e.ownedBy(p)).isEmpty())
-                        xiaoshi2022.corpseorigin.entity.SkillConstructEntity.spawn(p,
-                                xiaoshi2022.corpseorigin.registry.ModEntities.BLACK_GOLD_HEART,p,200);
+                    // The heart is now a client-only inventory preview; its passive effects stay server-side.
                 }
                 if(p.tickCount%10==0 && p.getAttachedOrCreate(LOTUS_ARMOR)>p.level().getGameTime())
-                    ChapterCombat.ring((ServerLevel)p.level(),p.position(),1.1,0xcc184f,24);
+                    QiEffects.aura(p,"lotus_armor",0xcc184f,1.8f,18);
             }
             CASTS.values().removeIf(c->!c.owner.isAlive() || c.owner.isRemoved() || c.owner.level()!=c.level
                     || !c.role.equals(CharacterManager.getInstance().getPlayerCharacterId(c.owner)) || c.owner.tickCount-c.start>=c.duration);
             for(Cast c:CASTS.values()) {
                 var p=c.owner;int age=p.tickCount-c.start;
-                if(c.kind.equals("sword_flower") || c.kind.equals("round_dance")) {
-                    if(age%5==0)for(int r=1;r<=6;r++)ChapterCombat.ring(c.level,p.position().add(0,.9,0),r,c.kind.equals("sword_flower")?0xff76b3:0xdf203c,24);
+                if(c.kind.equals("slaughter_qi")){
+                    if(age%5==0)QiEffects.aura(p,"slaughter",p.getHealth()<p.getMaxHealth()*.35f?0xe61928:0x991d42,2.5f,12);
+                }else if(c.kind.equals("sword_flower") || c.kind.equals("round_dance")) {
+                    if(age%5==0)QiEffects.aura(p,c.kind,c.kind.equals("sword_flower")?0xff76b3:0xdf203c,6,12);
                     if(age%10==0)area(p,6,c.kind.equals("sword_flower")?18:20,.35);
                 } else if(c.kind.equals("blood_cloud")) {
-                    if(age%3==0)c.level.sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xb51236,2),p.getX(),p.getY()+1,p.getZ(),28,2,1,2,.02);
+                    if(age%5==0)QiEffects.aura(p,"blood_cloud",0xb51236,4,12);
                     if(age%10==0) {
                         area(p,4,14,.5);
                         for(var t:c.level.getEntitiesOfClass(LivingEntity.class,p.getBoundingBox().inflate(4)))
@@ -106,7 +105,10 @@ public final class SkillRework {
                 if(!p.isAlive() || p.isRemoved() || p.level()!=s.level || t.level()!=s.level || !ChapterCombat.canHit(p,t)
                         || !CharacterManager.getInstance().getPlayerCharacterId(p).equals("heixiaofei")
                         || !p.getMainHandItem().is(ModItems.BLOOD_WING_BLADE) || p.distanceToSqr(t)>12.25 || !p.hasLineOfSight(t) || p.isShiftKeyDown())return true;
-                for(int i=0;i<8;i++)ChapterCombat.dust(s.level,t.getEyePosition().lerp(p.getEyePosition(),i/8.0),0xa80d27,1.4f);
+                if(p.tickCount%5==0){
+                    QiEffects.aura(t,"siphon_target",0xa80d27,1.3f,12);
+                    QiEffects.cloud(s.level,t.getEyePosition().lerp(p.getEyePosition(),.5),0xa80d27,1.2f,12);
+                }
                 if(p.tickCount%10==0) {
                     float before=t.getHealth();
                     t.hurtServer(s.level,p.damageSources().playerAttack(p),Math.max(16,t.getMaxHealth()*.12f));

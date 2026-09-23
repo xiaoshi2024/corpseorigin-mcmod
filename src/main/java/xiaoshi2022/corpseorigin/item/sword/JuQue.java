@@ -62,7 +62,8 @@ public class JuQue extends Item implements GeoItem {
 
     public static JuQue create(ResourceKey<Item> id) {
         return new JuQue(new Item.Properties()
-                .sword(ToolMaterial.DIAMOND, 3.0F, -2.4F)
+                .sword(ToolMaterial.DIAMOND, 26.0F, -2.4F)
+                .rarity(net.minecraft.world.item.Rarity.EPIC)
                 .setId(id));
     }
 

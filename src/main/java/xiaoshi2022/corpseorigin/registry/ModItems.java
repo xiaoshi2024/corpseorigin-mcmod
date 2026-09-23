@@ -23,6 +23,11 @@ import xiaoshi2022.corpseorigin.item.weapon.BloodLotusLamp;
 import java.util.function.Supplier;
 
 public final class ModItems {
+    public static final Item TIAN_GANG_KEY = register("tian_gang_key",
+            new xiaoshi2022.corpseorigin.item.weapon.TianGangKeyItem(new Item.Properties()
+                    .stacksTo(1).rarity(Rarity.EPIC).setId(itemKey("tian_gang_key"))));
+    public static final Item BLACK_GOLD_HEART = register("black_gold_heart", new BlackGoldHeartItem(
+            new Item.Properties().stacksTo(1).setId(itemKey("black_gold_heart"))));
     public static final Item BEE_WHEEL=register("bee_wheel",new BeeWheelItem(new Item.Properties()
             .sword(ToolMaterial.DIAMOND,8,-2.4f).stacksTo(1).setId(itemKey("bee_wheel"))));
     public static final Item DR_MU_EYE = register("dr_mu_eye", new Item(new Item.Properties().setId(itemKey("dr_mu_eye"))));
@@ -30,7 +35,8 @@ public final class ModItems {
     public static final Item PARCEL_BOMB = register("parcel_bomb",new Item(new Item.Properties().setId(itemKey("parcel_bomb"))));
     public static final Item BILLIARD_EIGHT = register("billiard_eight",new Item(new Item.Properties().setId(itemKey("billiard_eight"))));
     public static final Item BLOOD_WING_BLADE = register("blood_wing_blade",
-            new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,3f,-2.4f).setId(itemKey("blood_wing_blade"))));
+            new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,22f,-2.4f)
+                    .rarity(Rarity.EPIC).setId(itemKey("blood_wing_blade"))));
 
     public static final Item MEDUSA_EYE = register("medusa_eye",
             new MedusaEyeItem(new Item.Properties()
@@ -229,10 +235,12 @@ public final class ModItems {
                 output.accept(JUQUE_TW);
                 output.accept(BLOOD_WING_BLADE);
                 output.accept(BEE_WHEEL);
+                output.accept(BLACK_GOLD_HEART);
                 output.accept(RED_METEOR_SWORD);
                 output.accept(PARCEL_BOMB);
                 output.accept(BILLIARD_EIGHT);
                 output.accept(BLOOD_LOTUS_LAMP);
+                output.accept(TIAN_GANG_KEY);
                 output.accept(CLONE_CHAMBER);
                 output.accept(ZBR_FLESH);
                 output.accept(ANTENNA_ZBR_ARMOR_HELMET.get());
