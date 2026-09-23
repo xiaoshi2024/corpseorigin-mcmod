@@ -43,9 +43,9 @@ public final class TianGangKeySkill extends AbstractSkill {
         return CASTS.containsKey(player.getUUID()) ? Component.translatable("skill.corpseorigin.tian_gang_blood_lotus.busy") : null;
     }
     @Override public void onActivate(ServerPlayer player) {
-        CASTS.put(player.getUUID(), new Cast(player));
-        ItemStack stack = player.getItemInHand(TianGangKeyItem.weaponHand(player));
-        ((TianGangKeyItem) stack.getItem()).triggerAnim(player, GeoItem.getOrAssignId(stack, player.level()), "main", "fire");
+        Cast cast = new Cast(player);
+        CASTS.put(player.getUUID(), cast);
+        cast.animatable.triggerAnim(player, cast.animationId, "main", "fire");
     }
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(server -> CASTS.values().removeIf(Cast::tick));
@@ -88,6 +88,11 @@ public final class TianGangKeySkill extends AbstractSkill {
         final ServerPlayer player;
         final ServerLevel level;
         final ItemStack weapon;
+        // ItemStack is mutable: dropping it can turn getItem() into AIR. Keep the
+        // original animatable and assigned ID so cleanup never dereferences an emptied stack.
+        final TianGangKeyItem animatable;
+        final long animationId;
+        boolean stopped;
         final InteractionHand hand;
         long lastSwingTick = Long.MIN_VALUE / 2;
         final UUID id = UUID.randomUUID();
@@ -100,10 +105,13 @@ public final class TianGangKeySkill extends AbstractSkill {
         Cast(ServerPlayer player) {
             this.player = player; level = player.level(); hand = TianGangKeyItem.weaponHand(player);
             weapon = player.getItemInHand(hand);
+            animatable = (TianGangKeyItem) weapon.getItem();
+            animationId = GeoItem.getOrAssignId(weapon, level);
         }
 
         boolean validOwner() {
             return !player.isRemoved() && player.isAlive() && !player.isSpectator() && player.level() == level
+                    && !stopped && !weapon.isEmpty() && weapon.getItem() == animatable
                     && player.getItemInHand(hand) == weapon
                     && "zhaoritian".equals(CharacterManager.getInstance().getPlayerCharacterId(player));
         }
@@ -183,9 +191,14 @@ public final class TianGangKeySkill extends AbstractSkill {
                     ClipContext.Fluid.NONE, player)).getType() == net.minecraft.world.phys.HitResult.Type.MISS;
         }
         void stop() {
+            if (stopped) return;
+            stopped = true;
+            pending = null;
+            previous = null;
+            nextHit.clear();
             broadcast(Vec3.ZERO, false, 0);
-            ((TianGangKeyItem) weapon.getItem()).triggerAnim(player,
-                    GeoItem.getOrAssignId(weapon, level), "main", "rest");
+            if (!player.isRemoved() && player.level() == level)
+                animatable.triggerAnim(player, animationId, "main", "rest");
         }
         void broadcast(Vec3 end, boolean firing, int ticks) {
             var packet = new TianGangBeamPayload(player.getUUID(), id, hand, end, ticks > 0 ? RANGE : 0, firing, ticks);
