@@ -29,7 +29,7 @@ public final class ModBlocks {
     /** 尸兄肉块：尸巢的基本建筑方块，外观由 GeckoLib 的 BER 渲染（所以 render shape 是 INVISIBLE） */
     public static final Block ZBR_FLESH = register(
             "zbr_flesh",
-            new ZBRFleshBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SLIME_BLOCK)
+            new ZBRFleshBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.SOUL_SAND)
                     .strength(2.0F, 3600000.0F)
                     .mapColor(MapColor.COLOR_RED)
                     .noOcclusion()

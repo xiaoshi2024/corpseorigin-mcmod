@@ -7,14 +7,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.ZuoHuFa;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.entity.ZuoFloodLongEntity;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
-import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
 
@@ -34,8 +32,6 @@ public class DetachGuardianSkill implements ISkill {
 
     /** 附近已有自己的蛟龙时不再重复放 */
     private static final double DUPLICATE_CHECK_RADIUS = 64.0;
-    /** 蛟龙落地位置：身前这么远 */
-    private static final double SPAWN_DISTANCE = 2.0;
 
     @Override
     public Identifier getId() {
@@ -85,19 +81,11 @@ public class DetachGuardianSkill implements ISkill {
         }
 
         // ① 先把蛟龙造出来再脱 —— 造不出来就保持龙身，免得"人形了、龙却没落地"
-        ZuoFloodLongEntity dragon = ModEntities.ZUO_FLOOD_LONG.create(level, EntitySpawnReason.TRIGGERED);
+        ZuoFloodLongEntity dragon = ZuoFloodLongEntity.spawnFor(player, level);
         if (dragon == null) {
             player.sendOverlayMessage(Component.translatable("skill.corpseorigin." + PATH + ".failed"));
             return;
         }
-        Vec3 look = player.getLookAngle();
-        double x = player.getX() + look.x * SPAWN_DISTANCE;
-        double z = player.getZ() + look.z * SPAWN_DISTANCE;
-        dragon.setOwner(player);
-        dragon.setPos(x, player.getY(), z);
-        dragon.setYRot(player.getYRot());
-        dragon.setYHeadRot(player.getYRot());
-        level.addFreshEntity(dragon);
 
         // ② 人恢复人形：只清掉"蛟龙外观变种"，尸兄身份照旧
         PlayerCorpseComponent.get(player).setVariant(0);

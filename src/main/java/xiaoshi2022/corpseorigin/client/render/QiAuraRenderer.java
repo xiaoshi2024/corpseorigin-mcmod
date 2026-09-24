@@ -28,7 +28,8 @@ public final class QiAuraRenderer {
     private QiAuraRenderer() {}
     private static boolean outward(Aura aura){
         return switch(aura.data.channel()){
-            case "incarnation","blood_cloud","round_dance","sword_flower" -> true;
+            case "incarnation","blood_cloud","round_dance","sword_flower",
+                    "tiangang","tiangang_charge","slaughter","aps_release" -> true;
             default -> aura.data.anchor()<0;
         };
     }
@@ -125,20 +126,21 @@ public final class QiAuraRenderer {
         float partial=Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
         Vec3 base=entity.getPosition(partial);
         boolean release=outward(aura);
-        double width=entity.getBbWidth()*(release?1.25:.65)+.12;
-        double height=entity.getBbHeight()*(release?1.6:1.13);
+        double width=entity.getBbWidth()*(release?1.65:.65)+.12;
+        double height=entity.getBbHeight()*(release?2.5:1.13);
         if(aura.data.channel().equals("incarnation")){
             width=Math.max(width,aura.data.radius()*.45);
             height=Math.max(height,aura.data.radius()*1.15);
         }
         final double flameWidth=width,flameHeight=height;
-        double time=(world.getGameTime()+partial)*.14;
+        double time=(world.getGameTime()+partial)*(release?.24:.14);
         int color=aura.data.color();float opacity=fade(aura);
         collector.submitCustomGeometry(stack,RenderTypes.entityTranslucentEmissive(CorpseOrigin.id("textures/effect/qi_mist.png")),(pose,out)->{
             // Tapered ribbons, with different heights and phases, rise from the body like an anime power-up.
             for(int layer=0;layer<2;layer++)for(int tongue=0;tongue<18;tongue++)for(int segment=0;segment<8;segment++){
                 double angle=tongue*Math.PI/9;
-                double peak=flameHeight*(.72+.28*Math.sin(tongue*2.4+time*.55));
+                double peak=flameHeight*(release ? .9+.1*Math.sin(tongue*2.4+time*.8)
+                        : .72+.28*Math.sin(tongue*2.4+time*.55));
                 int r=(color>>16)&255,g=(color>>8)&255,b=color&255;
                 if(layer==1){r=Math.min(255,r+65);g=Math.min(255,g+70);b=Math.min(255,b+55);}
                 for(int corner=0;corner<4;corner++){
@@ -151,7 +153,8 @@ public final class QiAuraRenderer {
                     float x=(float)(base.x+Math.cos(theta)*radius+sway);
                     float z=(float)(base.z+Math.sin(theta)*radius);
                     float y=(float)(base.y+peak*t);
-                    int alpha=(int)(opacity*(layer==0?65:85)*Math.sin(Math.PI*t)* (release?1:.55));
+                    int alpha=(int)(opacity*(release ? (layer==0?85:110) : (layer==0?65:85))
+                            *Math.pow(Math.sin(Math.PI*t),release?.65:1)* (release?1:.55));
                     out.addVertex(pose.pose(),x,y,z).setColor(r,g,b,alpha).setUv((float)((side+1)/2),(float)t)
                             .setOverlay(OverlayTexture.NO_OVERLAY).setLight(0xF000F0).setNormal(0,1,0);
                 }

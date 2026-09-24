@@ -8,7 +8,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.*;
-import xiaoshi2022.corpseorigin.skill.EvolutionManager;
 import xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
 
@@ -29,14 +28,16 @@ public final class JingangInfantLink {
                 ServerPlayer parent;
                 try { parent = server.getPlayerList().getPlayer(java.util.UUID.fromString(parentId)); }
                 catch (IllegalArgumentException ignored) { unlink(infant, null, false); continue; }
-                boolean secondStage = EvolutionManager.getLevel(PlayerCharacterData.get(infant)
-                        .getEarnedPoints(infant.getUUID())) >= 2;
+                // Body stage is independent of the shared evolution/skill-point level.
+                boolean secondStage = !infant.getAttachedOrCreate(CreatureAbilities.INFANT);
+                boolean jingang = JinGangZb.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(infant));
                 if (parent == null || !parent.isAlive() || !infant.isAlive()
+                        || parent.isSpectator() || infant.isSpectator() || !jingang
+                        || !infant.getUUID().toString().equals(parent.getAttachedOrCreate(CHILD))
                         || infant.level() != parent.level() || secondStage) {
-                    unlink(infant, parent, secondStage);
+                    unlink(infant, parent, jingang && secondStage && infant.isAlive());
                     continue;
                 }
-                infant.setAttached(CreatureAbilities.INFANT, true);
                 if (infant.distanceToSqr(parent) > 24 * 24)
                     infant.teleportTo(parent.getX() + 1, parent.getY(), parent.getZ());
                 if (infant.tickCount % 2 == 0) drawCord(infant, parent);
@@ -48,12 +49,11 @@ public final class JingangInfantLink {
         ServerPlayer best = null;
         double bestDistance = 64 * 64;
         for (ServerPlayer player : owner.level().getServer().getPlayerList().getPlayers()) {
-            if (player == owner || player.level() != owner.level() || !player.isAlive()
-                    || !JinGangZb.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(player))
-                    || EvolutionManager.getLevel(PlayerCharacterData.get(player)
-                        .getEarnedPoints(player.getUUID())) >= 2) continue;
+            // Both forms can be recalled: selecting this role initially gives the adult form.
+            if (player == owner || player.level() != owner.level() || !player.isAlive() || player.isSpectator()
+                    || !JinGangZb.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(player))) continue;
             double distance = player.distanceToSqr(owner);
-            if (distance < bestDistance) { bestDistance = distance; best = player; }
+            if (distance <= bestDistance) { bestDistance = distance; best = player; }
         }
         return best;
     }
@@ -66,12 +66,14 @@ public final class JingangInfantLink {
         if (!oldParent.isEmpty()) {
             try {
                 ServerPlayer old = owner.level().getServer().getPlayerList().getPlayer(java.util.UUID.fromString(oldParent));
-                if (old != null) old.setAttached(CHILD, "");
+                if (old != null && infant.getUUID().toString().equals(old.getAttachedOrCreate(CHILD)))
+                    old.setAttached(CHILD, "");
             } catch (IllegalArgumentException ignored) {}
         }
         owner.setAttached(CHILD, infant.getUUID().toString());
         infant.setAttached(PARENT, owner.getUUID().toString());
         infant.setAttached(CreatureAbilities.INFANT, true);
+        infant.setAttached(CreatureAbilities.RAGE_UNTIL, 0L);
         Vec3 side = owner.getLookAngle().cross(new Vec3(0, 1, 0)).normalize();
         infant.teleportTo(owner.getX() + side.x * 1.5, owner.getY(), owner.getZ() + side.z * 1.5);
         owner.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
@@ -86,15 +88,17 @@ public final class JingangInfantLink {
         if (childId.isEmpty()) return;
         try {
             ServerPlayer child = owner.level().getServer().getPlayerList().getPlayer(java.util.UUID.fromString(childId));
-            if (child != null) child.setAttached(PARENT, "");
+            if (child != null && owner.getUUID().toString().equals(child.getAttachedOrCreate(PARENT)))
+                child.setAttached(PARENT, "");
         } catch (IllegalArgumentException ignored) {}
         owner.setAttached(CHILD, "");
     }
 
     private static void unlink(ServerPlayer infant, ServerPlayer parent, boolean grown) {
         infant.setAttached(PARENT, "");
-        infant.setAttached(CreatureAbilities.INFANT, false);
-        if (parent != null) parent.setAttached(CHILD, "");
+        // Disconnecting (logout, dimension change, etc.) is not a body-stage transition.
+        if (parent != null && infant.getUUID().toString().equals(parent.getAttachedOrCreate(CHILD)))
+            parent.setAttached(CHILD, "");
         if (grown) infant.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
                 "skill.corpseorigin.jingang_infant_convergence.grown"));
     }

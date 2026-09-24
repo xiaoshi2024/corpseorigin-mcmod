@@ -62,6 +62,7 @@ public final class CreatureAbilities {
         });
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity,source,amount)->{
             if(!(entity instanceof ServerPlayer p) || !role(p,"jingang_zb") || !PlayerCharacterData.get(p).hasLearned(p.getUUID(),"iron_body"))return true;
+            if(p.getAttachedOrCreate(INFANT))return true;
             if(p.getAttachedOrCreate(RAGE_UNTIL)>p.level().getGameTime())return true;
             return !(source.getDirectEntity() instanceof net.minecraft.world.entity.projectile.Projectile) && !(source.getEntity() instanceof LivingEntity && amount<=4);
         });

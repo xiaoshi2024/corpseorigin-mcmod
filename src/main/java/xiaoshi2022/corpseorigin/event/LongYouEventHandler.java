@@ -18,6 +18,7 @@ import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.LongYou;
+import xiaoshi2022.corpseorigin.character.ZuoHuFa;
 import xiaoshi2022.corpseorigin.effect.BYeffect;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
 import xiaoshi2022.corpseorigin.registry.ModEffects;
@@ -138,12 +139,14 @@ public final class LongYouEventHandler {
             if (target instanceof Player || !ZombieKin.isZombieKin(target)) {
                 return;
             }
-            if (!LongYou.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(caster))) {
+            // 尸王与青龙（左护法）击杀同类都能积攒气血；近战回血是尸王独有的天赋，青龙不回血
+            String role = CharacterManager.getInstance().getPlayerCharacterId(caster);
+            if (!LongYou.ID.equals(role) && !ZuoHuFa.ID.equals(role)) {
                 return;
             }
             xiaoshi2022.corpseorigin.skill.longyou.BloodReserve.add(caster,
                     Math.max(1, (int)Math.ceil(damageTaken)));
-            if (caster.getHealth() >= caster.getMaxHealth()) {
+            if (!LongYou.ID.equals(role) || caster.getHealth() >= caster.getMaxHealth()) {
                 return;
             }
 

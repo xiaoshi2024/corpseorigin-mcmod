@@ -1,7 +1,7 @@
 package xiaoshi2022.corpseorigin.entity;
 
 import net.minecraft.core.UUIDUtil;
-import net.minecraft.core.particles.ParticleTypes;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -277,6 +277,7 @@ public class FlyingGreatSwordEntity extends Entity {
     public void tick() {
         super.tick();
 
+        // Continuous qi geometry is drawn by FlyingGreatSwordRenderer.
         if (level().isClientSide()) return;
         if (resolved) return;
 
@@ -294,21 +295,9 @@ public class FlyingGreatSwordEntity extends Entity {
         if (steerDuringCharge) {
             updateFlyDirection();
         }
-        // ✅ lerp 版本，加回来
         syncRotationFromDir();
 
-        if (level() instanceof ServerLevel sl) {
-            for (int i = 0; i < 4; i++) {
-                double a = Math.random() * Math.PI * 2;
-                double r = 1.5 * (1.0 - t);
-                double px = getX() + Math.cos(a) * r;
-                double pz = getZ() + Math.sin(a) * r;
-                double py = getY() + (Math.random() - 0.5) * 1.5;
-                sl.sendParticles(ParticleTypes.END_ROD, px, py, pz, 1, 0, 0, 0, 0.0);
-                sl.sendParticles(ParticleTypes.ENCHANT, px, py, pz, 1, 0, 0, 0, 0.05);
-            }
-        }
-
+        // 连续剑气由客户端渲染，服务端只播音效
         if (chargeTicks >= CHARGE_TICKS) {
             this.entityData.set(DATA_PHASE, (byte) 1);
             if (level() instanceof ServerLevel sl) {
@@ -340,8 +329,6 @@ public class FlyingGreatSwordEntity extends Entity {
         float shrink = 1.0f - 0.3f * Math.min(1.0f, (float) flyTicks / FLY_MAX_LIFE);
         this.entityData.set(DATA_SCALE, fullScale * shrink);
 
-        spawnTrailParticles();
-
         AABB hitBox = new AABB(
                 getX() - HIT_BOX_SIZE, getY() - HIT_BOX_SIZE, getZ() - HIT_BOX_SIZE,
                 getX() + HIT_BOX_SIZE, getY() + HIT_BOX_SIZE, getZ() + HIT_BOX_SIZE);
@@ -359,11 +346,10 @@ public class FlyingGreatSwordEntity extends Entity {
                     : damageSources().generic();
             for (LivingEntity t : hits) {
                 t.hurtServer(sl, src, DIRECT_DAMAGE);
-                sl.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
-                        t.getX(), t.getY() + 1, t.getZ(), 1, 0, 0, 0, 0);
+                QiEffects.cloud(sl, t.getBoundingBox().getCenter(), 0xdcefff, 1.2f, 10);
             }
             sl.playSound(null, getX(), getY(), getZ(),
-                    SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 1.5F, 0.8F);
+                    SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.8F, 0.7F);
             resolveFinalSlash();
             return;
         }
@@ -497,13 +483,6 @@ public class FlyingGreatSwordEntity extends Entity {
 
     // ==================== 粒子 & 终结 ====================
 
-    private void spawnTrailParticles() {
-        if (!(level() instanceof ServerLevel sl)) return;
-        sl.sendParticles(ParticleTypes.SWEEP_ATTACK, getX(), getY(), getZ(), 3, 0.3, 0.3, 0.3, 0.0);
-        sl.sendParticles(ParticleTypes.CRIT,          getX(), getY(), getZ(), 6, 0.2, 0.2, 0.2, 0.1);
-        sl.sendParticles(ParticleTypes.END_ROD,       getX(), getY(), getZ(), 2, 0.1, 0.1, 0.1, 0.02);
-    }
-
     private void resolveFinalSlash() {
         if (resolved) return;
         resolved = true;
@@ -530,14 +509,7 @@ public class FlyingGreatSwordEntity extends Entity {
                 t.hurtServer(sl, src, SLASH_DAMAGE);
             }
 
-            for (int i = 0; i < 180; i++) {
-                double a = Math.random() * Math.PI * 2;
-                double r = Math.random() * SLASH_RADIUS;
-                double x = center.x + Math.cos(a) * r;
-                double z = center.z + Math.sin(a) * r;
-                sl.sendParticles(ParticleTypes.SWEEP_ATTACK,
-                        x, center.y + Math.random() * 2, z, 1, 0, 0, 0, 0);
-            }
+            QiEffects.cloud(sl, center, 0xdcefff, (float) SLASH_RADIUS, 14);
 
             sl.playSound(null, center.x, center.y, center.z,
                     SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.5F, 0.7F);

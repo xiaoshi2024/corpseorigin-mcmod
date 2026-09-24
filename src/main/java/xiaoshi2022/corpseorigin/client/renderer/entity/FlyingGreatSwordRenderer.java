@@ -2,26 +2,22 @@ package xiaoshi2022.corpseorigin.client.renderer.entity;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import xiaoshi2022.corpseorigin.CorpseOrigin;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.item.ItemModelResolver;
-import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.ItemStack;
 import xiaoshi2022.corpseorigin.entity.FlyingGreatSwordEntity;
 
+/** Continuous, emissive qi blade and wake using the shared qi mist texture. */
 public class FlyingGreatSwordRenderer
         extends EntityRenderer<FlyingGreatSwordEntity, FlyingGreatSwordRenderState> {
 
-    private final ItemModelResolver itemModelResolver;
-
     public FlyingGreatSwordRenderer(EntityRendererProvider.Context context) {
         super(context);
-        this.itemModelResolver = context.getItemModelResolver();
-        this.shadowRadius = 0.5f;
+        this.shadowRadius = 0.0f;   // 剑气没有实体，不投阴影
     }
 
     @Override
@@ -34,14 +30,11 @@ public class FlyingGreatSwordRenderer
                                    FlyingGreatSwordRenderState state,
                                    float partialTicks) {
         super.extractRenderState(entity, state, partialTicks);
-        state.itemStack = entity.getItemStack();
         state.syncedYaw = entity.getSyncedYaw();
         state.syncedPitch = entity.getSyncedPitch();
-        state.roll = entity.getRenderRoll();
-        state.modelYawOffset = entity.getModelYawOffset();
-        state.modelPitchOffset = entity.getModelPitchOffset();
         state.renderScale = entity.getRenderScale();
-        state.sourceEntity = entity;
+        state.phase = entity.getPhase();
+        state.qiAge = entity.tickCount + partialTicks;
     }
 
     @Override
@@ -49,35 +42,44 @@ public class FlyingGreatSwordRenderer
                        PoseStack poseStack,
                        SubmitNodeCollector collector,
                        CameraRenderState camera) {
-        super.submit(state, poseStack, collector, camera);
-
-        ItemStack stack = state.itemStack;
-        if (stack.isEmpty() || state.sourceEntity == null || state.renderScale <= 0.001f) {
-            return;
-        }
-
+        if (state.phase > 1 || state.renderScale <= .001f) return;
+        final double radius = .42 * state.renderScale;
+        final double age = state.qiAge;
+        final boolean charging = state.phase == 0;
         poseStack.pushPose();
-
-        // ① 实体朝向（世界方向，飞行方向）
-        poseStack.mulPose(Axis.YP.rotationDegrees(state.syncedYaw));
+        poseStack.mulPose(Axis.YP.rotationDegrees(-state.syncedYaw));
         poseStack.mulPose(Axis.XP.rotationDegrees(state.syncedPitch));
-
-        // ② 模型修正
-        poseStack.mulPose(Axis.XP.rotationDegrees(270f));    // 保持躺平
-        poseStack.mulPose(Axis.ZP.rotationDegrees(225f));    // 45°抵斜置 + 180°翻前后 = 225°
-        poseStack.mulPose(Axis.YP.rotationDegrees(state.modelYawOffset));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(state.roll));
-        poseStack.mulPose(Axis.XP.rotationDegrees(state.modelPitchOffset));
-
-        // ③ 缩放
-        poseStack.scale(state.renderScale, state.renderScale, state.renderScale);
-
-        // ④ 渲染
-        ItemStackRenderState renderState = new ItemStackRenderState();
-        this.itemModelResolver.updateForNonLiving(
-                renderState, stack, ItemDisplayContext.FIXED, state.sourceEntity);
-        renderState.submit(poseStack, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
-
+        collector.submitCustomGeometry(poseStack,
+                RenderTypes.entityTranslucentEmissive(CorpseOrigin.id("textures/effect/qi_mist.png")),
+                (pose, out) -> {
+                    // A broad crescent with a bright inner layer and a tapering wake.
+                    // Render both windings so the qi is visible from either side.
+                    for (int layer = 0; layer < 3; layer++) {
+                        for (int segment = 0; segment < 32; segment++) {
+                            for (int face = 0; face < 2; face++) {
+                                for (int vertex = 0; vertex < 4; vertex++) {
+                                    int corner = face == 0 ? vertex : 3 - vertex;
+                                    double t = (segment + (corner >= 2 ? 1 : 0)) / 32.0;
+                                    double angle = -1.75 + 3.5 * t;
+                                    boolean rear = corner == 1 || corner == 2;
+                                    double edge = Math.sin(Math.PI * t);
+                                    double thickness = (layer == 2 ? .12 : .35) * edge;
+                                    double r = radius * (1 - (rear ? thickness : 0));
+                                    double x = Math.sin(angle) * r;
+                                    double y = .06 * Math.sin(angle * 4 - age * .3) * edge;
+                                    double z = Math.cos(angle) * r - (rear ? radius * (charging ? .3 : 1.4) * edge : 0);
+                                    // Slightly fanned surfaces give the blade volume from head-on views.
+                                    y += (layer - 1) * (.08 * edge + z * .22);
+                                    int alpha = (int)((rear ? 28 : layer == 2 ? 210 : 110) * edge);
+                                    out.addVertex(pose.pose(), (float)x, (float)y, (float)z)
+                                            .setColor(layer == 2 ? 245 : 180, layer == 2 ? 252 : 220, 255, alpha)
+                                            .setUv((float)t, rear ? 1f : 0f)
+                                            .setOverlay(OverlayTexture.NO_OVERLAY).setLight(0xF000F0).setNormal(0, 1, 0);
+                                }
+                            }
+                        }
+                    }
+                });
         poseStack.popPose();
     }
 }

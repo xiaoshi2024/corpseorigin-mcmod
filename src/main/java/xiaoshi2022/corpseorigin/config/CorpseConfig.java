@@ -41,6 +41,10 @@ public final class CorpseConfig {
     public InfectedWater infectedWater = new InfectedWater();
     /** 与其他模组的软联动 */
     public Compat compat = new Compat();
+    /** HUD 自定义（位置/大小/缩放） */
+    public Hud hud = new Hud();
+    /** 技能热键栏自定义（位置/间距/缩放） */
+    public SkillHud skillHud = new SkillHud();
 
     /** 自然生成的权重与"尸水泉聚集"参数。权重参照原版僵尸 = 100 */
     public static final class InfectedWater {
@@ -226,6 +230,44 @@ public final class CorpseConfig {
         public String mouthSnakeSpecies = "king_snake";
     }
 
+    /**
+     * HUD 自定义配置。
+     * <p>
+     * 位置：x/y 填 -1 表示自动靠右上（默认行为），否则为绝对像素坐标（原点左上角）。
+     * 尺寸：batteryWidth/batteryHeight 控制电池条大小，rowGap 控制行间距，整体缩放 scale 可以放大/缩小整个 HUD。
+     */
+    public static final class Hud {
+        /** 0..1920 绝对像素 X（-1 = 自动靠右上） */
+        public int x = -1;
+        /** 0..1080 绝对像素 Y（-1 = 自动靠右上） */
+        public int y = -1;
+        /** 电池条宽度（像素） */
+        public int batteryWidth = 116;
+        /** 电池条高度（像素） */
+        public int batteryHeight = 13;
+        /** 行间距（像素） */
+        public int rowGap = 3;
+        /** 整体缩放倍数（支持 0.5 / 0.75 / 1.0 / 1.25 / 1.5 / 2.0） */
+        public float scale = 1.0F;
+    }
+
+    /**
+     * 技能热键栏（左侧 3 个技能槽）自定义配置。
+     * <p>
+     * x/y 填 -1 表示自动（x=8 贴左边、y 垂直居中），否则为绝对像素坐标（原点左上角）。
+     * spacing 是槽位之间的垂直间距，scale 是整个热键栏的缩放倍数。
+     */
+    public static final class SkillHud {
+        /** 0..1920 绝对像素 X（-1 = 自动靠左） */
+        public int x = -1;
+        /** 0..1080 绝对像素 Y（-1 = 垂直居中） */
+        public int y = -1;
+        /** 槽位之间的垂直间距（像素） */
+        public int spacing = 4;
+        /** 整体缩放倍数（支持 0.5 / 0.75 / 1.0 / 1.25 / 1.5 / 2.0） */
+        public float scale = 1.0F;
+    }
+
     private CorpseConfig() {
     }
 
@@ -235,6 +277,19 @@ public final class CorpseConfig {
             instance = load();
         }
         return instance;
+    }
+
+    /** 强制把当前配置写回文件（HUD 设置界面等运行时修改后调用） */
+    public static void save() {
+        if (instance == null) return;
+        try {
+            Path path = FabricLoader.getInstance().getConfigDir().resolve(FILE_NAME);
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, GSON.toJson(instance), StandardCharsets.UTF_8);
+            CorpseOrigin.LOGGER.debug("已保存配置文件：{}", path);
+        } catch (Exception e) {
+            CorpseOrigin.LOGGER.warn("保存配置文件失败: {}", e.getMessage());
+        }
     }
 
     private static CorpseConfig load() {
@@ -287,6 +342,23 @@ public final class CorpseConfig {
             compat = new Compat();
         }
         compat.mouthSnakeSpecies = orDefault(compat.mouthSnakeSpecies, "king_snake");
+        if (hud == null) {
+            hud = new Hud();
+        }
+        // x/y：-1 = 自动位置；>= 0 = 绝对像素。超过合理范围时兜底成默认 -1
+        if (hud.x < -1 || hud.x > 4096) hud.x = -1;
+        if (hud.y < -1 || hud.y > 2160) hud.y = -1;
+        hud.batteryWidth = Math.max(40, hud.batteryWidth);
+        hud.batteryHeight = Math.max(6, hud.batteryHeight);
+        hud.rowGap = Math.max(0, hud.rowGap);
+        hud.scale = clamp(hud.scale, 0.25F, 4.0F);
+        if (skillHud == null) {
+            skillHud = new SkillHud();
+        }
+        if (skillHud.x < -1 || skillHud.x > 4096) skillHud.x = -1;
+        if (skillHud.y < -1 || skillHud.y > 2160) skillHud.y = -1;
+        skillHud.spacing = Math.max(0, skillHud.spacing);
+        skillHud.scale = clamp(skillHud.scale, 0.25F, 4.0F);
         if (names.consentedIds == null) {
             names.consentedIds = new ArrayList<>();
         }

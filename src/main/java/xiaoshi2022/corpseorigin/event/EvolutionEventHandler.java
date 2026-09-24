@@ -1,7 +1,13 @@
 package xiaoshi2022.corpseorigin.event;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -11,6 +17,9 @@ import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.skill.EvolutionManager;
+import xiaoshi2022.corpseorigin.skill.EvolutionStats;
+import xiaoshi2022.corpseorigin.skill.EvolutionTier;
 
 /**
  * 进化点获得（所有角色通用）
@@ -33,8 +42,14 @@ public final class EvolutionEventHandler {
             if (points <= 0) return;
 
             PlayerCharacterData data = PlayerCharacterData.get(player);
+            int levelBefore = EvolutionManager.getLevel(data.getEarnedPoints(player.getUUID()));
             data.addEarnedPoints(player.getUUID(), points);
             CorpseNetwork.sendEvolutionSync(player);
+
+            // 进化等级提升 → 重算属性成长（血/攻/甲/速），并即时补上新增的血量上限
+            if (EvolutionStats.reconcileAfterPointGain(player, levelBefore)) {
+                announceLevelUp(player);
+            }
 
 //            CorpseOrigin.LOGGER.info("玩家 {}（{}）击杀 {}，获得 {} 进化点",
 //                    player.getName().getString(),
@@ -42,6 +57,30 @@ public final class EvolutionEventHandler {
 //                    target.getName().getString(),
 //                    points);
         });
+    }
+
+    /** 升级反馈：弹幕显示新阶层 + 音效 + 环绕粒子（跨越"人→地→天→神…"大境界时音效更隆重） */
+    private static void announceLevelUp(ServerPlayer player) {
+        PlayerCharacterData data = PlayerCharacterData.get(player);
+        int level = EvolutionManager.getLevel(data.getEarnedPoints(player.getUUID()));
+        String tierName = EvolutionTier.formatFullName(level);
+
+        player.sendOverlayMessage(Component.translatable(
+                "message.corpseorigin.evolution.levelup", tierName)
+                .withStyle(ChatFormatting.GOLD, ChatFormatting.BOLD));
+
+        boolean majorBreakthrough = EvolutionTier.fromAbsoluteLevel(level)
+                != EvolutionTier.fromAbsoluteLevel(Math.max(1, level - 1));
+        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                majorBreakthrough ? SoundEvents.UI_TOAST_CHALLENGE_COMPLETE
+                                 : SoundEvents.PLAYER_LEVELUP,
+                SoundSource.PLAYERS, 1.0F, majorBreakthrough ? 1.0F : 1.3F);
+
+        if (player.level() instanceof ServerLevel sl) {
+            sl.sendParticles(ParticleTypes.HAPPY_VILLAGER,
+                    player.getX(), player.getY() + 1.0, player.getZ(),
+                    24, 0.8, 1.0, 0.8, 0.05);
+        }
     }
 
     /**

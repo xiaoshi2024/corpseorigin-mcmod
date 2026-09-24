@@ -20,6 +20,15 @@ public class CharacterManager {
     /** 按注册顺序保存（保证列表与创造物品栏里的顺序稳定） */
     private final Map<String, ICharacter> registeredCharacters = new LinkedHashMap<>();
 
+    /**
+     * 角色 ID → 阵营 的集中映射表。
+     * <p>
+     * 后期想调整阵营只改这一张表即可，不用动任何角色类。
+     * <p>
+     * ⚠️ 注册了但<b>不在这张表里</b>的角色一律归 {@link CharacterFaction#OTHER}。
+     */
+    private final Map<String, CharacterFaction> factionMap = new LinkedHashMap<>();
+
     /** 客户端缓存的当前角色ID */
     private String clientCachedCharacterId = MortalCharacter.ID;
 
@@ -81,6 +90,69 @@ public class CharacterManager {
 
         // 其他既有角色
         registerCharacter(new WeiXin());
+
+        // ==== 阵营映射 —— 后期想调整阵营只改这里 ====
+        populateFactionMap();
+    }
+
+    /**
+     * 角色 ID → 阵营 的集中映射表。后期想把某角色从"尸王"挪去"其他"、
+     * 或者新增阵营，都只需要改这一张表。
+     * <p>
+     * 没在这里列出的注册角色会自动归到 {@link CharacterFaction#OTHER}，
+     * 这样新加角色时也不会丢。
+     */
+    private void populateFactionMap() {
+        // ========== 人类阵营 ==========
+        // 凡人 / 被感染但仍有理智的主角团 / 炎黄特能队 / 收复部队
+        factionMap.put(MortalCharacter.ID, CharacterFaction.HUMAN);
+        factionMap.put(CorpseBrother.ID, CharacterFaction.HUMAN);
+        factionMap.put("baixiaofei", CharacterFaction.HUMAN);
+        factionMap.put("heixiaofei", CharacterFaction.HUMAN);
+        factionMap.put("xiaolu", CharacterFaction.HUMAN);
+        factionMap.put("xiaoyanzi", CharacterFaction.HUMAN);
+        factionMap.put("kaiweinai", CharacterFaction.HUMAN);
+        factionMap.put("xiaohui", CharacterFaction.HUMAN);
+        factionMap.put("tushu", CharacterFaction.HUMAN);
+        factionMap.put("muxi", CharacterFaction.HUMAN);
+        factionMap.put("formation_metal", CharacterFaction.HUMAN);
+        factionMap.put("formation_water", CharacterFaction.HUMAN);
+        factionMap.put("formation_earth", CharacterFaction.HUMAN);
+        factionMap.put("yanyan", CharacterFaction.HUMAN);
+        factionMap.put("yanhuang_budui", CharacterFaction.HUMAN);
+        factionMap.put("chuangshang_xingcunzhe", CharacterFaction.HUMAN);
+        factionMap.put("bianyi_guiyu", CharacterFaction.HUMAN);
+
+        // ========== 尸王阵营 ==========
+        // 龙右本人 + 效忠龙右的尸兄
+        factionMap.put("longyou", CharacterFaction.CORPSE_KING);
+        factionMap.put("shichaozhizi", CharacterFaction.CORPSE_KING);
+        factionMap.put("tianxianbaobao_zb", CharacterFaction.CORPSE_KING);
+        factionMap.put("jingang_zb", CharacterFaction.CORPSE_KING);
+        factionMap.put("bianselong_zb", CharacterFaction.CORPSE_KING);
+        factionMap.put("chongmu", CharacterFaction.CORPSE_KING);
+        factionMap.put("qingwa_zb", CharacterFaction.CORPSE_KING);
+        factionMap.put("zuohufa", CharacterFaction.CORPSE_KING);
+        factionMap.put("hujie", CharacterFaction.CORPSE_KING);
+        factionMap.put("xiongxing_zb", CharacterFaction.CORPSE_KING);
+        factionMap.put("chongqun", CharacterFaction.CORPSE_KING);
+        factionMap.put("siyangyuan_zb", CharacterFaction.CORPSE_KING);
+        factionMap.put("kuaidiyuan_zb", CharacterFaction.CORPSE_KING);
+
+        // ========== 东瀛 ==========
+        factionMap.put("fengmohuitailang", CharacterFaction.TOYO);
+
+        // ========== 米国欧盟 ==========
+        // 黑暗议会（K + 使者 Jack/Laura + 随从）
+        factionMap.put("k", CharacterFaction.WESTERN);
+        factionMap.put("heianhui_suicong", CharacterFaction.WESTERN);
+        factionMap.put("jack", CharacterFaction.WESTERN);
+        factionMap.put("laura", CharacterFaction.WESTERN);
+
+        // ========== 其他 ==========
+        // 血莲教唯欣、赵日天这类不属于四大阵营的中立/独立势力
+        factionMap.put("zhaoritian", CharacterFaction.OTHER);
+        factionMap.put("weixin", CharacterFaction.OTHER);
     }
 
     public void registerCharacter(ICharacter character) {
@@ -97,6 +169,28 @@ public class CharacterManager {
 
     public List<ICharacter> getRegisteredCharacters() {
         return new ArrayList<>(registeredCharacters.values());
+    }
+
+    /** 查询指定角色的阵营；没在映射表里的一律归 OTHER */
+    public CharacterFaction getFaction(String characterId) {
+        return factionMap.getOrDefault(characterId, CharacterFaction.OTHER);
+    }
+
+    /** 查询指定阵营下的全部角色（保持注册顺序） */
+    public List<ICharacter> getCharactersByFaction(CharacterFaction faction) {
+        List<ICharacter> result = new ArrayList<>();
+        for (ICharacter c : registeredCharacters.values()) {
+            CharacterFaction f = factionMap.getOrDefault(c.getId(), CharacterFaction.OTHER);
+            if (f == faction) {
+                result.add(c);
+            }
+        }
+        return result;
+    }
+
+    /** 全部已定义的阵营（按枚举顺序） */
+    public CharacterFaction[] getAllFactions() {
+        return CharacterFaction.values();
     }
 
     // ==================== 玩家角色分配 ====================
@@ -140,6 +234,10 @@ public class CharacterManager {
         player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.ACTION,"");
         player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.UNTIL,0L);
         character.onAcquire(player);
+
+        // 进化属性成长跟着新角色的成长路线（GrowthProfile）重算；
+        // evo_* 修饰符 id 全局固定，这里原地替换，旧角色的成长加成不会残留
+        xiaoshi2022.corpseorigin.skill.EvolutionStats.reconcile(serverPlayer);
 
         // ✅ 角色切换后重置内力（上线即满 / 切换角色满内力）
         InnerPowerManager.reset(serverPlayer);

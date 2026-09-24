@@ -15,6 +15,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.entity.FlyingGreatSwordEntity;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModDataAttachments;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainGenerator;
@@ -86,12 +87,10 @@ public class APSSubSkills {
         double[] dir = APSTerrainManager.getRiverDir(player);
         Vec3 river = new Vec3(dir[0], 0, dir[1]).normalize();
 
-        for (int i = 0; i < 24; i++) {
-            Vec3 p = player.position().add(river.scale(i * 0.4));
-            level.sendParticles(ParticleTypes.SWEEP_ATTACK,
-                    p.x, p.y + 0.5, p.z, 1, 0, 0, 0, 0);
-            level.sendParticles(ParticleTypes.CRIT,
-                    p.x, p.y + 0.5, p.z, 2, 0.2, 0.2, 0.2, 0.05);
+        QiEffects.aura(player, "aps_release", 0xdcefff, 2, 12);
+        for (int i = 0; i < 8; i++) {
+            Vec3 p = player.position().add(river.scale(i * 1.2)).add(0, .5, 0);
+            QiEffects.cloud(level, p, 0xdcefff, .85f, 10);
         }
 
         CorpseNetwork.broadcastInkPoem(player, 1);
@@ -128,11 +127,10 @@ public class APSSubSkills {
                     riverDirX, riverDirZ) + 3;
 
             Vec3 fly = new Vec3(-sign * perpDirX, 0, -sign * perpDirZ);
-            for (int k = 0; k < 4; k++) {
-                double px = x + fly.x * k * 1.5;
-                double pz = z + fly.z * k * 1.5;
-                level.sendParticles(ParticleTypes.SWEEP_ATTACK,
-                        px, y, pz, 1, 0, 0, 0, 0);
+            for (int k = 0; k < 2; k++) {
+                double px = x + fly.x * k * 3;
+                double pz = z + fly.z * k * 3;
+                QiEffects.cloud(level, new Vec3(px, y, pz), 0xdcefff, 1.5f, 14);
             }
         }
 
@@ -171,17 +169,17 @@ public class APSSubSkills {
                     MobEffects.WEAKNESS, 120, 0, false, true, true));
         }
 
-        for (int i = 0; i < 120; i++) {
+        for (int i = 0; i < 24; i++) {
             double a = Math.random() * Math.PI * 2;
             double r = Math.random() * fieldRadius;
             double x = center.getX() + Math.cos(a) * r;
             double z = center.getZ() + Math.sin(a) * r;
-            level.sendParticles(ParticleTypes.ENCHANT,
-                    x, center.getY() + 1 + Math.random() * 3, z,
-                    1, 0, 0, 0, 0.05);
+            QiEffects.cloud(level, new Vec3(x, center.getY() + 1 + Math.random() * 3, z),
+                    0xdcefff, 1.4f, 16);
         }
 
         // ✅ 玩家挥刀 + 统一工厂发射大剑
+        QiEffects.aura(player, "aps_release", 0xdcefff, 2.5f, 18);
         player.swing(InteractionHand.MAIN_HAND, true);
 
         FlyingGreatSwordEntity.spawnDirected(

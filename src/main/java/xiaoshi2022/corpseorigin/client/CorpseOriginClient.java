@@ -483,6 +483,12 @@ public class CorpseOriginClient implements ClientModInitializer {
                 }
             }
 
+            while (CorpseKeyBindings.openHudSettings.consumeClick()) {
+                if (client.gui.screen() == null) {
+                    client.gui.setScreen(new HudSettingsScreen());
+                }
+            }
+
             for (int slot = 0; slot < CorpseKeyBindings.quickSkills.length; slot++) {
                 while (CorpseKeyBindings.quickSkills[slot].consumeClick()) {
                     if (client.gui.screen() == null && client.player != null) {

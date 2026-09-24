@@ -19,6 +19,10 @@ repositories {
 			includeGroup "curse.maven"
 		}
 	}
+	maven {
+		name = "Terraformers"
+		url = "https://maven.terraformersmc.com/"
+	}
 }
 
 fabricApi {
@@ -37,6 +41,10 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// ModMenu — optional; provides the "Settings" button in the mods list HUD.
+	// Players without ModMenu installed can still open HUD settings via the F9 key.
+	compileOnly "curse.maven:modmenu-308702:8854488"
 }
 
 processResources {

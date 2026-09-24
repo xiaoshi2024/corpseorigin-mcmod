@@ -13,9 +13,12 @@ public final class BloodReserve {
     public static void init() {
         net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, level, hand) -> {
             var stack = player.getItemInHand(hand);
-            if (!player.isShiftKeyDown() || !stack.is(xiaoshi2022.corpseorigin.registry.ModItems.ZBR_FLESH)
-                    || !"longyou".equals(player.getAttachedOrCreate(
-                        xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE)))
+            if (!player.isShiftKeyDown() || !stack.is(xiaoshi2022.corpseorigin.registry.ModItems.ZBR_FLESH))
+                return net.minecraft.world.InteractionResult.PASS;
+            // 尸王与青龙（左护法）都靠吃尸肉积攒气血
+            String role = player.getAttachedOrCreate(
+                    xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE);
+            if (!"longyou".equals(role) && !"zuohufa".equals(role))
                 return net.minecraft.world.InteractionResult.PASS;
             if (player instanceof ServerPlayer serverPlayer) {
                 if (serverPlayer.getAttachedOrCreate(VALUE) >= MAX)
@@ -36,6 +39,23 @@ public final class BloodReserve {
             return false;
         }
         add(p, -RESTORE_COST);
+        return true;
+    }
+
+    /** 当前气血余量 */
+    public static int get(ServerPlayer p) {
+        return p.getAttachedOrCreate(VALUE);
+    }
+
+    /**
+     * 通用气血消耗（左护法「唤龙」复活青龙等用）。
+     * 余量不足返回 false（调用方自己提示），不做任何改动。
+     */
+    public static boolean spend(ServerPlayer p, int amount) {
+        if (p.getAttachedOrCreate(VALUE) < amount) {
+            return false;
+        }
+        add(p, -amount);
         return true;
     }
 }

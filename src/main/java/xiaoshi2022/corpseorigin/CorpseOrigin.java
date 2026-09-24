@@ -143,6 +143,7 @@ public class CorpseOrigin implements ModInitializer {
 		HeiXiaoFeiEventHandler.register();
 		LongYouEventHandler.register();
 		EvolutionEventHandler.register();
+		xiaoshi2022.corpseorigin.event.GuardianPetDeathHandler.register();
 		APSComboHandler.register();
 		APSGreatSwordInterceptor.register();
 		LimbEvents.register();
@@ -157,9 +158,10 @@ public class CorpseOrigin implements ModInitializer {
 		net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback.EVENT.register(
 				(dispatcher, registryAccess, environment) -> {
 					CharacterCommands.register(dispatcher);
-					SummonZbCommand.register(dispatcher);
-					LimbCommand.register(dispatcher);
-					SkillCommand.register(dispatcher);
+				SummonZbCommand.register(dispatcher);
+				LimbCommand.register(dispatcher);
+				SkillCommand.register(dispatcher);
+				xiaoshi2022.corpseorigin.command.EvolutionPointsCommand.register(dispatcher);
 				}
 		);
 

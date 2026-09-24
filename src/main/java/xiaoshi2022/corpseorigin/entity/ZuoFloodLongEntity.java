@@ -34,12 +34,15 @@ import net.minecraft.world.entity.ai.goal.target.TargetGoal;
 import net.minecraft.world.entity.ai.navigation.AmphibiousPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
+import xiaoshi2022.corpseorigin.registry.ModEntities;
 
 import java.util.EnumSet;
 import java.util.UUID;
@@ -181,6 +184,38 @@ public class ZuoFloodLongEntity extends PathfinderMob implements GeoEntity, Zomb
         }
         String uuid = this.entityData.get(DATA_OWNER_UUID);
         return !uuid.isEmpty() && uuid.equals(entity.getUUID().toString());
+    }
+
+    /** 主人 UUID（可能为 null）：宠物死亡时要靠它找到该挂"青龙已殒"标记的玩家 */
+    @Nullable
+    public UUID getOwnerUUID() {
+        return this.ownerUuid;
+    }
+
+    /** 蛟龙落在主人身前的距离 */
+    private static final double SPAWN_DISTANCE = 2.0;
+
+    /**
+     * 在主人身前 {@value #SPAWN_DISTANCE} 格处生成一条归其所有的蛟龙，并加入世界。
+     * <p>
+     * 「脱离」与「唤龙（复活）」共用这一个入口，保证两条途径出来的宠物状态完全一致。
+     * 造不出来返回 {@code null}（调用方负责提示并保持玩家原形态）。
+     */
+    @Nullable
+    public static ZuoFloodLongEntity spawnFor(ServerPlayer owner, ServerLevel level) {
+        ZuoFloodLongEntity dragon = ModEntities.ZUO_FLOOD_LONG.create(level, EntitySpawnReason.TRIGGERED);
+        if (dragon == null) {
+            return null;
+        }
+        Vec3 look = owner.getLookAngle();
+        dragon.setOwner(owner);
+        dragon.setPos(owner.getX() + look.x * SPAWN_DISTANCE,
+                owner.getY(),
+                owner.getZ() + look.z * SPAWN_DISTANCE);
+        dragon.setYRot(owner.getYRot());
+        dragon.setYHeadRot(owner.getYRot());
+        level.addFreshEntity(dragon);
+        return dragon;
     }
 
     /** 主人身边（半径内）的那条蛟龙；没有就返回 {@code null}（"脱离 / 合体"技能用） */

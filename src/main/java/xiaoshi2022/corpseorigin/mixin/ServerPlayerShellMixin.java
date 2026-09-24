@@ -290,6 +290,9 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
         //   前者比后者多 5 颗心），从这具身体换走就摘掉。同样要在 load 之后。
         xiaoshi2022.corpseorigin.character.ZuoHuFa.applyIfZuoHuFa(self);
 
+        // ★ 玩家自身的进化属性成长（evo_*）属于"修为"不随身体走，load 覆盖属性表后补回
+        xiaoshi2022.corpseorigin.skill.EvolutionStats.reconcile(self);
+
         // ★ 身体的大小（尸王原体是缩小版）：同样在 load 之后写，渲染与碰撞箱一起变
         AttributeInstance scale = self.getAttribute(Attributes.SCALE);
         if (scale != null) {

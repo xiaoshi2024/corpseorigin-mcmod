@@ -26,7 +26,9 @@ public class PlayerCharacterData extends SavedData {
                     .forGetter(e -> List.copyOf(e.learnedSkills)),
             Codec.INT.optionalFieldOf("earned_points", 0).forGetter(e -> e.earnedPoints),
             Codec.INT.optionalFieldOf("available_points", 0).forGetter(e -> e.availablePoints),
-            Codec.BOOL.optionalFieldOf("starter_book", false).forGetter(e -> e.starterBookGiven)
+            Codec.BOOL.optionalFieldOf("starter_book", false).forGetter(e -> e.starterBookGiven),
+            // 左护法的青龙宠物被击杀后置 true：「唤龙」技能凭它判定"有一条可复活的青龙"
+            Codec.BOOL.optionalFieldOf("guardian_lost", false).forGetter(e -> e.guardianLost)
     ).apply(inst, PlayerEntry::new));
 
     private static final Codec<PlayerCharacterData> CODEC = RecordCodecBuilder.create(inst -> inst.group(
@@ -93,12 +95,15 @@ public class PlayerCharacterData extends SavedData {
         public int availablePoints = 0;
         /** 是否已经领过"生存开局"送的那本角色选择书（只发一次，防重复登录白嫖） */
         public boolean starterBookGiven = false;
+        /** 左护法的青龙宠物是否已被击杀（可用「唤龙」消耗气血复活；复活 / 重铸后清掉） */
+        public boolean guardianLost = false;
 
         public PlayerEntry() {
         }
 
         private PlayerEntry(String characterId, List<String> learnedSkills,
-                            int earnedPoints, int availablePoints, boolean starterBookGiven) {
+                            int earnedPoints, int availablePoints, boolean starterBookGiven,
+                            boolean guardianLost) {
             this.characterId = characterId;
             for (String skill : learnedSkills) {
                 this.learnedSkills.add(normalizeSkillId(skill));
@@ -106,6 +111,7 @@ public class PlayerCharacterData extends SavedData {
             this.earnedPoints = earnedPoints;
             this.availablePoints = availablePoints;
             this.starterBookGiven = starterBookGiven;
+            this.guardianLost = guardianLost;
         }
     }
 
@@ -135,6 +141,22 @@ public class PlayerCharacterData extends SavedData {
     public void markStarterBookReceived(UUID uuid) {
         getEntry(uuid).starterBookGiven = true;
         setDirty();
+    }
+
+    // ==================== 左护法青龙宠物 ====================
+
+    /** 青龙宠物是否已被击杀（「唤龙」技能的复活前提） */
+    public boolean isGuardianLost(UUID uuid) {
+        return getEntry(uuid).guardianLost;
+    }
+
+    /** 宠物被击杀 / 被复活时更新标记 */
+    public void setGuardianLost(UUID uuid, boolean lost) {
+        PlayerEntry entry = getEntry(uuid);
+        if (entry.guardianLost != lost) {
+            entry.guardianLost = lost;
+            setDirty();
+        }
     }
 
     // ==================== 技能学习相关 ====================

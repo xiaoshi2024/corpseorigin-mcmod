@@ -19,6 +19,7 @@ import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModItems;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.longyou.*;
+import xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill;
 
 import java.util.List;
 
@@ -53,7 +54,9 @@ public class LongYou implements ICharacter {
             // 换身体的两手：缩进原体 / 重塑一具新身体（旧身体都会蜕成分身）
             new GoldenCicadaShellSkill(),
             new FleshReshapeSkill(),
-            new FleshAbandonSkill(), new XuanwuBodySkill(), new JingangInfantConvergenceSkill()
+            new FleshAbandonSkill(), new XuanwuBodySkill(), new JingangInfantConvergenceSkill(),
+            // 天罡匙：龙右作为尸王也能掌握这件神兵（原著中天罡匙是神兵，不是赵日天专属道具）
+            new TianGangKeySkill()
     );
 
     @Override

@@ -46,7 +46,8 @@ public final class TianGangKeyItem extends Item implements GeoItem {
             TianGangKeySkill.cancel(server);
             return InteractionResult.SUCCESS;
         }
-        if (!"zhaoritian".equals(CharacterManager.getInstance().getPlayerCharacterId(server))) {
+        String roleId = CharacterManager.getInstance().getPlayerCharacterId(server);
+        if (!"zhaoritian".equals(roleId) && !"longyou".equals(roleId)) {
             server.sendOverlayMessage(Component.translatable("item.corpseorigin.tian_gang_key.wrong_role"));
             return InteractionResult.FAIL;
         }

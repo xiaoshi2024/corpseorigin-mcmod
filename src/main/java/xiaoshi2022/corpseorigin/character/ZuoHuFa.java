@@ -18,6 +18,7 @@ import xiaoshi2022.corpseorigin.skill.zuohufa.DetachGuardianSkill;
 import xiaoshi2022.corpseorigin.skill.zuohufa.MergeGuardianSkill;
 import xiaoshi2022.corpseorigin.skill.zuohufa.MouthSnakeSkill;
 import xiaoshi2022.corpseorigin.skill.zuohufa.QiLockSkill;
+import xiaoshi2022.corpseorigin.skill.zuohufa.ReviveGuardianSkill;
 import xiaoshi2022.corpseorigin.skill.zuohufa.TyrantStrikeSkill;
 
 import java.util.List;
@@ -42,7 +43,8 @@ public class ZuoHuFa implements ICharacter {
             new MouthSnakeSkill(),
             new QiLockSkill(),
             new DetachGuardianSkill(),
-            new MergeGuardianSkill()
+            new MergeGuardianSkill(),
+            new ReviveGuardianSkill()
     );
 
     @Override

@@ -12,6 +12,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.InsideBlockEffectApplier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.level.block.SoulSandBlock;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -62,7 +63,7 @@ import java.util.ArrayDeque;
  *   <li>取"肉块方块状态"原来走注册表名字符串，这里直接引 {@link ModBlocks#ZBR_FLESH}。</li>
  * </ul>
  */
-public class ZBRFleshBlock extends Block implements EntityBlock {
+public class ZBRFleshBlock extends SoulSandBlock implements EntityBlock {
 
     /** 外壳厚度 */
     private static final int OUTER_WALL_THICKNESS = 2;

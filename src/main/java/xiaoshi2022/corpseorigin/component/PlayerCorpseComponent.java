@@ -213,7 +213,7 @@ public class PlayerCorpseComponent {
 
     public void setEvolutionLevel(int level) {
         CompoundTag tag = getData();
-        tag.putInt(KEY_EVOLUTION_LEVEL, Math.max(1, Math.min(5, level)));
+        tag.putInt(KEY_EVOLUTION_LEVEL, Math.max(1, Math.min(xiaoshi2022.corpseorigin.skill.EvolutionManager.MAX_LEVEL, level)));
         setData(tag);
     }
 

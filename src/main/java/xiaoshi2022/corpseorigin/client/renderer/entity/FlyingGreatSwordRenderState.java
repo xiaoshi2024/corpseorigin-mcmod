@@ -8,6 +8,8 @@ public class FlyingGreatSwordRenderState extends EntityRenderState {
     public ItemStack itemStack = ItemStack.EMPTY;
 
     public float syncedYaw;
+    public byte phase;
+    public float qiAge;
     public float syncedPitch;
 
     /** 0 = 剑身立起沿飞行方向；90 = 横躺 */

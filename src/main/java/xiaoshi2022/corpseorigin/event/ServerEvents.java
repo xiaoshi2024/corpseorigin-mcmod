@@ -43,6 +43,8 @@ public final class ServerEvents {
             // 左护法同理：新实体上要按当前形态（合体 / 分离）重套一遍基础数值
             xiaoshi2022.corpseorigin.character.ZuoHuFa.applyIfZuoHuFa(newPlayer);
             xiaoshi2022.corpseorigin.character.ShiChaoZhiZi.reconcileSecondForm(newPlayer);
+            // 进化属性成长（血/攻/甲/速）也要在新实体上重套一遍
+            xiaoshi2022.corpseorigin.skill.EvolutionStats.reconcile(newPlayer);
             // ★ 体型也要复位：死在"拇指原体"里重生，SCALE 属性会被一起带过来，
             //   不复位的话人会一直是个小人儿
             xiaoshi2022.corpseorigin.character.LongYou.resetBodySize(newPlayer);
@@ -64,6 +66,8 @@ public final class ServerEvents {
             // 左护法：登录时按当前形态补一次基础数值（老存档 / 上次异常退出的兜底）
             xiaoshi2022.corpseorigin.character.ZuoHuFa.applyIfZuoHuFa(player);
             xiaoshi2022.corpseorigin.character.ShiChaoZhiZi.reconcileSecondForm(player);
+            // 进化属性成长：按当前进化等级补套（老存档首次升级系统时的兜底）
+            xiaoshi2022.corpseorigin.skill.EvolutionStats.reconcile(player);
             // ★ 把在线其他玩家的尸兄状态补给刚进来的玩家。
             //   尸兄数据平时只在"发生变化"时广播，新玩家错过那些包的话，
             //   在他眼里别人就都是普通人（看不到多眼/外骨骼）。
