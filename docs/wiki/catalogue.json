@@ -1,0 +1,422 @@
+{
+  "version": "1.0.3-alpha-26.2",
+  "date": "2026-09-24",
+  "characters": [
+    {
+      "id": "mortal",
+      "skills": []
+    },
+    {
+      "id": "corpse_brother",
+      "skills": []
+    },
+    {
+      "id": "baixiaofei",
+      "skills": [
+        "slaughter_awakening",
+        "ancient_poetry_sword",
+        "water_orb",
+        "spatial_blink"
+      ]
+    },
+    {
+      "id": "heixiaofei",
+      "skills": [
+        "slaughter_momentum",
+        "dark_siphon",
+        "black_gold_heart",
+        "severed_arm_strike",
+        "tiger_claw_bee_wheel",
+        "hound_unleashed",
+        "round_dance",
+        "killing_incarnation"
+      ]
+    },
+    {
+      "id": "longyou",
+      "skills": [
+        "tiangang_zhi",
+        "tiangang_ji",
+        "tiangang_li",
+        "tiangang_yu",
+        "tiangang_qi",
+        "tiangang_hui",
+        "tiangang_mie",
+        "tiangang_wu",
+        "tiangang_shen",
+        "tiangang_nipo",
+        "tiangang_pogang",
+        "tiangang_tiangangpo",
+        "undying_chest",
+        "thunder_power",
+        "corpse_king_thunder",
+        "natural_judgment",
+        "corpse_king_infrasound",
+        "water_pollution",
+        "corpse_brother_rally",
+        "nest_sense",
+        "golden_cicada_shell",
+        "flesh_reshape",
+        "flesh_abandon",
+        "xuanwu_body",
+        "jingang_infant_convergence",
+        "tian_gang_blood_lotus"
+      ]
+    },
+    {
+      "id": "shichaozhizi",
+      "skills": [
+        "son_of_corpse_nest",
+        "nest_sense",
+        "blood_lotus_armor",
+        "thousand_eyes",
+        "xuanwu_body",
+        "peel_shell"
+      ]
+    },
+    {
+      "id": "kaiweinai",
+      "skills": [
+        "chrysanthemum_shield",
+        "dog_eye_cannon"
+      ]
+    },
+    {
+      "id": "xiaolu",
+      "skills": [
+        "osmium_gold",
+        "osmium_ice_spike"
+      ]
+    },
+    {
+      "id": "xiaoyanzi",
+      "skills": [
+        "ham_summon",
+        "escape_passive"
+      ]
+    },
+    {
+      "id": "tianxianbaobao_zb",
+      "skills": [
+        "life_drain_suck",
+        "antenna_block"
+      ]
+    },
+    {
+      "id": "jingang_zb",
+      "skills": [
+        "iron_body",
+        "muscle_rage",
+        "pounce_combo"
+      ]
+    },
+    {
+      "id": "xiaohui",
+      "skills": []
+    },
+    {
+      "id": "tushu",
+      "skills": [
+        "special_forces_combat",
+        "defense_stance"
+      ]
+    },
+    {
+      "id": "muxi",
+      "skills": [
+        "five_elements_formation",
+        "wood_bind"
+      ]
+    },
+    {
+      "id": "formation_metal",
+      "skills": [
+        "five_elements_formation"
+      ]
+    },
+    {
+      "id": "formation_water",
+      "skills": [
+        "five_elements_formation"
+      ]
+    },
+    {
+      "id": "formation_earth",
+      "skills": [
+        "five_elements_formation"
+      ]
+    },
+    {
+      "id": "yanyan",
+      "skills": [
+        "swallow_nest",
+        "flame_strike",
+        "reverse_formation_fireball"
+      ]
+    },
+    {
+      "id": "fengmohuitailang",
+      "skills": [
+        "tengu_divine_array",
+        "meteor_sword"
+      ]
+    },
+    {
+      "id": "k",
+      "skills": [
+        "bat_cloak",
+        "blood_wing_blade"
+      ]
+    },
+    {
+      "id": "bianselong_zb",
+      "skills": [
+        "chameleon_disguise",
+        "heart_grab_ambush"
+      ]
+    },
+    {
+      "id": "chongmu",
+      "skills": [
+        "summon_swarm",
+        "bag_capture"
+      ]
+    },
+    {
+      "id": "qingwa_zb",
+      "skills": [
+        "killing_gas"
+      ]
+    },
+    {
+      "id": "hujie",
+      "skills": []
+    },
+    {
+      "id": "zuohufa",
+      "skills": [
+        "tyrant_strike",
+        "mouth_snake",
+        "qi_lock",
+        "detach_guardian",
+        "merge_guardian",
+        "revive_guardian"
+      ]
+    },
+    {
+      "id": "heianhui_suicong",
+      "skills": []
+    },
+    {
+      "id": "jack",
+      "skills": [
+        "black_friday_eight"
+      ]
+    },
+    {
+      "id": "laura",
+      "skills": [
+        "sword_flower"
+      ]
+    },
+    {
+      "id": "xiongxing_zb",
+      "skills": [
+        "bear_charge"
+      ]
+    },
+    {
+      "id": "chongqun",
+      "skills": [
+        "swarm_bite"
+      ]
+    },
+    {
+      "id": "siyangyuan_zb",
+      "skills": [
+        "keeper_melee"
+      ]
+    },
+    {
+      "id": "kuaidiyuan_zb",
+      "skills": [
+        "parcel_bomb"
+      ]
+    },
+    {
+      "id": "zhaoritian",
+      "skills": [
+        "power_strike",
+        "crimson_blood_spear",
+        "tian_gang_blood_lotus"
+      ]
+    },
+    {
+      "id": "chuangshang_xingcunzhe",
+      "skills": []
+    },
+    {
+      "id": "bianyi_guiyu",
+      "skills": [
+        "corpse_fish_eggs",
+        "water_bite"
+      ]
+    },
+    {
+      "id": "yanhuang_budui",
+      "skills": []
+    },
+    {
+      "id": "weixin",
+      "skills": [
+        "blood_cloud",
+        "blood_lotus"
+      ]
+    },
+    {
+      "id": "xiaojingang",
+      "skills": [
+        "gourd_link",
+        "gourd_arms",
+        "gourd_acid",
+        "gourd_devour",
+        "gourd_fire",
+        "gourd_eyes",
+        "gourd_power"
+      ]
+    },
+    {
+      "id": "guigun_human",
+      "skills": [
+        "guigun_sweep",
+        "guigun_guard"
+      ]
+    },
+    {
+      "id": "guigun_corpse",
+      "skills": [
+        "guigun_resonance",
+        "guigun_crush"
+      ]
+    },
+    {
+      "id": "hei_wuchou",
+      "skills": [
+        "wuchou_blade",
+        "wuchou_step"
+      ]
+    },
+    {
+      "id": "bai_wusheng",
+      "skills": [
+        "wusheng_twin",
+        "wusheng_cross"
+      ]
+    }
+  ],
+  "skills": [
+    "ancient_poetry_sword",
+    "antenna_block",
+    "bag_capture",
+    "bat_cloak",
+    "bear_charge",
+    "black_friday_eight",
+    "black_gold_heart",
+    "blood_cloud",
+    "blood_lotus",
+    "blood_lotus_armor",
+    "blood_wing_blade",
+    "chameleon_disguise",
+    "chrysanthemum_shield",
+    "corpse_brother_rally",
+    "corpse_fish_eggs",
+    "corpse_king_infrasound",
+    "corpse_king_thunder",
+    "crimson_blood_spear",
+    "dark_siphon",
+    "defense_stance",
+    "detach_guardian",
+    "dog_eye_cannon",
+    "escape_passive",
+    "five_elements_formation",
+    "flame_strike",
+    "flesh_abandon",
+    "flesh_reshape",
+    "golden_cicada_shell",
+    "gourd_acid",
+    "gourd_arms",
+    "gourd_devour",
+    "gourd_eyes",
+    "gourd_fire",
+    "gourd_link",
+    "gourd_power",
+    "ground_burrow",
+    "guigun_crush",
+    "guigun_guard",
+    "guigun_resonance",
+    "guigun_sweep",
+    "ham_summon",
+    "heart_grab_ambush",
+    "hound_unleashed",
+    "iron_body",
+    "jingang_infant_convergence",
+    "keeper_melee",
+    "killing_gas",
+    "killing_incarnation",
+    "life_drain_suck",
+    "merge_guardian",
+    "meteor_sword",
+    "mouth_snake",
+    "muscle_rage",
+    "natural_judgment",
+    "nest_sense",
+    "osmium_gold",
+    "osmium_ice_spike",
+    "parcel_bomb",
+    "peel_shell",
+    "pounce_combo",
+    "power_strike",
+    "qi_lock",
+    "reverse_formation_fireball",
+    "revive_guardian",
+    "round_dance",
+    "severed_arm_strike",
+    "slaughter_awakening",
+    "slaughter_momentum",
+    "son_of_corpse_nest",
+    "spatial_blink",
+    "special_forces_combat",
+    "summon_swarm",
+    "swallow_nest",
+    "swarm_bite",
+    "sword_flower",
+    "tengu_divine_array",
+    "thousand_eyes",
+    "thunder_power",
+    "tian_gang_blood_lotus",
+    "tiangang_hui",
+    "tiangang_ji",
+    "tiangang_li",
+    "tiangang_mie",
+    "tiangang_nipo",
+    "tiangang_pogang",
+    "tiangang_qi",
+    "tiangang_shen",
+    "tiangang_tiangangpo",
+    "tiangang_wu",
+    "tiangang_yu",
+    "tiangang_zhi",
+    "tiger_claw_bee_wheel",
+    "tyrant_strike",
+    "undying_chest",
+    "water_bite",
+    "water_orb",
+    "water_pollution",
+    "wood_bind",
+    "wuchou_blade",
+    "wuchou_step",
+    "wusheng_cross",
+    "wusheng_twin",
+    "xuanwu_body"
+  ]
+}
