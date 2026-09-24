@@ -1075,12 +1075,17 @@
   "gui.corpseorigin.skin_state.2": "Loaded",
   "gui.corpseorigin.skin_state.3": "Failed",
   "skill.corpseorigin.gourd_devour": "Gourd Devour",
-  "skill.corpseorigin.gourd_devour.desc": "The serpent captures a creature within 8 blocks and shrinks it into the gourd. Ordinary villagers and wandering traders (maximum health ≤20) may be devoured at full health. Other targets require maximum health ≤100 and remaining health ≤40% and ≤20. A successful kill grants 8–60 blood. Free, 10-second cooldown. Excludes players, allies, tamed pets, and bosses.",
+  "skill.corpseorigin.gourd_devour.desc": "The serpent captures a creature within 8 blocks and shrinks it into the gourd. Ordinary villagers and wandering traders (maximum health ≤20) may be devoured at full health. Other targets require remaining health below 50% of maximum health, with no fixed health cap. A successful kill grants 8–60 blood. Free, 10-second cooldown. Excludes players, allies, tamed pets, and bosses.",
   "skill.corpseorigin.gourd_devour.no_target": "No edible creature ahead",
-  "skill.corpseorigin.gourd_devour.too_strong": "Target too strong: villagers/traders with maximum health ≤20 may be devoured directly; other targets require maximum health ≤100 and remaining health ≤40% and ≤20",
+  "skill.corpseorigin.gourd_devour.too_strong": "Target too strong: villagers/traders with maximum health ≤20 may be devoured directly; other targets require remaining health below 50% of maximum health, with no fixed health cap",
   "skill.corpseorigin.gourd_devour.success": "Devoured: blood +%s",
   "skill.corpseorigin.gourd_devour.captured": "Captured: pulling into the gourd...",
   "skill.corpseorigin.gourd_devour.busy": "A capture is in progress, or this target cannot be captured",
   "message.corpseorigin.character_book.disabled": "This server has disabled character-book selection for %s",
   "gui.corpseorigin.character_book.disabled": "Disabled by server"
+,
+  "message.corpseorigin.gourd.pet_stored": "Gourd fed: stored flesh %s/%s. Merge to transfer it to blood.",
+  "message.corpseorigin.gourd.stay": "Gourd staying; following and feeding paused (%s/%s flesh). Right-click to follow, sneak-right-click to merge.",
+  "message.corpseorigin.gourd.follow": "Gourd following and foraging (%s/%s flesh). Right-click to stay, sneak-right-click to merge.",
+  "message.corpseorigin.gourd.transferred": "Merged: gained %s blood; %s flesh remains stored."
 }

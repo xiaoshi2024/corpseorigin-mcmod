@@ -3,6 +3,7 @@
   "package": "xiaoshi2022.corpseorigin.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "GourdCaptureMobMixin",
     "HeartFeignPoseMixin",
     "HeartFeignJumpMixin",
     "CooldownInstanceAccessor",

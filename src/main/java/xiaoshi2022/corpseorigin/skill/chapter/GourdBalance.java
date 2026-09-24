@@ -3,8 +3,11 @@ package xiaoshi2022.corpseorigin.skill.chapter;
 /** Bounded biological conversion and cast timings, shared with regression tests. */
 public final class GourdBalance {
     private GourdBalance() {}
+    public static final int PET_CAPACITY=120, PET_COOLDOWN=600;
+    public static int petFlesh(float maxHealth){return Math.min(15,flesh(maxHealth)/2);}
+    public static int transfer(int stored,int playerBlood){return Math.min(Math.max(0,stored),Math.max(0,600-playerBlood));}
     public static int duration(int form){return switch(form){case 1->400;case 2->90;case 3->100;case 4->100;case 5->140;case 6->240;default->20;};}
-    public static boolean edible(float health,float maxHealth){return Float.isFinite(health)&&Float.isFinite(maxHealth)&&health>0&&maxHealth>0&&maxHealth<=100&&health<=Math.min(20,maxHealth*.4f);}
+    public static boolean edible(float health,float maxHealth){return Float.isFinite(health)&&Float.isFinite(maxHealth)&&health>0&&maxHealth>0&&health<maxHealth*.5f;}
     public static boolean edible(float health,float maxHealth,boolean villager){
         if(villager && Float.isFinite(health) && Float.isFinite(maxHealth)
                 && health>0 && health<=maxHealth && maxHealth<=20)return true;

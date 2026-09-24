@@ -75,6 +75,7 @@ public final class CustomOrganLayer extends RenderLayer<AvatarRenderState,Player
                 cache.prepareOrgan(Long.MIN_VALUE+17,r);
             var state=new AvatarRenderState();state.addGeckolibData(CLIP,GourdOrganState.clip(form,false));
             r.extractRenderState(player,state,partial);
+            state.addGeckolibData(xiaoshi2022.corpseorigin.client.render.GourdMouthAnchors.ENTITY,player.getId());
             frames.add(new Frame(new OrganSlot(def.id(),"body",0,14,5,0,0,0,.45f,false),r,state));
         }
         try {
@@ -145,6 +146,7 @@ public final class CustomOrganLayer extends RenderLayer<AvatarRenderState,Player
         @Override public AvatarRenderState createRenderState(PlayerGeoAnimatable a,AbstractClientPlayer e){return super.createRenderState((PlayerGeoAnimatable)e,e);}
         @Override public Identifier getTextureLocation(AvatarRenderState s){return Identifier.parse(def.texture());}
         @Override public void adjustRenderPose(RenderPassInfo<AvatarRenderState> info){}
+        @Override public void preRenderPass(RenderPassInfo<AvatarRenderState> info,SubmitNodeCollector collector){super.preRenderPass(info,collector);if(slot==16)xiaoshi2022.corpseorigin.client.render.GourdMouthAnchors.listen(info,true);}
         @Override public void scaleModelForRender(RenderPassInfo<AvatarRenderState> info,float x,float y){}
     }
 }

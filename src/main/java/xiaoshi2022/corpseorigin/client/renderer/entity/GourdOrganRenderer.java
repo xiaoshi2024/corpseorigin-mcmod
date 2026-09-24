@@ -18,5 +18,7 @@ public final class GourdOrganRenderer extends GeoEntityRenderer<GourdOrganEntity
     });withScale(.45f);shadowRadius=.25f;}
     @Override public void extractRenderState(GourdOrganEntity entity,LivingEntityRenderState state,float partial){
         state.addGeckolibData(FORM,((GourdOrganEntity)entity).form());super.extractRenderState(entity,state,partial);
+        state.addGeckolibData(xiaoshi2022.corpseorigin.client.render.GourdMouthAnchors.ENTITY,entity.getId());
     }
+    @Override public void preRenderPass(com.geckolib.renderer.base.RenderPassInfo<LivingEntityRenderState> pass,net.minecraft.client.renderer.SubmitNodeCollector collector){super.preRenderPass(pass,collector);xiaoshi2022.corpseorigin.client.render.GourdMouthAnchors.listen(pass,false);}
 }

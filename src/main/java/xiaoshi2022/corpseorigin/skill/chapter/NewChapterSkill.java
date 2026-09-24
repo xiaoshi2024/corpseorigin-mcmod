@@ -26,6 +26,8 @@ public final class NewChapterSkill extends AbstractSkill {
     @Override public void onActivate(ServerPlayer p){
         if(form==0){GourdOrganState.toggle(p);return;}
         GourdOrganState.play(p,form,GourdBalance.duration(form));
+        // Acquire once on the input tick, before the snake's wind-up animation.
+        if(form==3){var g=GourdOrganState.detached(p)?GourdOrganState.find(p):null;devour(p,g==null?p.getEyePosition():g.position().add(0,1.65,0));return;}
         if(form==6){p.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.RESISTANCE,240,1));p.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.ABSORPTION,240,1));var g=GourdOrganState.find(p);if(g!=null)g.heal(8);return;}
         if(form==1){p.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.NIGHT_VISION,400,0));for(var t:p.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,p.getBoundingBox().inflate(20),t->ChapterCombat.canHit(p,t)&&p.hasLineOfSight(t)))t.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.GLOWING,200,0));return;}
         GourdOrganState.schedule(p,form==5?10:form==4?4:1,form==4?20:10,this::attack);

@@ -24,20 +24,25 @@ public final class GourdOrganState {
     public static void play(ServerPlayer p,int form,int ticks){var b=p.getAttachedOrCreate(SurvivalGrowth.BODY).copy();b.putInt("gourd_form",form);b.putLong("gourd_until",p.level().getGameTime()+ticks);p.setAttached(SurvivalGrowth.BODY,b);var e=find(p);if(e!=null)e.play(form,ticks);}
     public static GourdOrganEntity find(ServerPlayer p){String id=p.getAttachedOrCreate(SurvivalGrowth.BODY).getStringOr("gourd_entity","");if(id.isEmpty())return null;try{UUID uuid=UUID.fromString(id);for(var l:p.level().getServer().getAllLevels())if(l.getEntity(uuid) instanceof GourdOrganEntity g && g.isAlive() && g.isOwnedBy(p))return g;}catch(IllegalArgumentException ignored){}return null;}
     public static void saveHealth(ServerPlayer p,float value){var b=p.getAttachedOrCreate(SurvivalGrowth.BODY);if(b.getFloatOr("gourd_health",40)==value)return;b=b.copy();b.putFloat("gourd_health",value);p.setAttached(SurvivalGrowth.BODY,b);}
-    public static void killed(ServerPlayer p){var b=p.getAttachedOrCreate(SurvivalGrowth.BODY).copy();b.putBoolean("gourd_dead",true);b.putBoolean("gourd_detached",false);b.remove("gourd_entity");b.putFloat("gourd_health",0);p.setAttached(SurvivalGrowth.BODY,b);PENDING.remove(p.getUUID());p.sendOverlayMessage(Component.translatable("skill.corpseorigin.gourd.dead"));}
+    public static void killed(ServerPlayer p){var b=p.getAttachedOrCreate(SurvivalGrowth.BODY).copy();b.putBoolean("gourd_dead",true);b.putBoolean("gourd_detached",false);b.remove("gourd_entity");b.putFloat("gourd_health",0);b.remove("gourd_stored_flesh");p.setAttached(SurvivalGrowth.BODY,b);PENDING.remove(p.getUUID());p.sendOverlayMessage(Component.translatable("skill.corpseorigin.gourd.dead"));}
     public static void toggle(ServerPlayer p){
+        if(windingUp(p)){p.sendOverlayMessage(Component.translatable("skill.corpseorigin.gourd_devour.busy"));return;}
         var b=p.getAttachedOrCreate(SurvivalGrowth.BODY).copy();
         if(dead(p)){
             if(!p.isCreative() && !xiaoshi2022.corpseorigin.skill.SkillResources.pay(p,new xiaoshi2022.corpseorigin.skill.SkillResourceRules.Cost(0,100)))return;
             b.putBoolean("gourd_dead",false);b.putFloat("gourd_health",40);b.putBoolean("gourd_detached",false);p.setAttached(SurvivalGrowth.BODY,b);p.sendOverlayMessage(Component.translatable("skill.corpseorigin.gourd.regrown"));return;
         }
-        if(detached(p)){var e=find(p);if(e==null && !b.getStringOr("gourd_entity","").isEmpty()){p.sendOverlayMessage(Component.translatable("skill.corpseorigin.gourd.away"));return;}if(e!=null){b.putFloat("gourd_health",e.getHealth());e.discard();}b.remove("gourd_entity");b.putBoolean("gourd_detached",false);}
+        if(detached(p)){var e=find(p);if(e==null && !b.getStringOr("gourd_entity","").isEmpty()){p.sendOverlayMessage(Component.translatable("skill.corpseorigin.gourd.away"));return;}if(e!=null){b.putFloat("gourd_health",e.getHealth());
+            int gained=xiaoshi2022.corpseorigin.skill.chapter.GourdBalance.transfer(e.storedFlesh(),xiaoshi2022.corpseorigin.skill.longyou.BloodReserve.get(p));
+            xiaoshi2022.corpseorigin.skill.longyou.BloodReserve.add(p,gained);
+            b.putInt("gourd_stored_flesh",e.storedFlesh()-gained);
+            p.sendSystemMessage(Component.translatable("message.corpseorigin.gourd.transferred",gained,e.storedFlesh()-gained));e.restoreStoredFlesh(0);e.discard();}b.remove("gourd_entity");b.putBoolean("gourd_detached",false);}
         else{
             var e=xiaoshi2022.corpseorigin.registry.ModEntities.ZBR_GOURD.create(p.level(),net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);if(e==null)return;
-            e.setOwner(p);e.setHealth(Math.clamp(b.getFloatOr("gourd_health",40),1,40));
+            e.setOwner(p);e.restoreStoredFlesh(b.getIntOr("gourd_stored_flesh",0));e.setHealth(Math.clamp(b.getFloatOr("gourd_health",40),1,40));
             var desired=p.position().add(net.minecraft.world.phys.Vec3.directionFromRotation(0,p.getYRot()).scale(2));
             e.setPos(desired);if(!p.level().noCollision(e)){e.setPos(p.position());if(!p.level().noCollision(e)){p.sendOverlayMessage(Component.translatable("skill.corpseorigin.gourd.no_room"));return;}}
-            if(!p.level().addFreshEntity(e))return;b.putString("gourd_entity",e.getUUID().toString());b.putBoolean("gourd_detached",true);
+            if(!p.level().addFreshEntity(e))return;b.remove("gourd_stored_flesh");b.putString("gourd_entity",e.getUUID().toString());b.putBoolean("gourd_detached",true);
         }
         p.setAttached(SurvivalGrowth.BODY,b);p.sendOverlayMessage(Component.translatable(detached(p)?"skill.corpseorigin.gourd_link.detached":"skill.corpseorigin.gourd_link.attached"));
     }

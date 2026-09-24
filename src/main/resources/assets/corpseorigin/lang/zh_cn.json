@@ -1075,12 +1075,17 @@
   "gui.corpseorigin.skin_state.2": "已加载",
   "gui.corpseorigin.skin_state.3": "加载失败",
   "skill.corpseorigin.gourd_devour": "葫芦吞噬",
-  "skill.corpseorigin.gourd_devour.desc": "蛇形出现，捕获前方8格内的生物并缩小吸入。普通村民和流浪商人（最大生命≤20）可满血吞噬；其他目标需最大生命≤100、剩余生命≤40%且≤20。成功击杀转化8–60气血；免费，冷却10秒。排除玩家、队友、驯养宠物及首领。",
+  "skill.corpseorigin.gourd_devour.desc": "蛇形出现，捕获前方8格内的生物并缩小吸入。普通村民和流浪商人（最大生命≤20）可满血吞噬；其他目标只需剩余生命低于最大生命的50%，无固定血量上限。成功击杀转化8–60气血；免费，冷却10秒。排除玩家、队友、驯养宠物及首领。",
   "skill.corpseorigin.gourd_devour.no_target": "前方没有可吞噬的生物",
-  "skill.corpseorigin.gourd_devour.too_strong": "目标太强：普通村民/流浪商人最大生命≤20可直接吞噬；其他目标需最大生命≤100、剩余生命≤40%且≤20",
+  "skill.corpseorigin.gourd_devour.too_strong": "目标太强：普通村民/流浪商人最大生命≤20可直接吞噬；其他目标只需剩余生命低于最大生命的50%，无固定血量上限",
   "skill.corpseorigin.gourd_devour.success": "吞噬成功：气血 +%s",
   "skill.corpseorigin.gourd_devour.captured": "已捕获：正在拉入葫芦…",
   "skill.corpseorigin.gourd_devour.busy": "正在捕获吞噬，或目标无法被捕获",
   "message.corpseorigin.character_book.disabled": "服务器已禁用通过角色书选择：%s",
   "gui.corpseorigin.character_book.disabled": "服务器禁用"
+,
+  "message.corpseorigin.gourd.pet_stored": "葫芦已进食：储存血肉 %s/%s，合体时转入气血",
+  "message.corpseorigin.gourd.stay": "葫芦原地停留，停止跟随和觅食（血肉 %s/%s）；右键恢复，潜行右键合体",
+  "message.corpseorigin.gourd.follow": "葫芦恢复跟随和觅食（血肉 %s/%s）；右键停留，潜行右键合体",
+  "message.corpseorigin.gourd.transferred": "合体转入 %s 气血，葫芦保留 %s 血肉"
 }
