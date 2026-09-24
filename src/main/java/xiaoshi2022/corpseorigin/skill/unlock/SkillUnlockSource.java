@@ -44,6 +44,29 @@ public interface SkillUnlockSource {
 
     // ==================== 现成实现 ====================
 
+    /** Remember an encounter independently of the items needed to activate the skill. */
+    static <T extends net.minecraft.world.entity.LivingEntity> SkillUnlockSource encounter(
+            String encounterId, Class<T> entityClass, double radius, Component description) {
+        if (!Double.isFinite(radius) || radius <= 0 || radius > 64)
+            throw new IllegalArgumentException("Encounter radius must be in (0, 64]");
+        return custom("encounter:" + encounterId, description, player -> {
+            if (!player.isAlive() || player.isSpectator()) return false;
+            var journal = xiaoshi2022.corpseorigin.growth.SurvivalGrowth.JOURNAL;
+            String key = "encounter:" + encounterId;
+            if (player.getAttachedOrCreate(journal).getBooleanOr(key, false)) return true;
+            boolean seen = !player.level().getEntitiesOfClass(entityClass,
+                    player.getBoundingBox().inflate(radius), entity -> entity.isAlive()
+                            && player.distanceToSqr(entity) <= radius * radius
+                            && player.hasLineOfSight(entity)).isEmpty();
+            if (seen) {
+                var data = player.getAttachedOrCreate(journal).copy();
+                data.putBoolean(key, true);
+                player.setAttached(journal, data);
+            }
+            return seen;
+        });
+    }
+
     /**
      * 需要持有某个器官 / 收藏品（{@link PlayerRelicComponent} 里的记录，不占背包）。
      */
@@ -81,12 +104,13 @@ public interface SkillUnlockSource {
 
             @Override
             public Component describe() {
-                return Component.translatable("unlock_item.corpseorigin." + itemId);
+                return item.getDefaultInstance().getHoverName();
             }
 
             @Override
             public boolean isSatisfiedBy(ServerPlayer player) {
-                return player.getInventory().contains(stack -> stack.is(item));
+                return player.getInventory().contains(stack -> stack.is(item))
+                        || player.getMainHandItem().is(item) || player.getOffhandItem().is(item);
             }
         };
     }

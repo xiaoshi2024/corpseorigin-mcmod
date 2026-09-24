@@ -34,7 +34,8 @@ public final class TianGangCombat {
                 && valid(player, aura.level) && player.tickCount < aura.until;
     }
     private static boolean valid(ServerPlayer p,ServerLevel level){
-        return p.isAlive() && !p.isRemoved() && p.level()==level && "longyou".equals(CharacterManager.getInstance().getPlayerCharacterId(p));
+        return p.isAlive() && !p.isRemoved() && p.level()==level && ("longyou".equals(CharacterManager.getInstance().getPlayerCharacterId(p))
+                || xiaoshi2022.corpseorigin.growth.FreeGrowth.learnedFrom(p,"longyou"));
     }
     public static boolean canLeap(ServerPlayer p){return p.level().noCollision(p,p.getBoundingBox().expandTowards(0,2,0));}
     public static void cast(ServerPlayer p,Form form){
@@ -90,8 +91,9 @@ public final class TianGangCombat {
                 var p=a.player;int age=p.tickCount-a.start;
                 if(!valid(p,a.level) || age>70 || (a.form.advanced() && !isShen(p)))return true;
                 if(a.form==Form.NIPO){
-                    if(age%10==0){var target=ChapterCombat.aim(p,4);if(target==null)return true;
-                        target.hurtServer(a.level,p.damageSources().playerAttack(p),24);p.swing(net.minecraft.world.InteractionHand.MAIN_HAND,true);}
+                    if(age%10==0){var target=ChapterCombat.aim(p,4);
+                        if(target!=null)target.hurtServer(a.level,p.damageSources().playerAttack(p),24);
+                        p.swing(net.minecraft.world.InteractionHand.MAIN_HAND,true);}
                     return age>=50;
                 }
                 if(a.form==Form.MIE){

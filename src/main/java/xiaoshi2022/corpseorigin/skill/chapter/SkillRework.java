@@ -15,6 +15,8 @@ import java.util.*;
 
 /** Server-owned timed skills. State is discarded on death, role change and dimension change. */
 public final class SkillRework {
+    private static float sustainedMultiplier(){return xiaoshi2022.corpseorigin.growth.BalanceRules.bounded(
+            xiaoshi2022.corpseorigin.config.CorpseConfig.get().growth.sustainedAreaDamageMultiplier,.35f,.05f,1);}
     public static final AttachmentType<Long> GOLD = timer("gold_until");
     public static final AttachmentType<Long> LOTUS_ARMOR = timer("lotus_armor_until");
     private static AttachmentType<Long> timer(String id) { return AttachmentRegistry.create(CorpseOrigin.id(id),
@@ -34,7 +36,7 @@ public final class SkillRework {
     public static void siphon(ServerPlayer p) {
         if(SIPHONS.remove(p.getUUID())!=null)return;
         var target=ChapterCombat.aim(p,3.5);
-        if(target!=null)SIPHONS.put(p.getUUID(),new Siphon(p,target));
+        if(target!=null)SIPHONS.put(p.getUUID(),new Siphon(p,target));else ChapterCombat.emptyCast(p);
     }
     public static void area(ServerPlayer p, double radius, float damage, double push) {
         var level=(ServerLevel)p.level();
@@ -73,8 +75,8 @@ public final class SkillRework {
                 String role=CharacterManager.getInstance().getPlayerCharacterId(p);
                 attributes(p,role);
                 if(!p.isAlive()) {p.setAttached(GOLD,0L);p.setAttached(LOTUS_ARMOR,0L);continue;}
-                if(!role.equals("xiaolu"))p.setAttached(GOLD,0L);
-                if(!role.equals("shichaozhizi"))p.setAttached(LOTUS_ARMOR,0L);
+                if(!role.equals("xiaolu") && !xiaoshi2022.corpseorigin.growth.FreeGrowth.isFree(p))p.setAttached(GOLD,0L);
+                if(!role.equals("shichaozhizi") && !xiaoshi2022.corpseorigin.growth.FreeGrowth.isFree(p))p.setAttached(LOTUS_ARMOR,0L);
                 if(role.equals("heixiaofei") && PlayerCharacterData.get(p).hasLearned(p.getUUID(),"black_gold_heart") && p.tickCount%20==0) {
                     p.heal(2);buff(p,MobEffects.REGENERATION,25,1);
                     // The heart is now a client-only inventory preview; its passive effects stay server-side.
@@ -90,11 +92,11 @@ public final class SkillRework {
                     if(age%5==0)QiEffects.aura(p,"slaughter",p.getHealth()<p.getMaxHealth()*.35f?0xe61928:0x991d42,2.5f,12);
                 }else if(c.kind.equals("sword_flower") || c.kind.equals("round_dance")) {
                     if(age%5==0)QiEffects.aura(p,c.kind,c.kind.equals("sword_flower")?0xff76b3:0xdf203c,6,12);
-                    if(age%10==0)area(p,6,c.kind.equals("sword_flower")?18:20,.35);
+                    if(age%10==0)area(p,6,(c.kind.equals("sword_flower")?18:20)*sustainedMultiplier(),.35);
                 } else if(c.kind.equals("blood_cloud")) {
                     if(age%5==0)QiEffects.aura(p,"blood_cloud",0xb51236,4,12);
                     if(age%10==0) {
-                        area(p,4,14,.5);
+                        area(p,4,14*sustainedMultiplier(),.5);
                         for(var t:c.level.getEntitiesOfClass(LivingEntity.class,p.getBoundingBox().inflate(4)))
                             if(t==p || p.isAlliedTo(t)){buff(t,MobEffects.STRENGTH,30,2);buff(t,MobEffects.SPEED,30,1);buff(t,MobEffects.RESISTANCE,30,1);}
                     }
@@ -102,8 +104,9 @@ public final class SkillRework {
             }
             SIPHONS.values().removeIf(s->{
                 var p=s.owner;var t=s.target;
+                if(!xiaoshi2022.corpseorigin.growth.WeaponEligibility.vampire(p))return true;
                 if(!p.isAlive() || p.isRemoved() || p.level()!=s.level || t.level()!=s.level || !ChapterCombat.canHit(p,t)
-                        || !CharacterManager.getInstance().getPlayerCharacterId(p).equals("heixiaofei")
+                        || (!CharacterManager.getInstance().getPlayerCharacterId(p).equals("heixiaofei") && !xiaoshi2022.corpseorigin.growth.FreeGrowth.learned(p,"dark_siphon"))
                         || !p.getMainHandItem().is(ModItems.BLOOD_WING_BLADE) || p.distanceToSqr(t)>12.25 || !p.hasLineOfSight(t) || p.isShiftKeyDown())return true;
                 if(p.tickCount%5==0){
                     QiEffects.aura(t,"siphon_target",0xa80d27,1.3f,12);

@@ -6,9 +6,9 @@ import xiaoshi2022.corpseorigin.skill.chapter.*;
 public class FlameStrikeSkill extends AbstractSkill {
     public FlameStrikeSkill() { super("flame_strike", SkillType.COMBAT, 100, 12); }
     @Override public Component checkUsable(ServerPlayer p) {
-        return ChapterCombat.aim(p,8)==null ? Component.translatable("skill.corpseorigin.chapter.need_target") : null;
+        return null;
     }
     @Override public void onActivate(ServerPlayer p) {
-        var target=ChapterCombat.aim(p,8); if(target!=null) FiveElementsCombat.strike(p,target);
+        var target=ChapterCombat.aim(p,8); if(target!=null) FiveElementsCombat.strike(p,target); else xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.emptyCast(p);
     }
 }

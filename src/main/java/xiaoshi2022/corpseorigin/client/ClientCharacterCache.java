@@ -21,7 +21,7 @@ public final class ClientCharacterCache {
             return new ArrayList<>();
         }
         List<ISkill> skills = new ArrayList<>(character.getSkills());
-        if (!"longyou".equals(character.getId()))
+        if (!"longyou".equals(character.getId()) && !xiaoshi2022.corpseorigin.growth.FreeGrowth.isFree(character.getId()))
             skills.removeIf(s -> isBodySkill(s.getId().getPath()));
         if (hasBorrowedBody()) {
             if (skills.stream().noneMatch(s -> s.getId().getPath().equals("xuanwu_body")))

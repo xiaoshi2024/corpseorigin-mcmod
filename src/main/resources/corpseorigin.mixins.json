@@ -27,6 +27,7 @@
     "requireAnnotations": true
   },
   "client": [
+    "OrganPackSourceMixin",
     "TianGangControlsMixin",
     "InventoryHeartPreviewMixin",
     "QiFogMixin",

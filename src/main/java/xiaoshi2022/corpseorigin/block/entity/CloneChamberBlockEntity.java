@@ -750,6 +750,7 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         }
         CharacterShellStateComponent charComp = components.as(CharacterShellStateComponent.class);
         if (charComp != null) {
+            charComp.applyEvolutionPartsClone(random, corpseClone, completion);
             // ★ 尸王（龙右）转移身体不会忘记任何东西：技能不做"记忆残缺"裁剪，
             //   身份也不"白纸化" —— 一旦这具身体被清成凡人，玩家换进去后客户端会变成凡人
             //   （技能树直接空白），再用角色书重选龙右又会触发"切角色清空已学技能"，

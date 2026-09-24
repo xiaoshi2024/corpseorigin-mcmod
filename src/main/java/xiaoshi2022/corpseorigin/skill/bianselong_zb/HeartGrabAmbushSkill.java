@@ -21,12 +21,12 @@ public class HeartGrabAmbushSkill extends AbstractSkill {
     }
     @Override public net.minecraft.network.chat.Component checkUsable(net.minecraft.server.level.ServerPlayer p) {
         var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,3);
-        if(target==null) return net.minecraft.network.chat.Component.translatable("skill.corpseorigin.chapter.need_target");
+        if(target==null) return null;
         var toAttacker=p.position().subtract(target.position()).normalize();
         return target.getLookAngle().dot(toAttacker)>-.25 ? net.minecraft.network.chat.Component.translatable("skill.corpseorigin.heart_grab_ambush.need_back") : null;
     }
     @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
-        var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,3); if(target==null)return;
+        var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,3); if(target==null){xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.emptyCast(p);return;}
         p.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE,"");
         xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.action(p,"ambush",12);
         target.hurtServer((net.minecraft.server.level.ServerLevel)p.level(),p.damageSources().playerAttack(p),14);

@@ -48,11 +48,28 @@ public class AncientPoetrySwordSkill implements ISkill {
         return 0;
     }
 
+    public static boolean isRunning(ServerPlayer player) {
+        return APSTerrainManager.hasActiveAPS(player)
+                || player.getAttachedOrCreate(ModDataAttachments.APS_STATE).getBoolean(ACTIVE_KEY).orElse(false);
+    }
+
+    public static void stop(ServerPlayer player) {
+        var state = player.getAttachedOrCreate(ModDataAttachments.APS_STATE).copy();
+        state.putBoolean(ACTIVE_KEY, false);
+        state.putInt(STAGE_KEY, 0);
+        player.setAttached(ModDataAttachments.APS_STATE, state);
+        if (APSTerrainManager.hasActiveAPS(player)) APSTerrainManager.forceRestore(player, player.level());
+    }
+
     @Override
     public void onActivate(ServerPlayer player) {
         ServerLevel level = player.level();
 
         if (APSTerrainManager.hasActiveAPS(player)) {
+            var stopped = player.getAttachedOrCreate(ModDataAttachments.APS_STATE).copy();
+            stopped.putBoolean(ACTIVE_KEY, false);
+            stopped.putInt(STAGE_KEY, 0);
+            player.setAttached(ModDataAttachments.APS_STATE, stopped);
             boolean started = APSTerrainManager.forceRestore(player, level);
             if (started) {
                 player.sendOverlayMessage(Component.translatable(

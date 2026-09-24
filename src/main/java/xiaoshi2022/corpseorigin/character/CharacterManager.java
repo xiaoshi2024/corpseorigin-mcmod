@@ -106,7 +106,6 @@ public class CharacterManager {
         // ========== 人类阵营 ==========
         // 凡人 / 被感染但仍有理智的主角团 / 炎黄特能队 / 收复部队
         factionMap.put(MortalCharacter.ID, CharacterFaction.HUMAN);
-        factionMap.put(CorpseBrother.ID, CharacterFaction.HUMAN);
         factionMap.put("baixiaofei", CharacterFaction.HUMAN);
         factionMap.put("heixiaofei", CharacterFaction.HUMAN);
         factionMap.put("xiaolu", CharacterFaction.HUMAN);
@@ -153,6 +152,8 @@ public class CharacterManager {
         // 血莲教唯欣、赵日天这类不属于四大阵营的中立/独立势力
         factionMap.put("zhaoritian", CharacterFaction.OTHER);
         factionMap.put("weixin", CharacterFaction.OTHER);
+        factionMap.put(CorpseBrother.ID, CharacterFaction.OTHER);
+
     }
 
     public void registerCharacter(ICharacter character) {
@@ -243,7 +244,9 @@ public class CharacterManager {
         InnerPowerManager.reset(serverPlayer);
 
         // ✅ 自动学习该角色的全部技能（技能树未启用，故直接授予）
-        data.clearLearnedSkills(player.getUUID());
+        if (!(xiaoshi2022.corpseorigin.growth.FreeGrowth.isFree(oldId)
+                && xiaoshi2022.corpseorigin.growth.FreeGrowth.isFree(character.getId())))
+            data.clearLearnedSkills(player.getUUID());
         //注释一下就不自动学习
 //        for (ISkill skill : character.getSkills()) {
 //            data.learnSkill(player.getUUID(), skill.getId().getPath());
@@ -296,6 +299,7 @@ public class CharacterManager {
     // ==================== 同步 ====================
 
     public void syncToClient(ServerPlayer player) {
+        xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockManager.grantUnlocked(player, true);
         xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.reconcileCorpseState(player);
         String characterId = getPlayerCharacterId(player);
         CorpseNetwork.sendCharacterSync(player, characterId);

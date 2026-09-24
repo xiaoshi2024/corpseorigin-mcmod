@@ -53,7 +53,18 @@ public class APSComboHandler {
         boolean hasRealm = APSTerrainManager.hasActiveAPS(player);
 
         if (!active && !hasRealm) return;
+        if (!player.isAlive() || player.isSpectator()
+                || xiaoshi2022.corpseorigin.character.InnerPowerManager.getMaxInnerPower(player) <= 0) {
+            AncientPoetrySwordSkill.stop(player);
+            return;
+        }
         if (APSTerrainManager.isBusy(player)) return;
+        if (hasRealm && player.tickCount % 20 == 0
+                && !xiaoshi2022.corpseorigin.skill.SkillResources.pay(player,
+                    new xiaoshi2022.corpseorigin.skill.SkillResourceRules.Cost(2, 0))) {
+            AncientPoetrySwordSkill.stop(player);
+            return;
+        }
 
         long lastCast = state.getLong(AncientPoetrySwordSkill.CD_KEY).orElse(0L);
         long now = player.level().getGameTime();
@@ -85,6 +96,7 @@ public class APSComboHandler {
     private static final long MIN_STAGE_INTERVAL = 10L;  // 两段之间最少 10 tick
 
     private static void tryAdvance(ServerPlayer player) {
+        if (!player.isAlive() || player.isSpectator() || APSTerrainManager.isBusy(player)) return;
         ServerLevel level = player.level();
         long now = level.getGameTime();
 
@@ -115,6 +127,12 @@ public class APSComboHandler {
         // 推进段数
         int stage = state.getInt(AncientPoetrySwordSkill.STAGE_KEY).orElse(0);
         stage = (stage % 4) + 1;
+        if (!xiaoshi2022.corpseorigin.skill.SkillResources.pay(player,
+                new xiaoshi2022.corpseorigin.skill.SkillResourceRules.Cost(
+                    xiaoshi2022.corpseorigin.skill.SkillResourceRules.poetryStage(stage), 0))) {
+            AncientPoetrySwordSkill.stop(player);
+            return;
+        }
         state.putInt(AncientPoetrySwordSkill.STAGE_KEY, stage);
         state.putLong(AncientPoetrySwordSkill.CD_KEY, now);
         player.setAttached(ModDataAttachments.APS_STATE, state);

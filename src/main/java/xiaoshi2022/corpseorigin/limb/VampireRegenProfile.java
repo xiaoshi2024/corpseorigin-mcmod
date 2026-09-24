@@ -38,6 +38,7 @@ public final class VampireRegenProfile implements LimbRegenProfile {
 
     @Override
     public boolean appliesTo(ServerPlayer player) {
+        if (xiaoshi2022.corpseorigin.growth.SurvivalGrowth.active(player, "vampire")) return true;
         if (!HeiXiaoFei.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(player))) {
             return false;
         }

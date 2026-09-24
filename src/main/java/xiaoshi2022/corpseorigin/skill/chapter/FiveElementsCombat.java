@@ -36,7 +36,8 @@ public final class FiveElementsCombat {
     private FiveElementsCombat() {}
     private static boolean role(ServerPlayer player, String id) {
         return player.isAlive() && !player.isRemoved()
-                && id.equals(CharacterManager.getInstance().getPlayerCharacterId(player));
+                && (id.equals(CharacterManager.getInstance().getPlayerCharacterId(player))
+                || xiaoshi2022.corpseorigin.growth.FreeGrowth.learnedFrom(player,id));
     }
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(server -> tick());

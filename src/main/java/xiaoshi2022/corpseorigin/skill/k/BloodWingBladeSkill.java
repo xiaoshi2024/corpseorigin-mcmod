@@ -22,12 +22,11 @@ public class BloodWingBladeSkill extends AbstractSkill {
     @Override public net.minecraft.network.chat.Component checkUsable(net.minecraft.server.level.ServerPlayer player) {
         if (!player.getMainHandItem().is(xiaoshi2022.corpseorigin.registry.ModItems.BLOOD_WING_BLADE))
             return net.minecraft.network.chat.Component.translatable("skill.corpseorigin.blood_wing_blade.need_weapon");
-        return xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(player,4)==null
-                ? net.minecraft.network.chat.Component.translatable("skill.corpseorigin.chapter.need_target") : null;
+        return null;
     }
     @Override public void onActivate(net.minecraft.server.level.ServerPlayer player) {
         var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(player,4);
-        if(target==null) return;
+        if(target==null){xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.emptyCast(player);return;}
         float before=target.getHealth();
         float damage = (float) player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) * 1.5f;
         if(target.hurtServer((net.minecraft.server.level.ServerLevel)player.level(),player.damageSources().playerAttack(player),damage)) {

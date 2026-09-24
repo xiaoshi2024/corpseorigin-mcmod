@@ -12,7 +12,7 @@ import java.util.UUID;
  * <p>
  * 内力上限由角色的 {@link ICharacter#getMaxInnerPower()} 决定：
  * <ul>
- *   <li>0 → 无内力，不显示内力条，技能也不消耗内力</li>
+ *   <li>0 → 无气感，不能施放需要内力的技能；气血不能代替内力。</li>
  *   <li>> 0 → 有内力，技能激活时消耗内力，每 tick 自然回复</li>
  * </ul>
  */
@@ -32,18 +32,19 @@ public final class InnerPowerManager {
      * 如果玩家是无内力角色或从未记录过，返回 0。
      */
     public static int getInnerPower(ServerPlayer player) {
-        ICharacter character = CharacterManager.getInstance().getPlayerCharacter(player);
-        if (character.getMaxInnerPower() <= 0) {
+        int max = getMaxInnerPower(player);
+        if (max <= 0) {
             return 0;
         }
-        return INNER_POWER.getOrDefault(player.getUUID(), character.getMaxInnerPower());
+        return Math.min(max, INNER_POWER.getOrDefault(player.getUUID(), max));
     }
 
     /**
      * 获取玩家内力上限。
      */
     public static int getMaxInnerPower(ServerPlayer player) {
-        return CharacterManager.getInstance().getPlayerCharacter(player).getMaxInnerPower();
+        return Math.max(CharacterManager.getInstance().getPlayerCharacter(player).getMaxInnerPower(),
+                xiaoshi2022.corpseorigin.growth.FreeGrowth.innerPower(player));
     }
 
     /**
@@ -52,12 +53,13 @@ public final class InnerPowerManager {
      * @return true 表示内力足够并已扣除
      */
     public static boolean consume(ServerPlayer player, int amount) {
-        if (amount <= 0) {
+        if (amount < 0) return false;
+        if (amount == 0) {
             return true;
         }
         int max = getMaxInnerPower(player);
         if (max <= 0) {
-            return true;  // 无内力角色，技能不消耗内力
+            return false;
         }
         int current = getInnerPower(player);
         if (current < amount) {
@@ -120,6 +122,7 @@ public final class InnerPowerManager {
      */
     public static void tickRegen(ServerPlayer player) {
         if (xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.isChanneling(player)) return;
+        if (xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager.hasActiveAPS(player)) return;
         int max = getMaxInnerPower(player);
         if (max <= 0) {
             return;

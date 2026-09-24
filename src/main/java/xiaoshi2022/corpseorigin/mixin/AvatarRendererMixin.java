@@ -29,6 +29,8 @@ public abstract class AvatarRendererMixin {
         ((LivingEntityRendererMixin)self).callAddLayer(new xiaoshi2022.corpseorigin.client.render.layer.ChameleonHeadLayer(self));
         ((LivingEntityRendererMixin)self).callAddLayer(new xiaoshi2022.corpseorigin.client.render.layer.ChapterCostumeLayer(self));
         ((LivingEntityRendererMixin)self).callAddLayer(new xiaoshi2022.corpseorigin.client.render.layer.QiCoatingLayer(self));
+        EvolutionGeoRenderer.create(context);
+        ((LivingEntityRendererMixin)self).callAddLayer(new xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer(self,context));
 
         try {
             var modelSet = Minecraft.getInstance().getEntityModels();
@@ -117,6 +119,9 @@ public abstract class AvatarRendererMixin {
         if (!(avatar instanceof AbstractClientPlayer player)) {
             return;
         }
+        state.addGeckolibData(EvolutionGeoRenderer.SNAPSHOT, null);
+        xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.extract(player,state,partialTick);
+        EvolutionGeoRenderer.extract(player, state, partialTick);
         String disguise=player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE);
         String possessedSkin = player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.BodyPossession.SKIN);
         if (!possessedSkin.isEmpty()) {

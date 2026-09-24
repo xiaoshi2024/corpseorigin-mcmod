@@ -20,11 +20,10 @@ public class PowerStrikeSkill extends AbstractSkill {
         super(PATH, SkillType.COMBAT, 400);
     }
     @Override public net.minecraft.network.chat.Component checkUsable(net.minecraft.server.level.ServerPlayer p) {
-        return xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,4)==null
-                ? net.minecraft.network.chat.Component.translatable("skill.corpseorigin.chapter.need_target") : null;
+        return null;
     }
     @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
-        var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,4); if(target==null)return;
+        var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,4); if(target==null){xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.emptyCast(p);return;}
         boolean story=!(target instanceof net.minecraft.world.entity.player.Player) && target.entityTags().contains("corpseorigin_story_execution");
         target.hurtServer((net.minecraft.server.level.ServerLevel)p.level(),p.damageSources().playerAttack(p),story?target.getHealth()*20+100:80);
         xiaoshi2022.corpseorigin.skill.chapter.ImpactTerrain.launch(p,target,3);p.swing(net.minecraft.world.InteractionHand.MAIN_HAND,true);

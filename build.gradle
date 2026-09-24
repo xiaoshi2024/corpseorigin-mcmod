@@ -48,6 +48,9 @@ dependencies {
 }
 
 processResources {
+	from('examples/organ-pack') {
+		into 'corpseorigin_examples/organ-pack'
+	}
 	def version = project.version
 	inputs.property "version", version
 
@@ -91,6 +94,76 @@ tasks.register('qiDensityTest', JavaExec) {
     mainClass = 'xiaoshi2022.corpseorigin.entity.QiDensityTest'
 }
 tasks.named('check') { dependsOn qiDensityTest }
+
+tasks.register('growthRulesTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.growth.GrowthRulesTest'
+}
+tasks.named('check') { dependsOn growthRulesTest }
+
+tasks.register('organSlotTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.growth.OrganSlotTest'
+}
+tasks.named('check') { dependsOn organSlotTest }
+
+tasks.register('organPresetTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.growth.OrganPresetTest'
+}
+tasks.named('check') { dependsOn organPresetTest }
+
+tasks.register('organResourceIdsTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.growth.OrganResourceIdsTest'
+}
+tasks.named('check') { dependsOn organResourceIdsTest }
+
+tasks.register('balanceRulesTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.growth.BalanceRulesTest'
+}
+tasks.named('check') { dependsOn balanceRulesTest }
+
+tasks.register('bloodReserveRulesTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.skill.longyou.BloodReserveRulesTest'
+}
+tasks.named('check') { dependsOn bloodReserveRulesTest }
+
+tasks.register('skillResourceRulesTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.skill.SkillResourceRulesTest'
+}
+tasks.named('check') { dependsOn skillResourceRulesTest }
+
+tasks.register('organAccessRulesTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.growth.OrganAccessRulesTest'
+}
+tasks.named('check') { dependsOn organAccessRulesTest }
+
+tasks.register('organEvolutionRulesTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.growth.OrganEvolutionRulesTest'
+}
+tasks.named('check') { dependsOn organEvolutionRulesTest }
+
+tasks.register('opportunityRulesTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.growth.OpportunityRulesTest'
+}
+tasks.named('check') { dependsOn opportunityRulesTest }
 
 tasks.register('tianGangBladeSweepTest', JavaExec) {
     dependsOn physicsTestClasses

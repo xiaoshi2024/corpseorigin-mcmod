@@ -46,7 +46,6 @@ public class JuQue extends Item implements GeoItem {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
     // 2阶巨阙参数
-    private static final float THRESHOLD = 0.4F;
     private static final float SLOW_CHANCE = 0.3F;
     private static final float DAMAGE_CHANCE = 0.3F;
     private static final int SLOW_DURATION = 150;
@@ -71,6 +70,7 @@ public class JuQue extends Item implements GeoItem {
 
     /** 普通剑气 */
     public static void releaseBeamStatic(Player player, ItemStack stack) {
+        if (!(player instanceof net.minecraft.server.level.ServerPlayer server) || !xiaoshi2022.corpseorigin.growth.WeaponEligibility.allow(server,stack)) return;
         if (player.getCooldowns().isOnCooldown(stack)) return;
 
         stack.hurtAndBreak(1, player,
@@ -93,6 +93,7 @@ public class JuQue extends Item implements GeoItem {
 
     /** 剑意核心（大剑实体） */
     public static void releaseGreatSwordStatic(Player player, ItemStack stack, InteractionHand hand) {
+        if (!(player instanceof net.minecraft.server.level.ServerPlayer server) || !xiaoshi2022.corpseorigin.growth.WeaponEligibility.allow(server,stack)) return;
         if (player.getCooldowns().isOnCooldown(stack)) return;
 
         stack.hurtAndBreak(1, player,
@@ -122,12 +123,16 @@ public class JuQue extends Item implements GeoItem {
 
     @Override
     public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
-        // ① 残血斩杀
-        if (target.isAlive() && target.getHealth() / target.getMaxHealth() <= THRESHOLD) {
+        if(attacker instanceof net.minecraft.server.level.ServerPlayer server && !xiaoshi2022.corpseorigin.growth.WeaponEligibility.allow(server,stack))return;
+        // Finite finishing strike; large health pools and bosses are not bypassed.
+        var balance=xiaoshi2022.corpseorigin.config.CorpseConfig.get().growth;
+        float finishing=xiaoshi2022.corpseorigin.growth.BalanceRules.executeDamage(target.getHealth(),target.getMaxHealth(),
+                (float)attacker.getAttributeValue(Attributes.ATTACK_DAMAGE),balance.juqueExecuteThreshold,balance.juqueExecuteDamageCap);
+        if (target.isAlive() && finishing>0) {
             if (attacker instanceof Player player) {
-                target.hurt(attacker.damageSources().playerAttack(player), Float.MAX_VALUE);
+                target.hurt(attacker.damageSources().playerAttack(player), finishing);
             } else {
-                target.hurt(attacker.damageSources().genericKill(), Float.MAX_VALUE);
+                target.hurt(attacker.damageSources().mobAttack(attacker), finishing);
             }
             return;
         }

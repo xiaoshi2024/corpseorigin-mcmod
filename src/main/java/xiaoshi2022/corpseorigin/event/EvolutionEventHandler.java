@@ -41,15 +41,7 @@ public final class EvolutionEventHandler {
             int points = calcPoints(player, target, character);
             if (points <= 0) return;
 
-            PlayerCharacterData data = PlayerCharacterData.get(player);
-            int levelBefore = EvolutionManager.getLevel(data.getEarnedPoints(player.getUUID()));
-            data.addEarnedPoints(player.getUUID(), points);
-            CorpseNetwork.sendEvolutionSync(player);
-
-            // 进化等级提升 → 重算属性成长（血/攻/甲/速），并即时补上新增的血量上限
-            if (EvolutionStats.reconcileAfterPointGain(player, levelBefore)) {
-                announceLevelUp(player);
-            }
+            awardPoints(player, points);
 
 //            CorpseOrigin.LOGGER.info("玩家 {}（{}）击杀 {}，获得 {} 进化点",
 //                    player.getName().getString(),
@@ -60,6 +52,17 @@ public final class EvolutionEventHandler {
     }
 
     /** 升级反馈：弹幕显示新阶层 + 音效 + 环绕粒子（跨越"人→地→天→神…"大境界时音效更隆重） */
+    public static int awardPoints(ServerPlayer player, int requested) {
+        PlayerCharacterData data = PlayerCharacterData.get(player);
+        int earned = data.getEarnedPoints(player.getUUID());
+        int points = xiaoshi2022.corpseorigin.growth.GrowthRules.reward(earned, requested);
+        if (points <= 0) return 0;
+        int before = EvolutionManager.getLevel(earned);
+        data.addEarnedPoints(player.getUUID(), points);
+        CorpseNetwork.sendEvolutionSync(player);
+        if (EvolutionStats.reconcileAfterPointGain(player, before)) announceLevelUp(player);
+        return points;
+    }
     private static void announceLevelUp(ServerPlayer player) {
         PlayerCharacterData data = PlayerCharacterData.get(player);
         int level = EvolutionManager.getLevel(data.getEarnedPoints(player.getUUID()));

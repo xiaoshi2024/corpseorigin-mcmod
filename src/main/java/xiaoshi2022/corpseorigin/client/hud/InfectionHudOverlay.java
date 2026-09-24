@@ -37,7 +37,7 @@ public final class InfectionHudOverlay {
     private static final int INFECTION_HIGH_COLOR = 0xFFD33D55;
     private static final int INNER_POWER_COLOR = 0xFF279FE0;
     private static final int BLOOD_COLOR = 0xFFC92F49;
-    private static final int BLOOD_MAX = 600;
+    private static final int BLOOD_MAX = BloodReserve.MAX;
 
     private InfectionHudOverlay() {
     }
@@ -104,8 +104,14 @@ public final class InfectionHudOverlay {
 
         String role = mc.player.getAttachedOrCreate(ChapterActorState.ROLE);
         int blood = clamp(mc.player.getAttachedOrCreate(BloodReserve.VALUE), 0, BLOOD_MAX);
-        // 尸王恒显气血条；左护法只有攒下气血（打怪 / 吃尸肉）后才显示，免得平时空条占位置
-        if ("longyou".equals(role) || ("zuohufa".equals(role) && blood > 0)) {
+        // 符合条件即显示空条，让玩家明确知道已经拥有血肉储备。
+        if (xiaoshi2022.corpseorigin.skill.longyou.BloodReserveRules.eligible(role, isCorpse, level)
+                || ClientState.learnedSkills.stream().anyMatch(path ->
+                    xiaoshi2022.corpseorigin.skill.SkillResourceRules.cost(path, 0).blood() > 0)
+                || "k".equals(role) || "heixiaofei".equals(role)
+                || xiaoshi2022.corpseorigin.growth.SurvivalGrowth.has(mc.player,"vampire")
+                || isCorpse && (xiaoshi2022.corpseorigin.growth.SurvivalGrowth.has(mc.player,"wings")
+                || xiaoshi2022.corpseorigin.growth.SurvivalGrowth.has(mc.player,"gills"))) {
             drawBattery(graphics, mc, x, y, blood, BLOOD_MAX, batteryWidth, batteryHeight,
                     rowGap, BLOOD_COLOR,
                     Component.translatable("hud.corpseorigin.blood", blood, BLOOD_MAX));

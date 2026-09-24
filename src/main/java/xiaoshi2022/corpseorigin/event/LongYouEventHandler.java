@@ -18,7 +18,6 @@ import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.LongYou;
-import xiaoshi2022.corpseorigin.character.ZuoHuFa;
 import xiaoshi2022.corpseorigin.effect.BYeffect;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
 import xiaoshi2022.corpseorigin.registry.ModEffects;
@@ -86,6 +85,11 @@ public final class LongYouEventHandler {
                 return;
             }
 
+            if (!xiaoshi2022.corpseorigin.character.InnerPowerManager.consume(caster, 2)) {
+                ThunderPowerSkill.clearOnDisconnect(caster.getUUID());
+                caster.sendOverlayMessage(net.minecraft.network.chat.Component.literal("内力不足，雷电之力已关闭"));
+                return;
+            }
             zapping = true;
             try {
                 ThunderStrikeHandler.meleeZap(caster, target);
@@ -136,16 +140,17 @@ public final class LongYouEventHandler {
                 return;
             }
             // 只吸"普通尸兄"（NPC）：尸兄玩家和其它生物都不算
-            if (target instanceof Player || !ZombieKin.isZombieKin(target)) {
+            if (target instanceof Player || target.isAlliedTo(caster) || !ZombieKin.isZombieKin(target)
+                    || target instanceof xiaoshi2022.corpseorigin.entity.CorpseAntEntity
+                    || target instanceof xiaoshi2022.corpseorigin.entity.VampireBatEntity) {
                 return;
             }
-            // 尸王与青龙（左护法）击杀同类都能积攒气血；近战回血是尸王独有的天赋，青龙不回血
+            // 高等级尸兄与指定角色伤害同类可积攒气血，直接吸血治疗仍是尸王天赋。
             String role = CharacterManager.getInstance().getPlayerCharacterId(caster);
-            if (!LongYou.ID.equals(role) && !ZuoHuFa.ID.equals(role)) {
+            if (!xiaoshi2022.corpseorigin.skill.longyou.BloodReserve.isEligible(caster)) {
                 return;
             }
-            xiaoshi2022.corpseorigin.skill.longyou.BloodReserve.add(caster,
-                    Math.max(1, (int)Math.ceil(damageTaken)));
+            xiaoshi2022.corpseorigin.skill.longyou.BloodReserve.addCombat(caster,damageTaken);
             if (!LongYou.ID.equals(role) || caster.getHealth() >= caster.getMaxHealth()) {
                 return;
             }

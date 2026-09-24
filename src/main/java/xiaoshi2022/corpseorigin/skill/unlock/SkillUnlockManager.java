@@ -68,18 +68,21 @@ public final class SkillUnlockManager {
      * @return 本次新学会的技能数量
      */
     public static int grantUnlocked(ServerPlayer player, boolean quiet) {
+        if (!player.isAlive() || player.isSpectator()) return 0;
         ICharacter character = CharacterManager.getInstance().getPlayerCharacter(player);
         PlayerCharacterData data = PlayerCharacterData.get(player);
 
         List<ISkill> newly = new ArrayList<>();
         for (ISkill skill : character.getSkills()) {
-            if (skill.getUnlockSources().isEmpty()) {
+            if (xiaoshi2022.corpseorigin.growth.WeaponEligibility.skillReason(player,skill.getId().getPath())!=null) continue;
+            boolean innate = SkillLearningRules.innate(character.getId(), skill.getId().getPath());
+            if (!innate && skill.getUnlockSources().isEmpty()) {
                 continue;   // 纯技能树技能，不走这条路
             }
             if (data.hasLearned(player.getUUID(), skill.getId().getPath())) {
                 continue;
             }
-            if (!isSatisfied(player, skill)) {
+            if (!innate && !isSatisfied(player, skill)) {
                 continue;
             }
             data.learnSkill(player.getUUID(), skill.getId().getPath());
@@ -107,7 +110,10 @@ public final class SkillUnlockManager {
 
     /** 某技能的解锁条件是否已全部满足（多个来源之间是「或」的关系） */
     public static boolean isSatisfied(ServerPlayer player, ISkill skill) {
+        if (xiaoshi2022.corpseorigin.growth.WeaponEligibility.skillReason(player,skill.getId().getPath())!=null) return false;
         for (SkillUnlockSource source : skill.getUnlockSources()) {
+            if (source.id().startsWith("character:") && xiaoshi2022.corpseorigin.growth.FreeGrowth.isFree(player)
+                    && xiaoshi2022.corpseorigin.growth.FreeGrowth.discovered(player,skill.getId().getPath())) return true;
             if (source.isSatisfiedBy(player)) {
                 return true;
             }

@@ -82,6 +82,11 @@ public final class SkillManager {
             var incarnation=xiaoshi2022.corpseorigin.entity.SkillConstructEntity.findOwned(player,"slaughter_incarnation");
             if(incarnation!=null)return incarnation.activateSpecial(player);
         }
+        // Release controls remain available even when the corresponding resource is empty.
+        if (isRelease(player, skillPath)) {
+            skill.onActivate(player);
+            return true;
+        }
         long now = System.currentTimeMillis();
         long end = getCooldownEnd(player.getUUID(), skillPath);
         if (end > now) {
@@ -89,18 +94,16 @@ public final class SkillManager {
         }
 
         // 硬前置（形态 / 宠物在身边之类）：不满足就只提示，不吃冷却、不扣内力
+        var eligibility=xiaoshi2022.corpseorigin.growth.WeaponEligibility.skillReason(player,skillPath);
+        if(eligibility!=null){player.sendOverlayMessage(eligibility);return false;}
         net.minecraft.network.chat.Component blocked = skill.checkUsable(player);
         if (blocked != null) {
             player.sendOverlayMessage(blocked);
             return false;
         }
 
-        // 校验内力（无内力角色自动通过）
-        if (!InnerPowerManager.consume(player, skill.getInnerPowerCost())) {
-            return false;
-        }
+        if (!SkillResources.pay(player, skill.getResourceCost())) return false;
 
-        // 执行效果
         skill.onActivate(player);
 
         // 写冷却
@@ -147,7 +150,21 @@ public final class SkillManager {
             return true;
         }
 
+        // Innate/item/encounter skills never charge points or bypass their source requirements.
+        var eligibility=xiaoshi2022.corpseorigin.growth.WeaponEligibility.skillReason(player,skillPath);
+        if(eligibility!=null){player.sendOverlayMessage(eligibility);return false;}
+        if (xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.innate(character.getId(), skillPath)
+                || !skill.getUnlockSources().isEmpty()) {
+            xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockManager.grantUnlocked(player, false);
+            return data.hasLearned(player.getUUID(), skillPath);
+        }
+
         // 3. 检查前置技能
+        if (xiaoshi2022.corpseorigin.growth.FreeGrowth.isFree(player)
+                && !xiaoshi2022.corpseorigin.growth.FreeGrowth.discovered(player,skillPath)) {
+            player.sendOverlayMessage(net.minecraft.network.chat.Component.literal("尚未遇到该技能的机遇：探索、拜师或吞噬血肉"));
+            return false;
+        }
         for (Identifier prereq : skill.getPrerequisites()) {
             if (!data.hasLearned(player.getUUID(), prereq.getPath())) {
                 CorpseOrigin.LOGGER.warn("玩家 {} 学习 {} 前置未满足: {}",
@@ -209,6 +226,17 @@ public final class SkillManager {
     private static boolean isOriginalBodyFallback(ServerPlayer player, String skillPath) {
         return xiaoshi2022.corpseorigin.skill.longyou.FleshReshapeSkill.PATH.equals(skillPath)
                 && xiaoshi2022.corpseorigin.skill.longyou.BodyTransplantHandler.isInOriginalBody(player);
+    }
+
+    private static boolean isRelease(ServerPlayer player, String path) {
+        return switch (path) {
+            case "ancient_poetry_sword" -> xiaoshi2022.corpseorigin.skill.baixiaofei.AncientPoetrySwordSkill.isRunning(player);
+            case "thunder_power" -> xiaoshi2022.corpseorigin.skill.longyou.ThunderPowerSkill.isEnabled(player.getUUID());
+            case "xuanwu_body" -> player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.UndeadBodyState.STATE) == 1;
+            case "son_of_corpse_nest" -> xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.get(player).getVariant()
+                    == xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.VARIANT_SHICHAOZHIZI;
+            default -> false;
+        };
     }
 
     private static long getCooldownEnd(UUID uuid, String skillPath) {

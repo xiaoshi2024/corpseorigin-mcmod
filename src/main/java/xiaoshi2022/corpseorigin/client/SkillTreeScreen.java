@@ -106,7 +106,8 @@ public class SkillTreeScreen extends Screen {
             boolean learned = ClientState.hasLearned(skill.getId().getPath());
             boolean hovered = mouseX >= x && mouseX <= x + w
                     && mouseY >= y && mouseY <= y + ROW_HEIGHT - 2;
-            boolean canLearn = !learned
+            boolean innate = xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.innate(ClientState.characterId, skill.getId().getPath());
+            boolean canLearn = !learned && encountered(skill) && !innate && skill.getUnlockSources().isEmpty()
                     && level >= skill.getRequiredLevel()
                     && ClientState.availablePoints >= skill.getCost()
                     && ClientState.learnedSkills.containsAll(
@@ -123,7 +124,9 @@ public class SkillTreeScreen extends Screen {
             int textColor = learned ? 0xFF66FF66 : canLearn ? 0xFFFFFF99 : 0xFF999999;
             graphics.text(font, skill.getName(), x + 8, y + 3, textColor, true);
             graphics.text(font,
-                    Component.translatable("gui.corpseorigin.skill_tree.row_info",
+                    innate ? Component.translatable("gui.corpseorigin.skill_tree.innate")
+                            : !skill.getUnlockSources().isEmpty() ? Component.translatable("gui.corpseorigin.skill_tree.automatic")
+                            : !encountered(skill) ? Component.literal("探索 / 拜师 / 血肉吞噬，寻找机遇") : Component.translatable("gui.corpseorigin.skill_tree.row_info",
                             skill.getCost(), skill.getRequiredLevel(),
                             Component.translatable("skilltype.corpseorigin." + skill.getSkillType().getName())),
                     x + 8, y + 15, 0xFFAAAAAA, false);
@@ -145,6 +148,9 @@ public class SkillTreeScreen extends Screen {
                 }
             }
             graphics.text(font, state, x + w - 8 - font.width(state), y + 9, textColor, false);
+            if (hovered) graphics.setComponentTooltipForNextFrame(font,
+                    java.util.List.of(skill.getDescription(),
+                        xiaoshi2022.corpseorigin.skill.SkillResources.description(skill)), mouseX, mouseY);
         }
 
         // 技能没显示完 → 右侧滚动条 + 底部提示
@@ -181,7 +187,8 @@ public class SkillTreeScreen extends Screen {
                 if (hovered) {
                     ISkill skill = skills.get(i);
                     boolean learned = ClientState.hasLearned(skill.getId().getPath());
-                    boolean canLearn = !learned
+                    boolean canLearn = !learned && encountered(skill) && skill.getUnlockSources().isEmpty()
+                            && !xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.innate(ClientState.characterId, skill.getId().getPath())
                             && level >= skill.getRequiredLevel()
                             && ClientState.availablePoints >= skill.getCost()
                             && ClientState.learnedSkills.containsAll(
@@ -200,5 +207,11 @@ public class SkillTreeScreen extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+    private boolean encountered(ISkill skill) {
+        if(!xiaoshi2022.corpseorigin.growth.FreeGrowth.isFree(ClientState.characterId))return true;
+        var player=net.minecraft.client.Minecraft.getInstance().player;
+        return player!=null && player.getAttachedOrCreate(xiaoshi2022.corpseorigin.growth.SurvivalGrowth.JOURNAL)
+                .getBooleanOr("skill:"+skill.getId().getPath(),false);
     }
 }

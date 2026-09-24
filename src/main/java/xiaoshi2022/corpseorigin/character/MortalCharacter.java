@@ -42,7 +42,7 @@ public class MortalCharacter implements ICharacter {
 
     @Override
     public boolean isPassive() {
-        return true;
+        return false;
     }
 
     @Override
@@ -51,5 +51,8 @@ public class MortalCharacter implements ICharacter {
                 Component.translatable("character.corpseorigin.mortal.trait1"),
                 Component.translatable("character.corpseorigin.mortal.trait2")
         );
+    }
+    @Override public List<xiaoshi2022.corpseorigin.skill.ISkill> getSkills() {
+        return xiaoshi2022.corpseorigin.growth.FreeGrowth.skills();
     }
 }

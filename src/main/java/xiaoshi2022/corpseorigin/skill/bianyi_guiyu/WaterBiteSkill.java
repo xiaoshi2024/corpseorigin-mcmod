@@ -26,13 +26,12 @@ public class WaterBiteSkill extends AbstractSkill {
     }
     @Override public net.minecraft.network.chat.Component checkUsable(net.minecraft.server.level.ServerPlayer p) {
         if(!p.isInWater()) return net.minecraft.network.chat.Component.translatable("skill.corpseorigin.chapter.need_water");
-        return xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,4)==null
-                ? net.minecraft.network.chat.Component.translatable("skill.corpseorigin.chapter.need_target") : null;
+        return null;
     }
     @Override
     public void onActivate(ServerPlayer p) {
         var target = ChapterCombat.aim(p, 4);
-        if (target == null) return;
+        if (target == null) { ChapterCombat.emptyCast(p); return; }
         boolean inWater = p.isInWater();
         p.setAttached(ChapterActorState.BITE_UNTIL, p.level().getGameTime() + 12);
         target.hurtServer((ServerLevel) p.level(), p.damageSources().playerAttack(p), inWater ? 8 : 5);

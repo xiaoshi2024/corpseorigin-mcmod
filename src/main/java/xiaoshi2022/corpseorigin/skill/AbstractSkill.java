@@ -38,17 +38,23 @@ public abstract class AbstractSkill implements ISkill {
 
     /** 主动技能（默认 1 点 / 1 级 / 不消耗内力） */
     protected AbstractSkill(String path, SkillType type, int cooldownTicks) {
-        this(path, type, cooldownTicks, 1, 1, true, 0);
+        this(path, type, cooldownTicks,
+                xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.cost(path, type, cooldownTicks, true),
+                xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.level(path, type), true, 0);
     }
 
     /** 主动技能（指定内力消耗） */
     protected AbstractSkill(String path, SkillType type, int cooldownTicks, int innerPowerCost) {
-        this(path, type, cooldownTicks, 1, 1, true, innerPowerCost);
+        this(path, type, cooldownTicks,
+                xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.cost(path, type, cooldownTicks, true),
+                xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.level(path, type), true, innerPowerCost);
     }
 
     /** 被动技能（不进技能轮盘、无冷却） */
     protected AbstractSkill(String path, SkillType type) {
-        this(path, type, 0, 1, 1, false, 0);
+        this(path, type, 0,
+                xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.cost(path, type, 0, false),
+                xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.level(path, type), false, 0);
     }
 
     @Override
@@ -78,7 +84,12 @@ public abstract class AbstractSkill implements ISkill {
 
     @Override
     public int getCost() {
-        return cost;
+        return getUnlockSources().isEmpty() ? cost : 0;
+    }
+
+    @Override
+    public java.util.List<xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockSource> getUnlockSources() {
+        return xiaoshi2022.corpseorigin.skill.unlock.ItemSkillSources.forSkill(path);
     }
 
     @Override

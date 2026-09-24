@@ -176,6 +176,7 @@ public class CorpseOriginClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        OrganClient.register();
         HeartRecoveryScreen.register();
         // 1. 按键绑定
         CorpseKeyBindings.register();
@@ -487,6 +488,12 @@ public class CorpseOriginClient implements ClientModInitializer {
                 if (client.gui.screen() == null) {
                     client.gui.setScreen(new HudSettingsScreen());
                 }
+            }
+            while(CorpseKeyBindings.openOrganEditor.consumeClick()) {
+                if(client.gui.screen()==null && client.player!=null)client.gui.setScreen(new OrganEditorScreen());
+            }
+            while(CorpseKeyBindings.organAbility.consumeClick()){
+                if(client.gui.screen()==null&&client.player!=null)ClientPlayNetworking.send(new xiaoshi2022.corpseorigin.growth.OrganEvolutionPayload("",client.player.isShiftKeyDown()?"water_drink":"water_fire"));
             }
 
             for (int slot = 0; slot < CorpseKeyBindings.quickSkills.length; slot++) {

@@ -63,7 +63,7 @@ public class CorpseBrother implements ICharacter {
 
     @Override
     public List<ISkill> getSkills() {
-        return SKILLS;
+        return xiaoshi2022.corpseorigin.growth.FreeGrowth.skills();
     }
 
     /** 已经是尸兄了，再被尸水"感染"没有意义 */

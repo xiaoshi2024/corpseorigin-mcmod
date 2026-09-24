@@ -116,6 +116,7 @@ public class CorpseOrigin implements ModInitializer {
 
 		// ✅ 9. 网络
 		CorpseNetwork.register();
+        xiaoshi2022.corpseorigin.growth.OrganNetwork.register();
         xiaoshi2022.corpseorigin.skill.heixiaofei.HeartImplant.register();
         xiaoshi2022.corpseorigin.skill.zhaoritian.CrimsonBloodSpearSkill.register();
         xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.register();
@@ -143,6 +144,8 @@ public class CorpseOrigin implements ModInitializer {
 		HeiXiaoFeiEventHandler.register();
 		LongYouEventHandler.register();
 		EvolutionEventHandler.register();
+        xiaoshi2022.corpseorigin.growth.SurvivalGrowth.register();
+        xiaoshi2022.corpseorigin.growth.WeaponEligibility.register();
 		xiaoshi2022.corpseorigin.event.GuardianPetDeathHandler.register();
 		APSComboHandler.register();
 		APSGreatSwordInterceptor.register();
@@ -162,6 +165,7 @@ public class CorpseOrigin implements ModInitializer {
 				LimbCommand.register(dispatcher);
 				SkillCommand.register(dispatcher);
 				xiaoshi2022.corpseorigin.command.EvolutionPointsCommand.register(dispatcher);
+				xiaoshi2022.corpseorigin.command.TenguLaserCommand.register(dispatcher);
 				}
 		);
 

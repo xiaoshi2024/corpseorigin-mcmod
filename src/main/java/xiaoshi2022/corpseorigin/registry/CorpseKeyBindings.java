@@ -27,9 +27,13 @@ public final class CorpseKeyBindings {
     public static KeyMapping toggleHud;
     /** 打开 HUD 设置界面 */
     public static KeyMapping openHudSettings;
+    public static KeyMapping openOrganEditor;
+    public static KeyMapping organAbility;
     public static final KeyMapping[] quickSkills = new KeyMapping[3];
 
     public static void register() {
+        organAbility=KeyMappingHelper.registerKeyMapping(new KeyMapping("key.corpseorigin.organ_ability",InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_G,CATEGORY));
+        openOrganEditor=KeyMappingHelper.registerKeyMapping(new KeyMapping("key.corpseorigin.organ_editor",InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_F8,CATEGORY));
         openSkillWheel = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.corpseorigin.open_skill_wheel",
                 InputConstants.Type.KEYSYM,

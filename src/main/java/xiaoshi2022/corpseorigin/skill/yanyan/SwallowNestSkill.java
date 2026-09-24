@@ -6,9 +6,9 @@ import xiaoshi2022.corpseorigin.skill.chapter.*;
 public class SwallowNestSkill extends AbstractSkill {
     public SwallowNestSkill() { super("swallow_nest", SkillType.COMBAT, 120, 8); }
     @Override public Component checkUsable(ServerPlayer p) {
-        return ChapterCombat.aim(p,12)==null ? Component.translatable("skill.corpseorigin.chapter.need_target") : null;
+        return null;
     }
     @Override public void onActivate(ServerPlayer p) {
-        var target=ChapterCombat.aim(p,12); if(target!=null) FiveElementsCombat.mark(p,target);
+        var target=ChapterCombat.aim(p,12); if(target!=null) FiveElementsCombat.mark(p,target); else xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.emptyCast(p);
     }
 }

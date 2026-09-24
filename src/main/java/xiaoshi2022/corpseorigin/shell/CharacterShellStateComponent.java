@@ -20,6 +20,7 @@ public class CharacterShellStateComponent extends ShellStateComponent {
         this.data = PlayerCharacterData.get(player).writeNbt(player.getUUID());
         this.data.putBoolean("JingangInfant",player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.INFANT));
         this.data.putInt("BearArms",player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.BEAR_ARMS));
+        this.data.put("EvolutionParts", player.getAttachedOrCreate(xiaoshi2022.corpseorigin.growth.SurvivalGrowth.BODY).copy());
     }
 
     @Override
@@ -41,6 +42,18 @@ public class CharacterShellStateComponent extends ShellStateComponent {
         CompoundTag tag = this.data.copy();
         tag.putString("CharacterId", MortalCharacter.ID);
         this.data = tag;
+    }
+
+    public void applyEvolutionPartsClone(net.minecraft.util.RandomSource random, boolean corpseClone, float ratio) {
+        CompoundTag parts = data.getCompound("EvolutionParts").orElseGet(CompoundTag::new).copy();
+        if (!corpseClone) parts = new CompoundTag();
+        else for (String trait : xiaoshi2022.corpseorigin.growth.SurvivalGrowth.TRAITS) {
+            if (random.nextFloat() > ratio) {
+                parts.remove(trait);
+                parts.remove(trait + "_progress");
+            }
+        }
+        data.put("EvolutionParts", parts);
     }
 
     @Override
@@ -81,6 +94,8 @@ public class CharacterShellStateComponent extends ShellStateComponent {
         PlayerCharacterData.get(player).readNbt(this.playerUuid, this.data);
         player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.INFANT,this.data.getBooleanOr("JingangInfant",false));
         player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.BEAR_ARMS,Math.max(0,Math.min(6,this.data.getIntOr("BearArms",0))));
+        player.setAttached(xiaoshi2022.corpseorigin.growth.SurvivalGrowth.BODY,
+                this.data.getCompound("EvolutionParts").orElseGet(CompoundTag::new).copy());
     }
 
     /**

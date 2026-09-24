@@ -157,6 +157,15 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<PlayerGeoAnimatable>("custom_organs", 4, test -> {
+            String clip=test.getData(xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.CLIP);
+            return clip==null?PlayState.CONTINUE:test.setAndContinue(RawAnimation.begin().thenLoop(clip));
+        }));
+        controllers.add(new AnimationController<PlayerGeoAnimatable>("evolution_parts", 4, test -> {
+            String motion = test.getData(xiaoshi2022.corpseorigin.client.renderer.player.EvolutionGeoRenderer.MOTION);
+            if (motion == null) return PlayState.CONTINUE;
+            return test.setAndContinue(RawAnimation.begin().thenLoop("evolution." + motion));
+        }));
         controllers.add(new AnimationController<PlayerGeoAnimatable>("creature",2,test->{
             String model=test.getData(xiaoshi2022.corpseorigin.client.renderer.player.CreaturePlayerRenderer.MODEL);
             if(model==null)return PlayState.CONTINUE;
@@ -547,7 +556,7 @@ public abstract class ClientPlayerGeoAnimatableMixin implements PlayerGeoAnimata
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         if (corpseorigin$animatableCache == null) {
-            corpseorigin$animatableCache = GeckoLibUtil.createInstanceCache(this);
+            corpseorigin$animatableCache = new xiaoshi2022.corpseorigin.client.limb.PlayerLayerAnimationCache(this);
         }
         return corpseorigin$animatableCache;
     }

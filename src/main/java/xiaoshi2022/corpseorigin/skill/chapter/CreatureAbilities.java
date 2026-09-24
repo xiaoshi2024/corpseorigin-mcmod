@@ -45,8 +45,8 @@ public final class CreatureAbilities {
         }
         ChapterScenes.action(p,"cast",32);
     }
-    public static Component targetError(ServerPlayer p){return ChapterCombat.aim(p,5)==null?Component.translatable("skill.corpseorigin.chapter.need_target"):null;}
-    public static void capture(ServerPlayer p){LivingEntity target=ChapterCombat.aim(p,5);if(target==null)return;CAPTURES.removeIf(c->c.target==target || c.owner==p);CAPTURES.add(new Capture(p,target,(ServerLevel)p.level(),target.position(),p.level().getGameTime()+60));ChapterScenes.action(p,"cast",32);}
+    public static Component targetError(ServerPlayer p){return null;}
+    public static void capture(ServerPlayer p){LivingEntity target=ChapterCombat.aim(p,5);if(target==null){ChapterCombat.emptyCast(p);return;}CAPTURES.removeIf(c->c.target==target || c.owner==p);CAPTURES.add(new Capture(p,target,(ServerLevel)p.level(),target.position(),p.level().getGameTime()+60));ChapterScenes.action(p,"cast",32);}
     public static void rush(ServerPlayer p,boolean combo){RUSHES.removeIf(r->r.owner==p);RUSHES.add(new Rush(p,(ServerLevel)p.level(),CharacterManager.getInstance().getPlayerCharacterId(p),p.getLookAngle().multiply(1,0,1).normalize(),p.level().getGameTime(),combo,new HashSet<>()));ChapterScenes.action(p,combo?"pounce":"charge",combo?32:20);}
     public static void rage(ServerPlayer p){if(xiaoshi2022.corpseorigin.skill.longyou.UndeadBodyState.sealed(p))return;p.setAttached(xiaoshi2022.corpseorigin.skill.longyou.BodyPossession.HUMAN,false);p.setAttached(INFANT,false);p.setAttached(RAGE_UNTIL,p.level().getGameTime()+160);ChapterScenes.action(p,"transform",32);p.sendOverlayMessage(Component.translatable("skill.corpseorigin.muscle_rage.weakpoint"));}
     public static void swarmBite(ServerPlayer p){

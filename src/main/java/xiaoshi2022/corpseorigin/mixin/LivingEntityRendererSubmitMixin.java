@@ -37,10 +37,24 @@ import xiaoshi2022.corpseorigin.character.ZuoHuFa;
  */
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererSubmitMixin {
+    @Inject(method = "submit", at = @At("HEAD"))
+    private void corpseorigin$evolutionParts(LivingEntityRenderState state, PoseStack poses,
+                                            SubmitNodeCollector collector, CameraRenderState camera, CallbackInfo ci) {
+        if (!(state instanceof AvatarRenderState avatar) || !((Object)this instanceof AvatarRenderer<?>)) return;
+        if (xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.replacesBody(avatar)) return;
+        var snapshot = avatar.getGeckolibData(EvolutionGeoRenderer.SNAPSHOT);
+        var renderer = EvolutionGeoRenderer.get();
+        if (snapshot == null || renderer == null) return;
+        poses.pushPose();
+        poses.scale(avatar.scale, avatar.scale, avatar.scale);
+        renderer.submit(snapshot, poses, collector, camera);
+        poses.popPose();
+    }
     @Inject(method = "submit", at = @At("HEAD"), cancellable = true)
     private void corpseorigin$submitSalmon(LivingEntityRenderState state, PoseStack poses,
                                          SubmitNodeCollector collector, CameraRenderState camera, CallbackInfo ci) {
         if (!(state instanceof AvatarRenderState avatar) || !((Object)this instanceof AvatarRenderer<?>)) return;
+        if (xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.replacesBody(avatar)) return;
         if (!Boolean.TRUE.equals(avatar.getGeckolibData(xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.ACTIVE))) return;
         var creature=xiaoshi2022.corpseorigin.client.renderer.player.CreaturePlayerRenderer.get(avatar);
         var renderer=creature!=null?creature:xiaoshi2022.corpseorigin.client.renderer.player.MutantSalmonRenderer.get();
@@ -59,6 +73,7 @@ public abstract class LivingEntityRendererSubmitMixin {
         if (!(state instanceof AvatarRenderState avatarState)
                 || !((Object) this instanceof AvatarRenderer<?>)) return;
         if (!Boolean.TRUE.equals(avatarState.getGeckolibData(ShiChaoBodyRenderData.ACTIVE))) return;
+        if (xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.replacesBody(avatarState)) return;
         ShiChaoZhiZiBodyRenderer renderer = ShiChaoZhiZiBodyRenderer.get();
         if (renderer == null) return;
 
@@ -80,6 +95,25 @@ public abstract class LivingEntityRendererSubmitMixin {
      * 万一残桩整体偏高/偏低，只改这一个数即可（负值往下压、正值往上抬）。
      */
     private static final double CORPSE_MODEL_Y_OFFSET = -0.01;
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    @Inject(method = "submit", at = @At("HEAD"), cancellable = true)
+    private void corpseorigin$customBody(LivingEntityRenderState state, PoseStack poses,
+                                         SubmitNodeCollector collector, CameraRenderState camera, CallbackInfo ci) {
+        if (!(state instanceof AvatarRenderState avatar) || !((Object)this instanceof AvatarRenderer renderer)
+                || !xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.replacesBody(avatar)) return;
+        var local = new PoseStack();local.last().set(poses.last());
+        local.scale(avatar.scale,avatar.scale,avatar.scale);
+        var access=(LivingEntityRendererMixin)(Object)this;
+        access.callSetupRotations(avatar,local,avatar.bodyRot,avatar.scale);
+        local.scale(-1,-1,1);
+        access.callScale(avatar,local);
+        local.translate(0,-1.501,0);
+        var model=(net.minecraft.client.model.player.PlayerModel)renderer.getModel();
+        model.setupAnim(avatar);
+        xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.submitFrames(model,local,collector,avatar);
+        ci.cancel();
+    }
 
     /**
      * 穿模显示的前移量（<b>模型像素</b>）：残桩 / 血管朝相机方向挪这么多，越过贴身盔甲外壳。
@@ -108,6 +142,7 @@ public abstract class LivingEntityRendererSubmitMixin {
         if (!(state instanceof AvatarRenderState avatarState)) {
             return;
         }
+        if (xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.replacesBody(avatarState)) return;
         if (!((Object) this instanceof AvatarRenderer<?>)) {
             return;
         }
@@ -153,6 +188,7 @@ public abstract class LivingEntityRendererSubmitMixin {
         if (!(state instanceof AvatarRenderState avatarState)) {
             return;
         }
+        if (xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.replacesBody(avatarState)) return;
         if (!((Object) this instanceof AvatarRenderer<?>)) {
             return;
         }

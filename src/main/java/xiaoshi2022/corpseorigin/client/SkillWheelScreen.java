@@ -35,6 +35,11 @@ public class SkillWheelScreen extends Screen {
     private float outerRadius;
     private float stepDeg;       // 每个扇区占的角度（度）
     private int hoveredSlot = -1;
+    private static final int SKILLS_PER_PAGE = 10;
+    private int page;
+    private List<ISkill> allSkills = List.of();
+    private net.minecraft.client.gui.components.Button previousPage;
+    private net.minecraft.client.gui.components.Button nextPage;
 
     public SkillWheelScreen() {
         super(Component.translatable("gui.corpseorigin.skill_wheel"));
@@ -47,8 +52,29 @@ public class SkillWheelScreen extends Screen {
         outerRadius = Math.min(width, height) * 0.32f;
         innerRadius = outerRadius * 0.55f;
 
+        clearWidgets();
+        allSkills = List.copyOf(ClientCharacterCache.getActivatableSkills());
+        int buttonY = Math.min(height - 24, (int)(centerY + outerRadius) + 20);
+        previousPage = addRenderableWidget(net.minecraft.client.gui.components.Button.builder(
+                Component.translatable("gui.corpseorigin.skill_wheel.previous"), b -> changePage(-1))
+                .bounds(centerX - 90, buttonY, 80, 20).build());
+        nextPage = addRenderableWidget(net.minecraft.client.gui.components.Button.builder(
+                Component.translatable("gui.corpseorigin.skill_wheel.next"), b -> changePage(1))
+                .bounds(centerX + 10, buttonY, 80, 20).build());
+        rebuildPage();
+    }
+
+    private int pageCount() { return Math.max(1, (allSkills.size() + SKILLS_PER_PAGE - 1) / SKILLS_PER_PAGE); }
+
+    private void rebuildPage() {
+        page = Math.clamp(page, 0, pageCount() - 1);
+        hoveredSlot = -1;
         slots.clear();
-        List<ISkill> skills = ClientCharacterCache.getActivatableSkills();
+        int start = page * SKILLS_PER_PAGE;
+        List<ISkill> skills = allSkills.subList(start, Math.min(start + SKILLS_PER_PAGE, allSkills.size()));
+        previousPage.visible = nextPage.visible = pageCount() > 1;
+        previousPage.active = page > 0;
+        nextPage.active = page < pageCount() - 1;
         int n = skills.size();
         if (n == 0) {
             stepDeg = 0;
@@ -62,13 +88,32 @@ public class SkillWheelScreen extends Screen {
         }
     }
 
+    private void refreshSkills() {
+        var current = ClientCharacterCache.getActivatableSkills();
+        if (!allSkills.stream().map(ISkill::getId).toList().equals(current.stream().map(ISkill::getId).toList())) {
+            allSkills = List.copyOf(current);
+            rebuildPage();
+        }
+    }
+
+    private void changePage(int direction) {
+        refreshSkills();
+        page = Math.clamp(page + direction, 0, pageCount() - 1);
+        rebuildPage();
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (scrollY != 0 && pageCount() > 1) {
+            changePage(scrollY > 0 ? -1 : 1);
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
     @Override
     public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-        var currentSkills = ClientCharacterCache.getActivatableSkills();
-        if (!slots.stream().map(s -> s.skill().getId()).toList().equals(
-                currentSkills.stream().map(ISkill::getId).toList())) {
-            init();
-        }
+        refreshSkills();
         // 半透明背景
         graphics.fill(0, 0, this.width, this.height, 0x66000000);
 
@@ -134,6 +179,9 @@ public class SkillWheelScreen extends Screen {
         if (hovered >= 0 && hovered < slots.size()) {
             ISkill skill = slots.get(hovered).skill();
             graphics.centeredText(font, skill.getName(), centerX, centerY - 8, 0xFFFFFFAA);
+            var resourceCost = skill.getResourceCost();
+            graphics.centeredText(font, "内力 " + resourceCost.inner() + " / 气血 " + resourceCost.blood(),
+                    centerX, centerY + 28, 0xFF99CCFF);
             int cd = ClientState.getCooldownRemaining(skill.getId().getPath());
             if (cd > 0) {
                 graphics.centeredText(font, cd / 20 + 1 + "s", centerX, centerY + 4, 0xFFFF5555);
@@ -150,6 +198,11 @@ public class SkillWheelScreen extends Screen {
                     centerX, centerY + 4, 0xFF55FF55);
         }
 
+        graphics.centeredText(font, Component.translatable("gui.corpseorigin.skill_wheel.page",
+                page + 1, pageCount(), allSkills.size()), centerX, Math.max(4, (int)(centerY - outerRadius) - 26), 0xFFFFFFFF);
+        if (pageCount() > 1) graphics.centeredText(font,
+                Component.translatable("gui.corpseorigin.skill_wheel.paging_hint"),
+                centerX, Math.max(15, (int)(centerY - outerRadius) - 14), 0xFFBBBBBB);
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
@@ -233,6 +286,7 @@ public class SkillWheelScreen extends Screen {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubled) {
+        refreshSkills();
         if (event.button() == 0) {
             int mouseX = (int) event.x();
             int mouseY = (int) event.y();
@@ -250,6 +304,9 @@ public class SkillWheelScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        refreshSkills();
+        if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_PAGE_UP) { changePage(-1); return true; }
+        if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_PAGE_DOWN) { changePage(1); return true; }
         if (event.key() >= org.lwjgl.glfw.GLFW.GLFW_KEY_1
                 && event.key() <= org.lwjgl.glfw.GLFW.GLFW_KEY_3
                 && hoveredSlot >= 0 && hoveredSlot < slots.size()) {

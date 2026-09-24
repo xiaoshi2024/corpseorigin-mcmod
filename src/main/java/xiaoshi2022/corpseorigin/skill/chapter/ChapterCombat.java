@@ -14,6 +14,15 @@ import net.minecraft.world.phys.Vec3;
 /** Shared targeting for the corpse-nest chapter: walls, pets and teams are respected. */
 public final class ChapterCombat {
     private ChapterCombat() {}
+    /** Visible release even when the directional attack misses; never invent a target. */
+    public static void emptyCast(ServerPlayer player) {
+        player.swing(net.minecraft.world.InteractionHand.MAIN_HAND,true);
+        ChapterScenes.action(player,"cast",12);
+        Vec3 start=player.getEyePosition();
+        Vec3 end=player.level().clip(new ClipContext(start,start.add(player.getLookAngle().scale(2)),
+                ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,player)).getLocation();
+        for(int i=1;i<=8;i++)dust((ServerLevel)player.level(),start.lerp(end,i/8.0),0xaaccee,1);
+    }
     public static boolean canHit(ServerPlayer owner, LivingEntity target) {
         if (target == owner || !target.isAlive() || target.isSpectator() || owner.isAlliedTo(target)) return false;
         if (target instanceof Player player && (player.isCreative() || !owner.canHarmPlayer(player))) return false;

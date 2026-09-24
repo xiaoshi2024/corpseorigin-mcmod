@@ -20,11 +20,10 @@ public class WoodBindSkill extends AbstractSkill {
         super(PATH, SkillType.COMBAT, 200, 12);
     }
     @Override public net.minecraft.network.chat.Component checkUsable(net.minecraft.server.level.ServerPlayer p) {
-        return xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,12)==null
-                ? net.minecraft.network.chat.Component.translatable("skill.corpseorigin.chapter.need_target") : null;
+        return null;
     }
     @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
         var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,12);
-        if(target!=null) xiaoshi2022.corpseorigin.skill.chapter.FiveElementsCombat.bind(p,target);
+        if(target!=null) xiaoshi2022.corpseorigin.skill.chapter.FiveElementsCombat.bind(p,target); else xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.emptyCast(p);
     }
 }

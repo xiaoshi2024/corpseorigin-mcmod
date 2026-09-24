@@ -37,8 +37,8 @@ public final class TianGangKeySkill extends AbstractSkill {
     public TianGangKeySkill() { super(PATH, SkillType.ULTIMATE, 400, 3, 1, true, 10); }
     @Override public Component checkUsable(ServerPlayer player) {
         String roleId = CharacterManager.getInstance().getPlayerCharacterId(player);
-        if (!"zhaoritian".equals(roleId) && !"longyou".equals(roleId))
-            return Component.translatable("item.corpseorigin.tian_gang_key.wrong_role");
+        var gate=xiaoshi2022.corpseorigin.growth.WeaponEligibility.skillReason(player,PATH);
+        if(gate!=null)return gate;
         if (TianGangKeyItem.weaponHand(player) == null)
             return Component.translatable("skill.corpseorigin.tian_gang_blood_lotus.need_key");
         return CASTS.containsKey(player.getUUID()) ? Component.translatable("skill.corpseorigin.tian_gang_blood_lotus.busy") : null;
@@ -115,7 +115,7 @@ public final class TianGangKeySkill extends AbstractSkill {
             return !player.isRemoved() && player.isAlive() && !player.isSpectator() && player.level() == level
                     && !stopped && !weapon.isEmpty() && weapon.getItem() == animatable
                     && player.getItemInHand(hand) == weapon
-                    && ("zhaoritian".equals(roleId) || "longyou".equals(roleId));
+                    && xiaoshi2022.corpseorigin.growth.WeaponEligibility.skillReason(player,PATH)==null;
         }
         boolean tick() {
             if (!validOwner()

@@ -116,6 +116,8 @@ public class SkillConstructEntity extends PathfinderMob implements GeoEntity {
             player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable("skill.corpseorigin.killing_incarnation.special_wait"));
             return false;
         }
+        if (!xiaoshi2022.corpseorigin.skill.SkillResources.pay(player,
+                new xiaoshi2022.corpseorigin.skill.SkillResourceRules.Cost(15, 15))) return false;
         specialDirection=player.getLookAngle().normalize();
         specialTicks=64;specialCooldown=120;
         stopTriggeredAnim("action","attack");

@@ -15,7 +15,10 @@ public class HamSummonSkill extends AbstractSkill {
     public HamSummonSkill() { super(PATH, SkillType.COMBAT, DogCageItem.FIRE_COOLDOWN); }
 
     @Override public List<SkillUnlockSource> getUnlockSources() {
-        return List.of(SkillUnlockSource.custom("pet:" + PET_ID,
+        return List.of(SkillUnlockSource.encounter(PET_ID,
+                xiaoshi2022.corpseorigin.entity.HamEntity.class, 16,
+                Component.translatable("unlock.corpseorigin.encounter_ham")),
+                SkillUnlockSource.custom("pet:" + PET_ID,
                 Component.translatable("item.corpseorigin.dog_cage.loaded"), DogCageItem::hasCapturedHam));
     }
     @Override public Component checkUsable(ServerPlayer player) {

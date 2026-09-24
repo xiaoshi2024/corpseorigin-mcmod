@@ -14,4 +14,10 @@ public interface LivingEntityRendererMixin<T extends LivingEntity, S extends Liv
 
     @Invoker("addLayer")
     boolean callAddLayer(RenderLayer<S, M> layer);
+
+    @Invoker("setupRotations")
+    void callSetupRotations(S state, com.mojang.blaze3d.vertex.PoseStack poses, float bodyRot, float scale);
+
+    @Invoker("scale")
+    void callScale(S state, com.mojang.blaze3d.vertex.PoseStack poses);
 }

@@ -53,8 +53,6 @@ public final class TianGangSkill extends AbstractSkill {
         if(form.advanced() && !TianGangCombat.isShen(p))return Component.literal("需先开启天罡气九重·神。");
         if((form==Form.HUI || form==Form.TIANGANGPO) && (!p.onGround() || !TianGangCombat.canLeap(p)))
             return Component.literal("需要站稳，且头顶有足够空间起跳。");
-        if((form==Form.NIPO || form==Form.POGANG || form==Form.WU) && ChapterCombat.aim(p,form==Form.WU?6:4)==null)
-            return Component.translatable("skill.corpseorigin.chapter.need_target");
         return null;
     }
     @Override public void onActivate(ServerPlayer p){TianGangCombat.cast(p,form);}
