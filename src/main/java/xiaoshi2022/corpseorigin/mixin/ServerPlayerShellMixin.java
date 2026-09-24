@@ -72,27 +72,27 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
     }
 
     @Override
-    public Either<ShellState, String> sync(TransferredBody target) {
+    public Either<ShellState, Component> sync(TransferredBody target) {
         return this.sync(target, false);
     }
 
     @Override
-    public Either<ShellState, String> syncFromDeath(TransferredBody target) {
+    public Either<ShellState, Component> syncFromDeath(TransferredBody target) {
         return this.sync(target, true);
     }
 
-    private Either<ShellState, String> sync(TransferredBody target, boolean fromDeath) {
+    private Either<ShellState, Component> sync(TransferredBody target, boolean fromDeath) {
         ServerPlayer self = (ServerPlayer) (Object) this;
         if (target == null || !target.ready()) {
-            return Either.right("目标身体尚未就绪");
+            return Either.right(Component.translatable("message.corpseorigin.transfer.ready"));
         }
         if (!self.getUUID().equals(target.ownerUuid())) {
-            return Either.right("这不是你的身体");
+            return Either.right(Component.translatable("message.corpseorigin.transfer.owner"));
         }
 
         ShellState targetState = target.snapshot();
         if (targetState == null) {
-            return Either.right("目标身体没有快照");
+            return Either.right(Component.translatable("message.corpseorigin.transfer.snapshot"));
         }
 
         if (target instanceof CloneAvatarEntity avatar) {

@@ -24,15 +24,15 @@ public final class WeaponEligibility {
     }
     public static Component skillReason(ServerPlayer p,String skill){
         if((skill.equals("blood_wing_blade")||skill.equals("dark_siphon"))&&!vampire(p))
-            return Component.literal("血翼黑刃需要吸血鬼体质：K、黑小飞或已继承吸血体质");
+            return Component.translatable("message.corpseorigin.weapon_eligibility.text_01");
         if(skill.equals("tian_gang_blood_lotus")&&(!lineage(p)||!innerInheritance(p)))
-            return Component.literal("天罡匙需要修习天罡一脉（天罡·智）并获得内力传承");
+            return Component.translatable("message.corpseorigin.weapon_eligibility.text_02");
         return null;
     }
     public static Component itemReason(ServerPlayer p,ItemStack stack){
         if(stack.getItem() instanceof xiaoshi2022.corpseorigin.item.sword.JuQue
                 &&xiaoshi2022.corpseorigin.skill.EvolutionManager.getLevel(PlayerCharacterData.get(p).getEarnedPoints(p.getUUID()))<2)
-            return Component.literal("巨阙需要达到人2（进化等级2）及以上");
+            return Component.translatable("message.corpseorigin.weapon_eligibility.text_03");
         if(stack.is(ModItems.BLOOD_WING_BLADE))return skillReason(p,"blood_wing_blade");
         if(stack.is(ModItems.TIAN_GANG_KEY))return skillReason(p,"tian_gang_blood_lotus");
         return null;

@@ -1,4 +1,5 @@
 package xiaoshi2022.corpseorigin.shell;
+import net.minecraft.network.chat.Component;
 
 import com.mojang.datafixers.util.Either;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,13 +21,13 @@ public interface ServerShell {
      * 把自己当前身体存进 storedState，再把 target 的身体 apply 到玩家。
      * 返回：成功时返回旧身体的 ShellState；失败时返回错误信息。
      */
-    Either<ShellState, String> sync(TransferredBody target);
+    Either<ShellState, Component> sync(TransferredBody target);
 
     /**
      * 死亡夺舍：旧身体只回收进"身边"的空克隆仓，附近没有就直接丢弃（掉落物品）。
      * 与手动转移不同——手动转移会把旧身体留在取走身体的那座仓里，以便随时换回来。
      */
-    default Either<ShellState, String> syncFromDeath(TransferredBody target) {
+    default Either<ShellState, Component> syncFromDeath(TransferredBody target) {
         return sync(target);
     }
 

@@ -11,6 +11,7 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.entity.*;
 
 public final class ModEntities {
+    public static final EntityType<GourdOrganEntity> ZBR_GOURD=register("zbr_gourd",EntityType.Builder.<GourdOrganEntity>of(GourdOrganEntity::new,MobCategory.MISC).sized(.7f,1.2f).clientTrackingRange(12).updateInterval(1));
     private static EntityType<SkillConstructEntity> construct(String id){
         return register(id,EntityType.Builder.<SkillConstructEntity>of(SkillConstructEntity::new,MobCategory.MISC)
                 .sized(.5f,.5f).clientTrackingRange(12).updateInterval(1));

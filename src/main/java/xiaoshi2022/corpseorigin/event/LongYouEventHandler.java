@@ -87,7 +87,7 @@ public final class LongYouEventHandler {
 
             if (!xiaoshi2022.corpseorigin.character.InnerPowerManager.consume(caster, 2)) {
                 ThunderPowerSkill.clearOnDisconnect(caster.getUUID());
-                caster.sendOverlayMessage(net.minecraft.network.chat.Component.literal("内力不足，雷电之力已关闭"));
+                caster.sendOverlayMessage(net.minecraft.network.chat.Component.translatable("message.corpseorigin.long_you_event_handler.text_01"));
                 return;
             }
             zapping = true;

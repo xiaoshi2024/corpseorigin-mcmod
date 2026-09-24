@@ -95,7 +95,7 @@ public class CorpseOriginClient implements ClientModInitializer {
         return suck == null ? -1 : Math.max(0, suck.totalTicks() - suck.ticks());
     }
 
-    /** ✅ 天线宝宝尸兄的"格挡中"窗口：玩家 UUID → 剩余 tick（服务端广播过来的，只影响表现） */
+    /** ✅ 天线宝宝尸兄的net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.097")窗口：玩家 UUID → 剩余 tick（服务端广播过来的，只影响表现） */
     public static final Map<UUID, Integer> antennaBlocks = new ConcurrentHashMap<>();
 
     /** 这位玩家现在是否处于格挡动画窗口（盔甲渲染时读它决定播不播格挡动画） */
@@ -210,6 +210,7 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.BLOOD_LOTUS_PETAL,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"blood_lotus_petal"));
         EntityRendererRegistry.register(ModEntities.BEE_WHEEL,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"bee_wheel"));
         EntityRendererRegistry.register(ModEntities.SLAUGHTER_INCARNATION,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"slaughter_incarnation"));
+        EntityRendererRegistry.register(ModEntities.ZBR_GOURD,xiaoshi2022.corpseorigin.client.renderer.entity.GourdOrganRenderer::new);
         EntityRendererRegistry.register(ModEntities.SEVERED_FOREARM,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"severed_forearm"));
         EntityRendererRegistry.register(ModEntities.TIANGANG_HALO,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"tiangang_halo"));
         EntityRendererRegistry.register(ModEntities.CORPSE_FISH_EGG, CorpseFishEggRenderer::new);
@@ -273,8 +274,8 @@ public class CorpseOriginClient implements ClientModInitializer {
                     Minecraft client = context.client();
 
                     // 文字提示（失败原因、死亡自动夺舍的提示之类）
-                    if (!payload.message().isEmpty() && client.player != null) {
-                        client.player.sendOverlayMessage(Component.literal(payload.message()));
+                    if (!payload.message().equals(Component.empty()) && client.player != null) {
+                        client.player.sendOverlayMessage(payload.message());
                     }
 
                     if (!payload.success()) {

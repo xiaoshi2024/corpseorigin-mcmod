@@ -4,10 +4,10 @@ package xiaoshi2022.corpseorigin.client.skin;
  * 尸兄皮肤加载状态枚举
  */
 public enum ZbSkinState {
-    NOT_LOADED(0, "未加载"),
-    LOADING(1, "加载中"),
-    LOADED(2, "已加载"),
-    FAILED(3, "加载失败");
+    NOT_LOADED(0, "gui.corpseorigin.skin_state.0"),
+    LOADING(1, "gui.corpseorigin.skin_state.1"),
+    LOADED(2, "gui.corpseorigin.skin_state.2"),
+    FAILED(3, "gui.corpseorigin.skin_state.3");
 
     private final int code;
     private final String description;
@@ -22,7 +22,7 @@ public enum ZbSkinState {
     }
 
     public String getDescription() {
-        return description;
+        return net.minecraft.client.resources.language.I18n.get(description);
     }
 
     public static ZbSkinState fromCode(int code) {

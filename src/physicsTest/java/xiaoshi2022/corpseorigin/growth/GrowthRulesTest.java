@@ -22,6 +22,11 @@ public final class GrowthRulesTest {
         check(SkillLearningRules.innate("longyou", "tian_gang_blood_lotus"));
         for (String path : SkillLearningRules.THUNDER) check(!SkillLearningRules.innate("longyou", path));
         check(!SkillLearningRules.innate("zhaoritian", "tian_gang_blood_lotus"));
+        for(String path:new String[]{"gourd_link","gourd_arms","gourd_acid","gourd_fire","gourd_eyes","gourd_power"}){
+            check(SkillLearningRules.innate("xiaojingang",path));
+            check(!SkillLearningRules.innate("mortal",path));
+        }
+        check(!SkillLearningRules.innate("xiaojingang","guigun_sweep"));
         check(SkillLearningRules.cost("thunder_power", SkillType.COMBAT, 0, true) == 8);
         check(SkillLearningRules.cost("corpse_king_thunder", SkillType.COMBAT, 200, true) == 15);
         check(SkillLearningRules.cost("natural_judgment", SkillType.ULTIMATE, 1200, true) == 30);

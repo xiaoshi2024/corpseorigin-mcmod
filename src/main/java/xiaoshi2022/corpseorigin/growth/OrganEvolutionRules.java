@@ -13,6 +13,6 @@ public final class OrganEvolutionRules {
         return current >= 0 && current < 1000000 && (creative || stage >= 2 && current < 5 && points >= attributeCost(current));
     }
     public static String stageName(int stage) {
-        return switch(stage) { case 0 -> "未解锁"; case 1 -> "I · 器官觉醒"; case 2 -> "II · 属性强化"; default -> "III · 特化进化"; };
+        return switch(stage) { case 0 -> "organ.corpseorigin.stage.0"; case 1 -> "organ.corpseorigin.stage.1"; case 2 -> "organ.corpseorigin.stage.2"; default -> "organ.corpseorigin.stage.3"; };
     }
 }

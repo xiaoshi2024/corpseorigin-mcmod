@@ -1,4 +1,6 @@
 package xiaoshi2022.corpseorigin.growth;
+import net.minecraft.network.chat.Component;
+import xiaoshi2022.corpseorigin.util.LocalizedException;
 
 import java.nio.file.*;
 import java.util.*;
@@ -8,8 +10,8 @@ import java.nio.charset.StandardCharsets;
 /** Read manifests in place; never extract user archives or guess model bindings. */
 public final class OrganPackCatalog {
     private OrganPackCatalog() {}
-    public static String load(Path directory, Map<String,OrganDefinition> output) {
-        var errors=new ArrayList<String>();
+    public static Component load(Path directory, Map<String,OrganDefinition> output) {
+        var errors=new ArrayList<Component>();
         try {
             Files.createDirectories(directory);
             try(var paths=Files.list(directory)) {
@@ -17,34 +19,34 @@ public final class OrganPackCatalog {
                     if(path.getFileName().toString().equals("examples"))continue;
                     try {
                         if(Files.isDirectory(path) && Files.exists(path.resolve("pack.mcmeta"))) {
-                            if(!Files.exists(path.resolve("organ.json")))throw new IllegalArgumentException("缺少根目录organ.json器官定义");
+                            if(!Files.exists(path.resolve("organ.json")))throw new LocalizedException("message.corpseorigin.organ.validation.6");
                             try(var in=Files.newInputStream(path.resolve("organ.json"))){read(in,output);}
                         } else if(path.toString().toLowerCase(Locale.ROOT).endsWith(".zip")) {
                             try(var zip=new ZipFile(path.toFile())) {
-                                if(zip.getEntry("pack.mcmeta")==null)throw new IllegalArgumentException("pack.mcmeta不在ZIP根目录");
+                                if(zip.getEntry("pack.mcmeta")==null)throw new LocalizedException("message.corpseorigin.organ.validation.7");
                                 var entry=zip.getEntry("organ.json");
-                                if(entry==null)throw new IllegalArgumentException("缺少根目录organ.json器官定义");
+                                if(entry==null)throw new LocalizedException("message.corpseorigin.organ.validation.6");
                                 try(var in=zip.getInputStream(entry)){read(in,output);}
                             }
                         }
-                    }catch(Exception e){errors.add(path.getFileName()+"："+(e.getMessage()==null?"无法读取":e.getMessage()));}
+                    }catch(Exception e){errors.add(Component.translatable("message.corpseorigin.organ.pack_error", path.getFileName().toString(), LocalizedException.describe(e)));}
                 }
             }
-        }catch(Exception e){errors.add("器官资源包目录读取失败");}
-        return errors.isEmpty()?"":errors.getFirst();
+        }catch(Exception e){errors.add(Component.translatable("message.corpseorigin.organ.directory_error"));}
+        return errors.isEmpty()?Component.empty():errors.getFirst();
     }
     private static void read(java.io.InputStream in,Map<String,OrganDefinition> output)throws Exception {
         byte[] bytes=in.readNBytes(262145);
-        if(bytes.length>262144)throw new IllegalArgumentException("organ.json超过256KB");
+        if(bytes.length>262144)throw new LocalizedException("message.corpseorigin.organ.validation.8");
         var entries=OrganLibrary.JSON.fromJson(new String(bytes,StandardCharsets.UTF_8),OrganDefinition[].class);
-        if(entries==null)throw new IllegalArgumentException("organ.json必须为器官定义数组");
+        if(entries==null)throw new LocalizedException("message.corpseorigin.organ.validation.9");
         var candidate=new LinkedHashMap<>(output);
         for(var def:entries){
-            if(def==null || !def.valid())throw new IllegalArgumentException("器官定义字段无效");
+            if(def==null || !def.valid())throw new LocalizedException("message.corpseorigin.organ.validation.10");
             candidate.put(def.id(),def);
         }
         if(candidate.size()>128 || OrganLibrary.JSON.toJson(candidate.values()).length()>262144)
-            throw new IllegalArgumentException("器官目录超出同步限制");
+            throw new LocalizedException("message.corpseorigin.organ.validation.11");
         output.clear();output.putAll(candidate);
     }
 }

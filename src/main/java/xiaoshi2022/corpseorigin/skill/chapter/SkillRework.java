@@ -61,12 +61,12 @@ public final class SkillRework {
                         if(!"fengmohuitailang".equals(CharacterManager.getInstance().getPlayerCharacterId(p))
                                 || !(entity instanceof LivingEntity target) || target.level()!=p.level()
                                 || !ChapterCombat.canHit(p,target) || p.distanceToSqr(target)>4096 || !p.hasLineOfSight(target)) {
-                            p.sendSystemMessage(net.minecraft.network.chat.Component.literal("需要风魔灰太狼角色及64格内可见敌对目标。"));return 0;
+                            p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.corpseorigin.skill_rework.text_01"));return 0;
                         }
                         var ships=p.level().getEntitiesOfClass(xiaoshi2022.corpseorigin.entity.GreatTenguEntity.class,
                                 p.getBoundingBox().inflate(64),s->s.isOwnedBy(p));
                         for(var ship:ships)if(ship.callLaser(target))return 1;
-                        p.sendSystemMessage(net.minecraft.network.chat.Component.literal("请先释放大天狗神御，或等待激光冷却（2秒）。"));return 0;
+                        p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("message.corpseorigin.skill_rework.text_02"));return 0;
                     })));
         });
         ServerLifecycleEvents.SERVER_STOPPED.register(s->{CASTS.clear();SIPHONS.clear();});
@@ -118,7 +118,7 @@ public final class SkillRework {
                     float drained=Math.max(0,before-t.getHealth());s.absorbed+=drained;p.heal(drained*.6f);
                     if(s.absorbed>p.getMaxHealth()*2) {
                         p.hurtServer(s.level,p.damageSources().magic(),p.getMaxHealth()*.65f);
-                        p.sendOverlayMessage(net.minecraft.network.chat.Component.literal("躯体承受不住吸收的气血，黑暗虹吸反噬！"));return true;
+                        p.sendOverlayMessage(net.minecraft.network.chat.Component.translatable("message.corpseorigin.skill_rework.text_03"));return true;
                     }
                 }
                 return !t.isAlive();

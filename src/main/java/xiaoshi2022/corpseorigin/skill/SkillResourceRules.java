@@ -11,6 +11,11 @@ public final class SkillResourceRules {
     }
     public static Cost cost(String path, int declaredInner) {
         return switch (path) {
+            case "gourd_arms" -> new Cost(0,15);
+            case "gourd_acid", "gourd_power" -> new Cost(0,20);
+            case "gourd_fire" -> new Cost(0,30);
+            case "gourd_eyes" -> new Cost(0,10);
+            case "gourd_link", "gourd_devour", "guigun_sweep", "guigun_guard", "guigun_resonance", "guigun_crush", "wuchou_blade", "wuchou_step", "wusheng_twin", "wusheng_cross" -> new Cost(0,0);
             case "ancient_poetry_sword", "water_orb", "tian_gang_blood_lotus" -> new Cost(10, 0);
             case "spatial_blink", "sword_flower", "round_dance", "power_strike", "osmium_gold", "osmium_ice_spike" -> new Cost(15, 0);
             case "meteor_sword", "corpse_king_thunder" -> new Cost(25, 0);

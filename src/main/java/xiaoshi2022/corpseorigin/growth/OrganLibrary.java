@@ -1,4 +1,6 @@
 package xiaoshi2022.corpseorigin.growth;
+import net.minecraft.network.chat.Component;
+import xiaoshi2022.corpseorigin.util.LocalizedException;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -13,20 +15,20 @@ public final class OrganLibrary {
     public static final String BODY_KEY = "organ_loadout";
     public static final int MAX_SLOTS = 8;
     private static List<OrganDefinition> server = List.of();
-    public static String packStatus = "";
+    public static Component packStatus = Component.empty();
     private OrganLibrary() {}
     public static List<OrganDefinition> definitions() { return server; }
     public static List<OrganSlot> parseSlots(String json) {
-        if (json == null || json.length() > 8192) throw new IllegalArgumentException("预设超过8192字符");
+        if (json == null || json.length() > 8192) throw new LocalizedException("message.corpseorigin.organ.validation.0");
         OrganSlot[] slots;
         try { slots = JSON.fromJson(json, OrganSlot[].class); }
-        catch (com.google.gson.JsonParseException e) { throw new IllegalArgumentException("预设JSON格式错误"); }
-        if (slots == null) throw new IllegalArgumentException("预设必须是器官列表");
-        if (slots.length > MAX_SLOTS) throw new IllegalArgumentException("最多装配8个器官");
+        catch (com.google.gson.JsonParseException e) { throw new LocalizedException("message.corpseorigin.organ.validation.1"); }
+        if (slots == null) throw new LocalizedException("message.corpseorigin.organ.validation.2");
+        if (slots.length > MAX_SLOTS) throw new LocalizedException("message.corpseorigin.organ.validation.3");
         if (Arrays.stream(slots).anyMatch(s -> s == null || !s.valid()))
-            throw new IllegalArgumentException("关节或参数无效：位移±48，旋转±180，缩放0.1–3");
+            throw new LocalizedException("message.corpseorigin.organ.validation.4");
         if (Arrays.stream(slots).filter(OrganSlot::replacesBody).count() > 1)
-            throw new IllegalArgumentException("最多装配一个全身替换模型");
+            throw new LocalizedException("message.corpseorigin.organ.validation.5");
         return List.of(slots);
     }
     public static void load() {
@@ -63,11 +65,11 @@ public final class OrganLibrary {
         var clips = Map.of("idle","evolution.idle","crouch","evolution.crouch","fly","evolution.fly",
                 "glide","evolution.glide","swim","evolution.swim");
         for (String wing : List.of("bat", "feather")) for (String color : EvolutionAppearance.COLORS)
-            out.add(new OrganDefinition(wing+"_"+color, (wing.equals("bat")?"蝙蝠翼 · ":"羽毛翼 · ")+color,
+            out.add(new OrganDefinition(wing+"_"+color, "organ.corpseorigin."+wing+"_"+color,
                     "wings", "corpseorigin:geckolib/models/entity/organ_"+wing+".geo.json",
                     "corpseorigin:textures/entity/evolution/"+color+".png",
                     "corpseorigin:geckolib/animations/entity/organ_parts.animation.json", clips));
-        out.add(new OrganDefinition("aquatic_tail", "水生尾巴", "gills",
+        out.add(new OrganDefinition("aquatic_tail", "organ.corpseorigin.aquatic_tail", "gills",
                 "corpseorigin:geckolib/models/entity/organ_tail.geo.json", "corpseorigin:textures/entity/evolution/cyan.png",
                 "corpseorigin:geckolib/animations/entity/organ_parts.animation.json", clips));
         return out;

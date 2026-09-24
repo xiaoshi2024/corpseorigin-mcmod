@@ -24,7 +24,7 @@ public final class FreeGrowth {
         var skill=skills().stream().filter(s->s.getId().getPath().equals(path)).findFirst();
         if(skill.isEmpty())return;
         var journal=p.getAttachedOrCreate(SurvivalGrowth.JOURNAL).copy();journal.putBoolean("skill:"+path,true);p.setAttached(SurvivalGrowth.JOURNAL,journal);
-        p.sendSystemMessage(Component.literal("机遇：领悟了 ").append(skill.get().getName()).append("，可在技能树修习（仍需等级、点数及前置）。"));
+        p.sendSystemMessage(Component.translatable("message.corpseorigin.opportunity.discovered", skill.get().getName()));
     }
     public static void awaken(ServerPlayer p){
         if(!isFree(p))return;
@@ -32,7 +32,7 @@ public final class FreeGrowth {
         if(journal.getBooleanOr("inner_power",false))return;
         journal.putBoolean("inner_power",true);p.setAttached(SurvivalGrowth.JOURNAL,journal);
         InnerPowerManager.reset(p);
-        p.sendSystemMessage(Component.literal("习武入门：气感觉醒，获得内力。继续探索、拜师和修习技能。"));
+        p.sendSystemMessage(Component.translatable("message.corpseorigin.free_growth.text_02"));
     }
     public static int innerPower(ServerPlayer p){
         if(!isFree(p)
@@ -50,12 +50,10 @@ public final class FreeGrowth {
             int lessons=(int)Math.min(Integer.MAX_VALUE,(long)Math.max(0,journal.getIntOr("village_lessons",0))+1);
             journal.putInt("village_lessons",lessons);p.setAttached(SurvivalGrowth.JOURNAL,journal);
             discovery=cfg.villageOpportunitiesEnabled && OpportunityRules.lessonDue(lessons,cfg.villageLessonsPerOpportunity);
-            if(!discovery)p.sendSystemMessage(Component.literal(cfg.villageOpportunitiesEnabled
-                    ? "修行积累："+(lessons%Math.clamp(cfg.villageLessonsPerOpportunity,1,10000))+" / "+Math.clamp(cfg.villageLessonsPerOpportunity,1,10000)+"次传承后获得技能机遇"
-                    : "服务器已关闭村落技能机遇，仍获得普通修行奖励"));
+            if(!discovery)p.sendSystemMessage((cfg.villageOpportunitiesEnabled ? Component.translatable("message.corpseorigin.opportunity.lessons", lessons%Math.clamp(cfg.villageLessonsPerOpportunity,1,10000), Math.clamp(cfg.villageLessonsPerOpportunity,1,10000)) : Component.translatable("message.corpseorigin.opportunity.disabled")));
         }else if(event.startsWith("exploration:")){
             discovery=cfg.explorationOpportunitiesEnabled && OpportunityRules.roll(p.getRandom().nextDouble(),cfg.explorationOpportunityChance);
-            if(!discovery)p.sendSystemMessage(Component.literal("本次探索获得成长奖励，未领悟额外技能机遇"));
+            if(!discovery)p.sendSystemMessage(Component.translatable("message.corpseorigin.free_growth.text_03"));
         }else if(event.startsWith("flesh_count:"))discovery=cfg.fleshOpportunitiesEnabled;
         if(!discovery){if(!event.startsWith("flesh_count:"))awaken(p);return;}
         var data=PlayerCharacterData.get(p);
@@ -68,7 +66,7 @@ public final class FreeGrowth {
             ISkill choice=choices.get(p.getRandom().nextInt(choices.size()));
             // Discover the prerequisite chain too, so random opportunities cannot strand a branch.
             discoverChain(p,choice,new HashSet<>());
-        } else p.sendOverlayMessage(Component.literal("当前境界暂无新的技能机遇，提升等级后继续探索"));
+        } else p.sendOverlayMessage(Component.translatable("message.corpseorigin.free_growth.text_04"));
         if (!event.startsWith("flesh_count:")) awaken(p);
         xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockManager.grantUnlocked(p,false);
         CorpseNetwork.sendEvolutionSync(p);

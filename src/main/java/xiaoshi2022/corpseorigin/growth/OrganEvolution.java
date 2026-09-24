@@ -1,4 +1,6 @@
 package xiaoshi2022.corpseorigin.growth;
+import net.minecraft.network.chat.Component;
+import xiaoshi2022.corpseorigin.util.LocalizedException;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
@@ -11,45 +13,45 @@ public final class OrganEvolution {
     private OrganEvolution() {}
     public static List<OrganDefinition> entries(List<OrganDefinition> catalog) {
         var list = new java.util.ArrayList<>(catalog);
-        list.add(new OrganDefinition("trait_vampire", "吸血鬼体质", "vampire", "", "", "", java.util.Map.of()));
+        list.add(new OrganDefinition("trait_vampire", "organ.corpseorigin.trait_vampire", "vampire", "", "", "", java.util.Map.of()));
         return list;
     }
     public static int stage(Player p, String id) { return Math.clamp(p.getAttachedOrCreate(SurvivalGrowth.BODY).getIntOr("organ_stage:"+id,0),0,3); }
     public static int stat(Player p, String id, String stat) { return Math.clamp(p.getAttachedOrCreate(SurvivalGrowth.BODY).getIntOr("organ_"+stat+":"+id,0),0,1000000); }
     public static String special(Player p, String id) { return p.getAttachedOrCreate(SurvivalGrowth.BODY).getStringOr("organ_special:"+id,""); }
-    public static String act(ServerPlayer p, String id, String action) {
-        if (!p.isAlive() || p.isSpectator()) return "当前状态不能进化";
+    public static Component act(ServerPlayer p, String id, String action) {
+        if (!p.isAlive() || p.isSpectator()) return Component.translatable("message.corpseorigin.organ.feedback.0");
         tick(p);
-        if (!p.isCreative() && (!PlayerCorpseComponent.isCorpse(p) || !xiaoshi2022.corpseorigin.config.CorpseConfig.get().growth.enabled)) return "生存进化需要尸兄身体且服务器启用成长";
+        if (!p.isCreative() && (!PlayerCorpseComponent.isCorpse(p) || !xiaoshi2022.corpseorigin.config.CorpseConfig.get().growth.enabled)) return Component.translatable("message.corpseorigin.organ.feedback.1");
         var def = entries(OrganLibrary.definitions()).stream().filter(d->d.id().equals(id)).findFirst().orElse(null);
-        if (def == null) return "服务器目录中不存在该器官";
+        if (def == null) return Component.translatable("message.corpseorigin.organ.feedback.2");
         var data = PlayerCharacterData.get(p); int stage = stage(p,id);
         int level = xiaoshi2022.corpseorigin.skill.EvolutionManager.getLevel(data.getEarnedPoints(p.getUUID()));
         int points = data.getAvailablePoints(p.getUUID()), cost;
         var body = p.getAttachedOrCreate(SurvivalGrowth.BODY).copy();
         if (action.equals("advance")) {
-            if (!OrganEvolutionRules.mayAdvance(p.isCreative(),stage,level,points)) return stage>=3 ? "天梯已完成，可继续属性加点或选择特化" : "需要等级"+OrganEvolutionRules.level(stage+1)+"和"+OrganEvolutionRules.cost(stage+1)+"可用进化点";
+            if (!OrganEvolutionRules.mayAdvance(p.isCreative(),stage,level,points)) return stage>=3 ? Component.translatable("message.corpseorigin.organ.feedback.3") : Component.translatable("message.corpseorigin.organ.requirements", OrganEvolutionRules.level(stage+1), OrganEvolutionRules.cost(stage+1));
             cost = OrganEvolutionRules.cost(stage+1);
             body.putInt("organ_stage:"+id,stage+1);
             if (!def.trait().equals("cosmetic")) body.putBoolean(def.trait(),true);
             EvolutionAppearance.initialize(body,p.getRandom());
         } else if (action.equals("vitality") || action.equals("efficiency")) {
             int value=stat(p,id,action);
-            if (!OrganEvolutionRules.mayAllocate(p.isCreative(),stage,value,points)) return "需II阶；每项生存最多5点，下一点消耗"+OrganEvolutionRules.attributeCost(value)+"进化点";
+            if (!OrganEvolutionRules.mayAllocate(p.isCreative(),stage,value,points)) return Component.translatable("message.corpseorigin.organ.attribute_requirements", OrganEvolutionRules.attributeCost(value));
             cost=OrganEvolutionRules.attributeCost(value);body.putInt("organ_"+action+":"+id,value+1);
         } else if (action.equals("power") || action.equals("sustain")) {
-            if (!p.isCreative() && stage<3) return "需先完成III阶特化进化";
-            if (special(p,id).equals(action)) return "当前已经选择此特化";
-            if (!p.isCreative() && !special(p,id).isEmpty()) return "生存特化二选一，确认后不能反复切换";
+            if (!p.isCreative() && stage<3) return Component.translatable("message.corpseorigin.organ.feedback.4");
+            if (special(p,id).equals(action)) return Component.translatable("message.corpseorigin.organ.feedback.5");
+            if (!p.isCreative() && !special(p,id).isEmpty()) return Component.translatable("message.corpseorigin.organ.feedback.6");
             cost=0;body.putString("organ_special:"+id,action);
-        } else return "未知进化操作";
+        } else return Component.translatable("message.corpseorigin.organ.feedback.7");
         if (p.isCreative() && stage==0 && !action.equals("advance")) {
             body.putInt("organ_stage:"+id,3);
             if (!def.trait().equals("cosmetic")) body.putBoolean(def.trait(),true);
         }
-        if (!p.isCreative() && !data.spendPoints(p.getUUID(),cost)) return "可用进化点不足";
+        if (!p.isCreative() && !data.spendPoints(p.getUUID(),cost)) return Component.translatable("message.corpseorigin.organ.feedback.8");
         p.setAttached(SurvivalGrowth.BODY,body);CorpseNetwork.sendEvolutionSync(p);
-        return "已进化："+def.name()+"（"+(p.isCreative()?"创造免费":cost+"点")+"）";
+        return Component.translatable("message.corpseorigin.organ.evolved", def.displayName(), p.isCreative()?Component.translatable("message.corpseorigin.organ.creative_free"):Component.translatable("message.corpseorigin.organ.points", cost));
     }
     // Duplicating a model/slot never duplicates its bonuses. Survival bonuses remain bounded.
     public static int efficiency(ServerPlayer p,String trait) {

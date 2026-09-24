@@ -53,7 +53,7 @@ public class SummonZbCommand {
         zb.setPos(pos.x, pos.y, pos.z);
         level.addFreshEntity(zb);
 
-        source.sendSuccess(() -> Component.literal("§a成功召唤尸兄！§7(随机皮肤: §f" + skinName + "§7)"), true);
+        source.sendSuccess(() -> Component.translatable("message.corpseorigin.summon_zb_command.text_01", skinName), true);
         CorpseOrigin.LOGGER.info("管理员 {} 召唤了尸兄（随机皮肤: {}）", source.getTextName(), skinName);
 
         return 1;
@@ -70,7 +70,7 @@ public class SummonZbCommand {
         zb.setPos(pos.x, pos.y, pos.z);
         level.addFreshEntity(zb);
 
-        source.sendSuccess(() -> Component.literal("§a成功召唤尸兄！皮肤玩家: §e" + playerName), true);
+        source.sendSuccess(() -> Component.translatable("message.corpseorigin.summon_zb_command.text_02", playerName), true);
         CorpseOrigin.LOGGER.info("管理员 {} 召唤了尸兄，使用玩家 {} 的皮肤", source.getTextName(), playerName);
 
         return 1;

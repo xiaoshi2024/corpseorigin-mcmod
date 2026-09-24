@@ -22,6 +22,15 @@ public final class SkillResourceRulesTest {
         check(SkillResourceRules.poetryStage(1) + SkillResourceRules.poetryStage(2)
                 + SkillResourceRules.poetryStage(3) + SkillResourceRules.poetryStage(4) == 70, "Poetry combo costs 70 plus startup");
         check(SkillResourceRules.cost("future_skill", 17).inner() == 17, "New skill preserves declared cost");
+        String[] gourds={"gourd_arms","gourd_acid","gourd_fire","gourd_eyes","gourd_power"};
+        int[] blood={15,20,30,10,20};
+        for(int i=0;i<gourds.length;i++){
+            var cost=SkillResourceRules.cost(gourds[i],0);
+            check(cost.inner()==0 && cost.blood()==blood[i],"Gourd uses biological blood: "+gourds[i]);
+            check(!cost.affordable(0,0,blood[i]-1),"Insufficient blood blocks gourd: "+gourds[i]);
+            check(cost.affordable(0,0,blood[i]),"Gourd needs no human qi: "+gourds[i]);
+        }
+        check(SkillResourceRules.cost("gourd_link",0).affordable(0,0,0),"Recall remains free");
         // Fail if a new concrete skill is added without an explicit catalogue decision.
         Path root = Path.of("src/main/java/xiaoshi2022/corpseorigin/skill");
         String catalogue = Files.readString(root.resolve("SkillResourceRules.java"));

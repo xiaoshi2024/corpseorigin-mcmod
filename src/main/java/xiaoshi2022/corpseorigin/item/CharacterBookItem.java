@@ -93,6 +93,8 @@ public class CharacterBookItem extends Item {
         CharacterManager manager = CharacterManager.getInstance();
         ICharacter character = manager.getCharacter(characterId);
 
+        if (!xiaoshi2022.corpseorigin.character.CharacterBookPolicy.allow(serverPlayer, characterId)) return InteractionResult.FAIL;
+
         if (characterId.equals(manager.getPlayerCharacterId(player))) {
             serverPlayer.sendOverlayMessage(Component.translatable(
                             "message.corpseorigin.character_book.already", character.getName())
@@ -116,10 +118,13 @@ public class CharacterBookItem extends Item {
      * 选了当前角色时只提示、<b>不扣书</b>，免得玩家白丢一本。
      */
     public static boolean selectFromBook(ServerPlayer player, String characterId) {
+        if (!xiaoshi2022.corpseorigin.character.CharacterBookPolicy.allow(player, characterId)) return false;
         InteractionHand hand = findBookHand(player);
         if (hand == null) {
             return false;   // 手上没书：静默忽略（接口界面只是发包，判定全在这边）
         }
+        String boundId = getCharacterId(player.getItemInHand(hand));
+        if (boundId != null && !boundId.equals(characterId)) return false;
 
         CharacterManager manager = CharacterManager.getInstance();
         ICharacter character = manager.getCharacter(characterId);

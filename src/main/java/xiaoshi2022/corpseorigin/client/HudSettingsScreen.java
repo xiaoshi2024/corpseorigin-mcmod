@@ -104,13 +104,13 @@ public class HudSettingsScreen extends Screen {
         addLabel(labelX, row, "gui.corpseorigin.hud_settings.x");
         addSlider(sliderX, row, -1, 1920, x,
                 v -> { x = v; },
-                () -> x == -1 ? "自动" : String.valueOf(x));
+                () -> x == -1 ? net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.092") : String.valueOf(x));
         row += ROW_H + ROW_GAP;
 
         addLabel(labelX, row, "gui.corpseorigin.hud_settings.y");
         addSlider(sliderX, row, -1, 1080, y,
                 v -> { y = v; },
-                () -> y == -1 ? "自动" : String.valueOf(y));
+                () -> y == -1 ? net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.092") : String.valueOf(y));
         row += ROW_H + ROW_GAP;
 
         addLabel(labelX, row, "gui.corpseorigin.hud_settings.width");
@@ -144,13 +144,13 @@ public class HudSettingsScreen extends Screen {
         addLabel(labelX, row, "gui.corpseorigin.hud_settings.skill_x");
         addSlider(sliderX, row, -1, 1920, skillX,
                 v -> { skillX = v; },
-                () -> skillX == -1 ? "自动" : String.valueOf(skillX));
+                () -> skillX == -1 ? net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.092") : String.valueOf(skillX));
         row += ROW_H + ROW_GAP;
 
         addLabel(labelX, row, "gui.corpseorigin.hud_settings.skill_y");
         addSlider(sliderX, row, -1, 1080, skillY,
                 v -> { skillY = v; },
-                () -> skillY == -1 ? "自动" : String.valueOf(skillY));
+                () -> skillY == -1 ? net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.092") : String.valueOf(skillY));
         row += ROW_H + ROW_GAP;
 
         addLabel(labelX, row, "gui.corpseorigin.hud_settings.skill_spacing");

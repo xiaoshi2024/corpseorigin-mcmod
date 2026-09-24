@@ -18,7 +18,7 @@ public final class PlayerLayerAnimationCache extends InstancedAnimatableInstance
         evolution = new InstancedAnimatableInstanceCache(player);
     }
     @Override public AnimatableManager<?> getManagerForId(long id) {
-        if(id>EVOLUTION && id<=EVOLUTION+16)
+        if(id>EVOLUTION && id<=EVOLUTION+17)
             return organs.computeIfAbsent(id,k->new InstancedAnimatableInstanceCache(animatable)).getManagerForId(id);
         return id == EVOLUTION ? evolution.getManagerForId(id) : super.getManagerForId(id);
     }

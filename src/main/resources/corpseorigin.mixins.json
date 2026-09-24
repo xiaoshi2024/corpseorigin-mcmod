@@ -45,6 +45,7 @@
     "LivingEntityRendererLayersAccessor",
     "LivingEntityRendererMixin",
     "LivingEntityRendererSubmitMixin",
-    "PlayerModelLimbMixin"
+    "PlayerModelLimbMixin",
+    "GourdCaptureRenderMixin"
   ]
 }

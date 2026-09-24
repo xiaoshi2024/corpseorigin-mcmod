@@ -39,7 +39,7 @@ public final class ChapterActorState {
         if (java.util.Set.of("longyou", "zuohufa", "kaiweinai", "tianxianbaobao_zb",
                 "jingang_zb", "shichaozhizi", "bianselong_zb", "qingwa_zb", "hujie", "chongmu",
                 "chongqun", "xiongxing_zb", "siyangyuan_zb", "kuaidiyuan_zb", "bianyi_guiyu",
-                "corpse_brother").contains(role)) {
+                  "corpse_brother", "xiaojingang", "guigun_corpse", "hei_wuchou", "bai_wusheng").contains(role)) {
             var comp = xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.get(player);
             if (!comp.isCorpse()) {
                 xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.setPlayerAsCorpse(player,

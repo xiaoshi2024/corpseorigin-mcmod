@@ -8,7 +8,8 @@ public final class SkillLearningRules {
     public static final Set<String> THUNDER = Set.of("thunder_power", "corpse_king_thunder", "natural_judgment");
     private SkillLearningRules() {}
     public static boolean innate(String role, String path) {
-        return "longyou".equals(role) && !THUNDER.contains(path);
+        return "longyou".equals(role) && !THUNDER.contains(path)
+                || "xiaojingang".equals(role) && path.startsWith("gourd_");
     }
     public static int cost(String path, SkillType type, int cooldown, boolean active) {
         return switch (path) {

@@ -1,4 +1,6 @@
 package xiaoshi2022.corpseorigin.network;
+import net.minecraft.network.chat.Component;
+import xiaoshi2022.corpseorigin.util.LocalizedException;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -16,10 +18,10 @@ public record OrganEditorPayload(String json) implements CustomPacketPayload {
                 (p,b)->b.writeUtf(p.json,262144), b->new Catalog(b.readUtf(262144)));
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
-    public record Result(boolean success, String message) implements CustomPacketPayload {
+    public record Result(boolean success, Component message) implements CustomPacketPayload {
         public static final Type<Result> TYPE = new Type<>(CorpseOrigin.id("organ_result"));
         public static final StreamCodec<RegistryFriendlyByteBuf,Result> CODEC = StreamCodec.ofMember(
-                (p,b)->{b.writeBoolean(p.success);b.writeUtf(p.message,256);}, b->new Result(b.readBoolean(),b.readUtf(256)));
+                (p,b)->{b.writeBoolean(p.success);net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.encode(b,p.message);}, b->new Result(b.readBoolean(),net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.decode(b)));
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
 }

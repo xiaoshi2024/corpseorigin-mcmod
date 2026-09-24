@@ -69,7 +69,7 @@ public final class EvolutionPointsCommand {
         int earned = data.getEarnedPoints(uuid);
         int available = data.getAvailablePoints(uuid);
         int level = EvolutionManager.getLevel(earned);
-        String tier = EvolutionTier.formatFullName(level);
+        var tier = EvolutionTier.formatFullName(level);
 
         source.sendSuccess(() -> Component.translatable(
                 "command.corpseorigin.points.get",

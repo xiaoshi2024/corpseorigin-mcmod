@@ -71,9 +71,9 @@ public final class InfectionHudOverlay {
         int scaledLineHeight = Math.round(mc.font.lineHeight * scale);
 
         int level = EvolutionManager.getLevel(ClientState.earnedPoints);
-        String tierFullName = EvolutionTier.formatFullName(level);
+        String tierFullName = EvolutionTier.formatFullName(level).getString();
         int tierColor = EvolutionTier.colorOf(level);
-        String evolutionLine = tierFullName + "  |  点数：" + ClientState.availablePoints;
+        String evolutionLine = tierFullName + net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.098") + ClientState.availablePoints;
         graphics.centeredText(mc.font, evolutionLine, x + batteryWidth / 2, y, tierColor);
         y += scaledLineHeight + rowGap;
 

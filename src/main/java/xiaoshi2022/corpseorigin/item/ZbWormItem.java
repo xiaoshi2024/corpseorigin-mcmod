@@ -126,16 +126,16 @@ public class ZbWormItem extends Item implements GeoItem {
 
         // 体内已经有虫子在变异了，不再叠加
         if (player.hasEffect(ModEffects.QIANS)) {
-            player.sendOverlayMessage(Component.literal("你体内已经有虫子在蠕动了...")
+            player.sendOverlayMessage(Component.translatable("message.corpseorigin.zb_worm_item.text_01")
                     .withStyle(ChatFormatting.RED));
             return;
         }
 
         if (player.getRandom().nextDouble() < DEATH_CHANCE) {
             player.sendOverlayMessage(Component.literal("")
-                    .append(Component.literal("虫子在你体内疯狂撕咬！你的内脏被彻底摧毁...")
+                    .append(Component.translatable("message.corpseorigin.zb_worm_item.text_02")
                             .withStyle(ChatFormatting.DARK_RED))
-                    .append(Component.literal("\n§c你死了...")));
+                    .append(Component.translatable("message.corpseorigin.zb_worm_item.text_03")));
 
             if (player.level() instanceof ServerLevel serverLevel) {
                 player.hurtServer(serverLevel, player.damageSources().magic(), Float.MAX_VALUE);
@@ -144,9 +144,9 @@ public class ZbWormItem extends Item implements GeoItem {
             CorpseOrigin.LOGGER.info("玩家 {} 食用尸兄虫子后死亡", player.getName().getString());
         } else {
             player.sendOverlayMessage(Component.literal("")
-                    .append(Component.literal("你感觉有什么东西在你体内蠕动...")
+                    .append(Component.translatable("message.corpseorigin.zb_worm_item.text_04")
                             .withStyle(ChatFormatting.DARK_RED))
-                    .append(Component.literal("\n§c你的身体正在发生可怕的变化！")));
+                    .append(Component.translatable("message.corpseorigin.zb_worm_item.text_05")));
 
             if (player instanceof ServerPlayer serverPlayer && player.level() instanceof ServerLevel serverLevel) {
                 BYeffect.applyInfection(serverPlayer, serverLevel);

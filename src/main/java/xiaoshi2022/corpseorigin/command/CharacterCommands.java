@@ -45,14 +45,14 @@ public final class CharacterCommands {
                                                 StringArgumentType.getString(ctx, "skill"),
                                                 EntityArgument.getPlayers(ctx, "targets"))))))
                 .then(Commands.literal("list").executes(ctx -> {
-                    StringBuilder list = new StringBuilder("===== ");
-                    list.append(Component.translatable("command.corpseorigin.character.list_header").getString())
+                    var list = Component.literal("===== ");
+                    list.append(Component.translatable("command.corpseorigin.character.list_header"))
                             .append(" =====");
                     for (ICharacter character : CharacterManager.getInstance().getRegisteredCharacters()) {
-                        list.append("\n- ").append(character.getName().getString())
+                        list.append("\n- ").append(character.getName())
                                 .append(" (ID: ").append(character.getId()).append(")");
                     }
-                    ctx.getSource().sendSuccess(() -> Component.literal(list.toString()), false);
+                    ctx.getSource().sendSuccess(() -> list, false);
                     return 1;
                 }))
                 .then(Commands.literal("select")
@@ -175,17 +175,15 @@ public final class CharacterCommands {
     private static int listHitboxes(CommandSourceStack source) {
         var segments = hitboxSegments();
         if (segments.isEmpty()) {
-            source.sendFailure(Component.literal("配置里没有任何一节碰撞箱（mutantBody.hitboxes.segments 是空的）"));
+            source.sendFailure(Component.translatable("message.corpseorigin.character_commands.text_01"));
             return 0;
         }
-        StringBuilder text = new StringBuilder("===== 蛟龙节碰撞箱（相对玩家、按朝向旋转；up 是箱子底面高度）=====");
+        var text=Component.translatable("command.corpseorigin.hitbox.header");
         for (var segment : segments) {
-            text.append('\n').append(describeHitbox(segment));
+            text.append("\n").append(describeHitbox(segment));
         }
-        text.append("\n用 /character hitbox <节名> <字段> <数值> 微调（下一 tick 生效）；")
-                .append("调好后把数值抄进 config/corpseorigin.json —— 命令改的是内存，重启会丢。")
-                .append("想看箱子按 F3+B。");
-        source.sendSuccess(() -> Component.literal(text.toString()), false);
+        text.append(Component.translatable("command.corpseorigin.hitbox.help"));
+        source.sendSuccess(() -> text, false);
         return 1;
     }
 
@@ -194,7 +192,7 @@ public final class CharacterCommands {
                 .filter(segment -> segment.name.equalsIgnoreCase(name))
                 .findFirst().orElse(null);
         if (target == null) {
-            source.sendFailure(Component.literal("没有叫 " + name + " 的这一节（用 /character hitbox 看列表）"));
+            source.sendFailure(Component.translatable("message.corpseorigin.character_commands.text_02", name));
             return 0;
         }
 
@@ -206,19 +204,17 @@ public final class CharacterCommands {
             case "width" -> target.width = Math.max(0.1F, value);
             case "height" -> target.height = Math.max(0.1F, value);
             default -> {
-                source.sendFailure(Component.literal(
-                        "字段只能是 " + String.join(" / ", HITBOX_FIELDS) + "（当前填的是 " + field + "）"));
+                source.sendFailure(Component.translatable("message.corpseorigin.character_commands.text_03", String.join(" / ", HITBOX_FIELDS), field));
                 return 0;
             }
         }
 
-        source.sendSuccess(() -> Component.literal("已更新：" + describeHitbox(target)), true);
+        source.sendSuccess(() -> Component.translatable("message.corpseorigin.character_commands.text_04", describeHitbox(target)), true);
         return 1;
     }
 
-    private static String describeHitbox(xiaoshi2022.corpseorigin.config.CorpseConfig.MutantBody.Hitboxes.Segment s) {
-        return String.format(java.util.Locale.ROOT, "%s: forward=%.2f up=%.2f right=%.2f 尺寸=%.2f×%.2f",
-                s.name, s.forward, s.up, s.right, s.width, s.height);
+    private static Component describeHitbox(xiaoshi2022.corpseorigin.config.CorpseConfig.MutantBody.Hitboxes.Segment s) {
+        return Component.translatable("command.corpseorigin.hitbox.segment", s.name, String.format(java.util.Locale.ROOT,"%.2f",s.forward), String.format(java.util.Locale.ROOT,"%.2f",s.up), String.format(java.util.Locale.ROOT,"%.2f",s.right), String.format(java.util.Locale.ROOT,"%.2f",s.width), String.format(java.util.Locale.ROOT,"%.2f",s.height));
     }
 
     /** 为目标玩家解锁其当前角色的全部技能（跳过进化点与前置） */

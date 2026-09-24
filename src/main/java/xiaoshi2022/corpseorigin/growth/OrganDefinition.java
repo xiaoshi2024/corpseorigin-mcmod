@@ -22,6 +22,9 @@ public record OrganDefinition(String id, String name, String trait, String model
             &&cooldownTicks>=5&&cooldownTicks<=1200&&Float.isFinite(damage)&&damage>0&&damage<=40
             &&Float.isFinite(range)&&range>=1&&range<=32&&java.util.Set.of("water","mud","sand").contains(materialType());}
     }
+    public net.minecraft.network.chat.Component displayName() {
+        return name.startsWith("organ.") ? net.minecraft.network.chat.Component.translatable(name) : net.minecraft.network.chat.Component.literal(name);
+    }
     public boolean valid() {
         return id != null && !id.isBlank() && id.length() <= 96 && name != null && !name.isBlank() && name.length() <= 80
                 && java.util.Set.of("wings", "gills", "vampire", "cosmetic").contains(trait == null ? "" : trait)

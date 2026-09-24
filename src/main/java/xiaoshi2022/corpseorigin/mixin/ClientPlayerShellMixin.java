@@ -17,7 +17,7 @@ public abstract class ClientPlayerShellMixin implements ClientShell, CameraLock 
     @Override
     public String beginSync(ShellState state) {
         if (state == null || !state.isReady()) {
-            return "目标身体尚未就绪";
+            return net.minecraft.client.resources.language.I18n.get("message.corpseorigin.transfer.ready");
         }
         return null;
     }

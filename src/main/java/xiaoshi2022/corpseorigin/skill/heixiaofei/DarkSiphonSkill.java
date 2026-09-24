@@ -7,6 +7,6 @@ import xiaoshi2022.corpseorigin.skill.chapter.*;
 public class DarkSiphonSkill extends AbstractSkill {
  public static final String PATH="dark_siphon";
  public DarkSiphonSkill(){super(PATH,SkillType.COMBAT,20);}
- @Override public net.minecraft.network.chat.Component checkUsable(ServerPlayer p){if(SkillRework.siphoning(p))return null;if(!p.getMainHandItem().is(xiaoshi2022.corpseorigin.registry.ModItems.BLOOD_WING_BLADE))return net.minecraft.network.chat.Component.literal("需要主手持血翼黑刃；贴近目标后发动，潜行或换手拔刀。");return null;}
+ @Override public net.minecraft.network.chat.Component checkUsable(ServerPlayer p){if(SkillRework.siphoning(p))return null;if(!p.getMainHandItem().is(xiaoshi2022.corpseorigin.registry.ModItems.BLOOD_WING_BLADE))return net.minecraft.network.chat.Component.translatable("message.corpseorigin.dark_siphon_skill.text_01");return null;}
  @Override public void onActivate(ServerPlayer p){SkillRework.siphon(p);}
 }

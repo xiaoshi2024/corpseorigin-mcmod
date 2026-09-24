@@ -8,7 +8,7 @@ import xiaoshi2022.corpseorigin.registry.ModEntities;
 public class SeveredArmStrikeSkill extends AbstractSkill {
  public static final String PATH="severed_arm_strike";
  public SeveredArmStrikeSkill(){super(PATH,SkillType.COMBAT,200);}
- @Override public Component checkUsable(ServerPlayer p){return BodySkillState.hasArm(p)?null:Component.literal("右臂未恢复，无法再次甩出半臂。");}
+ @Override public Component checkUsable(ServerPlayer p){return BodySkillState.hasArm(p)?null:Component.translatable("message.corpseorigin.severed_arm_strike_skill.text_01");}
  @Override public void onActivate(ServerPlayer p){
   if(!BodySkillState.hasArm(p))return;
   p.setAttached(BodySkillState.FOREARM_UNTIL,p.level().getGameTime()+80);

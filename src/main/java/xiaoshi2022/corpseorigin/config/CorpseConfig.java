@@ -46,6 +46,11 @@ public final class CorpseConfig {
     /** 技能热键栏自定义（位置/间距/缩放） */
     public SkillHud skillHud = new SkillHud();
     public xiaoshi2022.corpseorigin.growth.GrowthConfig growth = new xiaoshi2022.corpseorigin.growth.GrowthConfig();
+    /** Server-side restrictions on both bound and universal character books. Restart to apply. */
+    public CharacterBooks characterBooks = new CharacterBooks();
+    public static final class CharacterBooks {
+        public List<String> disabledCharacters = new ArrayList<>();
+    }
 
     /** 自然生成的权重与"尸水泉聚集"参数。权重参照原版僵尸 = 100 */
     public static final class InfectedWater {
@@ -323,6 +328,8 @@ public final class CorpseConfig {
      * Gson 反序列化时不一定走构造器，所以不能只靠字段初始值。
      */
     private void sanitize() {
+        if (characterBooks == null) characterBooks = new CharacterBooks();
+        if (characterBooks.disabledCharacters == null) characterBooks.disabledCharacters = new ArrayList<>();
         if (growth == null) growth = new xiaoshi2022.corpseorigin.growth.GrowthConfig();
         if (growth.exploration == null) growth.exploration = new ArrayList<>();
         if (growth.teachings == null) growth.teachings = new ArrayList<>();

@@ -66,7 +66,7 @@ public final class EvolutionEventHandler {
     private static void announceLevelUp(ServerPlayer player) {
         PlayerCharacterData data = PlayerCharacterData.get(player);
         int level = EvolutionManager.getLevel(data.getEarnedPoints(player.getUUID()));
-        String tierName = EvolutionTier.formatFullName(level);
+        var tierName = EvolutionTier.formatFullName(level);
 
         player.sendOverlayMessage(Component.translatable(
                 "message.corpseorigin.evolution.levelup", tierName)

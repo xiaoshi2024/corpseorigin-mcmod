@@ -90,6 +90,11 @@ public class CharacterManager {
 
         // 其他既有角色
         registerCharacter(new WeiXin());
+        registerCharacter(new NewChapterCharacter("xiaojingang",true));
+        registerCharacter(new NewChapterCharacter("guigun_human",false));
+        registerCharacter(new NewChapterCharacter("guigun_corpse",true));
+        registerCharacter(new NewChapterCharacter("hei_wuchou",true));
+        registerCharacter(new NewChapterCharacter("bai_wusheng",true));
 
         // ==== 阵营映射 —— 后期想调整阵营只改这里 ====
         populateFactionMap();
@@ -103,6 +108,9 @@ public class CharacterManager {
      * 这样新加角色时也不会丢。
      */
     private void populateFactionMap() {
+        factionMap.put("guigun_human",CharacterFaction.HUMAN);
+        factionMap.put("xiaojingang",CharacterFaction.OTHER);
+        for(String role:List.of("guigun_corpse","hei_wuchou","bai_wusheng"))factionMap.put(role,CharacterFaction.CORPSE_KING);
         // ========== 人类阵营 ==========
         // 凡人 / 被感染但仍有理智的主角团 / 炎黄特能队 / 收复部队
         factionMap.put(MortalCharacter.ID, CharacterFaction.HUMAN);
@@ -299,6 +307,7 @@ public class CharacterManager {
     // ==================== 同步 ====================
 
     public void syncToClient(ServerPlayer player) {
+        CharacterBookPolicy.sync(player);
         xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockManager.grantUnlocked(player, true);
         xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.reconcileCorpseState(player);
         String characterId = getPlayerCharacterId(player);

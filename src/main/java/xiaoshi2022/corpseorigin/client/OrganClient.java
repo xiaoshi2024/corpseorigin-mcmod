@@ -1,4 +1,6 @@
 package xiaoshi2022.corpseorigin.client;
+import net.minecraft.network.chat.Component;
+import xiaoshi2022.corpseorigin.util.LocalizedException;
 
 import java.util.List;
 import java.util.Arrays;
@@ -8,13 +10,13 @@ import xiaoshi2022.corpseorigin.network.OrganEditorPayload;
 
 public final class OrganClient {
     public static List<OrganDefinition> catalog = List.of();
-    public static String status = "";
+    public static Component status = Component.empty();
     public static boolean pending;
     private static boolean refreshing;
     public static void refreshPacks(){
         if(refreshing)return;
         var mc=net.minecraft.client.Minecraft.getInstance();
-        refreshing=true;status="正在扫描并加载器官包…";
+        refreshing=true;status=Component.translatable("gui.corpseorigin.label.088");
         try{
             var root=net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("corpseorigin/organ");
             java.nio.file.Files.createDirectories(root);
@@ -30,15 +32,15 @@ public final class OrganClient {
             repository.setSelected(selected);
             mc.reloadResourcePacks().whenComplete((ignored,error)->mc.execute(()->{
                 refreshing=false;
-                if(error!=null){status="资源包加载失败：检查pack.mcmeta、模型和动画格式";return;}
+                if(error!=null){status=Component.translatable("gui.corpseorigin.label.089");return;}
                 xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.clearCatalog();
                 var local=new java.util.LinkedHashMap<String,OrganDefinition>();
-                String problem=OrganPackCatalog.load(root,local);
-                if(!problem.isEmpty()&&mc.player!=null)mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(problem));
+                Component problem=OrganPackCatalog.load(root,local);
+                if(!problem.equals(Component.empty())&&mc.player!=null)mc.player.sendSystemMessage(problem);
                 if(mc.player!=null)ClientPlayNetworking.send(new OrganEvolutionPayload("","refresh"));
-                status="资源已加载，等待服务器更新器官列表…";
+                status=Component.translatable("gui.corpseorigin.label.090");
             }));
-        }catch(Exception e){refreshing=false;status="刷新失败，请检查资源包目录与游戏日志";
+        }catch(Exception e){refreshing=false;status=Component.translatable("gui.corpseorigin.label.091");
             xiaoshi2022.corpseorigin.CorpseOrigin.LOGGER.warn("Cannot refresh organ packs",e);}
     }
     public static void register() {
@@ -51,7 +53,7 @@ public final class OrganClient {
         ClientPlayNetworking.registerGlobalReceiver(OrganEditorPayload.Result.TYPE,(p,c)->c.client().execute(()-> {
             pending=false; status=p.message();
         }));
-        ClientPlayConnectionEvents.DISCONNECT.register((h,c)-> {catalog=List.of();pending=false;status="";
+        ClientPlayConnectionEvents.DISCONNECT.register((h,c)-> {catalog=List.of();pending=false;status=Component.empty();
             xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.clearCatalog();});
     }
 }

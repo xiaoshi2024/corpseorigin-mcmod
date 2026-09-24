@@ -22,6 +22,7 @@ import java.util.UUID;
  * 服务端事件处理
  */
 public final class ServerEvents {
+    private static final java.util.Map<UUID,Integer> RESPAWN_SYNC = new java.util.HashMap<>();
 
     private ServerEvents() {
     }
@@ -52,6 +53,8 @@ public final class ServerEvents {
                 newPlayer.setHealth(newPlayer.getMaxHealth());
             }
             CharacterManager.getInstance().syncToClient(newPlayer);
+            // Repeat after the client's replacement player is installed, not inside the respawn sequence.
+            RESPAWN_SYNC.put(newPlayer.getUUID(), 2);
         });
 
         // 登录 → 同步角色
@@ -84,6 +87,18 @@ public final class ServerEvents {
         // （所有 setter 都汇到 PlayerCorpseComponent.setData，那里只标脏不发包）
         ServerTickEvents.END_SERVER_TICK.register(server ->
                 xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.flushPendingSync(server));
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            var iterator = RESPAWN_SYNC.entrySet().iterator();
+            while (iterator.hasNext()) {
+                var entry = iterator.next();
+                if (entry.getValue() > 0) { entry.setValue(entry.getValue() - 1); continue; }
+                var player = server.getPlayerList().getPlayer(entry.getKey());
+                if (player != null) CharacterManager.getInstance().syncToClient(player);
+                iterator.remove();
+            }
+        });
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> RESPAWN_SYNC.remove(handler.player.getUUID()));
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> RESPAWN_SYNC.clear());
 
         // 每 tick 推进天线宝宝盔甲的吸食（抓取 → 持续吸血 → 松手/被打断）
         // 玩家和穿戴该套装的生物共用同一套逻辑

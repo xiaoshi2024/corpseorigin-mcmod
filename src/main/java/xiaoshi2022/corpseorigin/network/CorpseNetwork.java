@@ -1,4 +1,5 @@
 package xiaoshi2022.corpseorigin.network;
+import net.minecraft.network.chat.Component;
 
 import com.mojang.datafixers.util.Either;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -109,8 +110,7 @@ public final class CorpseNetwork {
         ServerPlayNetworking.registerGlobalReceiver(CorpsePayloads.SelectCharacterC2S.TYPE, (payload, context) -> {
             ServerPlayer player = context.player();
             context.server().execute(() -> {
-                xiaoshi2022.corpseorigin.character.CharacterManager.getInstance()
-                        .setPlayerCharacter(player, payload.characterId());
+                xiaoshi2022.corpseorigin.item.CharacterBookItem.selectFromBook(player, payload.characterId());
             });
         });
 
@@ -348,7 +348,7 @@ public final class CorpseNetwork {
                 ShellState targetState = target.snapshot();
                 if (targetState == null) {
                     ServerPlayNetworking.send(player,
-                            SynchronizationResponsePacket.failure("目标身体没有快照"));
+                            SynchronizationResponsePacket.failure(Component.translatable("message.corpseorigin.transfer.snapshot")));
                     return;
                 }
 
@@ -362,7 +362,7 @@ public final class CorpseNetwork {
                 PENDING_SYNCS.put(player.getUUID(), new PendingSync(targetState, target));
 
                 ServerPlayNetworking.send(player, new SynchronizationResponsePacket(
-                        true, true, SynchronizationResponsePacket.CameraStyle.STAIRWAY, "",
+                        true, true, SynchronizationResponsePacket.CameraStyle.STAIRWAY, Component.empty(),
                         payload.targetStateUuid(),
                         fromWorld, fromPos, player.getDirection(),
                         toWorld, toPos, Direction.NORTH));
@@ -375,7 +375,7 @@ public final class CorpseNetwork {
                 ServerPlayer player = context.player();
                 PendingSync pending = PENDING_SYNCS.remove(player.getUUID());
                 if (pending != null && pending.target() != null) {
-                    Either<ShellState, String> result = ServerShell.of(player).sync(pending.target());
+                    Either<ShellState, Component> result = ServerShell.of(player).sync(pending.target());
                     if (result.right().isPresent()) {
                         ServerPlayNetworking.send(player,
                                 SynchronizationResponsePacket.failure(result.right().get()));
@@ -420,7 +420,7 @@ public final class CorpseNetwork {
                 new PendingTransfer(transfer, System.currentTimeMillis() + TRANSFER_TIMEOUT_MS));
         // targetStateUuid 在这条分支用不上（服务端只认玩家自己的待执行动作），给个零值占位
         ServerPlayNetworking.send(player, new SynchronizationResponsePacket(
-                true, true, SynchronizationResponsePacket.CameraStyle.RIGHT_ANGLE, "",
+                true, true, SynchronizationResponsePacket.CameraStyle.RIGHT_ANGLE, Component.empty(),
                 new UUID(0L, 0L),
                 player.level().dimension().identifier(), player.blockPosition(), player.getDirection(),
                 toWorld, toPos, toFacing));
@@ -454,20 +454,20 @@ public final class CorpseNetwork {
     }
 
     /** 转移目标解析失败时给出具体原因（列表过期 / 身体已被取走 / 还没培育完） */
-    private static String noTargetReason(ServerPlayer player, BlockPos pos) {
+    private static Component noTargetReason(ServerPlayer player, BlockPos pos) {
         if (pos != null && player.level().getBlockEntity(pos) instanceof CloneChamberBlockEntity chamber) {
             if (!chamber.hasClone()) {
-                String hint = otherBodyHint(player);
+                Component hint = otherBodyHint(player);
                 return hint == null
-                        ? "这座克隆仓里没有可转移的身体"
-                        : "这座克隆仓里没有可转移的身体（你还有身体在" + hint + "）";
+                        ? Component.translatable("message.corpseorigin.transfer.no_body")
+                        : Component.translatable("message.corpseorigin.transfer.elsewhere", hint);
             }
             if (!chamber.ready()) {
                 int percent = Math.min(99, (int) (chamber.getCloneProgress() * 100.0F));
-                return "克隆体还在培育中：" + percent + "%";
+                return Component.translatable("message.corpseorigin.transfer.growing", percent);
             }
         }
-        return "找不到目标身体";
+        return Component.translatable("message.corpseorigin.transfer.missing");
     }
 
     /**
@@ -476,7 +476,7 @@ public final class CorpseNetwork {
      * "仓里没有身体"最常见的原因是那具身体已经被取走、留在了别的仓里（或死亡时被丢弃），
      * 直接告诉玩家它现在在哪，免得误以为是功能坏了。
      */
-    private static String otherBodyHint(ServerPlayer player) {
+    private static Component otherBodyHint(ServerPlayer player) {
         String selfWorld = player.level().dimension().identifier().toString();
         return ServerShell.of(player).getAvailableBodies()
                 .map(TransferredBody::snapshot)
@@ -490,9 +490,9 @@ public final class CorpseNetwork {
                 }))
                 .map(state -> {
                     boolean sameWorld = selfWorld.equals(state.getWorld());
-                    String world = sameWorld ? "" : (state.getWorld() == null ? "其他维度" : state.getWorld()) + " ";
+                    Component world = sameWorld ? Component.empty() : state.getWorld()==null ? Component.translatable("message.corpseorigin.transfer.other_dimension") : Component.literal(state.getWorld().toString());
                     BlockPos bodyPos = state.getPos();
-                    return world + "(" + bodyPos.getX() + ", " + bodyPos.getY() + ", " + bodyPos.getZ() + ")";
+                    return (Component) Component.empty().append(world).append(" (" + bodyPos.getX() + ", " + bodyPos.getY() + ", " + bodyPos.getZ() + ")");
                 })
                 .orElse(null);
     }

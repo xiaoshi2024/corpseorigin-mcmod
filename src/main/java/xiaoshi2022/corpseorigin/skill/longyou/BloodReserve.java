@@ -34,7 +34,7 @@ public final class BloodReserve {
                 int gained = Math.min(20, MAX-get(serverPlayer));
                 add(serverPlayer, 20);
                 xiaoshi2022.corpseorigin.growth.SurvivalGrowth.fleshConsumed(serverPlayer);
-                serverPlayer.sendOverlayMessage(net.minecraft.network.chat.Component.literal("吸收血肉：气血 +"+gained));
+                serverPlayer.sendOverlayMessage(net.minecraft.network.chat.Component.translatable("message.corpseorigin.blood_reserve.text_01", gained));
             } else {
                 return net.minecraft.world.InteractionResult.PASS;
             }
@@ -58,7 +58,7 @@ public final class BloodReserve {
     }
     public static boolean spend(ServerPlayer p) {
         if (p.getAttachedOrCreate(VALUE) < RESTORE_COST) {
-            p.sendOverlayMessage(net.minecraft.network.chat.Component.literal("气血不足：恢复不死髅体需要 200 点气血"));
+            p.sendOverlayMessage(net.minecraft.network.chat.Component.translatable("message.corpseorigin.blood_reserve.text_02"));
             return false;
         }
         add(p, -RESTORE_COST);

@@ -126,7 +126,7 @@ public class SkillTreeScreen extends Screen {
             graphics.text(font,
                     innate ? Component.translatable("gui.corpseorigin.skill_tree.innate")
                             : !skill.getUnlockSources().isEmpty() ? Component.translatable("gui.corpseorigin.skill_tree.automatic")
-                            : !encountered(skill) ? Component.literal("探索 / 拜师 / 血肉吞噬，寻找机遇") : Component.translatable("gui.corpseorigin.skill_tree.row_info",
+                            : !encountered(skill) ? Component.translatable("message.corpseorigin.skill_tree_screen.text_01") : Component.translatable("gui.corpseorigin.skill_tree.row_info",
                             skill.getCost(), skill.getRequiredLevel(),
                             Component.translatable("skilltype.corpseorigin." + skill.getSkillType().getName())),
                     x + 8, y + 15, 0xFFAAAAAA, false);

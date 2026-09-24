@@ -60,10 +60,25 @@ public final class CustomOrganLayer extends RenderLayer<AvatarRenderState,Player
         if(context==null || !preview&&(parent.isInvisible || corpse!=null && corpse.isDisguised()))return;
         var body=player.getAttachedOrCreate(SurvivalGrowth.BODY);
         String saved=body.getStringOr(OrganLibrary.BODY_KEY, "");
-        if(!preview && saved.isEmpty())return;
         var frames=new ArrayList<Frame>();
+        if(!preview && GourdOrganState.active(player) && !GourdOrganState.detached(player) && !GourdOrganState.dead(player)) {
+            int form=GourdOrganState.form(player);
+            String color=GourdOrganState.color(form);
+            var def=new OrganDefinition("builtin_gourd_"+color,"organ.corpseorigin.gourd","cosmetic",
+                    "corpseorigin:geckolib/models/entity/zbr_gourd.geo.json",
+                    "corpseorigin:textures/entity/zbr_gourd/"+color+".png",
+                    "corpseorigin:geckolib/animations/entity/zbr_gourd.animation.json",Map.of("idle",GourdOrganState.clip(form,false)));
+            // Reserve a separate animation instance from the eight equipped and eight preview slots.
+            String key=def.id()+":16";
+            Renderer r=RENDERERS.computeIfAbsent(key,k->new Renderer(context,def,16));
+            if(((PlayerGeoAnimatable)player).getAnimatableInstanceCache() instanceof xiaoshi2022.corpseorigin.client.limb.PlayerLayerAnimationCache cache)
+                cache.prepareOrgan(Long.MIN_VALUE+17,r);
+            var state=new AvatarRenderState();state.addGeckolibData(CLIP,GourdOrganState.clip(form,false));
+            r.extractRenderState(player,state,partial);
+            frames.add(new Frame(new OrganSlot(def.id(),"body",0,14,5,0,0,0,.45f,false),r,state));
+        }
         try {
-            var slots=preview?previewSlots:OrganLibrary.parseSlots(saved);
+            var slots=preview?previewSlots:OrganLibrary.parseSlots(saved.isEmpty()?"[]":saved);
             for(int i=0;i<slots.size();i++) {
                 var slot=slots.get(i);var def=OrganClient.catalog.stream().filter(d->d.id().equals(slot.organ())).findFirst().orElse(null);
                 if(def==null)continue;

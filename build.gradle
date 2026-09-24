@@ -172,6 +172,33 @@ tasks.register('tianGangBladeSweepTest', JavaExec) {
 }
 tasks.named('check') { dependsOn tianGangBladeSweepTest }
 
+// Catch incomplete distributions before a deferred ability class is first loaded in game.
+tasks.register('verifyOrganDistribution') {
+    dependsOn tasks.named('jar')
+    doLast {
+        def archive = tasks.named('jar').get().archiveFile.get().asFile
+        new java.util.zip.ZipFile(archive).withCloseable { zip ->
+            [
+                'xiaoshi2022/corpseorigin/growth/OrganAbilities.class',
+                'xiaoshi2022/corpseorigin/growth/OrganNetwork.class',
+                'xiaoshi2022/corpseorigin/growth/GourdOrganState.class',
+                'xiaoshi2022/corpseorigin/entity/GourdOrganEntity.class',
+                'assets/corpseorigin/geckolib/models/entity/zbr_gourd.geo.json',
+                'assets/corpseorigin/geckolib/animations/entity/zbr_gourd.animation.json'
+            ].each { name ->
+                if (zip.getEntry(name) == null) throw new GradleException("Incomplete mod JAR: missing ${name}")
+            }
+        }
+    }
+}
+tasks.named('check') { dependsOn verifyOrganDistribution }
+tasks.register('gourdBalanceTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.skill.chapter.GourdBalanceTest'
+}
+tasks.named('check') { dependsOn gourdBalanceTest }
+
 jar {
 	def projectName = project.name
 	inputs.property "projectName", projectName

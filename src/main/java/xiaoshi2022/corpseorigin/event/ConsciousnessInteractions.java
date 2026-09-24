@@ -23,7 +23,7 @@ public final class ConsciousnessInteractions {
     public static void register() {
         UseBlockCallback.EVENT.register((p, level, hand, hit) -> {
             if (level.isClientSide() || !restricted(p)) return InteractionResult.PASS;
-            p.sendOverlayMessage(Component.literal("尚未恢复意识，无法操作方块。吞食血肉或穆博士的眼睛恢复意识。"));
+            p.sendOverlayMessage(Component.translatable("message.corpseorigin.consciousness_interactions.text_01"));
             return InteractionResult.FAIL;
         });
         UseItemCallback.EVENT.register((p, level, hand) -> {
@@ -38,9 +38,9 @@ public final class ConsciousnessInteractions {
             p.setAttached(FLESH, eaten);
             if (eye || eaten >= 20) {
                 comp.restoreConsciousness();
-                p.sendOverlayMessage(Component.literal("你恢复了自我意识，可以操作门和工作台了。"));
+                p.sendOverlayMessage(Component.translatable("message.corpseorigin.consciousness_interactions.text_02"));
                 if (p instanceof ServerPlayer sp) CorpseNetwork.broadcastPlayerCorpseSync(sp);
-            } else p.sendOverlayMessage(Component.literal("吞食血肉：意识恢复进度 " + eaten + " / 20"));
+            } else p.sendOverlayMessage(Component.translatable("message.corpseorigin.consciousness_interactions.text_03", eaten));
             return InteractionResult.SUCCESS;
         });
     }

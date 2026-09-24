@@ -18,12 +18,12 @@ public final class ItemSkillSources {
         if(item==null)return List.of();
         var source=SkillUnlockSource.item(path,item);
         String requirement=switch(path){
-            case "dark_siphon","blood_wing_blade" -> "持有血翼黑刃 + 吸血鬼体质";
-            case "tian_gang_blood_lotus" -> "持有天罡匙 + 天罡一脉 + 内力传承";
+            case "dark_siphon","blood_wing_blade" -> "unlock.corpseorigin.vampire_blade";
+            case "tian_gang_blood_lotus" -> "unlock.corpseorigin.tiangang_lineage";
             default -> null;
         };
         return requirement==null?List.of(source):List.of(SkillUnlockSource.custom(source.id(),
-                net.minecraft.network.chat.Component.literal(requirement),player->source.isSatisfiedBy(player)
+                net.minecraft.network.chat.Component.translatable(requirement),player->source.isSatisfiedBy(player)
                         &&xiaoshi2022.corpseorigin.growth.WeaponEligibility.skillReason(player,path)==null));
     }
 }

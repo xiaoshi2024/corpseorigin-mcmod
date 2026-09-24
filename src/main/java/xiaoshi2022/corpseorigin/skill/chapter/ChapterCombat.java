@@ -24,6 +24,7 @@ public final class ChapterCombat {
         for(int i=1;i<=8;i++)dust((ServerLevel)player.level(),start.lerp(end,i/8.0),0xaaccee,1);
     }
     public static boolean canHit(ServerPlayer owner, LivingEntity target) {
+        if (target instanceof xiaoshi2022.corpseorigin.entity.OwnerBound body && body.isOwnedBy(owner)) return false;
         if (target == owner || !target.isAlive() || target.isSpectator() || owner.isAlliedTo(target)) return false;
         if (target instanceof Player player && (player.isCreative() || !owner.canHarmPlayer(player))) return false;
         return !(target instanceof TamableAnimal pet && pet.isOwnedBy(owner));

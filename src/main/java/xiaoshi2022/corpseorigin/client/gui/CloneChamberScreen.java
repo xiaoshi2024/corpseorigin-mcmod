@@ -67,7 +67,7 @@ public class CloneChamberScreen extends Screen {
         String text = worldName(entry.world())
                 + " (" + entry.x() + ", " + entry.y() + ", " + entry.z() + ") " + percent + "%";
         if (here) {
-            text = text + " ← 本仓";
+            text = text + net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.093");
         }
         return Component.literal(text);
     }
@@ -77,9 +77,9 @@ public class CloneChamberScreen extends Screen {
             return "";
         }
         return switch (world) {
-            case "minecraft:overworld" -> "主世界";
-            case "minecraft:the_nether" -> "下界";
-            case "minecraft:the_end" -> "末地";
+            case "minecraft:overworld" -> net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.094");
+            case "minecraft:the_nether" -> net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.095");
+            case "minecraft:the_end" -> net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.096");
             default -> world;
         };
     }

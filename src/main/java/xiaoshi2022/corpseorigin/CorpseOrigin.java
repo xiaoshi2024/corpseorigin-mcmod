@@ -1,4 +1,5 @@
 package xiaoshi2022.corpseorigin;
+import net.minecraft.network.chat.Component;
 
 import com.mojang.datafixers.util.Either;
 import net.fabricmc.api.ModInitializer;
@@ -145,6 +146,9 @@ public class CorpseOrigin implements ModInitializer {
 		LongYouEventHandler.register();
 		EvolutionEventHandler.register();
         xiaoshi2022.corpseorigin.growth.SurvivalGrowth.register();
+        xiaoshi2022.corpseorigin.character.CharacterBookPolicy.init();
+        xiaoshi2022.corpseorigin.growth.GourdOrganState.register();
+        xiaoshi2022.corpseorigin.skill.chapter.GourdCapture.register();
         xiaoshi2022.corpseorigin.growth.WeaponEligibility.register();
 		xiaoshi2022.corpseorigin.event.GuardianPetDeathHandler.register();
 		APSComboHandler.register();
@@ -186,7 +190,7 @@ public class CorpseOrigin implements ModInitializer {
 					//   而过场动画要用它来算出"从哪里飞到哪里"
 					ShellState deathTarget = nearest.snapshot();
 
-					Either<ShellState, String> result = shell.syncFromDeath(nearest);
+					Either<ShellState, Component> result = shell.syncFromDeath(nearest);
 					if (result.right().isPresent()) {
 						return true;   // 夺舍失败，正常死亡
 					}
@@ -203,7 +207,7 @@ public class CorpseOrigin implements ModInitializer {
 								: player.level().dimension().identifier();
 						ServerPlayNetworking.send(player, new SynchronizationResponsePacket(
 								true, true, SynchronizationResponsePacket.CameraStyle.STAIRWAY,
-								"意识已转移至最近的克隆体",
+								Component.translatable("message.corpseorigin.transfer.complete"),
 								deathTarget.getUuid(),
 								player.level().dimension().identifier(), player.blockPosition(),
 								player.getDirection(),
@@ -211,7 +215,7 @@ public class CorpseOrigin implements ModInitializer {
 								net.minecraft.core.Direction.NORTH));
 					} else {
 						ServerPlayNetworking.send(player,
-								SynchronizationResponsePacket.message(true, "意识已转移至最近的克隆体"));
+								SynchronizationResponsePacket.message(true, Component.translatable("message.corpseorigin.transfer.complete")));
 					}
 					return false;   // 拦截死亡
 				});

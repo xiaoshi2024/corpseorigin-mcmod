@@ -82,8 +82,8 @@ public final class SurvivalGrowth {
                     player.getMainHandItem().shrink(1);
                     FreeGrowth.opportunity(serverPlayer,lesson);
                     EvolutionEventHandler.awardPoints(serverPlayer,Math.clamp(CorpseConfig.get().growth.villageTrainingPoints,0,100));
-                    player.sendSystemMessage(Component.literal("村落传承：你用绿宝石换来一份修行心得。继续探索其他遗迹寻找机遇。"));
-                } else player.sendOverlayMessage(Component.literal("今天已完成村落传承，明天再来；不再消耗绿宝石"));
+                    player.sendSystemMessage(Component.translatable("message.corpseorigin.survival_growth.text_01"));
+                } else player.sendOverlayMessage(Component.translatable("message.corpseorigin.survival_growth.text_02"));
                 return InteractionResult.SUCCESS;
             }
             for (var teaching : CorpseConfig.get().growth.teachings) {
@@ -98,7 +98,7 @@ public final class SurvivalGrowth {
                 boolean unclaimed=!player.getAttachedOrCreate(JOURNAL).getBooleanOr("teaching:"+teaching.id,false);
                 long teachingNow=level.getGameTime();
                 if(unclaimed && !OpportunityRules.ready(teachingNow,player.getAttachedOrCreate(JOURNAL).getLongOr("last_teaching",Long.MIN_VALUE),CorpseConfig.get().growth.teachingCooldownTicks)){
-                    player.sendOverlayMessage(Component.literal("刚接受过师承，请消化修行心得后再学习新的传承"));
+                    player.sendOverlayMessage(Component.translatable("message.corpseorigin.survival_growth.text_03"));
                     return InteractionResult.SUCCESS;
                 }
                 FreeGrowth.awaken(serverPlayer);

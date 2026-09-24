@@ -244,9 +244,9 @@ public class ZbWormEntity extends PathfinderMob implements GeoEntity, ZombieKin 
 
         if (!player.addItem(wormStack)) {
             player.drop(wormStack, false);
-            player.sendOverlayMessage(Component.literal("§c你的背包满了，虫子掉到了地上！"));
+            player.sendOverlayMessage(Component.translatable("message.corpseorigin.zb_worm_entity.text_01"));
         } else {
-            player.sendOverlayMessage(Component.literal("§a你抓住了一只尸兄虫子！"));
+            player.sendOverlayMessage(Component.translatable("message.corpseorigin.zb_worm_entity.text_02"));
         }
 
         this.discard();

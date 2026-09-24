@@ -61,7 +61,7 @@ public final class LimbCommand {
     private static int sever(CommandSourceStack source, Collection<ServerPlayer> targets, String slotKey) {
         int slot = LimbSlots.slotFromKey(slotKey);
         if (slot < 0) {
-            source.sendFailure(Component.literal("未知部位: " + slotKey));
+            source.sendFailure(Component.translatable("message.corpseorigin.limb_command.text_01", slotKey));
             return 0;
         }
         int count = 0;
@@ -71,15 +71,14 @@ public final class LimbCommand {
             }
         }
         final int total = count;
-        source.sendSuccess(() -> Component.literal(
-                "已截断 " + total + " 名玩家的" + LimbSlots.DISPLAY_NAMES[slot]), true);
+        source.sendSuccess(() -> Component.translatable("message.corpseorigin.limb_command.text_02", total, LimbSlots.DISPLAY_NAMES[slot]), true);
         return total;
     }
 
     private static int regen(CommandSourceStack source, Collection<ServerPlayer> targets, String slotKey) {
         int slot = LimbSlots.slotFromKey(slotKey);
         if (slot < 0) {
-            source.sendFailure(Component.literal("未知部位: " + slotKey));
+            source.sendFailure(Component.translatable("message.corpseorigin.limb_command.text_01", slotKey));
             return 0;
         }
         int count = 0;
@@ -89,8 +88,7 @@ public final class LimbCommand {
             }
         }
         final int total = count;
-        source.sendSuccess(() -> Component.literal(
-                "已让 " + total + " 名玩家的" + LimbSlots.DISPLAY_NAMES[slot] + "重新长好"), true);
+        source.sendSuccess(() -> Component.translatable("message.corpseorigin.limb_command.text_03", total, LimbSlots.DISPLAY_NAMES[slot]), true);
         return total;
     }
 
@@ -102,7 +100,7 @@ public final class LimbCommand {
             }
         }
         final int total = count;
-        source.sendSuccess(() -> Component.literal("已清空 " + total + " 名玩家的断肢状态"), true);
+        source.sendSuccess(() -> Component.translatable("message.corpseorigin.limb_command.text_04", total), true);
         return total;
     }
 
@@ -111,33 +109,15 @@ public final class LimbCommand {
             PlayerCorpseComponent comp = PlayerCorpseComponent.get(target);
             LimbState state = comp.readLimbs();
 
-            StringBuilder sb = new StringBuilder(target.getName().getString());
-            // 资格自查：断肢要求「角色在白名单里 + 尸兄 + 未伪装」三者同时成立
-            sb.append(" 角色=").append(CharacterManager.getInstance().getPlayerCharacterId(target));
-            sb.append(" 尸兄=").append(comp.isCorpse() ? "是" : "否");
-            sb.append(" 伪装=").append(comp.isDisguised() ? "是" : "否");
-            sb.append(" 资格=").append(LimbAccess.canDismember(target) ? "✔" : "✘");
-            sb.append(" 再生=").append(LimbRegenProfiles.forPlayer(target).id());
-            sb.append(" 饥饿=").append(comp.getHunger());
-
-            if (!state.hasSevered()) {
-                sb.append(" | 四肢完好");
-            } else {
-                sb.append(" |");
-                for (int slot = 0; slot < LimbSlots.COUNT; slot++) {
-                    if (!state.isSevered(slot)) {
-                        continue;
-                    }
-                    sb.append(' ').append(LimbSlots.DISPLAY_NAMES[slot]).append('(');
-                    if (state.regrowTicks()[slot] <= 0) {
-                        sb.append("永久断");
-                    } else {
-                        sb.append("剩余 ").append(state.regrowTicks()[slot] / 20).append("s");
-                    }
-                    sb.append(')');
-                }
+            var out=Component.translatable("command.corpseorigin.limb.info", target.getName(), CharacterManager.getInstance().getPlayerCharacterId(target), comp.isCorpse(), comp.isDisguised(), LimbAccess.canDismember(target), LimbRegenProfiles.forPlayer(target).id(), comp.getHunger());
+            if(!state.hasSevered())out.append(Component.translatable("command.corpseorigin.limb.intact"));
+            else for(int slot=0;slot<LimbSlots.COUNT;slot++)if(state.isSevered(slot)){
+                out.append(" | ").append(LimbSlots.DISPLAY_NAMES[slot]).append(" (");
+                if(state.regrowTicks()[slot]<=0)out.append(Component.translatable("command.corpseorigin.limb.permanent"));
+                else out.append(Component.translatable("command.corpseorigin.limb.remaining", state.regrowTicks()[slot]/20));
+                out.append(")");
             }
-            source.sendSuccess(() -> Component.literal(sb.toString()), false);
+            source.sendSuccess(()->out,false);
         }
         return targets.size();
     }

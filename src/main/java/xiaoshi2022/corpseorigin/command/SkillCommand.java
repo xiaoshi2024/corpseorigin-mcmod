@@ -122,7 +122,7 @@ public final class SkillCommand {
                 .append(target.getName())
                 .append(Component.literal(" / "))
                 .append(character.getName())
-                .append(Component.literal(" 技能 ("));
+                .append(Component.translatable("message.corpseorigin.skill_command.text_01"));
 
         for (ISkill skill : skills) {
             if (data.hasLearned(target.getUUID(), skill.getId().getPath())) {
@@ -158,8 +158,7 @@ public final class SkillCommand {
         MutableComponent out = Component.translatable("command.corpseorigin.skill.state.source");
         for (SkillUnlockSource src : sources) {
             out.append(src.describe());
-            out.append(Component.literal(
-                    src.isSatisfiedBy(target) ? " (满足)" : " (缺)"));
+            out.append(Component.translatable(src.isSatisfiedBy(target)?"command.corpseorigin.skill.met":"command.corpseorigin.skill.missing"));
             out.append(Component.literal(" "));
         }
         return out;
@@ -167,7 +166,7 @@ public final class SkillCommand {
 
     /** 所有已注册角色及其全部技能（"查看所有角色技能"用） */
     private static int listAllCharacters(CommandSourceStack source) {
-        MutableComponent out = Component.literal("===== 所有角色技能 =====");
+        MutableComponent out = Component.translatable("message.corpseorigin.skill_command.text_02");
         int total = 0;
         for (ICharacter character : CharacterManager.getInstance().getRegisteredCharacters()) {
             List<ISkill> skills = character.getSkills();
@@ -179,7 +178,7 @@ public final class SkillCommand {
                             .map(s -> s.getId().getPath())
                             .collect(Collectors.joining(", "))));
         }
-        out.append(Component.literal("\n共 " + total + " 个技能"));
+        out.append(Component.translatable("message.corpseorigin.skill_command.text_03", total));
         int shown = total;
         source.sendSuccess(() -> out, false);
         return shown == 0 ? 0 : 1;

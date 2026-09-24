@@ -987,14 +987,7 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, Zombi
 
         if (isMaster(player)) {
             if (!this.level().isClientSide()) {
-                player.sendOverlayMessage(Component.literal(
-                        "§c§l合体尸兄(CoCo+大叔)§r§e - 等级: " + getEvolutionLevel()
-                                + " | 合体阶段: " + getFusionTier()
-                                + " | 触手: " + getTentacleCount()
-                                + " | 击杀: " + this.kills
-                                + " | 尸兄饱腹: " + getCorpseHunger()
-                                + " | 饥饿: " + getRegularHunger()
-                ));
+                player.sendOverlayMessage(Component.translatable("message.corpseorigin.coco_zombie_x_entity.text_01", getEvolutionLevel(), getFusionTier(), getTentacleCount(), this.kills, getCorpseHunger(), getRegularHunger()));
             }
             return InteractionResult.SUCCESS;
         }

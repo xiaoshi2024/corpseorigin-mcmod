@@ -65,13 +65,13 @@ public class UncleEntity extends PathfinderMob implements GeoEntity {
     private boolean hasDroppedWorm = false;
 
     private static final String[] RANDOM_DIALOGUES = {
-            "少女的内心，你懂吗？",
-            "我的漫画可是一等奖！",
-            "Coco别乱跑...",
-            "这个月的稿费...",
-            "平果4S就是我的命！",
-            "为了艺术献身！",
-            "你看过《鑫瓶梅》吗？"
+            "dialogue.corpseorigin.uncle.1",
+            "dialogue.corpseorigin.uncle.2",
+            "dialogue.corpseorigin.uncle.3",
+            "dialogue.corpseorigin.uncle.4",
+            "dialogue.corpseorigin.uncle.5",
+            "dialogue.corpseorigin.uncle.6",
+            "dialogue.corpseorigin.uncle.7"
     };
 
     public UncleEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
@@ -173,7 +173,7 @@ public class UncleEntity extends PathfinderMob implements GeoEntity {
         this.isWormExposed = true;
 
         for (Player player : this.level().getEntitiesOfClass(Player.class, this.getBoundingBox().inflate(16.0D))) {
-            player.sendOverlayMessage(Component.literal("§e大叔：§f别...别看！"));
+            player.sendOverlayMessage(Component.translatable("message.corpseorigin.uncle_entity.text_01"));
         }
     }
 
@@ -187,7 +187,7 @@ public class UncleEntity extends PathfinderMob implements GeoEntity {
         serverLevel.addFreshEntity(worm);
 
         for (Player player : serverLevel.getEntitiesOfClass(Player.class, this.getBoundingBox().inflate(16.0D))) {
-            player.sendOverlayMessage(Component.literal("§e大叔：§f一只尸兄虫子从体内钻出！"));
+            player.sendOverlayMessage(Component.translatable("message.corpseorigin.uncle_entity.text_02"));
         }
 
         // 让附近的企鹅直接盯上刚钻出来的虫子，接上「企鹅吃虫变尸兄」那条线
@@ -231,7 +231,7 @@ public class UncleEntity extends PathfinderMob implements GeoEntity {
 
         String dialogue = RANDOM_DIALOGUES[this.random.nextInt(RANDOM_DIALOGUES.length)];
         for (Player player : this.level().getEntitiesOfClass(Player.class, this.getBoundingBox().inflate(16.0D))) {
-            player.sendOverlayMessage(Component.literal("§e大叔：§f" + dialogue));
+            player.sendOverlayMessage(Component.translatable("message.corpseorigin.uncle_entity.text_03", Component.translatable(dialogue)));
         }
         dialogueCooldown = 400;
     }
@@ -249,7 +249,7 @@ public class UncleEntity extends PathfinderMob implements GeoEntity {
 
         if (!this.level().isClientSide()) {
             String greeting = RANDOM_DIALOGUES[this.random.nextInt(RANDOM_DIALOGUES.length)];
-            player.sendOverlayMessage(Component.literal("§e大叔：§f" + greeting));
+            player.sendOverlayMessage(Component.translatable("message.corpseorigin.uncle_entity.text_03", Component.translatable(greeting)));
         }
         return InteractionResult.SUCCESS;
     }

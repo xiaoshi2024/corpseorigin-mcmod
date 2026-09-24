@@ -130,6 +130,9 @@ public class CharacterBookScreen extends Screen {
     private boolean isCurrent(ICharacter character) {
         return character.getId().equals(currentId);
     }
+    private boolean isDisabled(ICharacter character) {
+        return minecraft.player != null && xiaoshi2022.corpseorigin.character.CharacterBookPolicy.disabled(minecraft.player,character.getId());
+    }
 
     /** 鼠标是不是落在这条上（当前角色那行不接受点击，所以 hovered 也算它不算） */
     private boolean isHovered(int index, int mouseX, int mouseY) {
@@ -203,7 +206,8 @@ public class CharacterBookScreen extends Screen {
             ICharacter character = characters.get(i);
             boolean current = isCurrent(character);
             boolean hoveredRow = isHovered(i, mouseX, mouseY);
-            boolean clickable = hoveredRow && !current;
+            boolean disabled = isDisabled(character);
+            boolean clickable = hoveredRow && !current && !disabled;
 
             // 左边画阵营色竖条，视觉上把每个角色跟阵营关联起来
             int factionColor = CharacterManager.getInstance().getFaction(character.getId()).getColor();
@@ -212,14 +216,14 @@ public class CharacterBookScreen extends Screen {
             graphics.fill(x, y, x + 3, y + ROW_HEIGHT - 3, current ? 0xFF55FF55 : factionColor);
 
             graphics.text(font, character.getName(), x + 9, y + 4,
-                    current ? 0xFF88FF88 : 0xFFFFFF, true);
+                    disabled ? 0xFF888888 : current ? 0xFF88FF88 : 0xFFFFFF, true);
 
             // 描述通常比一行长，按剩余宽度截断（右边要留给状态文字）
             String description = character.getDescription().getString();
             graphics.text(font, font.plainSubstrByWidth(description, w - 100),
                     x + 9, y + 17, 0xFFAAAAAA, false);
 
-            String state = Component.translatable(current
+            String state = Component.translatable(disabled ? "gui.corpseorigin.character_book.disabled" : current
                     ? "gui.corpseorigin.character_book.current"
                     : "gui.corpseorigin.character_book.select").getString();
             graphics.text(font, state, x + w - 8 - font.width(state), y + 11,
@@ -270,7 +274,7 @@ public class CharacterBookScreen extends Screen {
                     continue;
                 }
                 ICharacter character = characters.get(i);
-                if (isCurrent(character)) {
+                if (isCurrent(character) || isDisabled(character)) {
                     return true;   // 已经是这个角色：什么都不做，也不扣书
                 }
                 ClientPlayNetworking.send(

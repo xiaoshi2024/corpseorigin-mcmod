@@ -304,7 +304,7 @@ public class CocoZombieEntity extends PathfinderMob implements GeoEntity, Zombie
             for (Player player : serverLevel.players()) {
                 if (player.distanceTo(fusedEntity) < 50) {
                     player.sendOverlayMessage(
-                            Component.literal("§c§l⚠ 企鹅尸兄击杀了大叔！正在合体进化！ ⚠"));
+                            Component.translatable("message.corpseorigin.coco_zombie_entity.text_01"));
                 }
             }
         }
@@ -664,12 +664,7 @@ public class CocoZombieEntity extends PathfinderMob implements GeoEntity, Zombie
 
         if (isMaster(player)) {
             if (!this.level().isClientSide()) {
-                player.sendOverlayMessage(Component.literal(
-                        "§e企鹅尸兄 - 等级: " + getEvolutionLevel()
-                                + " | 击杀: " + this.kills
-                                + " | 尸兄饱腹: " + getCorpseHunger()
-                                + " | 饥饿: " + getRegularHunger()
-                ));
+                player.sendOverlayMessage(Component.translatable("message.corpseorigin.coco_zombie_entity.text_02", getEvolutionLevel(), this.kills, getCorpseHunger(), getRegularHunger()));
             }
             return InteractionResult.SUCCESS;
         }

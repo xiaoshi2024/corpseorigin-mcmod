@@ -14,9 +14,8 @@ public final class SkillResources {
         int blood = BloodReserve.get(player);
         if (!cost.affordable(max, inner, blood)) {
             player.sendOverlayMessage(cost.inner() > 0 && max <= 0
-                    ? Component.literal("尚未觉醒气感：请通过拜师或探索传承习得内力")
-                    : Component.literal("资源不足：需要内力 " + cost.inner() + " / 气血 " + cost.blood()
-                        + "，当前 " + inner + " / " + blood));
+                    ? Component.translatable("message.corpseorigin.skill_resources.text_01")
+                    : Component.translatable("message.corpseorigin.skill_resources.text_02", cost.inner(), cost.blood(), inner, blood));
             return false;
         }
         if (cost.inner() > 0 && !InnerPowerManager.consume(player, cost.inner())) return false;
@@ -25,19 +24,20 @@ public final class SkillResources {
     }
     public static Component description(ISkill skill) {
         var cost = skill.getResourceCost();
-        String text = "消耗：内力 " + cost.inner() + " / 气血 " + cost.blood();
-        if (cost.inner() > 0) text += "（需气感）";
-        text += switch (skill.getId().getPath()) {
-            case "ancient_poetry_sword" -> "；连招 10/15/20/25，领域 2 内力/秒；关闭免费";
-            case "revive_guardian" -> "；复活另耗 100 气血";
-            case "flesh_reshape" -> "；重塑按形态消耗气血或饱食度";
-            case "water_pollution", "slaughter_awakening" -> "；另有饥饿代价";
-            case "thunder_power" -> "；命中另耗 2 内力，关闭免费";
-            case "tian_gang_blood_lotus" -> "；引导持续耗内力，取消免费";
-            case "killing_incarnation" -> "；追加攻击另耗 15 内力 + 15 气血";
-            case "xuanwu_body", "son_of_corpse_nest" -> "；解除免费";
+        var text = Component.translatable("skill.corpseorigin.resource_cost", cost.inner(), cost.blood());
+        if(cost.inner()>0) text.append(Component.translatable("skill.corpseorigin.requires_qi"));
+        String extra=switch(skill.getId().getPath()) {
+            case "ancient_poetry_sword" -> "poetry";
+            case "revive_guardian" -> "revive";
+            case "flesh_reshape" -> "reshape";
+            case "water_pollution", "slaughter_awakening" -> "hunger";
+            case "thunder_power" -> "thunder";
+            case "tian_gang_blood_lotus" -> "lotus";
+            case "killing_incarnation" -> "incarnation";
+            case "xuanwu_body", "son_of_corpse_nest" -> "cancel";
             default -> "";
         };
-        return Component.literal(text);
+        if(!extra.isEmpty())text.append(Component.translatable("skill.corpseorigin.extra_cost."+extra));
+        return text;
     }
 }

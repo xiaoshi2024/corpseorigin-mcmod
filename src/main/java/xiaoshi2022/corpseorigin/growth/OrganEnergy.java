@@ -48,7 +48,7 @@ public final class OrganEnergy {
             abilities.flying=false;abilities.mayfly=false;mark(p,false);p.onUpdateAbilities();
             if(falling&&p.isAlive()&&!p.onGround()&&!p.isInWater()){
                 p.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING,100,0,false,false,true));
-                p.sendOverlayMessage(Component.literal("翅膀供能停止：短暂缓降，请尽快着陆"));
+                p.sendOverlayMessage(Component.translatable("message.corpseorigin.organ_energy.text_01"));
             }
         }
         state.wasFlying=owned&&canFly&&abilities.flying;

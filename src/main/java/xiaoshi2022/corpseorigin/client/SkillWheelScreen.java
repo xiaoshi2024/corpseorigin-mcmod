@@ -180,7 +180,7 @@ public class SkillWheelScreen extends Screen {
             ISkill skill = slots.get(hovered).skill();
             graphics.centeredText(font, skill.getName(), centerX, centerY - 8, 0xFFFFFFAA);
             var resourceCost = skill.getResourceCost();
-            graphics.centeredText(font, "内力 " + resourceCost.inner() + " / 气血 " + resourceCost.blood(),
+            graphics.centeredText(font, Component.translatable("gui.corpseorigin.skill_wheel.cost", resourceCost.inner(), resourceCost.blood()),
                     centerX, centerY + 28, 0xFF99CCFF);
             int cd = ClientState.getCooldownRemaining(skill.getId().getPath());
             if (cd > 0) {

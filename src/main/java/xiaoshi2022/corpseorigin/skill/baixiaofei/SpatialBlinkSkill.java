@@ -33,7 +33,7 @@ public class SpatialBlinkSkill extends AbstractSkill {
         return null;
     }
     @Override public net.minecraft.network.chat.Component checkUsable(net.minecraft.server.level.ServerPlayer p) {
-        return destination(p)==null?net.minecraft.network.chat.Component.literal("前方没有安全的空间落点"):null;
+        return destination(p)==null?net.minecraft.network.chat.Component.translatable("message.corpseorigin.spatial_blink_skill.text_01"):null;
     }
     @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
         var end=destination(p);if(end==null)return;

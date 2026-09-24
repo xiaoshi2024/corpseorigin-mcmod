@@ -1,8 +1,9 @@
 package xiaoshi2022.corpseorigin.network;
+import net.minecraft.network.chat.Component;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
@@ -16,7 +17,7 @@ public record SynchronizationResponsePacket(
         boolean cameraCutscene,
         /** 播哪一套过场 */
         CameraStyle cameraStyle,
-        String message,
+        Component message,
         UUID targetStateUuid,
         Identifier fromWorld,
         BlockPos fromPos,
@@ -34,7 +35,7 @@ public record SynchronizationResponsePacket(
         RIGHT_ANGLE
     }
 
-    public static SynchronizationResponsePacket failure(String message) {
+    public static SynchronizationResponsePacket failure(Component message) {
         return new SynchronizationResponsePacket(
                 false, false, CameraStyle.STAIRWAY, message, new UUID(0L, 0L),
                 Identifier.fromNamespaceAndPath("minecraft", "overworld"), BlockPos.ZERO, Direction.NORTH,
@@ -42,7 +43,7 @@ public record SynchronizationResponsePacket(
     }
 
     /** 只发一条提示、不触发过场相机 */
-    public static SynchronizationResponsePacket message(boolean success, String message) {
+    public static SynchronizationResponsePacket message(boolean success, Component message) {
         return new SynchronizationResponsePacket(
                 success, false, CameraStyle.STAIRWAY, message,
                 new java.util.UUID(0L, 0L),
@@ -57,13 +58,13 @@ public record SynchronizationResponsePacket(
     public static final Type<SynchronizationResponsePacket> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "sync_response"));
 
-    public static final StreamCodec<FriendlyByteBuf, SynchronizationResponsePacket> CODEC =
+    public static final StreamCodec<RegistryFriendlyByteBuf, SynchronizationResponsePacket> CODEC =
             StreamCodec.ofMember(
                     (p, buf) -> {
                         buf.writeBoolean(p.success());
                         buf.writeBoolean(p.cameraCutscene());
                         buf.writeVarInt(p.cameraStyle().ordinal());
-                        buf.writeUtf(p.message());
+                        net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.encode(buf,p.message());
                         buf.writeUUID(p.targetStateUuid());
                         buf.writeIdentifier(p.fromWorld());
                         buf.writeBlockPos(p.fromPos());
@@ -74,7 +75,7 @@ public record SynchronizationResponsePacket(
                     },
                     buf -> new SynchronizationResponsePacket(
                             buf.readBoolean(), buf.readBoolean(), CameraStyle.values()[buf.readVarInt()],
-                            buf.readUtf(), buf.readUUID(),
+                            net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.decode(buf), buf.readUUID(),
                             buf.readIdentifier(), buf.readBlockPos(), Direction.values()[buf.readVarInt()],
                             buf.readIdentifier(), buf.readBlockPos(), Direction.values()[buf.readVarInt()]));
 

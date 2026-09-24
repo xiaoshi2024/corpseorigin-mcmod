@@ -1,4 +1,5 @@
 package xiaoshi2022.corpseorigin.limb;
+import net.minecraft.network.chat.Component;
 
 /**
  * 肢体位定义与位掩码工具。
@@ -69,7 +70,7 @@ public final class LimbSlots {
     };
 
     /** 提示文字用 */
-    public static final String[] DISPLAY_NAMES = {"右臂", "左臂", "右腿", "左腿", "头部"};
+    public static final net.minecraft.network.chat.Component[] DISPLAY_NAMES = {Component.translatable("limb.corpseorigin.part.0"), Component.translatable("limb.corpseorigin.part.1"), Component.translatable("limb.corpseorigin.part.2"), Component.translatable("limb.corpseorigin.part.3"), Component.translatable("limb.corpseorigin.part.4")};
     /** 指令参数用 */
     public static final String[] KEYS = {"arm_r", "arm_l", "leg_r", "leg_l", "head"};
 

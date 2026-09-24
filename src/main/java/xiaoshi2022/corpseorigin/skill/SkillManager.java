@@ -162,7 +162,7 @@ public final class SkillManager {
         // 3. 检查前置技能
         if (xiaoshi2022.corpseorigin.growth.FreeGrowth.isFree(player)
                 && !xiaoshi2022.corpseorigin.growth.FreeGrowth.discovered(player,skillPath)) {
-            player.sendOverlayMessage(net.minecraft.network.chat.Component.literal("尚未遇到该技能的机遇：探索、拜师或吞噬血肉"));
+            player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable("message.corpseorigin.skill_manager.text_01"));
             return false;
         }
         for (Identifier prereq : skill.getPrerequisites()) {
