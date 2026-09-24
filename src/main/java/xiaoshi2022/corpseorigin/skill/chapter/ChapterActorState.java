@@ -23,32 +23,40 @@ public final class ChapterActorState {
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             for (var player : server.getPlayerList().getPlayers()) {
+                reconcileCorpseState(player);
                 String role = CharacterManager.getInstance().getPlayerCharacterId(player);
-                if (java.util.Set.of("longyou", "zuohufa", "kaiweinai", "tianxianbaobao_zb",
-                        "jingang_zb", "shichaozhizi", "bianselong_zb", "qingwa_zb", "hujie", "chongmu",
-                        "chongqun", "xiongxing_zb", "siyangyuan_zb", "kuaidiyuan_zb", "bianyi_guiyu",
-                        "corpse_brother").contains(role)) {
-                    var comp = xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.get(player);
-                    if (!comp.isCorpse()) {
-                        xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.setPlayerAsCorpse(player,
-                                xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.TYPE_NORMAL,
-                                xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.VARIANT_NO_EXOSKELETON);
-                    }
-                    // Repair existing saves as well as freshly selected advanced/animal roles.
-                    boolean restored = !xiaoshi2022.corpseorigin.event.ConsciousnessInteractions.requiresRecovery(role)
-                            && !comp.hasConsciousness();
-                    if (restored) comp.restoreConsciousness();
-                    if (comp.getInfection() != 100 || restored) {
-                        comp.setInfection(100);
-                        xiaoshi2022.corpseorigin.network.CorpseNetwork.sendInfectionSync(player);
-                        xiaoshi2022.corpseorigin.network.CorpseNetwork.broadcastPlayerCorpseSync(player);
-                    }
-                }
                 if (!role.equals(player.getAttachedOrCreate(ROLE))) player.setAttached(ROLE,role);
                 if (!player.getAttachedOrCreate(DISGUISE).isEmpty() && (!"bianselong_zb".equals(role)
                         || !player.isAlive() || player.level().getGameTime()>=player.getAttachedOrCreate(DISGUISE_UNTIL)))
                     player.setAttached(DISGUISE,"");
             }
         });
+    }
+
+    /** 登录、重生发包前也执行，避免只同步角色名却发出尚未校正的尸兄状态。 */
+    public static void reconcileCorpseState(net.minecraft.server.level.ServerPlayer player) {
+        String role = CharacterManager.getInstance().getPlayerCharacterId(player);
+        if (java.util.Set.of("longyou", "zuohufa", "kaiweinai", "tianxianbaobao_zb",
+                "jingang_zb", "shichaozhizi", "bianselong_zb", "qingwa_zb", "hujie", "chongmu",
+                "chongqun", "xiongxing_zb", "siyangyuan_zb", "kuaidiyuan_zb", "bianyi_guiyu",
+                "corpse_brother").contains(role)) {
+            var comp = xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.get(player);
+            if (!comp.isCorpse()) {
+                xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.setPlayerAsCorpse(player,
+                        "longyou".equals(role)
+                                ? xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.TYPE_KING
+                                : xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.TYPE_NORMAL,
+                        xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.VARIANT_NO_EXOSKELETON);
+            }
+            // Repair existing saves as well as freshly selected advanced/animal roles.
+            boolean restored = !xiaoshi2022.corpseorigin.event.ConsciousnessInteractions.requiresRecovery(role)
+                    && !comp.hasConsciousness();
+            if (restored) comp.restoreConsciousness();
+            if (comp.getDataPublic().getInt("infection").orElse(0) != 100 || restored) {
+                comp.setInfection(100);
+                xiaoshi2022.corpseorigin.network.CorpseNetwork.sendInfectionSync(player);
+                xiaoshi2022.corpseorigin.network.CorpseNetwork.broadcastPlayerCorpseSync(player);
+            }
+        }
     }
 }

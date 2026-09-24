@@ -108,8 +108,8 @@ public class LongYou implements ICharacter {
 
     // ==================== 尸王的基础数值 ====================
 
-    /** 血量：神级实力，比普通玩家厚一倍多 */
-    public static final double BASE_HEALTH = 50.0;
+    /** 血量：尸王拥有 200 点生命，高于重做后赵日天的 100 点。 */
+    public static final double BASE_HEALTH = 200.0;
     /** 护甲（裸装）：不死髅体本身的防御力，可再被「玄武体」之类的技能临时拉高 */
     public static final double BASE_ARMOR = 10.0;
     /** 徒手攻击力：强过普通玩家（1），弱于下界合金剑（8），给武器留出空间 */
@@ -273,11 +273,11 @@ public class LongYou implements ICharacter {
         comp.setEvolutionLevel(PlayerCorpseComponent.MAX_EVOLUTION_LEVEL);
         comp.restoreConsciousness();
 
-        // ✅ 尸王的基础数值：血量 50 / 护甲 10 / 徒手 6 / 移速 0.12 / 击退抗性 50%
+        // ✅ 尸王的基础数值：血量 200 / 护甲 10 / 徒手 6 / 移速 0.12 / 击退抗性 50%
         applyBaseAttributes(player);
         // ✅ 自动换上尸王专属服装（原先穿的盔甲掉在脚下，不销毁）
         equipCorpseKingCloth(player);
-        // 换上这具身体就是满状态（否则 20 血量的本体切过来只有 20/50）
+        // 换上这具身体就是满状态（否则 20 血量的本体切过来只有 20/200）
         player.setHealth(player.getMaxHealth());
 
         // ⚠️ setEvolutionLevel/restoreConsciousness 不会触发同步，需显式补一次。

@@ -198,6 +198,7 @@ public class CharacterManager {
     // ==================== 同步 ====================
 
     public void syncToClient(ServerPlayer player) {
+        xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.reconcileCorpseState(player);
         String characterId = getPlayerCharacterId(player);
         CorpseNetwork.sendCharacterSync(player, characterId);
         CorpseNetwork.sendInfectionSync(player);

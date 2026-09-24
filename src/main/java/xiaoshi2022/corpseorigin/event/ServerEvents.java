@@ -38,7 +38,6 @@ public final class ServerEvents {
         });
         // 重生 → 同步角色
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
-            CharacterManager.getInstance().syncToClient(newPlayer);
             // 重生是换了一个新的玩家实体，尸王的基础数值要重新套上（不是龙右就是摘掉）
             xiaoshi2022.corpseorigin.character.LongYou.applyIfLongYou(newPlayer);
             // 左护法同理：新实体上要按当前形态（合体 / 分离）重套一遍基础数值
@@ -47,6 +46,10 @@ public final class ServerEvents {
             // ★ 体型也要复位：死在"拇指原体"里重生，SCALE 属性会被一起带过来，
             //   不复位的话人会一直是个小人儿
             xiaoshi2022.corpseorigin.character.LongYou.resetBodySize(newPlayer);
+            if (!alive && xiaoshi2022.corpseorigin.character.LongYou.isLongYouBody(newPlayer)) {
+                newPlayer.setHealth(newPlayer.getMaxHealth());
+            }
+            CharacterManager.getInstance().syncToClient(newPlayer);
         });
 
         // 登录 → 同步角色

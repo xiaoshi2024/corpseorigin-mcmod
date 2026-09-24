@@ -74,12 +74,16 @@ public class PlayerCorpseComponent {
     }
 
     public int getInfection() {
-        return getData().getInt(KEY_INFECTION).orElse(0);
+        CompoundTag data = getData();
+        // 已转化的身体始终是完全感染；兼容旧存档中未写入 infection 的尸兄。
+        return data.getBoolean(KEY_IS_CORPSE).orElse(false)
+                ? 100 : data.getInt(KEY_INFECTION).orElse(0);
     }
 
     public void setInfection(int value) {
         CompoundTag tag = getData();
-        tag.putInt(KEY_INFECTION, Math.max(0, Math.min(100, value)));
+        tag.putInt(KEY_INFECTION, tag.getBoolean(KEY_IS_CORPSE).orElse(false)
+                ? 100 : Math.max(0, Math.min(100, value)));
         setData(tag);
     }
 
@@ -522,6 +526,7 @@ public class PlayerCorpseComponent {
 
         // ✅ 一次性构建所有数据
         tag.putBoolean(KEY_IS_CORPSE, true);
+        tag.putInt(KEY_INFECTION, 100);
         tag.putInt(KEY_CORPSE_TYPE, corpseType);
         tag.putString(KEY_ORIGINAL_NAME, player.getName().getString());
         tag.putString(KEY_SKIN_UUID, player.getUUID().toString());
@@ -553,13 +558,11 @@ public class PlayerCorpseComponent {
     public static void removeCorpseState(Player player) {
         player.setAttached(ModDataAttachments.PLAYER_CORPSE, new CompoundTag());
         syncToClient(player);
-        if (player instanceof ServerPlayer serverPlayer) {
-            CorpseNetwork.sendInfectionSync(serverPlayer);
-        }
     }
 
     private static void syncToClient(Player player) {
         if (player instanceof ServerPlayer serverPlayer) {
+            CorpseNetwork.sendInfectionSync(serverPlayer);
             // ★ 必须广播而不是只发给自己：尸兄外观是"别人看你"时才渲染的，
             //   只发本人会导致切换角色后自己看得见、其他玩家眼里还是普通人。
             //   这个方法只在"变成/失去尸兄"这种低频且影响外观的操作里调用，广播开销可以忽略。

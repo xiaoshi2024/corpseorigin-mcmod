@@ -175,6 +175,10 @@ public final class TianGangKeySkill extends AbstractSkill {
                 if (contact == null) continue;
                 if (!clearPath(start, contact) || !clearPath(start, target.getBoundingBox().getCenter())) continue;
                 nextHit.put(target.getUUID(), now + DAMAGE_INTERVAL);
+                if (xiaoshi2022.corpseorigin.skill.longyou.TianGangCombat.blocksTianGangBlade(target)) {
+                    QiEffects.cloud(level, contact, 0x88AAFF, .8f, 12);
+                    continue;
+                }
                 if (target.hurtServer(level, player.damageSources().playerAttack(player), DAMAGE)) {
                     target.knockback(.2, -direction.x, -direction.z, player.damageSources().playerAttack(player), DAMAGE);
                     QiEffects.cloud(level, contact, 0xFF173E, .8f, 12);

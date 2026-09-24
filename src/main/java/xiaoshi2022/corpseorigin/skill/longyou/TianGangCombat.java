@@ -24,7 +24,15 @@ public final class TianGangCombat {
     private record Action(ServerPlayer player,ServerLevel level,Form form,int start,Vec3 origin,Vec3 direction,Set<UUID> hits){}
     private static final Map<UUID,Aura> AURAS=new HashMap<>();
     private static final List<Action> ACTIONS=new ArrayList<>();
-    public static boolean isShen(ServerPlayer p){var a=AURAS.get(p.getUUID());return a!=null && a.form==Form.SHEN && valid(p,a.level) && p.tickCount<a.until;}
+    public static boolean isShen(ServerPlayer p){var a=AURAS.get(p.getUUID());return a!=null && a.player==p && a.form==Form.SHEN && valid(p,a.level) && p.tickCount<a.until;}
+    /** 御与八重合一的神可化解天罡匙；必须是当前身体仍在生效的护体。 */
+    public static boolean blocksTianGangBlade(LivingEntity target) {
+        if (!(target instanceof ServerPlayer player)) return false;
+        Aura aura = AURAS.get(player.getUUID());
+        return aura != null && aura.player == player
+                && (aura.form == Form.YU || aura.form == Form.SHEN)
+                && valid(player, aura.level) && player.tickCount < aura.until;
+    }
     private static boolean valid(ServerPlayer p,ServerLevel level){
         return p.isAlive() && !p.isRemoved() && p.level()==level && "longyou".equals(CharacterManager.getInstance().getPlayerCharacterId(p));
     }
