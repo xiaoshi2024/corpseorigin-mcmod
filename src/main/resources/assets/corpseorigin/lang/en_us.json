@@ -807,6 +807,7 @@
   "character.corpseorigin.bai_wusheng.desc": "One of the Black-and-White Generals. White robe and twin yellow blades, ruthless and vain — he beheaded the Evil Arhat and snapped a selfie with the head.",
   "character.corpseorigin.chapter_placeholder.desc": "Character framework available. Combat skills are placeholders and cost nothing until implemented.",
   "message.corpseorigin.chapter_role.text_01": "Only %s can use this move.",
+  "message.corpseorigin.chapter_weapon.text_01": "Requires %s in your main hand.",
   "character.corpseorigin.form.corpse": "Corpse form",
   "character.corpseorigin.form.human": "Human form",
   "skill.corpseorigin.gourd_link": "Gourd · Attach / Detach",

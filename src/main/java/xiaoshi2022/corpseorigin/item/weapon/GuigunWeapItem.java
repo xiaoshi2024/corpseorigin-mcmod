@@ -10,6 +10,7 @@ import com.geckolib.renderer.GeoItemRenderer;
 import com.geckolib.util.GeckoLibUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -54,6 +55,20 @@ public final class GuigunWeapItem extends Item implements GeoItem {
     public void hurtEnemy(ItemStack stack, LivingEntity target, LivingEntity attacker) {
         if (attacker.level() instanceof ServerLevel serverLevel) {
             triggerAnim(attacker, GeoItem.getOrAssignId(stack, serverLevel), CONTROLLER, "swing");
+        }
+    }
+
+    /**
+     * 让手里这把三节棍放一遍甩棍动画（{@code one}）。
+     * <p>
+     * 给「棍术横扫」这类<b>范围判定</b>的招式用：它们不会触发近战命中，
+     * 所以走不到上面那条 {@link #hurtEnemy}，必须由技能显式叫一次。
+     * <p>
+     * 控制器名与触发名都留在这个类里，调用方不用记字符串。
+     */
+    public static void swing(ServerPlayer player, ItemStack stack, ServerLevel level) {
+        if (stack.getItem() instanceof GuigunWeapItem weapon) {
+            weapon.triggerAnim(player, GeoItem.getOrAssignId(stack, level), CONTROLLER, "swing");
         }
     }
 

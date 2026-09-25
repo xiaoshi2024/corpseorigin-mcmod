@@ -807,6 +807,7 @@
   "character.corpseorigin.bai_wusheng.desc": "尸王麾下黑白二将之一。白衣双刀、出手狠辣，曾一刀斩杀邪罗汉；说话带着唱戏腔，自恋又贪生。",
   "character.corpseorigin.chapter_placeholder.desc": "角色框架已加入；经典战斗方向暂作技能占位，未实装的招式不会扣费。",
   "message.corpseorigin.chapter_role.text_01": "只有%s才能施展这一招。",
+  "message.corpseorigin.chapter_weapon.text_01": "需要手持%s才能施展。",
   "character.corpseorigin.form.corpse": "尸兄形态",
   "character.corpseorigin.form.human": "人类形态",
   "skill.corpseorigin.gourd_link": "葫芦·归体／离体",

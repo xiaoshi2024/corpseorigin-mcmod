@@ -16,6 +16,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.item.weapon.GuigunWeapItem;
 import xiaoshi2022.corpseorigin.skill.SkillType;
 
 /**
@@ -75,12 +76,16 @@ public final class GuigunCombat {
 
     /** 棍术横扫（鬼影棍）：三节棍在身前扫出 120 度弧光。 */
     public static final class Sweep extends RoleChapterSkill {
-        public Sweep() { super("guigun_sweep", SkillType.COMBAT, 60, "guigun_human"); }
+        public Sweep() { super("guigun_sweep", SkillType.COMBAT, 60, "guigun_human",
+                xiaoshi2022.corpseorigin.registry.ModItems.GUIGUN_WEAP); }
         @Override public void onActivate(ServerPlayer p) {
             var level = (ServerLevel) p.level();
             Vec3 look = p.getLookAngle();
             int hit = ChapterCombat.arc(p, look, 4.2, 60, 12f, .9);
             p.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
+            // ★ 手里的三节棍跟着甩一下：这一招是范围判定，不会走近战命中（GuigunWeapItem#hurtEnemy），
+            //   所以必须在施放时显式触发一次，否则武器永远不播甩棍动画。
+            GuigunWeapItem.swing(p, p.getMainHandItem(), level);
             ChapterScenes.action(p, "guigun_sweep", 12);
             Vec3 origin = p.getBoundingBox().getCenter().add(0, .15, 0);
             ChapterCombat.arcDust(level, origin, look, 2.9, 60, SWEEP_COLOR);
@@ -109,7 +114,8 @@ public final class GuigunCombat {
 
     /** 次声波尸棍：高举布满骷髅的尸棍，3 秒内向周围持续扫出次声波。 */
     public static final class Resonance extends RoleChapterSkill {
-        public Resonance() { super("guigun_resonance", SkillType.COMBAT, 200, "guigun_corpse"); }
+        public Resonance() { super("guigun_resonance", SkillType.COMBAT, 200, "guigun_corpse",
+                xiaoshi2022.corpseorigin.registry.ModItems.GUIGUN_CLUB); }
         @Override public Component checkUsable(ServerPlayer p) {
             Component blocked = super.checkUsable(p);
             if (blocked != null) return blocked;
@@ -128,7 +134,8 @@ public final class GuigunCombat {
 
     /** 尸棍重击（打狗棍法）：大木棍高高跃起砸地，落点 3 格内全部震飞。 */
     public static final class Crush extends RoleChapterSkill {
-        public Crush() { super("guigun_crush", SkillType.COMBAT, 80, "guigun_corpse"); }
+        public Crush() { super("guigun_crush", SkillType.COMBAT, 80, "guigun_corpse",
+                xiaoshi2022.corpseorigin.registry.ModItems.GUIGUN_CLUB); }
         @Override public void onActivate(ServerPlayer p) {
             var level = (ServerLevel) p.level();
             Vec3 start = p.getEyePosition();
