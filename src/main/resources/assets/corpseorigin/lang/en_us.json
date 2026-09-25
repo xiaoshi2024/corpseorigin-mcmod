@@ -659,6 +659,8 @@
   "skill.corpseorigin.reverse_formation_fireball.need_donor": "Requires an allied formation member within 10 blocks with remaining inner power.",
   "skill.corpseorigin.reverse_formation_fireball.interrupted": "The contributing teammate left. Reverse formation interrupted.",
   "item.corpseorigin.blood_wing_blade": "Blood Wing Blade",
+  "item.corpseorigin.guigun_weap": "Gui Gun's Three-Section Staff",
+  "item.corpseorigin.guigun_weap.desc": "The three-section staff of Gui Gun from Yanhuang Squad Five: five to six meters of iron-ringed segments that whirl into a wide, brutal sweep.",
   "item.corpseorigin.guigun_club": "Gui Gun's Corpse Staff",
   "item.corpseorigin.guigun_club.desc": "The skull-studded cudgel of Gui Gun's corpse form, able to loose infrasound that shatters an enemy's organs. Heavy and slow, yet one blow bursts flesh and bone.",
   "item.corpseorigin.s_agent": "Yellow Strengthening Agent",

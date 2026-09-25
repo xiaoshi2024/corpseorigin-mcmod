@@ -659,6 +659,8 @@
   "skill.corpseorigin.reverse_formation_fireball.need_donor": "需要10格内同队阵员布阵并有剩余内力。",
   "skill.corpseorigin.reverse_formation_fireball.interrupted": "供能队友离开，逆阵中断。",
   "item.corpseorigin.blood_wing_blade": "血翼黑刃",
+  "item.corpseorigin.guigun_weap": "鬼棍·三节棍",
+  "item.corpseorigin.guigun_weap.desc": "炎黄特能队第五小队鬼棍所使的三节棍，五六米长的三段棍身以铁环相连，抡开时棍风刚猛，一记横扫可荡平一片。",
   "item.corpseorigin.guigun_club": "鬼棍·尸棍",
   "item.corpseorigin.guigun_club.desc": "鬼棍化为尸兄后所持的棍棒，棍身布满骷髅头，可发次声波震碎敌人内脏。沉重迟缓，一棍下去脏腑俱裂。",
   "item.corpseorigin.s_agent": "黄色强化剂",

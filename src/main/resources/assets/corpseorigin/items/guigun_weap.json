@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "corpseorigin:item/guigun_weap",
+    "model": {
+      "type": "geckolib:geckolib"
+    }
+  }
+}

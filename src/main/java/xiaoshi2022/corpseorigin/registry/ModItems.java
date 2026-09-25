@@ -40,6 +40,12 @@ public final class ModItems {
             new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,22f,-2.4f)
                     .rarity(Rarity.EPIC).setId(itemKey("blood_wing_blade"))));
 
+    /** 鬼棍·人类的三节棍：五六米长的三段棍身，GeoItem 三维模型 */
+    public static final Item GUIGUN_WEAP = register("guigun_weap",
+            new xiaoshi2022.corpseorigin.item.weapon.GuigunWeapItem(new Item.Properties()
+                    .sword(ToolMaterial.DIAMOND,6f,-2.8f)
+                    .rarity(Rarity.EPIC).setId(itemKey("guigun_weap"))));
+
     /** 鬼棍·尸兄的棍棒：布满骷髅头的次声波尸棍，GeoItem 三维模型 */
     public static final Item GUIGUN_CLUB = register("guigun_club",
             new xiaoshi2022.corpseorigin.item.weapon.GuigunClubItem(new Item.Properties()
@@ -262,6 +268,7 @@ public final class ModItems {
                 output.accept(BYWATER_BOTTLE);
                 output.accept(JUQUE_TW);
                 output.accept(BLOOD_WING_BLADE);
+                output.accept(GUIGUN_WEAP);
                 output.accept(GUIGUN_CLUB);
                 output.accept(S_AGENT);
                 output.accept(BLUE_S_AGENT);
