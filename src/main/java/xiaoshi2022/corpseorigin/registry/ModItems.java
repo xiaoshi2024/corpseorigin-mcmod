@@ -7,6 +7,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.item.equipment.ArmorType;
@@ -37,6 +39,32 @@ public final class ModItems {
     public static final Item BLOOD_WING_BLADE = register("blood_wing_blade",
             new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,22f,-2.4f)
                     .rarity(Rarity.EPIC).setId(itemKey("blood_wing_blade"))));
+
+    /** 鬼棍·尸兄的棍棒：布满骷髅头的次声波尸棍，GeoItem 三维模型 */
+    public static final Item GUIGUN_CLUB = register("guigun_club",
+            new xiaoshi2022.corpseorigin.item.weapon.GuigunClubItem(new Item.Properties()
+                    .sword(ToolMaterial.DIAMOND,5f,-3f)
+                    .rarity(Rarity.EPIC).setId(itemKey("guigun_club"))));
+
+    // ==================== 黑色火线·强化药剂（插入心脏注射） ====================
+
+    /** 黄色强化剂：注射后永久 +50% 最大生命，境界随机冲上人3 或 人4；副作用照常累积 */
+    public static final Item S_AGENT = register("s_agent",
+            new SagentItem(new Item.Properties().rarity(Rarity.RARE).setId(itemKey("s_agent")), SagentItem.YELLOW)
+                    .addAttributeModifier(Attributes.MAX_HEALTH,
+                            AttributeModifier.Operation.ADD_MULTIPLIED_BASE, 0.5, SagentItem.MODIFIER_YELLOW)
+                    .promoteChance(3, 50)
+                    .promoteChance(4, 50));
+
+    /** 蓝色中和剂：下调黄色强化剂的副作用等级 */
+    public static final Item BLUE_S_AGENT = register("blue_s_agent",
+            new SagentItem(new Item.Properties().rarity(Rarity.RARE).setId(itemKey("blue_s_agent")), SagentItem.BLUE));
+
+    /** 空药剂：注射后留下的空瓶，也是后续黑色火线仪器的原料 */
+    public static final Item NULL_S_AGENT = register("null_s_agent",
+            new SagentItem(new Item.Properties().setId(itemKey("null_s_agent")), SagentItem.EMPTY)
+                    .addAttributeModifier(Attributes.MAX_HEALTH,
+                            AttributeModifier.Operation.ADD_MULTIPLIED_BASE, 0.3, SagentItem.MODIFIER_EMPTY));
 
     public static final Item MEDUSA_EYE = register("medusa_eye",
             new MedusaEyeItem(new Item.Properties()
@@ -234,6 +262,10 @@ public final class ModItems {
                 output.accept(BYWATER_BOTTLE);
                 output.accept(JUQUE_TW);
                 output.accept(BLOOD_WING_BLADE);
+                output.accept(GUIGUN_CLUB);
+                output.accept(S_AGENT);
+                output.accept(BLUE_S_AGENT);
+                output.accept(NULL_S_AGENT);
                 output.accept(BEE_WHEEL);
                 output.accept(BLACK_GOLD_HEART);
                 output.accept(RED_METEOR_SWORD);

@@ -13,6 +13,7 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.CorpseBrother;
 import xiaoshi2022.corpseorigin.character.MortalCharacter;
+import xiaoshi2022.corpseorigin.character.NewChapterCharacter;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
@@ -144,11 +145,16 @@ public class BYeffect extends MobEffect {
         // ★ 凡人被感染成尸兄 → 自动转入「尸兄」角色。
         //   尸兄的进化效果（技能树、进化等级联动）都挂在这个角色上，
         //   所以不能只是"阵营变了、角色还是凡人"。
-        //   ⚠️ 必须放在 setPlayerAsCorpse 之后：CorpseBrother.onAcquire 看到"已经是尸兄"就不会
+        //   鬼棍·人类同理：感染期满 → 转为「鬼棍·尸兄」（天级精英尸兄，保留意识）。
+        //   ⚠️ 必须放在 setPlayerAsCorpse 之后：onAcquire 看到"已经是尸兄"的角色不会
         //   重写状态，感染给的尸兄类型 / 变种才保得住。
         CharacterManager characters = CharacterManager.getInstance();
+        boolean guigunTransformed = false;
         if (characters.getPlayerCharacter(player) instanceof MortalCharacter) {
             characters.setPlayerCharacter(player, CorpseBrother.ID);
+        } else if (NewChapterCharacter.GUIGUN_HUMAN_ID.equals(characters.getPlayerCharacterId(player))) {
+            characters.setPlayerCharacter(player, NewChapterCharacter.GUIGUN_CORPSE_ID);
+            guigunTransformed = true;
         }
 
         boolean hasConsciousness = PlayerCorpseComponent.get(player).hasInnateConsciousness();
@@ -156,7 +162,10 @@ public class BYeffect extends MobEffect {
         CorpseNetwork.broadcastPlayerCorpseSync(player);
         player.level().broadcastEntityEvent(player, (byte) 35);
 
-        if (hasConsciousness) {
+        if (guigunTransformed) {
+            player.sendOverlayMessage(Component.translatable("message.corpseorigin.b_yeffect.text_03"));
+            CorpseOrigin.LOGGER.info("玩家 {} 感染期满，鬼棍化为尸兄！", player.getName().getString());
+        } else if (hasConsciousness) {
             player.sendOverlayMessage(Component.translatable("message.corpseorigin.b_yeffect.text_01"));
             CorpseOrigin.LOGGER.info("玩家 {} 已转化为尸族！幸运地保留了意识！", player.getName().getString());
         } else {

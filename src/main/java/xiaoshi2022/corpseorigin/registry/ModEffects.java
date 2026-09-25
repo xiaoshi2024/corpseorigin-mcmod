@@ -16,6 +16,12 @@ public final class ModEffects {
             new BYeffect(MobEffectCategory.HARMFUL, 0xffffff)
     );
 
+    /** 黄色强化剂的副作用：等级越高越危险，蓝色中和剂可下调 */
+    public static final Holder<MobEffect> SIDE_EFFECT = register(
+            "side_effect",
+            new xiaoshi2022.corpseorigin.effect.SideEffect(MobEffectCategory.HARMFUL, 0xFFAA00)
+    );
+
     private static Holder<MobEffect> register(String name, MobEffect effect) {
         return Registry.registerForHolder(
                 BuiltInRegistries.MOB_EFFECT,

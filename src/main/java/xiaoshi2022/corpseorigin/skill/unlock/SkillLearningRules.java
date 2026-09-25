@@ -9,7 +9,10 @@ public final class SkillLearningRules {
     private SkillLearningRules() {}
     public static boolean innate(String role, String path) {
         return "longyou".equals(role) && !THUNDER.contains(path)
-                || "xiaojingang".equals(role) && path.startsWith("gourd_");
+                || "xiaojingang".equals(role) && path.startsWith("gourd_")
+                || ("guigun_human".equals(role) || "guigun_corpse".equals(role)) && path.startsWith("guigun_")
+                || "hei_wuchou".equals(role) && path.startsWith("wuchou_")
+                || "bai_wusheng".equals(role) && path.startsWith("wusheng_");
     }
     public static int cost(String path, SkillType type, int cooldown, boolean active) {
         return switch (path) {

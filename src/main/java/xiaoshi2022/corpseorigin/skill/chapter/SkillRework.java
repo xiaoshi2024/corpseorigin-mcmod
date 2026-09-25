@@ -128,7 +128,7 @@ public final class SkillRework {
     private static void attributes(ServerPlayer p,String role) {
         boolean enhanced=!Set.of("mortal","xiaohui","xiaoyanzi","chuangshang_xingcunzhe","yanhuang_budui").contains(role);
         double health=enhanced?40:0,attack=enhanced?9:0,armor=enhanced?6:0;
-        if(Set.of("heixiaofei","tushu","zhaoritian","chongmu","jingang_zb").contains(role)){health=80;attack=17;armor=12;}
+        if(Set.of("heixiaofei","tushu","zhaoritian","chongmu","jingang_zb","guigun_corpse","hei_wuchou","bai_wusheng").contains(role)){health=80;attack=17;armor=12;}
         if(role.equals("heixiaofei") && PlayerCharacterData.get(p).hasLearned(p.getUUID(),"black_gold_heart")){health+=60;attack+=8;armor+=8;}
         // Existing boss/form attributes already establish their own much higher baseline.
         if(Set.of("longyou","zuohufa","shichaozhizi").contains(role)){health=0;attack=9;armor=0;}

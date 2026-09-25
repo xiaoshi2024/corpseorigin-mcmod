@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "corpseorigin:item/null_s_agent",
+    "model": {
+      "type": "geckolib:geckolib"
+    }
+  }
+}

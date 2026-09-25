@@ -46,6 +46,14 @@ public abstract class PlayerModelLimbMixin {
                     case "charge" -> {self.rightArm.xRot=-2.2f;self.leftArm.xRot=-2.2f;self.rightArm.zRot=.4f;self.leftArm.zRot=-.4f;}
                     case "release" -> {self.rightArm.xRot=-1.6f;self.leftArm.xRot=-1.6f;}
                     case "ambush" -> {self.rightArm.xRot=-1.7f;self.body.yRot=-.35f;}
+                    case "guigun_sweep" -> {self.rightArm.xRot=-1.3f;self.rightArm.zRot=-.6f;self.body.yRot=.2f;}
+                    case "guigun_guard" -> {self.rightArm.xRot=-.7f;self.leftArm.xRot=-.9f;self.rightArm.zRot=.3f;self.leftArm.zRot=-.3f;}
+                    case "guigun_resonance" -> {self.rightArm.xRot=-2.0f;self.leftArm.xRot=-2.0f;self.head.xRot=-.2f;}
+                    case "guigun_crush" -> {self.rightArm.xRot=-2.9f;self.leftArm.xRot=-2.9f;self.rightLeg.xRot=-.6f;self.leftLeg.xRot=-.6f;}
+                    case "wuchou_blade" -> {self.rightArm.xRot=-1.8f;self.body.yRot=-.3f;}
+                    case "wuchou_step" -> {self.body.xRot=.25f;self.rightArm.xRot=.4f;self.leftArm.xRot=-.8f;}
+                    case "wusheng_twin" -> {self.rightArm.xRot=-1.5f;self.leftArm.xRot=-1.2f;self.body.yRot=.25f;}
+                    case "wusheng_cross" -> {self.rightArm.xRot=-1.6f;self.leftArm.xRot=-1.6f;self.rightArm.zRot=.5f;self.leftArm.zRot=-.5f;}
                 }
             }
         }
