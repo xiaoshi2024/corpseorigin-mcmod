@@ -36,6 +36,7 @@ import xiaoshi2022.corpseorigin.effect.SideEffect;
 import xiaoshi2022.corpseorigin.event.EvolutionEventHandler;
 import xiaoshi2022.corpseorigin.registry.ModItems;
 import xiaoshi2022.corpseorigin.skill.EvolutionManager;
+import xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -144,6 +145,8 @@ public final class SagentItem extends Item implements GeoItem {
 
         PENDING.put(server.getUUID(), new Pending(server, hand, stack, server.tickCount + PRESS_TICKS));
         triggerAnim(server, GeoItem.getOrAssignId(stack, serverLevel), "press_controller", "press");
+        // 玩家本体也摆出「扎心」姿态：双手内扣按住胸口把针压进心脏，与物品动画同一段时长
+        ChapterScenes.action(server, "s_agent_press", PRESS_TICKS);
 
         // 药效立刻结算，只有物品替换等动画播完
         applyEnhancement(server);

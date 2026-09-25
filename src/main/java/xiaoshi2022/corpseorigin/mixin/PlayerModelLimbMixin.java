@@ -48,6 +48,12 @@ public abstract class PlayerModelLimbMixin {
                     case "ambush" -> {self.rightArm.xRot=-1.7f;self.body.yRot=-.35f;}
                     case "guigun_sweep" -> {self.rightArm.xRot=-1.3f;self.rightArm.zRot=-.6f;self.body.yRot=.2f;}
                     case "guigun_guard" -> {self.rightArm.xRot=-.7f;self.leftArm.xRot=-.9f;self.rightArm.zRot=.3f;self.leftArm.zRot=-.3f;}
+                    // 强化药剂扎心：双手内扣按住胸口，低头盯着针头压进心脏，针头入体时轻微发抖
+                    case "s_agent_press" -> {
+                        self.rightArm.xRot=-1.15f;self.rightArm.zRot=.55f+phase*.04f;
+                        self.leftArm.xRot=-1.25f;self.leftArm.zRot=-.55f-phase*.04f;
+                        self.head.xRot=.35f;self.body.xRot=.12f;
+                    }
                     case "guigun_resonance" -> {self.rightArm.xRot=-2.0f;self.leftArm.xRot=-2.0f;self.head.xRot=-.2f;}
                     case "guigun_crush" -> {self.rightArm.xRot=-2.9f;self.leftArm.xRot=-2.9f;self.rightLeg.xRot=-.6f;self.leftLeg.xRot=-.6f;}
                     case "wuchou_blade" -> {self.rightArm.xRot=-1.8f;self.body.yRot=-.3f;}
