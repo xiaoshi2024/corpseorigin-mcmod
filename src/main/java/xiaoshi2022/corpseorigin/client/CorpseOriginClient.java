@@ -68,6 +68,12 @@ public class CorpseOriginClient implements ClientModInitializer {
     // ✅ 客户端尸兄数据缓存（用 UUID 作为键）
     public static final java.util.Map<UUID, ClientCorpseData> corpseDataCache = new ConcurrentHashMap<>();
 
+    /**
+     * Flashback 回放专用：快照附件包到达时玩家实体可能还没重建完，
+     * 先按 UUID 暂存 evolution_parts 附件 NBT，每 tick 重试回填。
+     */
+    public static final Map<UUID, net.minecraft.nbt.CompoundTag> pendingReplayBodies = new ConcurrentHashMap<>();
+
     /** ✅ 临时红眼状态：UUID → 剩余 tick */
     public static final Map<UUID, Integer> tempRedEyeTicks = new ConcurrentHashMap<>();
 
@@ -366,6 +372,10 @@ public class CorpseOriginClient implements ClientModInitializer {
             });
         });
 
+        // ✅ Flashback 回放：快照补发的 evolution_parts 附件，按 UUID 回填到重建出的玩家实体
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.ReplayPlayerBodyS2C.TYPE, (payload, context) ->
+                context.client().execute(() -> applyReplayBody(payload.playerUuid(), payload.body())));
+
         // ✅ 接收进化/已学技能同步
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.EvolutionSyncS2C.TYPE, (payload, context) ->
                 context.client().execute(() ->
@@ -512,6 +522,16 @@ public class CorpseOriginClient implements ClientModInitializer {
             if (!tempRedEyeTicks.isEmpty()) {
                 tempRedEyeTicks.replaceAll((k, v) -> v - 1);
                 tempRedEyeTicks.entrySet().removeIf(e -> e.getValue() <= 0);
+            }
+
+            // ✅ Flashback 回放：实体重建可能晚于快照附件包，每 tick 尝试把暂存的附件回填
+            if (!pendingReplayBodies.isEmpty() && client.level != null) {
+                pendingReplayBodies.entrySet().removeIf(e -> {
+                    Player player = client.level.getPlayerByUUID(e.getKey());
+                    if (player == null) return false;
+                    player.setAttached(xiaoshi2022.corpseorigin.growth.SurvivalGrowth.BODY, e.getValue());
+                    return true;
+                });
             }
 
             // ✅ 吸食计时自减
@@ -672,6 +692,25 @@ public class CorpseOriginClient implements ClientModInitializer {
     }
 
     // ==================== 客户端数据类 ====================
+
+    /**
+     * Flashback 回放：把快照携带的 evolution_parts 附件 NBT 回填给指定 UUID 的玩家。
+     * <p>
+     * 快照的自定义包在 viewer 的 sendLevelInfo 阶段统一送达，绝大多数玩家实体重建已完成；
+     * 万一还没见到实体（本地玩家的创建包顺序不同），先放进 {@link #pendingReplayBodies}
+     * 由客户端 tick 继续尝试。
+     */
+    public static void applyReplayBody(UUID uuid, net.minecraft.nbt.CompoundTag body) {
+        if (uuid == null || body == null) return;
+        Minecraft client = Minecraft.getInstance();
+        Player player = client.level == null ? null : client.level.getPlayerByUUID(uuid);
+        if (player != null) {
+            player.setAttached(xiaoshi2022.corpseorigin.growth.SurvivalGrowth.BODY, body);
+            pendingReplayBodies.remove(uuid);
+        } else {
+            pendingReplayBodies.put(uuid, body);
+        }
+    }
 
     public static class ClientCorpseData {
         public final boolean isCorpse;

@@ -213,6 +213,30 @@ public final class CorpsePayloads {
         }
     }
 
+    /**
+     * Flashback 回放专用：把某位玩家的 {@code corpseorigin:evolution_parts} 附件整份带回放端（S2C）。
+     * <p>
+     * Flashback 的快照（初始加载 / seek）只重建原版实体数据，不含 Fabric 附件；而进化器官装配方案、
+     * 器官阶段、wings/gills、葫芦状态全部存在这个附件里。录制端把快照时刻的附件 NBT 经此通道补发，
+     * 回放客户端按 UUID 找到重建出的玩家实体后直接回填。正常服务端不会发送此通道。
+     */
+    public record ReplayPlayerBodyS2C(UUID playerUuid, CompoundTag body) implements CustomPacketPayload {
+        public static final Type<ReplayPlayerBodyS2C> TYPE = new Type<>(id("replay_player_body"));
+
+        public static final StreamCodec<ByteBuf, ReplayPlayerBodyS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8,
+                p -> p.playerUuid().toString(),
+                ByteBufCodecs.COMPOUND_TAG,
+                ReplayPlayerBodyS2C::body,
+                (uuidStr, body) -> new ReplayPlayerBodyS2C(UUID.fromString(uuidStr), body)
+        );
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
     // ==================== ✅ 学习技能（C2S） ====================
 
     public record LearnSkillC2S(String skillPath) implements CustomPacketPayload {

@@ -99,6 +99,8 @@ public final class CorpseNetwork {
         PayloadTypeRegistry.serverboundPlay().register(CorpsePayloads.SelectCharacterC2S.TYPE, CorpsePayloads.SelectCharacterC2S.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.CharacterSyncS2C.TYPE, CorpsePayloads.CharacterSyncS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.PlayerCorpseSyncS2C.TYPE, CorpsePayloads.PlayerCorpseSyncS2C.CODEC);
+        // Flashback 快照回放专用通道（仅录制端快照注入时会出现）
+        PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.ReplayPlayerBodyS2C.TYPE, CorpsePayloads.ReplayPlayerBodyS2C.CODEC);
 
         // ✅ 技能系统：激活（C2S）+ 进化/冷却同步（S2C）
         PayloadTypeRegistry.serverboundPlay().register(CorpsePayloads.ActivateSkillC2S.TYPE, CorpsePayloads.ActivateSkillC2S.CODEC);

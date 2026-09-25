@@ -1,0 +1,12 @@
+{
+  "required": false,
+  "package": "xiaoshi2022.corpseorigin.compat.flashback.mixin",
+  "plugin": "xiaoshi2022.corpseorigin.compat.flashback.FlashbackMixinPlugin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "RecorderMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
