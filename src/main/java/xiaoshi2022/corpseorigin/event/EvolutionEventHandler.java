@@ -3,7 +3,6 @@ package xiaoshi2022.corpseorigin.event;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -20,6 +19,7 @@ import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.skill.EvolutionManager;
 import xiaoshi2022.corpseorigin.skill.EvolutionStats;
 import xiaoshi2022.corpseorigin.skill.EvolutionTier;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 /**
  * 进化点获得（所有角色通用）
@@ -80,9 +80,7 @@ public final class EvolutionEventHandler {
                 SoundSource.PLAYERS, 1.0F, majorBreakthrough ? 1.0F : 1.3F);
 
         if (player.level() instanceof ServerLevel sl) {
-            sl.sendParticles(ParticleTypes.HAPPY_VILLAGER,
-                    player.getX(), player.getY() + 1.0, player.getZ(),
-                    24, 0.8, 1.0, 0.8, 0.05);
+            QiEffects.burst(sl, player.getX(), player.getY() + 1.0, player.getZ(), 0x8ce06a, 24, 1.0);
         }
     }
 

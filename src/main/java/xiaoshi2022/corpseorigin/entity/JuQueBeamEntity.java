@@ -1,9 +1,9 @@
 package xiaoshi2022.corpseorigin.entity;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -20,6 +20,7 @@ import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 public class JuQueBeamEntity extends Projectile {
 
@@ -76,15 +77,9 @@ public class JuQueBeamEntity extends Projectile {
         Vec3 motion = this.getDeltaMovement();
         Vec3 pos = this.position();
 
-        // 粒子效果
-        if (this.level().isClientSide()) {
-            for (int i = 0; i < 2; i++) {
-                this.level().addParticle(ParticleTypes.SWEEP_ATTACK,
-                        pos.x + (this.random.nextDouble() - 0.5) * 0.5,
-                        pos.y + (this.random.nextDouble() - 0.5) * 0.5,
-                        pos.z + (this.random.nextDouble() - 0.5) * 0.5,
-                        motion.x * 0.2, motion.y * 0.2, motion.z * 0.2);
-            }
+        // 气只走服务端→客户端：本实体在服务端也 tick，直接发一团气（客户端不再自己撒粒子）。
+        if (this.level() instanceof ServerLevel sl) {
+            QiEffects.burst(sl, pos.x, pos.y, pos.z, 0xc0182a, 2, .25);
         }
 
         // 移动和碰撞检测

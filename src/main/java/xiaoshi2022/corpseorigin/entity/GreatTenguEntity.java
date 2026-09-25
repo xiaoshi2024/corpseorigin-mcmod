@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.level.storage.*;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 import java.util.UUID;
 import xiaoshi2022.corpseorigin.skill.longyou.UndeadBodyState;
 /** Timed airship apparition anchoring the ninja formation; not a drivable vehicle. */
@@ -75,7 +76,7 @@ public class GreatTenguEntity extends Entity implements GeoEntity {
     }
     @Override public boolean hurtServer(ServerLevel level,net.minecraft.world.damagesource.DamageSource source,float amount){
         if(phase==2 && source.getEntity() instanceof ServerPlayer attacker && attacker.getAttachedOrCreate(UndeadBodyState.STATE)==4){
-            if(amount>=4){phase=3; remaining=10; UndeadBodyState.escapeShip(attacker); attacker.teleportTo(getX(),getY()+2,getZ()); level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION,getX(),getY(),getZ(),30,2,1,2,.2);}
+            if(amount>=4){phase=3; remaining=10; UndeadBodyState.escapeShip(attacker); attacker.teleportTo(getX(),getY()+2,getZ()); QiEffects.burst(level,getX(),getY(),getZ(),0xd8552c,30,2);}
             return true;
         }
         return false;

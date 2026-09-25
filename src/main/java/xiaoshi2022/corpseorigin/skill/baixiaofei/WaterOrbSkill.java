@@ -24,10 +24,10 @@ public class WaterOrbSkill extends AbstractSkill {
     @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
         var t=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(p,20);if(t==null){xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.emptyCast(p);return;}
         var level=(net.minecraft.server.level.ServerLevel)p.level();
-        for(int i=0;i<24;i++) {
-            var v=p.getEyePosition().lerp(t.getEyePosition(),i/24.0);
-            level.sendParticles(net.minecraft.core.particles.ParticleTypes.SPLASH,v.x,v.y,v.z,5,.15,.15,.15,.1);
-        }
+        // 水球轨迹：整条直线塌缩成一朵气团（取中点、半径≈线长一半，上限 8）
+        var eye=p.getEyePosition();var end=t.getEyePosition();
+        double half=Math.min(8.0,eye.distanceTo(end)*.5);
+        xiaoshi2022.corpseorigin.skill.chapter.QiEffects.cloud(level,eye.lerp(end,.5),0x4fc3f7,(float)Math.max(.5,half),12);
         t.hurtServer(level,p.damageSources().playerAttack(p),24);
         xiaoshi2022.corpseorigin.skill.chapter.SkillRework.buff(t,net.minecraft.world.effect.MobEffects.SLOWNESS,80,2);
         t.push(p.getLookAngle().x*1.5,.4,p.getLookAngle().z*1.5);t.hurtMarked=true;

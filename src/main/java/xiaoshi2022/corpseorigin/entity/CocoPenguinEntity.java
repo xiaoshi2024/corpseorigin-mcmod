@@ -8,7 +8,6 @@ import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
 import com.geckolib.animation.state.AnimationTest;
 import com.geckolib.util.GeckoLibUtil;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
@@ -31,6 +30,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.registry.ModItems;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 /**
  * CoCo 企鹅 - 未尸兄化的王企鹅。
@@ -245,9 +245,9 @@ public class CocoPenguinEntity extends Animal implements GeoEntity {
         this.playSound(SoundEvents.ZOMBIE_VILLAGER_CONVERTED, 1.0F, 1.0F);
         zombie.playSound(SoundEvents.ZOMBIE_VILLAGER_CONVERTED, 1.0F, 1.0F);
 
-        serverLevel.sendParticles(ParticleTypes.SMOKE,
+        QiEffects.burst(serverLevel,
                 this.getX(), this.getY() + 1.0, this.getZ(),
-                30, 0.5, 0.5, 0.5, 0.05);
+                0x9aa4b0, 30, 0.5);
 
         serverLevel.addFreshEntity(zombie);
         this.discard();

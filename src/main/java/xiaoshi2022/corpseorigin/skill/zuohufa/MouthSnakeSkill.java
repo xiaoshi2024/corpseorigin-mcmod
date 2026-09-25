@@ -1,6 +1,5 @@
 package xiaoshi2022.corpseorigin.skill.zuohufa;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -14,6 +13,7 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.compat.SnakesAliveCompat;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.util.HashSet;
 import java.util.List;
@@ -42,6 +42,9 @@ public class MouthSnakeSkill implements ISkill {
     private static final double KNOCKBACK = 0.6;
     private static final int MAX_TARGETS = 5;
     private static final int INNER_POWER_COST = 5;
+
+    /** 蛇影 / 咬中统一的血红（原 CRIT / END_ROD / DAMAGE_INDICATOR） */
+    private static final int SNAKE_COLOR = 0xc0182a;
 
     @Override
     public Identifier getId() {
@@ -95,18 +98,15 @@ public class MouthSnakeSkill implements ISkill {
         //   没装 / 关掉联动时这里什么都不做，技能照样有下面的贯穿打击与蛇影轨迹。
         SnakesAliveCompat.spitSnake(player, look);
 
+        // 蛇影轨迹：整条直线塌缩成一朵气团（取中点、半径≈线长一半，上限 8）
+        QiEffects.cloud(level, start.add(look.scale(REACH * 0.5)), SNAKE_COLOR, 8.0f, 12);
+
         // 已被咬过的目标不再重复伤害（一条蛇对一个目标只咬一口）
         Set<Integer> hitIds = new HashSet<>();
         int hits = 0;
 
         for (double travelled = 0.0; travelled <= REACH && hits < MAX_TARGETS; travelled += STEP) {
             Vec3 point = start.add(look.scale(travelled));
-
-            // 蛇身轨迹：金色碎光 + 一点末端气流
-            level.sendParticles(ParticleTypes.CRIT, point.x, point.y, point.z, 1, 0.0, 0.0, 0.0, 0.0);
-            if (((int) (travelled / STEP)) % 3 == 0) {
-                level.sendParticles(ParticleTypes.END_ROD, point.x, point.y, point.z, 1, 0.0, 0.0, 0.0, 0.0);
-            }
 
             AABB probe = new AABB(point, point).inflate(0.6);
             List<LivingEntity> caught = level.getEntitiesOfClass(
@@ -127,9 +127,8 @@ public class MouthSnakeSkill implements ISkill {
                     target.push(push.x, 0.15, push.z);
                     target.hurtMarked = true;
                 }
-                level.sendParticles(ParticleTypes.DAMAGE_INDICATOR,
-                        target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-                        6, 0.25, 0.25, 0.25, 0.0);
+                QiEffects.burst(level, target.getX(), target.getY() + target.getBbHeight() * 0.5,
+                        target.getZ(), SNAKE_COLOR, 6, 0.25);
             }
         }
 

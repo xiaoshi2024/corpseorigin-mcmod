@@ -1,7 +1,6 @@
 package xiaoshi2022.corpseorigin.item;
 
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -27,6 +26,7 @@ import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.XiaoYanZi;
 import xiaoshi2022.corpseorigin.entity.HamEntity;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 import java.util.function.Consumer;
 
 /** One serialized Ham per cage; capture/release mutate only on the server. */
@@ -98,8 +98,7 @@ public class DogCageItem extends Item {
         if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)
             xiaoshi2022.corpseorigin.network.CorpseNetwork.sendCooldownSync(serverPlayer, "ham_summon", FIRE_COOLDOWN);
         level.playSound(null, player.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 1, 1);
-        level.sendParticles(ParticleTypes.SMALL_FLAME, player.getX(), player.getEyeY(), player.getZ(),
-                8, .1, .1, .1, .02);
+        QiEffects.burst(level, player.getX(), player.getEyeY(), player.getZ(), 0xff7a1a, 8, .1);
         return InteractionResult.SUCCESS;
     }
     @Override public InteractionResult use(Level level, Player player, InteractionHand hand) {

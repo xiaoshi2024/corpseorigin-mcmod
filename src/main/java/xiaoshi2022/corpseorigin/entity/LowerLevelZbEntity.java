@@ -11,7 +11,6 @@ import com.geckolib.util.GeckoLibUtil;
 import com.mojang.logging.LogUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -33,6 +32,7 @@ import org.slf4j.Logger;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinLoader;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinState;
 import xiaoshi2022.corpseorigin.registry.ModSounds;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.util.Optional;
 
@@ -175,10 +175,10 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
             this.playSound(ModSounds.GROUND_CHI, 1.0F, pitch);
 
             if (level instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(
-                        ParticleTypes.ITEM_SLIME,
+                QiEffects.burst(
+                        serverLevel,
                         target.getX(), target.getY() + 0.5, target.getZ(),
-                        5, 0.3, 0.3, 0.3, 0.1
+                        0x8ce06a, 5, 0.3
                 );
             }
         }
@@ -373,10 +373,10 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
             // ✅ 极度饥饿时显示粒子效果
             if (this.isStarving() && this.tickCount % 20 == 0) {
                 if (this.level() instanceof ServerLevel serverLevel) {
-                    serverLevel.sendParticles(
-                            ParticleTypes.ANGRY_VILLAGER,
+                    QiEffects.burst(
+                            serverLevel,
                             this.getX(), this.getY() + 1.5, this.getZ(),
-                            1, 0, 0, 0, 0
+                            0xc0182a, 1, 0
                     );
                 }
             }

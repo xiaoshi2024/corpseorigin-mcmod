@@ -66,7 +66,7 @@ public final class GourdCapture {
         if(t.hurtServer(p.level(),c.automatic?p.damageSources().mobAttack(g):p.damageSources().playerAttack(p),finishDamage)&&!t.isAlive()){
             int before=BloodReserve.get(p);
             if(c.automatic)g.storeFlesh(GourdBalance.petFlesh(t.getMaxHealth()));else BloodReserve.add(p,gain);
-            p.level().sendParticles(net.minecraft.core.particles.ParticleTypes.POOF,mouth.x,mouth.y,mouth.z,18,.15,.15,.15,.02);
+            QiEffects.burst((net.minecraft.server.level.ServerLevel)p.level(),mouth.x,mouth.y,mouth.z,0x9aa4b0,18,.15);
             p.sendOverlayMessage(c.automatic?Component.translatable("message.corpseorigin.gourd.pet_stored",g.storedFlesh(),GourdBalance.PET_CAPACITY):Component.translatable("skill.corpseorigin.gourd_devour.success",BloodReserve.get(p)-before));
         }
         return false;

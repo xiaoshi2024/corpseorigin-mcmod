@@ -1,12 +1,12 @@
 package xiaoshi2022.corpseorigin.skill.bianyi_guiyu;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.skill.AbstractSkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 /**
  * 变异鲑鱼·水战撕咬 —— 水下突袭撕咬。
@@ -37,7 +37,7 @@ public class WaterBiteSkill extends AbstractSkill {
         target.hurtServer((ServerLevel) p.level(), p.damageSources().playerAttack(p), inWater ? 8 : 5);
         p.setDeltaMovement(p.getLookAngle().scale(inWater ? .8 : .4));
         p.hurtMarked = true;
-        ((ServerLevel) p.level()).sendParticles(ParticleTypes.BUBBLE,
-                p.getX(), p.getY() + .5, p.getZ(), inWater ? 20 : 8, .5, .3, .5, .03);
+        QiEffects.burst((ServerLevel) p.level(), p.getX(), p.getY() + .5, p.getZ(),
+                0x4fc3f7, inWater ? 20 : 8, .5);
     }
 }

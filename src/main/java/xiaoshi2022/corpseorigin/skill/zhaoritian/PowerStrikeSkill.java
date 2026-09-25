@@ -2,6 +2,7 @@ package xiaoshi2022.corpseorigin.skill.zhaoritian;
 
 import xiaoshi2022.corpseorigin.skill.AbstractSkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 /**
  * 赵日天·强力一击 —— 专属秒杀剧情技。
@@ -27,7 +28,7 @@ public class PowerStrikeSkill extends AbstractSkill {
         boolean story=!(target instanceof net.minecraft.world.entity.player.Player) && target.entityTags().contains("corpseorigin_story_execution");
         target.hurtServer((net.minecraft.server.level.ServerLevel)p.level(),p.damageSources().playerAttack(p),story?target.getHealth()*20+100:80);
         xiaoshi2022.corpseorigin.skill.chapter.ImpactTerrain.launch(p,target,3);p.swing(net.minecraft.world.InteractionHand.MAIN_HAND,true);
-        ((net.minecraft.server.level.ServerLevel)p.level()).sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION,
-                target.getX(),target.getY()+1,target.getZ(),1,0,0,0,0);
+        QiEffects.burst((net.minecraft.server.level.ServerLevel)p.level(),
+                target.getX(),target.getY()+1,target.getZ(),0xd8552c,1,0);
     }
 }

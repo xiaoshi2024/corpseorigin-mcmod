@@ -31,7 +31,7 @@ public class HeartGrabAmbushSkill extends AbstractSkill {
         xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.action(p,"ambush",12);
         target.hurtServer((net.minecraft.server.level.ServerLevel)p.level(),p.damageSources().playerAttack(p),14);
         p.swing(net.minecraft.world.InteractionHand.MAIN_HAND,true);
-        ((net.minecraft.server.level.ServerLevel)p.level()).sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT,
-                target.getX(),target.getY()+1,target.getZ(),25,.3,.4,.3,.1);
+        xiaoshi2022.corpseorigin.skill.chapter.QiEffects.burst((net.minecraft.server.level.ServerLevel)p.level(),
+                target.getX(),target.getY()+1,target.getZ(),0xc0182a,25,.4);
     }
 }

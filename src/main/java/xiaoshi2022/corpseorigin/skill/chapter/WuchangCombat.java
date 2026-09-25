@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -88,11 +87,7 @@ public final class WuchangCombat {
             p.addEffect(new MobEffectInstance(MobEffects.SPEED, 100, 1));
             p.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 40, 0));
             ChapterScenes.action(p, "wuchou_step", 12);
-            for (int i = 0; i < 18; i++)
-                level.sendParticles(ParticleTypes.CLOUD,
-                        p.getX() + (p.getRandom().nextDouble() - .5),
-                        p.getY() + .2, p.getZ() + (p.getRandom().nextDouble() - .5),
-                        1, .25, .08, .25, .01);
+            QiEffects.burst(level, p.getX(), p.getY() + .2, p.getZ(), 0x9aa4b0, 18, .25);
             level.playSound(null, p.getX(), p.getY(), p.getZ(),
                     SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1f, 1.4f);
         }

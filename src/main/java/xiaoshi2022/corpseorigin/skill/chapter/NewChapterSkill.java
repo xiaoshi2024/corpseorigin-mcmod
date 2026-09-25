@@ -49,7 +49,8 @@ public final class NewChapterSkill extends AbstractSkill {
             if(form==5)target.igniteForSeconds(8);
         }
         if(form==5)ignite(p,origin,destination);
-        for(int i=0;i<32;i++){var at=origin.lerp(destination,i/31.0);p.level().sendParticles(form==5?net.minecraft.core.particles.ParticleTypes.FLAME:form==4?net.minecraft.core.particles.ParticleTypes.SPLASH:net.minecraft.core.particles.ParticleTypes.CRIT,at.x,at.y,at.z,2,.04,.04,.04,.03);}
+        var mid=origin.lerp(destination,.5);
+        QiEffects.cloud((net.minecraft.server.level.ServerLevel)p.level(),mid,form==5?0xff7a1a:form==4?0x4fc3f7:0xc0182a,(float)Math.max(.5,Math.min(8,origin.distanceTo(destination)/2)),12);
         ChapterCombat.emptyCast(p);
     }
     private void devour(ServerPlayer p,net.minecraft.world.phys.Vec3 origin){

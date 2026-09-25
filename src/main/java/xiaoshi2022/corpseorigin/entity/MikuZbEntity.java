@@ -8,7 +8,6 @@ import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
 import com.geckolib.animation.state.AnimationTest;
 import com.geckolib.util.GeckoLibUtil;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -37,6 +36,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import xiaoshi2022.corpseorigin.registry.ModItems;
 import xiaoshi2022.corpseorigin.registry.ModSounds;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 /**
  * 初音尸兄 - 《尸兄》同人原创女性尸兄（致敬初音未来）。
@@ -162,9 +162,9 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
             addBelly(5);
 
             this.playSound(ModSounds.GROUND_CHI, 1.0F, 0.7F + this.random.nextFloat() * 0.3F);
-            level.sendParticles(ParticleTypes.ITEM_SLIME,
+            QiEffects.burst(level,
                     target.getX(), target.getY() + target.getBbHeight() / 2, target.getZ(),
-                    4, 0.2, 0.2, 0.2, 0.05);
+                    0x8ce06a, 4, 0.2);
 
             if (target instanceof LivingEntity living && !living.isAlive()) {
                 onKill(living);
@@ -330,9 +330,9 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
             // 唱歌梗：空闲时冒音符
             if (this.tickCount % NOTE_PARTICLE_INTERVAL == 0 && this.getTarget() == null
                     && this.level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ParticleTypes.NOTE,
+                QiEffects.burst(serverLevel,
                         this.getX(), this.getY() + 2.0, this.getZ(),
-                        1, 0.2, 0.2, 0.2, 1.0);
+                        0x39c5bb, 1, 0.2);
             }
         }
     }

@@ -3,7 +3,6 @@ package xiaoshi2022.corpseorigin.event;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -22,6 +21,7 @@ import xiaoshi2022.corpseorigin.effect.BYeffect;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
 import xiaoshi2022.corpseorigin.registry.ModEffects;
 import xiaoshi2022.corpseorigin.registry.ModFluids;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 import xiaoshi2022.corpseorigin.skill.longyou.ThunderPowerSkill;
 import xiaoshi2022.corpseorigin.skill.longyou.ThunderStrikeHandler;
 import xiaoshi2022.corpseorigin.skill.longyou.WaterPollutionSkill;
@@ -208,14 +208,9 @@ public final class LongYouEventHandler {
     private static void lifestealFeedback(ServerLevel level, LivingEntity caster, LivingEntity target) {
         Vec3 from = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
         Vec3 to = caster.position().add(0.0, caster.getBbHeight() * 0.5, 0.0);
-        for (int i = 1; i <= 3; i++) {
-            double t = i / 4.0;
-            level.sendParticles(ParticleTypes.DAMAGE_INDICATOR,
-                    from.x + (to.x - from.x) * t,
-                    from.y + (to.y - from.y) * t,
-                    from.z + (to.z - from.z) * t,
-                    1, 0.0, 0.0, 0.0, 0.0);
-        }
+        // 原来沿目标→尸王这条线逐点撒 3 颗粒子；现在整条线只发一朵：取中点，半径≈线长一半（上限 8）
+        double radius = Math.max(.5, Math.min(8.0, from.distanceTo(to) * 0.5));
+        QiEffects.cloud(level, from.add(to).scale(0.5), 0xc0182a, (float) radius, 10);
     }
 
     /** 感染成功时的表现：一蓬尸水绿雾 + 咕嘟声 */
@@ -224,8 +219,8 @@ public final class LongYouEventHandler {
         double y = target.getY() + target.getBbHeight() * 0.5;
         double z = target.getZ();
 
-        level.sendParticles(ParticleTypes.WITCH, x, y, z, 18, 0.4, 0.5, 0.4, 0.02);
-        level.sendParticles(ParticleTypes.ITEM_SLIME, x, y, z, 10, 0.3, 0.4, 0.3, 0.05);
+        QiEffects.burst(level, x, y, z, 0x8a3fd6, 18, 0.5);
+        QiEffects.burst(level, x, y, z, 0x8ce06a, 10, 0.4);
         level.playSound(null, x, y, z, SoundEvents.BOTTLE_EMPTY, SoundSource.PLAYERS, 0.9F, 0.7F);
     }
 

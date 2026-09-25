@@ -84,7 +84,7 @@ public final class CrimsonBloodSpearSkill extends AbstractSkill {
         }
         void impact(Vec3 point) {
             QiEffects.cloud(level,point,0xD30B30,.9f,12);
-            level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION,point.x,point.y,point.z,1,0,0,0,0);
+            QiEffects.burst(level,point.x,point.y,point.z,0xD30B30,1,0);
         }
     }
     private static Vec3 right(Vec3 forward) {

@@ -1,6 +1,5 @@
 package xiaoshi2022.corpseorigin.skill.zuohufa;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -13,6 +12,7 @@ import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.entity.ZuoFloodLongEntity;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 import xiaoshi2022.corpseorigin.skill.longyou.BloodReserve;
 
 /**
@@ -113,20 +113,11 @@ public class ReviveGuardianSkill implements ISkill {
         // ③ 清掉"青龙已殒"标记（随存档持久化）
         data.setGuardianLost(player.getUUID(), false);
 
-        // ④ 重生特效：血气汇聚 + 龙吟
+        // ④ 重生特效：血气汇聚成一朵气壳 + 龙吟
         Vec3 center = dragon.position().add(0, dragon.getBbHeight() * 0.5, 0);
-        for (int i = 0; i < 36; i++) {
-            double a = Math.random() * Math.PI * 2;
-            double r = 3.0 * (1.0 - i / 36.0);
-            double px = center.x + Math.cos(a) * r;
-            double pz = center.z + Math.sin(a) * r;
-            double py = center.y + (Math.random() - 0.5) * 2.0;
-            level.sendParticles(ParticleTypes.SOUL, px, py, pz, 1, 0, 0, 0, 0.02);
-        }
-        level.sendParticles(ParticleTypes.END_ROD, center.x, center.y, center.z,
-                24, 0.8, 0.8, 0.8, 0.02);
-        level.sendParticles(ParticleTypes.ITEM_SLIME, center.x, center.y, center.z,
-                30, 0.8, 0.8, 0.8, 0.08);
+        QiEffects.cloud(level, center, 0x35d4d4, 3.0f, 12);
+        QiEffects.burst(level, center.x, center.y, center.z, 0xdcefff, 24, 0.8);
+        QiEffects.burst(level, center.x, center.y, center.z, 0x8ce06a, 30, 0.8);
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ENDER_DRAGON_GROWL, SoundSource.PLAYERS, 0.8F, 0.6F);
         level.playSound(null, player.getX(), player.getY(), player.getZ(),

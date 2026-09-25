@@ -16,6 +16,7 @@ import net.minecraft.world.level.storage.*;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 import java.util.UUID;
 
 /** Short-lived summons; owner, team and line-of-sight checks apply to every hit. */
@@ -44,7 +45,7 @@ public class CorpseAntEntity extends PathfinderMob implements GeoEntity, ZombieK
         if(target.hurtServer(level,damageSources().playerAttack(p),isBullet()?4:2)) {
             if(!isBullet())target.addEffect(new MobEffectInstance(MobEffects.POISON,60,0));
             else {
-                level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION,getX(),getY()+.4,getZ(),1,0,0,0,0);
+                QiEffects.burst(level,getX(),getY()+.4,getZ(),0xd8552c,1,0);
                 for(LivingEntity nearby:level.getEntitiesOfClass(LivingEntity.class,getBoundingBox().inflate(2)))
                     if(nearby!=target && !(nearby instanceof CorpseAntEntity) && ChapterCombat.canHit(p,nearby) && hasLineOfSight(nearby))nearby.hurtServer(level,damageSources().playerAttack(p),2);
             }

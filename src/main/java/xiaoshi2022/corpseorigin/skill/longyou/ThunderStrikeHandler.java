@@ -1,7 +1,6 @@
 package xiaoshi2022.corpseorigin.skill.longyou;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +19,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -109,9 +109,8 @@ public final class ThunderStrikeHandler {
                 SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER, 5.0F, 0.9F);
         level.playSound(null, point.x, point.y, point.z,
                 SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.WEATHER, 2.0F, 1.0F);
-        level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
-                point.x, point.y + 0.5, point.z, 70, 1.8, 1.8, 1.8, 0.4);
-        level.sendParticles(ParticleTypes.SONIC_BOOM, point.x, point.y + 0.5, point.z, 1, 0.0, 0.0, 0.0, 0.0);
+        QiEffects.burst(level, point.x, point.y + 0.5, point.z, 0x88aaff, 70, 1.8);
+        QiEffects.burst(level, point.x, point.y + 0.5, point.z, 0x7a5cff, 1, 0.0);
 
         // 伤害 + 击飞 + 麻痹
         hurtArea(level, caster, point, EEL_SMASH_RADIUS + 2.0, EEL_DAMAGE, 1.8, EEL_STUN_TICKS);
@@ -198,7 +197,7 @@ public final class ThunderStrikeHandler {
 
         level.playSound(null, start.x, start.y, start.z,
                 SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER, 6.0F, 0.6F);
-        level.sendParticles(ParticleTypes.SONIC_BOOM, start.x, start.y, start.z, 1, 0.0, 0.0, 0.0, 0.0);
+        QiEffects.burst(level, start.x, start.y, start.z, 0x7a5cff, 1, 0.0);
         return true;
     }
 
@@ -233,13 +232,10 @@ public final class ThunderStrikeHandler {
             return true;
         }
 
-        // 球体本身：电火花 + 紫色焰
-        orb.level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
-                orb.position.x, orb.position.y, orb.position.z, 14, 0.6, 0.6, 0.6, 0.3);
-        orb.level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
-                orb.position.x, orb.position.y, orb.position.z, 4, 0.35, 0.35, 0.35, 0.02);
-        orb.level.sendParticles(ParticleTypes.END_ROD,
-                orb.position.x, orb.position.y, orb.position.z, 2, 0.4, 0.4, 0.4, 0.01);
+        // 球体本身：电火花 + 紫色焰 + 白光合成一朵气团，并降到每 2 tick 一朵（球在飞，气团跟着留痕）
+        if (orb.age % 2 == 0) {
+            QiEffects.cloud(orb.level, orb.position, 0x88aaff, 1.1f, 6);
+        }
 
         // 周期性放电：电弧 + 伤害 + 吸过来
         ServerPlayer caster = orb.level.getServer() == null ? null
@@ -287,10 +283,8 @@ public final class ThunderStrikeHandler {
         }
         level.playSound(null, center.x, center.y, center.z,
                 SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER, 9.0F, 0.5F);
-        level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, center.x, center.y, center.z,
-                6, 3.0, 3.0, 3.0, 0.0);
-        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, center.x, center.y, center.z,
-                200, 6.0, 6.0, 6.0, 0.6);
+        QiEffects.burst(level, center.x, center.y, center.z, 0xd8552c, 6, 3.0);
+        QiEffects.burst(level, center.x, center.y, center.z, 0x88aaff, 200, 6.0);
 
         ServerPlayer caster = level.getServer() == null ? null
                 : level.getServer().getPlayerList().getPlayer(orb.caster);
@@ -386,8 +380,8 @@ public final class ThunderStrikeHandler {
         }
 
         if (broken > 0) {
-            level.sendParticles(ParticleTypes.LARGE_SMOKE, center.x, center.y + 0.5, center.z,
-                    40, radius * 0.35, 1.0, radius * 0.35, 0.05);
+            QiEffects.burst(level, center.x, center.y + 0.5, center.z, 0x9aa4b0, 40,
+                    Math.max(radius * 0.35, 1.0));
         }
         return broken;
     }

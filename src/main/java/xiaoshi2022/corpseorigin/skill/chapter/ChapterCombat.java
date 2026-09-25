@@ -1,6 +1,5 @@
 package xiaoshi2022.corpseorigin.skill.chapter;
 
-import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,7 +20,7 @@ public final class ChapterCombat {
         Vec3 start=player.getEyePosition();
         Vec3 end=player.level().clip(new ClipContext(start,start.add(player.getLookAngle().scale(2)),
                 ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,player)).getLocation();
-        for(int i=1;i<=8;i++)dust((ServerLevel)player.level(),start.lerp(end,i/8.0),0xaaccee,1);
+        QiEffects.cloud((ServerLevel)player.level(),start.lerp(end,.5),0xaaccee,1.1f,10);
     }
     public static boolean canHit(ServerPlayer owner, LivingEntity target) {
         if (target instanceof xiaoshi2022.corpseorigin.entity.OwnerBound body && body.isOwnedBy(owner)) return false;
@@ -70,25 +69,24 @@ public final class ChapterCombat {
         }
         return hit;
     }
-    /** 在玩家身前画一道扇形棍光/刀光粒子。 */
+    /** 在玩家身前扫出一道扇形气浪（原来是一整排粒子，现在整片只发 3 朵气团）。 */
     public static void arcDust(ServerLevel level, Vec3 origin, Vec3 dir, double radius, double halfAngleDeg, int color) {
         Vec3 face = new Vec3(dir.x, 0, dir.z);
         if (face.lengthSqr() < 1.0E-6) face = Vec3.directionFromRotation(0, 0);
         face = face.normalize();
         Vec3 right = new Vec3(-face.z, 0, face.x);
-        for (int i = 0; i <= 24; i++) {
-            double a = Math.toRadians(-halfAngleDeg + 2 * halfAngleDeg * i / 24.0);
+        for (int i = -1; i <= 1; i++) {
+            double a = Math.toRadians(halfAngleDeg * i);
             Vec3 at = origin.add(face.scale(Math.cos(a) * radius)).add(right.scale(Math.sin(a) * radius));
-            dust(level, at, color, 1.1f);
+            QiEffects.cloud(level, at, color, (float) (radius * .8), 10);
         }
     }
+    /** 单点气（顶替原来的一颗 dust 粒子）。 */
     public static void dust(ServerLevel level, Vec3 point, int color, float size) {
-        level.sendParticles(new DustParticleOptions(color, size), point.x, point.y, point.z, 1, 0, 0, 0, 0);
+        QiEffects.cloud(level, point, color, Math.max(.5f, size), 8);
     }
+    /** 一圈气浪：整圈只发一朵半径等于圈半径的气团。 */
     public static void ring(ServerLevel level, Vec3 center, double radius, int color, int points) {
-        for (int i = 0; i < points; i++) {
-            double angle = i * Math.PI * 2 / points;
-            dust(level, center.add(Math.cos(angle) * radius, .12, Math.sin(angle) * radius), color, 1.1f);
-        }
+        QiEffects.cloud(level, center.add(0, .12, 0), color, (float) radius, 12);
     }
 }

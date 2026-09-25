@@ -1,6 +1,5 @@
 package xiaoshi2022.corpseorigin.limb;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,6 +18,7 @@ import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.LongYou;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 /**
  * 截断判定。
@@ -264,9 +264,8 @@ public final class DismembermentLogic {
         }
 
         if (victim.level() instanceof ServerLevel level) {
-            level.sendParticles(ParticleTypes.DAMAGE_INDICATOR,
-                    victim.getX(), victim.getY() + victim.getBbHeight() * 0.6D, victim.getZ(),
-                    16, 0.4D, 0.4D, 0.4D, 0.0D);
+            QiEffects.burst(level, victim.getX(), victim.getY() + victim.getBbHeight() * 0.6D, victim.getZ(),
+                    0xc0182a, 16, 0.4D);
             level.playSound(null, victim.getX(), victim.getY(), victim.getZ(),
                     SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.0F, 0.6F);
         }

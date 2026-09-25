@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.UUID;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -53,11 +52,9 @@ public final class GuigunCombat {
                 }
                 int age = RESONANCE_TICKS - (c.endTick - p.tickCount);
                 ServerLevel level = (ServerLevel) p.level();
-                // 一圈圈向外扩散的绿色声波环。
+                // 一圈圈向外扩散的绿色气浪（整圈一朵，每 4 tick 推一圈，不再逐点撒粒子）。
                 double radius = 1.2 + (age % 10) * .62;
-                ChapterCombat.ring(level, p.position().add(0, .25, 0), radius, RESONANCE_COLOR, 28);
-                for (int i = 0; i < 6; i++)
-                    ChapterCombat.dust(level, p.position().add(0, .6 + i * .28, 0), RESONANCE_COLOR, 1.4f);
+                if (age % 4 == 0) QiEffects.cloud(level, p.position().add(0, .25, 0), RESONANCE_COLOR, (float) radius, 10);
                 if (age % 10 == 0) pulse(p, level);
                 return false;
             });
@@ -97,18 +94,14 @@ public final class GuigunCombat {
     public static final class Guard extends RoleChapterSkill {
         public Guard() { super("guigun_guard", SkillType.COMBAT, 240, "guigun_human"); }
         @Override public void onActivate(ServerPlayer p) {
-            var level = (ServerLevel) p.level();
             p.addEffect(new MobEffectInstance(MobEffects.STRENGTH, 200, 1));
             p.addEffect(new MobEffectInstance(MobEffects.SPEED, 200, 1));
             p.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 200, 0));
             ChapterScenes.action(p, "guigun_guard", 40);
             QiEffects.aura(p, "guigun_fury", FURY_COLOR, 2f, 50);
-            for (int i = 0; i < 24; i++) {
-                double a = Math.PI * 2 * i / 24;
-                ChapterCombat.dust(level, p.position().add(Math.cos(a) * 1.1, .35 + (i % 4) * .35, Math.sin(a) * 1.1),
-                        FURY_COLOR, 1.2f);
-            }
-            level.playSound(null, p.getX(), p.getY(), p.getZ(),
+            // 周身炸开一圈恶鬼之气（原来是一圈 24 颗粒子，现在整圈一朵）。
+            QiEffects.cloud((ServerLevel) p.level(), p.position().add(0, .9, 0), FURY_COLOR, 1.8f, 14);
+            p.level().playSound(null, p.getX(), p.getY(), p.getZ(),
                     SoundEvents.ILLUSIONER_PREPARE_BLINDNESS, SoundSource.PLAYERS, 1.2f, .8f);
             p.sendOverlayMessage(Component.translatable("skill.corpseorigin.guigun_guard.fury"));
         }
@@ -154,7 +147,7 @@ public final class GuigunCombat {
                     SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1f, .85f);
             ChapterCombat.ring(level, impact, 1.6, CRUSH_COLOR, 24);
             ChapterCombat.ring(level, impact, 3, CRUSH_COLOR, 32);
-            level.sendParticles(ParticleTypes.EXPLOSION, impact.x, impact.y + .1, impact.z, 2, .1, .05, .1, 0);
+            QiEffects.burst(level, impact.x, impact.y + .1, impact.z, CRUSH_COLOR, 2, .1);
             for (LivingEntity t : level.getEntitiesOfClass(LivingEntity.class,
                     new net.minecraft.world.phys.AABB(impact, impact).inflate(3),
                     t -> ChapterCombat.canHit(p, t) && impact.distanceToSqr(t.getBoundingBox().getCenter()) <= 9)) {

@@ -38,6 +38,6 @@ public class SpatialBlinkSkill extends AbstractSkill {
     @Override public void onActivate(net.minecraft.server.level.ServerPlayer p) {
         var end=destination(p);if(end==null)return;
         p.teleportTo(end.x,end.y,end.z);
-        ((net.minecraft.server.level.ServerLevel)p.level()).sendParticles(net.minecraft.core.particles.ParticleTypes.PORTAL,end.x,end.y+1,end.z,40,.5,.8,.5,.15);
+        xiaoshi2022.corpseorigin.skill.chapter.QiEffects.burst((net.minecraft.server.level.ServerLevel)p.level(),end.x,end.y+1,end.z,0x8a3fd6,40,.8);
     }
 }

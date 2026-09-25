@@ -9,8 +9,6 @@ import com.geckolib.animation.object.PlayState;
 import com.geckolib.animation.state.AnimationTest;
 import com.geckolib.util.GeckoLibUtil;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.particles.PowerParticleOption;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -45,6 +43,7 @@ import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.registry.ModSounds;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.util.EnumSet;
 import java.util.UUID;
@@ -425,9 +424,9 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, Zombi
             this.playSound(ModSounds.GROUND_CHI, 1.2F, 0.7F + this.random.nextFloat() * 0.4F);
 
             if (this.level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(ParticleTypes.SWEEP_ATTACK,
+                QiEffects.burst(serverLevel,
                         target.getX(), target.getY() + target.getBbHeight() / 2, target.getZ(),
-                        2, 0.2, 0.2, 0.2, 0);
+                        0xc0182a, 2, 0.2);
             }
 
             if (this.random.nextFloat() < 0.3f) {
@@ -459,9 +458,9 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, Zombi
 
             this.playSound(SoundEvents.FOX_TELEPORT, 1.5F, 0.6F);
             if (this.level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(PowerParticleOption.create(ParticleTypes.DRAGON_BREATH, 1.0F),
+                QiEffects.burst(serverLevel,
                         target.getX(), target.getY() + target.getBbHeight() / 2, target.getZ(),
-                        8, 0.3, 0.3, 0.3, 0.05);
+                        0xa855f7, 8, 0.3);
             }
         }
     }
@@ -477,9 +476,9 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, Zombi
                 && isBreakableBlock(serverLevel.getBlockState(targetPos))) {
             serverLevel.destroyBlock(targetPos, true, this, 512);
             this.playSound(SoundEvents.GLASS_BREAK, 1.0F, 0.8F);
-            serverLevel.sendParticles(ParticleTypes.EXPLOSION,
+            QiEffects.burst(serverLevel,
                     targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5,
-                    3, 0.2, 0.2, 0.2, 0);
+                    0xd8552c, 3, 0.2);
         }
     }
 
@@ -491,11 +490,10 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, Zombi
         this.playSound(SoundEvents.WITHER_SPAWN, 1.5F, 0.8F);
 
         if (this.level() instanceof ServerLevel serverLevel) {
-            for (int i = 0; i < 20; i++) {
-                serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
-                        this.getX(), this.getY() + this.getBbHeight() / 2, this.getZ(),
-                        1, 0.5, 0.5, 0.5, 0.05);
-            }
+            // 原先逐颗撒 20 次灵魂火，整团塌缩成一朵气。
+            QiEffects.burst(serverLevel,
+                    this.getX(), this.getY() + this.getBbHeight() / 2, this.getZ(),
+                    0x35d4d4, 20, 0.5);
         }
     }
 
@@ -541,9 +539,9 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, Zombi
         target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 60, 1));
 
         if (this.level() instanceof ServerLevel serverLevel) {
-            serverLevel.sendParticles(ParticleTypes.CRIMSON_SPORE,
+            QiEffects.burst(serverLevel,
                     target.getX(), target.getY() + target.getBbHeight() / 2, target.getZ(),
-                    10, 0.2, 0.2, 0.2, 0.02);
+                    0xa855f7, 10, 0.2);
         }
     }
 
@@ -599,11 +597,10 @@ public class CocoZombieXEntity extends PathfinderMob implements GeoEntity, Zombi
         this.playSound(SoundEvents.WITHER_SPAWN, 1.5F, 0.8F);
 
         if (this.level() instanceof ServerLevel serverLevel) {
-            for (int i = 0; i < 20; i++) {
-                serverLevel.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
-                        this.getX(), this.getY() + this.getBbHeight() / 2, this.getZ(),
-                        1, 0.5, 0.5, 0.5, 0.05);
-            }
+            // 原先逐颗撒 20 次灵魂火，整团塌缩成一朵气。
+            QiEffects.burst(serverLevel,
+                    this.getX(), this.getY() + this.getBbHeight() / 2, this.getZ(),
+                    0x35d4d4, 20, 0.5);
         }
     }
 

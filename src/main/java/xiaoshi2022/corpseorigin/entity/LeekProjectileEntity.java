@@ -1,7 +1,6 @@
 package xiaoshi2022.corpseorigin.entity;
 
 import net.minecraft.core.UUIDUtil;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -21,6 +20,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.registry.ModItems;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.util.List;
 import java.util.UUID;
@@ -130,8 +130,8 @@ public class LeekProjectileEntity extends Entity {
         this.setPos(getX() + step.x, getY() + step.y, getZ() + step.z);
 
         if (level() instanceof ServerLevel sl) {
-            sl.sendParticles(ParticleTypes.COMPOSTER,
-                    getX(), getY(), getZ(), 1, 0.05, 0.05, 0.05, 0.0);
+            QiEffects.burst(sl,
+                    getX(), getY(), getZ(), 0x8ce06a, 1, 0.05);
         }
 
         // 撞方块 → 消失
@@ -156,9 +156,9 @@ public class LeekProjectileEntity extends Entity {
                     : this.damageSources().generic();
             target.hurtServer(sl, src, DAMAGE);
 
-            sl.sendParticles(ParticleTypes.CRIT,
+            QiEffects.burst(sl,
                     target.getX(), target.getY() + target.getBbHeight() / 2, target.getZ(),
-                    6, 0.2, 0.2, 0.2, 0.1);
+                    0xc0182a, 6, 0.2);
             sl.playSound(null, target.getX(), target.getY(), target.getZ(),
                     SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.HOSTILE, 0.8F, 1.2F);
 
@@ -181,8 +181,8 @@ public class LeekProjectileEntity extends Entity {
         resolved = true;
 
         if (level() instanceof ServerLevel sl) {
-            sl.sendParticles(ParticleTypes.ITEM_SLIME,
-                    getX(), getY(), getZ(), 4, 0.1, 0.1, 0.1, 0.02);
+            QiEffects.burst(sl,
+                    getX(), getY(), getZ(), 0x8ce06a, 4, 0.1);
         }
         this.discard();
     }

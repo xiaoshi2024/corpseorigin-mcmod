@@ -1,6 +1,5 @@
 package xiaoshi2022.corpseorigin.skill.zuohufa;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -15,6 +14,7 @@ import xiaoshi2022.corpseorigin.entity.ZuoFloodLongEntity;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 /**
  * 左护法·脱离 —— 把身上那条蛟龙蜕下来。
@@ -93,12 +93,10 @@ public class DetachGuardianSkill implements ISkill {
         ZuoHuFa.applyIfZuoHuFa(player);
         CorpseNetwork.broadcastPlayerCorpseSync(player);
 
-        // ③ 蜕皮表现：血雾 + 黏液
+        // ③ 蜕皮表现：血雾 + 黏液（各塌缩成一朵气团）
         Vec3 center = player.position().add(0, player.getBbHeight() * 0.5, 0);
-        level.sendParticles(ParticleTypes.ITEM_SLIME, center.x, center.y, center.z,
-                40, 0.8, 0.8, 0.8, 0.08);
-        level.sendParticles(ParticleTypes.DAMAGE_INDICATOR, center.x, center.y, center.z,
-                20, 0.7, 0.7, 0.7, 0.05);
+        QiEffects.burst(level, center.x, center.y, center.z, 0x8ce06a, 40, 0.8);
+        QiEffects.burst(level, center.x, center.y, center.z, 0xc0182a, 20, 0.7);
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.SLIME_BLOCK_BREAK, SoundSource.PLAYERS, 1.2F, 0.6F);
 

@@ -2,7 +2,6 @@ package xiaoshi2022.corpseorigin.skill.chapter;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -62,8 +61,7 @@ public final class FiveElementsCombat {
         boolean primed = mark != null && mark.owner == player && mark.until > level.getGameTime();
         if (target.hurtServer(level, player.damageSources().playerAttack(player), primed ? 12 : 6)) {
             if (primed) { MARKS.remove(target.getUUID()); target.igniteForSeconds(6); }
-            level.sendParticles(ParticleTypes.FLAME, target.getX(), target.getY() + .7, target.getZ(),
-                    primed ? 35 : 12, .4, .5, .4, .03);
+            QiEffects.burst(level, target.getX(), target.getY() + .7, target.getZ(), 0xff7a1a, primed ? 35 : 12, .5);
         }
     }
     /** Casting five-elements formation is explicit consent to contribute; ungrouped strangers are excluded. */
@@ -129,8 +127,7 @@ public final class FiveElementsCombat {
         MARKS.values().removeIf(m -> !role(m.owner,"yanyan") || !m.target.isAlive()
                 || m.target.level() != m.owner.level() || m.owner.level().getGameTime() >= m.until);
         for (Mark m : MARKS.values()) if (m.owner.tickCount % 5 == 0)
-            ((ServerLevel)m.target.level()).sendParticles(new net.minecraft.core.particles.DustParticleOptions(0xb9162c, 1.3f),
-                    m.target.getX(), m.target.getY()+.7, m.target.getZ(), 8, .3,.5,.3,0);
+            QiEffects.burst((ServerLevel)m.target.level(), m.target.getX(), m.target.getY()+.7, m.target.getZ(), 0xb9162c, 8, .5);
         var iterator = CHARGES.values().iterator();
         while (iterator.hasNext()) {
             Charge c = iterator.next();
@@ -218,16 +215,12 @@ public final class FiveElementsCombat {
                     if (level.clip(new ClipContext(blastOrigin,target.getEyePosition(),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,owner)).getType()!=HitResult.Type.MISS) continue;
                     if (target.hurtServer(level,owner.damageSources().playerAttack(owner),(float)(8*multiplier))) target.igniteForSeconds(5);
                 }
-                level.sendParticles(ParticleTypes.EXPLOSION_EMITTER,position.x,position.y,position.z,1,0,0,0,0);
+                QiEffects.burst(level,position.x,position.y,position.z,0xd8552c,1,0);
                 return true;
             }
             position=end;
             double radius=.65+multiplier*.15;
-            for(int i=0;i<24;i++) {
-                double y=1-2*(i+.5)/24, r=Math.sqrt(1-y*y), angle=i*2.39996+age*.2;
-                Vec3 point=position.add(Math.cos(angle)*r*radius,y*radius,Math.sin(angle)*r*radius);
-                level.sendParticles(ParticleTypes.FLAME,point.x,point.y,point.z,1,0,0,0,0);
-            }
+            QiEffects.cloud(level,position,0xff7a1a,(float)radius,6);
             return false;
         }
     }

@@ -1,6 +1,5 @@
 package xiaoshi2022.corpseorigin.skill.zuohufa;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -15,6 +14,7 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.util.List;
 
@@ -78,22 +78,15 @@ public class QiLockSkill implements ISkill {
 
         for (LivingEntity target : targets) {
             target.addEffect(new MobEffectInstance(MobEffects.GLOWING, LOCK_TICKS, 0, false, true, true));
-            level.sendParticles(ParticleTypes.END_ROD,
-                    target.getX(), target.getY() + target.getBbHeight() * 0.9, target.getZ(),
-                    6, 0.2, 0.2, 0.2, 0.01);
+            // 锁住敌人身上的气：直接附着在目标实体上，持续到锁定结束
+            QiEffects.aura(target, "qi_lock", 0xdcefff, 1.5f, LOCK_TICKS);
         }
 
-        // 以自身为中心扩散一圈"气"的波纹，示意范围
+        // 以自身为中心扩散一圈"气"的波纹，示意范围（每圈塌缩成一朵气团）
         for (int ring = 0; ring < 3; ring++) {
             double radius = RADIUS * (ring + 1) / 3.0;
-            for (int i = 0; i < 32; i++) {
-                double angle = Math.PI * 2 * i / 32.0;
-                level.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
-                        player.getX() + Math.cos(angle) * radius,
-                        player.getY() + 1.0,
-                        player.getZ() + Math.sin(angle) * radius,
-                        1, 0.0, 0.0, 0.0, 0.0);
-            }
+            QiEffects.cloud(level, player.position().add(0, 1.0, 0), 0x35d4d4,
+                    (float) Math.min(16.0, radius), 12);
         }
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1.0F, 0.6F);

@@ -1,6 +1,5 @@
 package xiaoshi2022.corpseorigin.skill.longyou;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -21,6 +20,7 @@ import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.character.InnerPowerManager;
 import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -113,9 +113,8 @@ public final class InfrasoundFieldHandler {
         // 起手：脉冲判定一次（晕厥 / 免疫 / 操控尸兄），并给出表现
         level.playSound(null, caster.getX(), caster.getY(), caster.getZ(),
                 SoundEvents.WARDEN_SONIC_BOOM, SoundSource.HOSTILE, 2.0F, 0.7F);
-        level.sendParticles(ParticleTypes.SONIC_BOOM,
-                caster.getX(), caster.getY() + caster.getBbHeight() * 0.5, caster.getZ(),
-                1, 0.0, 0.0, 0.0, 0.0);
+        QiEffects.burst(level, caster.getX(), caster.getY() + caster.getBbHeight() * 0.5, caster.getZ(),
+                0x7a5cff, 1, 0.0);
         pulse(caster, level, field);
         return true;
     }
@@ -188,8 +187,8 @@ public final class InfrasoundFieldHandler {
                 continue;
             }
             Vec3 pos = arrow.position();
-            level.sendParticles(ParticleTypes.SONIC_BOOM, pos.x, pos.y, pos.z, 1, 0.0, 0.0, 0.0, 0.0);
-            level.sendParticles(ParticleTypes.CRIT, pos.x, pos.y, pos.z, 8, 0.2, 0.2, 0.2, 0.1);
+            // 共振解体：声波与崩解合为一朵气团（每根投掷物只发一朵，不再逐粒子）
+            QiEffects.burst(level, pos.x, pos.y, pos.z, 0x7a5cff, 9, 0.2);
             level.playSound(null, pos.x, pos.y, pos.z,
                     SoundEvents.ITEM_BREAK, SoundSource.HOSTILE, 1.0F, 1.6F);
             // 只有飞行中的投掷物会被震散：手里拿的武器、地上的掉落物都不受影响

@@ -6,7 +6,6 @@ import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.RawAnimation;
 import com.geckolib.util.GeckoLibUtil;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,6 +21,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.*;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 import java.util.UUID;
 
 /** A separately removable parasite. Drain stops after three seconds even on players. */
@@ -65,7 +65,7 @@ public class CorpseFishEggEntity extends Entity implements GeoEntity {
                 float before=target.getHealth();
                 if(target.hurtServer(level,damageSources().playerAttack(caster),1))
                     caster.heal(Math.min(.5f,Math.max(0,before-target.getHealth())));
-                level.sendParticles(ParticleTypes.DAMAGE_INDICATOR,getX(),getY(),getZ(),2,.1,.1,.1,0);
+                QiEffects.burst(level,getX(),getY(),getZ(),0xc0182a,2,.1);
             }
             if(attachedTicks>=60 && !(target instanceof Player)) discard();
             return;

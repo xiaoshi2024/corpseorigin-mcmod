@@ -1,7 +1,6 @@
 package xiaoshi2022.corpseorigin.skill.longyou;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -13,6 +12,7 @@ import net.minecraft.world.phys.AABB;
 import xiaoshi2022.corpseorigin.block.entity.ZBRFleshBlockEntity;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
 import xiaoshi2022.corpseorigin.registry.ModBlocks;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,9 +64,8 @@ public final class CorpseNestConstructionHandler {
                     job.center.getZ() + .5) <= 9.0) {
                 mob.discard();
                 job.consumed++;
-                level.sendParticles(ParticleTypes.DAMAGE_INDICATOR,
-                        job.center.getX() + .5, job.center.getY() + 1, job.center.getZ() + .5,
-                        16, 1, 1, 1, .08);
+                QiEffects.burst(level, job.center.getX() + .5, job.center.getY() + 1,
+                        job.center.getZ() + .5, 0xc0182a, 16, 1.0);
             }
         }
 

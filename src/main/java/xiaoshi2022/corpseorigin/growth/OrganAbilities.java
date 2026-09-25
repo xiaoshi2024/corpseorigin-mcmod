@@ -2,11 +2,13 @@ package xiaoshi2022.corpseorigin.growth;
 import net.minecraft.network.chat.Component;
 import xiaoshi2022.corpseorigin.util.LocalizedException;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.tags.FluidTags;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 /** Abilities are selected and paid on the server, only from the saved equipped loadout. */
 public final class OrganAbilities {
@@ -52,8 +54,9 @@ public final class OrganAbilities {
             var target=ChapterCombat.aim(p,jet.range());
             var end=p.level().clip(new ClipContext(start,start.add(p.getLookAngle().scale(jet.range())),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,p)).getLocation();
             if(target!=null){end=target.getBoundingBox().getCenter();target.hurtServer(p.level(),p.damageSources().playerAttack(p),jet.damage());}
-            int particles=Math.max(1,(int)Math.ceil(start.distanceTo(end)*3));
-            for(int i=0;i<=particles;i++){var at=start.lerp(end,(double)i/particles);p.level().sendParticles(waterMaterial?net.minecraft.core.particles.ParticleTypes.SPLASH:net.minecraft.core.particles.ParticleTypes.CRIT,at.x,at.y,at.z,2,.03,.03,.03,.03);}
+            // 沿整条水柱只发一朵气（取中点，半径≈线长一半，上限 8）
+            QiEffects.cloud((ServerLevel) p.level(), start.add(end).scale(0.5), waterMaterial?0x4fc3f7:0xc0182a,
+                    (float)Math.min(8.0,Math.max(0.5,start.distanceTo(end)*0.5)),12);
             p.swing(net.minecraft.world.InteractionHand.MAIN_HAND,true);
         }
         body.putInt("organ_water:"+id,water);p.setAttached(SurvivalGrowth.BODY,body);

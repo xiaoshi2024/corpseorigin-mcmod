@@ -6,7 +6,6 @@ import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.RawAnimation;
 import com.geckolib.util.GeckoLibUtil;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -22,6 +21,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 /** 小言子的狗变种伙伴。主人与坐下状态由原版驯养系统同步和保存。 */
 public class HamEntity extends TamableAnimal implements GeoEntity {
@@ -79,7 +79,7 @@ public class HamEntity extends TamableAnimal implements GeoEntity {
             if (level() instanceof ServerLevel server) {
                 tame(player);
                 stack.consume(1, player);
-                server.sendParticles(ParticleTypes.HEART, getX(), getY() + 1, getZ(), 7, .3, .3, .3, 0);
+                QiEffects.burst(server, getX(), getY() + 1, getZ(), 0xff5c8a, 7, .3);
             }
             return InteractionResult.SUCCESS;
         }

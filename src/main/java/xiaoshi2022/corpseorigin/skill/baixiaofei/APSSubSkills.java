@@ -1,7 +1,6 @@
 package xiaoshi2022.corpseorigin.skill.baixiaofei;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -32,17 +31,16 @@ public class APSSubSkills {
 
         APSTerrainManager.removeMobsInRealm(player, level, center, dir[0], dir[1]);
 
-        for (int i = 0; i < 300; i++) {
+        // 天光垂落 + 低空云气：整片区域采样收敛成 8 处气团（原来 300 次逐点撒粒子）
+        for (int i = 0; i < 8; i++) {
             double along = (Math.random() - 0.5) * APSTerrainGenerator.LENGTH;
             double perp = (Math.random() - 0.5) * (APSTerrainGenerator.MOUNTAIN_RUN * 2);
             double x = center.getX() + dir[0] * along + (-dir[1]) * perp;
             double z = center.getZ() + dir[1] * along + dir[0] * perp;
             double y = center.getY() + 40 + Math.random() * 30;
 
-            level.sendParticles(ParticleTypes.END_ROD,
-                    x, y, z, 1, 0, -0.8, 0, 0.4);
-            level.sendParticles(ParticleTypes.CLOUD,
-                    x, y - 10, z, 1, 0.3, 0.3, 0.3, 0.05);
+            QiEffects.cloud(level, new Vec3(x, y, z), 0xdcefff, 3f, 14);
+            QiEffects.cloud(level, new Vec3(x, y - 10, z), 0x9aa4b0, 3.5f, 14);
         }
 
         APSTerrainManager.toggleTransformation(player, player.getMainHandItem(), level);
@@ -55,16 +53,14 @@ public class APSSubSkills {
         player.addEffect(new MobEffectInstance(
                 MobEffects.SPEED, 100, 1, false, true, true));
 
-        for (int i = 0; i < 80; i++) {
+        // 围绕自身升腾的云气：收敛成 6 处气团（原来 80 次逐点撒粒子）
+        for (int i = 0; i < 6; i++) {
             double a = Math.random() * Math.PI * 2;
             double r = 5 + Math.random() * 20;
             double x = center.getX() + Math.cos(a) * r;
             double z = center.getZ() + Math.sin(a) * r;
-            level.sendParticles(ParticleTypes.CLOUD,
-                    x, center.getY() + 2 + Math.random() * 6, z,
-                    1, 0.2, 0.2, 0.2, 0.02);
-            level.sendParticles(ParticleTypes.END_ROD,
-                    x, center.getY() + 3, z, 1, 0.1, 0.1, 0.1, 0.01);
+            QiEffects.cloud(level, new Vec3(x, center.getY() + 2 + Math.random() * 6, z), 0x9aa4b0, 3f, 14);
+            QiEffects.cloud(level, new Vec3(x, center.getY() + 3, z), 0xdcefff, 2.5f, 14);
         }
 
         player.sendOverlayMessage(Component.translatable(
@@ -134,7 +130,8 @@ public class APSSubSkills {
             }
         }
 
-        for (int i = 0; i < 60; i++) {
+        // 沿岸的余韵：收敛成 8 处气团（原来 60 次逐点撒粒子）
+        for (int i = 0; i < 8; i++) {
             double sign = Math.random() < 0.5 ? -1 : 1;
             double perp = sign * (APSTerrainGenerator.RIVER_HALF_WIDTH
                     + APSTerrainGenerator.BANK_WIDTH
@@ -142,8 +139,7 @@ public class APSSubSkills {
             double along = (Math.random() - 0.5) * APSTerrainGenerator.LENGTH;
             double x = center.getX() + riverDirX * along + perpDirX * perp;
             double z = center.getZ() + riverDirZ * along + perpDirZ * perp;
-            level.sendParticles(ParticleTypes.NOTE,
-                    x, center.getY() + 3, z, 1, 0, 0, 0, 0.1);
+            QiEffects.cloud(level, new Vec3(x, center.getY() + 3, z), 0x39c5bb, 2.5f, 12);
         }
 
         CorpseNetwork.broadcastInkPoem(player, 2);

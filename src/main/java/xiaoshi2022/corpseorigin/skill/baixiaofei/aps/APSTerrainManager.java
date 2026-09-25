@@ -4,7 +4,6 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -33,6 +32,7 @@ import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.network.APSInkScenePayload;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.nio.file.Path;
 import java.util.*;
@@ -585,11 +585,17 @@ public class APSTerrainManager {
                 ServerPlayer sp = level.getServer().getPlayerList().getPlayer(playerId);
                 if (sp != null && sp.level() == level) {
                     int from = Math.max(0, currentIndex - 20);
+                    // 推进中的山河：最近生成的一段塌缩成一朵气团（原来逐列 20 颗粒子）
+                    double cx = 0, cz = 0;
+                    int n = 0;
                     for (int k = from; k < currentIndex; k++) {
                         BlockPos p = currentRadiusPositions.get(k);
-                        level.sendParticles(ParticleTypes.END_ROD,
-                                p.getX() + 0.5, baseY + 8, p.getZ() + 0.5,
-                                1, 0, -0.4, 0, 0.1);
+                        cx += p.getX() + 0.5;
+                        cz += p.getZ() + 0.5;
+                        n++;
+                    }
+                    if (n > 0) {
+                        QiEffects.cloud(level, new Vec3(cx / n, baseY + 8, cz / n), 0xdcefff, 4f, 12);
                     }
                 }
             }
@@ -804,11 +810,10 @@ public class APSTerrainManager {
             if (blockRestoreComplete && biomeRestoreComplete) {
                 ServerPlayer sp = level.getServer().getPlayerList().getPlayer(playerId);
                 if (sp != null && sp.level() == level) {
-                    for (int k = 0; k < Math.min(50, allRestorePositions.size()); k++) {
+                    // 还原完成的收束气：取若干处落点各一朵（原来 50 次逐点撒粒子）
+                    for (int k = 0; k < Math.min(8, allRestorePositions.size()); k++) {
                         BlockPos p = allRestorePositions.get(level.getRandom().nextInt(allRestorePositions.size()));
-                        level.sendParticles(ParticleTypes.CLOUD,
-                                p.getX() + 0.5, baseY + 3, p.getZ() + 0.5,
-                                1, 0.5, 1.0, 0.5, 0.1);
+                        QiEffects.cloud(level, new Vec3(p.getX() + 0.5, baseY + 3, p.getZ() + 0.5), 0x9aa4b0, 3f, 14);
                     }
                 }
                 return true;

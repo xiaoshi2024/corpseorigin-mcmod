@@ -1,6 +1,5 @@
 package xiaoshi2022.corpseorigin.skill.tianxianbaobao_zb;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -13,6 +12,7 @@ import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.ICharacter;
 import xiaoshi2022.corpseorigin.character.MortalCharacter;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -161,16 +161,12 @@ public final class EntityAntennaSuckHandler {
             return false;
         }
 
-        // 血色粒子：从目标流回施术者
-        Vec3 from = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
-        Vec3 to = caster.position().add(0.0, caster.getBbHeight() * 0.5, 0.0);
-        for (int i = 0; i < 4; i++) {
-            double t = i / 4.0;
-            level.sendParticles(ParticleTypes.DAMAGE_INDICATOR,
-                    from.x + (to.x - from.x) * t,
-                    from.y + (to.y - from.y) * t,
-                    from.z + (to.z - from.z) * t,
-                    1, 0.0, 0.0, 0.0, 0.0);
+        // 血色气：从目标流回施术者（整条线只发一朵，每 4 tick 刷新）
+        if (caster.tickCount % 4 == 0) {
+            Vec3 from = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
+            Vec3 to = caster.position().add(0.0, caster.getBbHeight() * 0.5, 0.0);
+            float radius = (float) Math.min(8.0, Math.max(0.5, from.distanceTo(to) * 0.5));
+            QiEffects.cloud(level, from.add(to).scale(0.5), 0xc0182a, radius, 12);
         }
 
         // 每隔一段时间吸一口

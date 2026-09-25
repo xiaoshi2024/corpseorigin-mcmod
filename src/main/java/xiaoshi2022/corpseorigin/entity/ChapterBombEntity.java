@@ -10,6 +10,7 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
 import xiaoshi2022.corpseorigin.registry.ModItems;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 public class ChapterBombEntity extends ThrowableItemProjectile {
     private int fuse=-1;
@@ -48,7 +49,7 @@ public class ChapterBombEntity extends ThrowableItemProjectile {
                 if(level.clip(new ClipContext(center,target.getEyePosition(),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,this)).getType()!=HitResult.Type.MISS)continue;
                 target.hurtServer(level,damageSources().playerAttack(player),getItem().is(ModItems.BILLIARD_EIGHT)?24:16);
             }
-            level.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION,center.x,center.y,center.z,3,.3,.3,.3,0);
+            QiEffects.burst(level,center.x,center.y,center.z,0xd8552c,3,.3);
             level.playSound(null,center.x,center.y,center.z,net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),net.minecraft.sounds.SoundSource.PLAYERS,.8f,1);
         }
         discard();

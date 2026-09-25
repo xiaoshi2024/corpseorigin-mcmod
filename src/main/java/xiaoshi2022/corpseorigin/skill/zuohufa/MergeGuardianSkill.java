@@ -1,6 +1,5 @@
 package xiaoshi2022.corpseorigin.skill.zuohufa;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -15,6 +14,7 @@ import xiaoshi2022.corpseorigin.entity.ZuoFloodLongEntity;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 /**
  * 左护法·合体 —— 「脱离」的反向操作：把身边的蛟龙收回来，重新变成蛟龙形态。
@@ -103,16 +103,12 @@ public class MergeGuardianSkill implements ISkill {
         }
         CorpseNetwork.broadcastPlayerCorpseSync(player);
 
-        // ③ 吸回去的表现：血雾往身上收
+        // ③ 吸回去的表现：一条血雾从蛟龙位置收向玩家（整条线塌缩成一朵气团）
         Vec3 to = player.position().add(0, player.getBbHeight() * 0.5, 0);
-        for (int i = 0; i < 24; i++) {
-            double t = i / 24.0;
-            double x = center.x + (to.x - center.x) * t;
-            double y = center.y + (to.y - center.y) * t;
-            double z = center.z + (to.z - center.z) * t;
-            level.sendParticles(ParticleTypes.SOUL, x, y, z, 2, 0.15, 0.15, 0.15, 0.0);
-        }
-        level.sendParticles(ParticleTypes.ITEM_SLIME, to.x, to.y, to.z, 24, 0.6, 0.6, 0.6, 0.05);
+        Vec3 mid = center.add(to.subtract(center).scale(0.5));
+        float trailRadius = (float) Math.min(8.0, center.distanceTo(to) * 0.5);
+        QiEffects.cloud(level, mid, 0x35d4d4, Math.max(0.5f, trailRadius), 12);
+        QiEffects.burst(level, to.x, to.y, to.z, 0x8ce06a, 24, 0.6);
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.SLIME_BLOCK_PLACE, SoundSource.PLAYERS, 1.2F, 0.5F);
 

@@ -1,7 +1,6 @@
 package xiaoshi2022.corpseorigin.event;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,6 +15,7 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.HeiXiaoFei;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 import xiaoshi2022.corpseorigin.skill.heixiaofei.BlackGoldHeartSkill;
 
 import java.util.HashMap;
@@ -81,8 +81,7 @@ public final class HeiXiaoFeiEventHandler {
 
         if (player.level() instanceof ServerLevel level) {
             knockbackEnemies(level, player);
-            level.sendParticles(ParticleTypes.DAMAGE_INDICATOR,
-                    player.getX(), player.getY() + 1.0, player.getZ(), 24, 0.5, 0.5, 0.5, 0.0);
+            QiEffects.burst(level, player.getX(), player.getY() + 1.0, player.getZ(), 0xc0182a, 24, 0.5);
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.7F, 1.8F);
         }

@@ -8,6 +8,7 @@ import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.character.ShiChaoZhiZi;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 /** Shared server-side entry point. Entity abilities may call possess after approaching a shell. */
 public final class BodyPossession {
@@ -86,8 +87,7 @@ public final class BodyPossession {
         }
 
         if (actor.level() instanceof net.minecraft.server.level.ServerLevel level) {
-            level.sendParticles(net.minecraft.core.particles.ParticleTypes.DAMAGE_INDICATOR,
-                    actor.getX(), actor.getY() + 1, actor.getZ(), 20, .3, .5, .3, .1);
+            QiEffects.burst(level, actor.getX(), actor.getY() + 1, actor.getZ(), 0xc0182a, 20, .5);
         }
     }
 }

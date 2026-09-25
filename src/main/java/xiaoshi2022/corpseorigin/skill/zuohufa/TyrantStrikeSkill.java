@@ -1,6 +1,5 @@
 package xiaoshi2022.corpseorigin.skill.zuohufa;
 
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -15,6 +14,7 @@ import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +38,9 @@ public class TyrantStrikeSkill implements ISkill {
     private static final double KNOCKBACK = 2.4;
     private static final int SLOW_TICKS = 60;
     private static final int INNER_POWER_COST = 8;
+
+    /** 打击色（原 CRIT / DAMAGE_INDICATOR / SWEEP_ATTACK 统一取血红） */
+    private static final int STRIKE_COLOR = 0xc0182a;
 
     @Override
     public Identifier getId() {
@@ -80,13 +83,10 @@ public class TyrantStrikeSkill implements ISkill {
             return;
         }
 
-        // 起手：血光在身前聚一下（打空了也放得出来，手感不至于"按键没反应"）
+        // 起手：血光在身前拉出一道（整条线塌缩成一朵气团，取中点、半径≈线长一半）
         Vec3 eye = player.getEyePosition();
         Vec3 look = player.getLookAngle();
-        for (int i = 1; i <= 6; i++) {
-            Vec3 point = eye.add(look.scale(i * 0.5));
-            level.sendParticles(ParticleTypes.CRIT, point.x, point.y, point.z, 2, 0.1, 0.1, 0.1, 0.0);
-        }
+        QiEffects.cloud(level, eye.add(look.scale(1.75)), STRIKE_COLOR, 1.3f, 10);
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.2F, 0.7F);
 
@@ -110,8 +110,8 @@ public class TyrantStrikeSkill implements ISkill {
         }
 
         Vec3 hit = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
-        level.sendParticles(ParticleTypes.DAMAGE_INDICATOR, hit.x, hit.y, hit.z, 14, 0.4, 0.4, 0.4, 0.0);
-        level.sendParticles(ParticleTypes.SWEEP_ATTACK, hit.x, hit.y, hit.z, 4, 0.3, 0.3, 0.3, 0.0);
+        QiEffects.burst(level, hit.x, hit.y, hit.z, STRIKE_COLOR, 14, 0.4);
+        QiEffects.burst(level, hit.x, hit.y, hit.z, STRIKE_COLOR, 4, 0.3);
         level.playSound(null, target.getX(), target.getY(), target.getZ(),
                 SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.4F, 0.6F);
     }
