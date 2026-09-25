@@ -66,9 +66,18 @@ public final class CorpseConfig {
         public int aotumanZbWeight = 2;
         public int mikuZbWeight = 2;
         public int cocoZombieWeight = 2;
+        /**
+         * CoCo 尸兄·二阶段（合体形态）。<b>目前不参与自然生成</b> —— 它按设定是企鹅与大叔的合体产物，
+         * 只应由合体流程产生（见 {@code ModSpawns}）。这个值保留着，方便你想改回去时直接用。
+         */
         public int cocoZombieXWeight = 1;
-        public int cocoPenguinWeight = 8;
+        public int cocoPenguinWeight = 3;
         public int uncleWeight = 3;
+        /**
+         * 哈姆（ham）—— 只在村庄附近刷的宠物犬，判据抄原版猫（见 {@code ModSpawns#corpseorigin$hamSpawnRules}）。
+         * 权重对着原版狼（8）来定，想更少见就调小。
+         */
+        public int hamWeight = 2;
         /**
          * 不在尸水泉附近时的额外通过几率（0~1）。
          * <p>

@@ -245,7 +245,11 @@ public class PlayerCharacterData extends SavedData {
 
         entry.earnedPoints = tag.getIntOr("Earned", 0);
         entry.availablePoints = tag.getIntOr("Available", 0);
-        entry.starterBookGiven = tag.getBooleanOr("StarterBook", false);
+        // ★ 「开局角色书已发」是一次性事实，只能单向翻过去：这里用「或」合并，只允许 false → true。
+        //   ⚠️ 不能写成 `= tag.getBooleanOr("StarterBook", false)`：换身/换壳搬家的 NBT 万一缺这条键
+        //   （比如"StarterBook 跟着走"这次修复之前培育的克隆体），缺键会被当成 false 把标记翻回来，
+        //   下次登录就白给一本 —— 死亡自动夺舍克隆体正好走这条路。
+        entry.starterBookGiven = entry.starterBookGiven || tag.getBooleanOr("StarterBook", false);
 
         setDirty();
     }

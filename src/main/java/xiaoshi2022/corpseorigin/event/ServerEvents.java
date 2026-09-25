@@ -43,6 +43,8 @@ public final class ServerEvents {
             xiaoshi2022.corpseorigin.character.LongYou.applyIfLongYou(newPlayer);
             // 左护法同理：新实体上要按当前形态（合体 / 分离）重套一遍基础数值
             xiaoshi2022.corpseorigin.character.ZuoHuFa.applyIfZuoHuFa(newPlayer);
+            // 虫母同理：体型走 Attributes.SCALE，也要在新实体上重套一遍
+            xiaoshi2022.corpseorigin.character.ChongMu.applyIfChongMu(newPlayer);
             xiaoshi2022.corpseorigin.character.ShiChaoZhiZi.reconcileSecondForm(newPlayer);
             // 进化属性成长（血/攻/甲/速）也要在新实体上重套一遍
             xiaoshi2022.corpseorigin.skill.EvolutionStats.reconcile(newPlayer);
@@ -68,6 +70,8 @@ public final class ServerEvents {
             xiaoshi2022.corpseorigin.character.LongYou.applyIfLongYou(player);
             // 左护法：登录时按当前形态补一次基础数值（老存档 / 上次异常退出的兜底）
             xiaoshi2022.corpseorigin.character.ZuoHuFa.applyIfZuoHuFa(player);
+            // 虫母同理：登录时补一次体型（老存档 / 上次异常退出的兜底）
+            xiaoshi2022.corpseorigin.character.ChongMu.applyIfChongMu(player);
             xiaoshi2022.corpseorigin.character.ShiChaoZhiZi.reconcileSecondForm(player);
             // 进化属性成长：按当前进化等级补套（老存档首次升级系统时的兜底）
             xiaoshi2022.corpseorigin.skill.EvolutionStats.reconcile(player);
@@ -80,6 +84,9 @@ public final class ServerEvents {
                 }
             }
             // 生存开局：第一次进服的玩家发一本统一角色书
+            // ★ 「只有一次」由 PlayerCharacterData 里那条标记保证，而且它是<b>单向</b>的
+            //   （readNbt 用「或」合并，换身/换壳永远无法把它翻回 false）——
+            //   所以不管玩家之后怎么克隆、夺舍、换身体，都不会再发第二本。
             giveStarterBookOnce(player);
         });
 

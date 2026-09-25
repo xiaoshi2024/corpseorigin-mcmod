@@ -133,6 +133,12 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
             self.sendOverlayMessage(Component.translatable("message.corpseorigin.clone_chamber.body_stored"));
         } else if (!self.isSpectator()) {
             dropInventory(self);
+            // ★ 旧身体无处安放 → 它带着的角色数据（身份 / 已学技能 / 进化点）本来会一起消失，
+            //   换过去的新身体只是按完成度裁剪过的克隆体（技能被随机砍、点数还缩水）。
+            //   把那份数据封成「角色记忆书」掉在死亡点，玩家回来捡起来就能恢复那个角色，
+            //   不至于"死一次就把角色废掉"。
+            //   ⚠️ 必须在这里掉：下面的 this.apply() 会把玩家传送到新身体那边。
+            dropMemoryBook(self, oldBody);
             self.sendOverlayMessage(Component.translatable("message.corpseorigin.clone_chamber.body_dropped"));
         }
 
@@ -193,6 +199,26 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
             }
         }
         player.giveExperiencePoints(-player.totalExperience);
+    }
+
+    /**
+     * 把旧身体的角色数据封成「角色记忆书」掉在死亡点。
+     * <p>
+     * 只在"旧身体无处安放"那条分支调用 —— 有仓可放时角色数据已经随身体存进仓里，
+     * 玩家随时能回去取，不需要再多发一本书。
+     * <p>
+     * ⚠️ 必须在 {@code apply()} 之前掉：那一步会把玩家传送到新身体所在的位置。
+     * 数据格式沿用 {@code CharacterShellStateComponent#writeNbt} 的 {@code {Uuid, Data}}，
+     * 其中 {@code Uuid} 是原主人，同时也是"只有本人能用"的锁。
+     */
+    private static void dropMemoryBook(ServerPlayer player, ShellState oldBody) {
+        if (oldBody == null || oldBody.getComponent() == null) return;
+        xiaoshi2022.corpseorigin.shell.CharacterShellStateComponent character =
+                oldBody.getComponent().as(xiaoshi2022.corpseorigin.shell.CharacterShellStateComponent.class);
+        if (character == null) return;
+        CompoundTag memory = new CompoundTag();
+        character.writeNbt(memory);
+        player.drop(xiaoshi2022.corpseorigin.item.CharacterMemoryItem.create(memory), true, false);
     }
 
     @Override
@@ -289,6 +315,10 @@ public abstract class ServerPlayerShellMixin implements ServerShell {
         // ★ 左护法同理：换到左护法身体就按<b>当前形态</b>套上数值（合体档 / 人形档，
         //   前者比后者多 5 颗心），从这具身体换走就摘掉。同样要在 load 之后。
         xiaoshi2022.corpseorigin.character.ZuoHuFa.applyIfZuoHuFa(self);
+
+        // ★ 虫母的体型同样挂在"身体"上：换到虫母就套上、换走就摘掉，也要在 load 之后。
+        //   它用的是修饰符而非基础值，所以不会被下一行的 scale 快照覆盖掉。
+        xiaoshi2022.corpseorigin.character.ChongMu.applyIfChongMu(self);
 
         // ★ 玩家自身的进化属性成长（evo_*）属于"修为"不随身体走，load 覆盖属性表后补回
         xiaoshi2022.corpseorigin.skill.EvolutionStats.reconcile(self);

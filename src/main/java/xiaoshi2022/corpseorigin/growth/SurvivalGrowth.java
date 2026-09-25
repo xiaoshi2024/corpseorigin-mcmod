@@ -106,9 +106,14 @@ public final class SurvivalGrowth {
                 if(first){var progress=player.getAttachedOrCreate(JOURNAL).copy();progress.putLong("last_teaching",teachingNow);player.setAttached(JOURNAL,progress);}
                 var data = PlayerCharacterData.get(player);
                 boolean learned = data.hasLearned(player.getUUID(), teaching.skill);
-                if (!learned) data.learnSkill(player.getUUID(), teaching.skill);
+                // 自由路线学满就不再收新招式（成长点照给 —— 师父该教的还是教了，只是你装不下了）
+                boolean capped = !learned && FreeGrowth.skillLimitReached(serverPlayer);
+                if (!learned && !capped) data.learnSkill(player.getUUID(), teaching.skill);
                 if (first) EvolutionEventHandler.awardPoints(serverPlayer, Math.clamp(teaching.points, 0, 10000));
-                if (!learned || first) {
+                if (capped) {
+                    player.sendOverlayMessage(Component.translatable(
+                            "message.corpseorigin.free_growth.skill_limit", FreeGrowth.SKILL_LIMIT));
+                } else if (!learned || first) {
                     CorpseNetwork.sendEvolutionSync(serverPlayer);
                     player.sendSystemMessage(Component.translatable("growth.corpseorigin.taught", skill.get().getName()));
                 }

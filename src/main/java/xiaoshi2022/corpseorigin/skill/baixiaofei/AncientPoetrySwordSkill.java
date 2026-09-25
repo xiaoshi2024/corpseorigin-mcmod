@@ -48,6 +48,29 @@ public class AncientPoetrySwordSkill implements ISkill {
         return 0;
     }
 
+    /**
+     * 诗仙剑是原著<b>大结局</b>才登场的招式，所以门槛抬到「神级 + 16 点」：
+     * <ul>
+     *   <li>{@link #getRequiredLevel()} = <b>10</b> —— 绝对进化等级 10，也就是
+     *       {@code EvolutionTier.SHEN}（神·前期）；</li>
+     *   <li>{@link #getCost()} = <b>16</b> —— 学会要花 16 点进化点。</li>
+     * </ul>
+     * 这两条同时管住技能树与自由角色（凡人 / 尸兄）的「发现」：
+     * {@code BalanceRules.discoveryLevel} 取 requiredLevel 与 9 的较大值，
+     * 所以神级之前连随机机遇都刷不出这条技能。
+     * <p>
+     * 注意本类直接实现 {@link ISkill}（不是 AbstractSkill），不写这两个方法就走接口默认的 1 点 / 1 级。
+     */
+    @Override
+    public int getRequiredLevel() {
+        return 10;
+    }
+
+    @Override
+    public int getCost() {
+        return 16;
+    }
+
     public static boolean isRunning(ServerPlayer player) {
         return APSTerrainManager.hasActiveAPS(player)
                 || player.getAttachedOrCreate(ModDataAttachments.APS_STATE).getBoolean(ACTIVE_KEY).orElse(false);

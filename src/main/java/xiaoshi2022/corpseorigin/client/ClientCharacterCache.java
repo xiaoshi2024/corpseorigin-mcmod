@@ -43,7 +43,43 @@ public final class ClientCharacterCache {
                 result.add(skill);
             }
         }
+        // 固定角色靠「获取物」学到的外角色招式不在当前角色的技能表里，轮盘要单独补进来
+        for (ISkill skill : crossRoleSkills()) {
+            if (!skill.isActivatable() || !ClientState.hasLearned(skill.getId().getPath())) continue;
+            boolean already = false;
+            for (ISkill own : result) {
+                if (own.getId().getPath().equals(skill.getId().getPath())) {
+                    already = true;
+                    break;
+                }
+            }
+            if (!already) {
+                result.add(skill);
+            }
+        }
         return result;
+    }
+
+    /**
+     * 全体角色里「跨角色可学」的技能（获取式，排除形态 / 身体改造类，见
+     * {@code SkillLearningRules.crossLearnable}）。
+     * <p>
+     * 角色在模组初始化时一次性注册、之后不再变化，所以这张表只算一次；
+     * 轮盘 HUD 每帧都会调 {@link #getActivatableSkills()}，不能每次都重建。
+     */
+    private static List<ISkill> crossRoleSkills;
+
+    private static List<ISkill> crossRoleSkills() {
+        if (crossRoleSkills == null) {
+            List<ISkill> list = new ArrayList<>();
+            for (ISkill skill : xiaoshi2022.corpseorigin.growth.FreeGrowth.skills()) {
+                if (xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.crossLearnable(skill)) {
+                    list.add(skill);
+                }
+            }
+            crossRoleSkills = list;
+        }
+        return crossRoleSkills;
     }
 
     private static boolean hasBorrowedBody() {

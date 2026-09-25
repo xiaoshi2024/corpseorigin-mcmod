@@ -49,6 +49,14 @@ public final class SkillManager {
                 break;
             }
         }
+        // 跨角色「获取式」招式：固定角色靠拿到东西 / 遇到指定事物学会的外角色技能
+        //（形态 / 身体改造类排除在外，见 SkillLearningRules.crossLearnable）
+        if (skill == null) {
+            skill = xiaoshi2022.corpseorigin.growth.FreeGrowth.skills().stream()
+                    .filter(xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules::crossLearnable)
+                    .filter(s -> s.getId().getPath().equals(skillPath))
+                    .findFirst().orElse(null);
+        }
 // ★ 动态技能：少教主进入不死髅体后临时获得的躯体技能
         if (skill == null) {
             skill = xiaoshi2022.corpseorigin.skill.longyou.UndeadBodyState
@@ -148,6 +156,14 @@ public final class SkillManager {
         PlayerCharacterData data = PlayerCharacterData.get(player);
         if (data.hasLearned(player.getUUID(), skillPath)) {
             return true;
+        }
+
+        // 2.5 自由路线（凡人 / 尸兄）学满上限就不再收新技能 —— 已学会的照旧能重放（上面已提前返回）
+        if (xiaoshi2022.corpseorigin.growth.FreeGrowth.skillLimitReached(player)) {
+            player.sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
+                    "message.corpseorigin.free_growth.skill_limit",
+                    xiaoshi2022.corpseorigin.growth.FreeGrowth.SKILL_LIMIT));
+            return false;
         }
 
         // Innate/item/encounter skills never charge points or bypass their source requirements.

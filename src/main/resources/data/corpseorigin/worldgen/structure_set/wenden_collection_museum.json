@@ -1,0 +1,9 @@
+{
+  "structures": [{ "structure": "corpseorigin:wenden_collection_museum", "weight": 1 }],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 128,
+    "separation": 64,
+    "salt": 77123190
+  }
+}

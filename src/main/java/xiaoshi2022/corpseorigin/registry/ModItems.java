@@ -35,7 +35,7 @@ public final class ModItems {
     public static final Item DR_MU_EYE = register("dr_mu_eye", new Item(new Item.Properties().setId(itemKey("dr_mu_eye"))));
     public static final Item RED_METEOR_SWORD = register("red_meteor_sword",new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,3,-2.4f).setId(itemKey("red_meteor_sword"))));
     public static final Item PARCEL_BOMB = register("parcel_bomb",new Item(new Item.Properties().setId(itemKey("parcel_bomb"))));
-    public static final Item BILLIARD_EIGHT = register("billiard_eight",new Item(new Item.Properties().setId(itemKey("billiard_eight"))));
+    public static final Item BILLIARD_EIGHT = register("billiard_eight",new BilliardEightItem(new Item.Properties().setId(itemKey("billiard_eight"))));
     public static final Item BLOOD_WING_BLADE = register("blood_wing_blade",
             new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,22f,-2.4f)
                     .rarity(Rarity.EPIC).setId(itemKey("blood_wing_blade"))));
@@ -203,6 +203,18 @@ public final class ModItems {
                     .setId(itemKey("character_book")))
     );
 
+    /**
+     * 角色记忆书 —— 死亡夺舍时旧身体无处安放，就把它的角色数据（身份 / 已学技能 / 进化点）
+     * 封成这本书掉在死亡点。只能由原主人使用，详见 {@code CharacterMemoryItem}。
+     */
+    public static final Item CHARACTER_MEMORY = register(
+            "character_memory",
+            new xiaoshi2022.corpseorigin.item.CharacterMemoryItem(new Item.Properties()
+                    .stacksTo(1)
+                    .rarity(Rarity.RARE)
+                    .setId(itemKey("character_memory")))
+    );
+
     // ==================== CoCo 企鹅系刷怪蛋 ====================
 
     public static final Item COCO_PENGUIN_SPAWN_EGG = register(
@@ -304,6 +316,7 @@ public final class ModItems {
                 output.accept(MIKU_ZB_SPAWN_EGG);
                 output.accept(LOWER_LEVEL_ZB_SPAWN_EGG);
                 output.accept(ZB_WORM_ITEM);
+                output.accept(CHARACTER_MEMORY);
                 output.accept(LEEK);
             })
             .build();

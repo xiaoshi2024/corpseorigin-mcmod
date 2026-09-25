@@ -25,8 +25,8 @@ public final class ModEntities {
     public static final EntityType<SkillConstructEntity> SLAUGHTER_INCARNATION=construct("slaughter_incarnation");
     public static final EntityType<SkillConstructEntity> SEVERED_FOREARM=construct("severed_forearm");
     public static final EntityType<SkillConstructEntity> TIANGANG_HALO=construct("tiangang_halo");
-    public static final EntityType<CorpseAntEntity> RED_FIRE_ANT=register("red_fire_ant",EntityType.Builder.<CorpseAntEntity>of(CorpseAntEntity::new,MobCategory.MONSTER).sized(.7f,.65f).clientTrackingRange(8));
-    public static final EntityType<CorpseAntEntity> BULLET_ANT=register("bullet_ant",EntityType.Builder.<CorpseAntEntity>of(CorpseAntEntity::new,MobCategory.MONSTER).sized(1.1f,.85f).clientTrackingRange(8));
+    public static final EntityType<CorpseAntEntity> RED_FIRE_ANT=register("red_fire_ant",EntityType.Builder.<CorpseAntEntity>of(CorpseAntEntity::new,MobCategory.MONSTER).sized(.7f,.65f).clientTrackingRange(8).notInPeaceful());
+    public static final EntityType<CorpseAntEntity> BULLET_ANT=register("bullet_ant",EntityType.Builder.<CorpseAntEntity>of(CorpseAntEntity::new,MobCategory.MONSTER).sized(1.1f,.85f).clientTrackingRange(8).notInPeaceful());
     public static final EntityType<GreatTenguEntity> GREAT_TENGU = register("great_tengu",EntityType.Builder.<GreatTenguEntity>of(GreatTenguEntity::new,MobCategory.MISC)
             .sized(6,2).clientTrackingRange(12).updateInterval(3));
     public static final EntityType<xiaoshi2022.corpseorigin.entity.ChapterBombEntity> CHAPTER_BOMB = register("chapter_bomb",
@@ -48,6 +48,7 @@ public final class ModEntities {
             EntityType.Builder.<LowerLevelZbEntity>of(LowerLevelZbEntity::new, MobCategory.MONSTER)
                     .sized(0.6f, 1.8f)
                     .clientTrackingRange(8)
+                    .notInPeaceful()
     );
 
     /**
@@ -59,6 +60,7 @@ public final class ModEntities {
             EntityType.Builder.<AotumanZbEntity>of(AotumanZbEntity::new, MobCategory.MONSTER)
                     .sized(0.6f, 1.8f)
                     .clientTrackingRange(8)
+                    .notInPeaceful()
     );
 
     // ✅ 新增剑气实体
@@ -98,6 +100,7 @@ public final class ModEntities {
             "coco_zombie",
             EntityType.Builder.<CocoZombieEntity>of(CocoZombieEntity::new, MobCategory.MONSTER)
                     .sized(1.0f, 0.6f)
+                    .notInPeaceful()
     );
 
     /** CoCo 尸兄二阶段 - 与大叔的合体形态 */
@@ -107,6 +110,7 @@ public final class ModEntities {
                     .sized(1.2f, 1.4f)
                     .clientTrackingRange(64)
                     .updateInterval(2)
+                    .notInPeaceful()
     );
 
     /** 尸兄虫 - 大叔体内钻出的寄生虫，也是 CoCo 企鹅的食物 */
@@ -114,6 +118,7 @@ public final class ModEntities {
             "zb_worm",
             EntityType.Builder.<ZbWormEntity>of(ZbWormEntity::new, MobCategory.MONSTER)
                     .sized(0.2f, 0.2f)
+                    .notInPeaceful()
     );
 
     /** 大叔（少女漫画家）- NPC，与 CoCo 尸兄合体线的起点 */
@@ -129,6 +134,7 @@ public final class ModEntities {
             EntityType.Builder.<MikuZbEntity>of(MikuZbEntity::new, MobCategory.MONSTER)
                     .sized(0.6f, 1.8f)
                     .clientTrackingRange(8)
+                    .notInPeaceful()
     );
 
     /** 投掷大葱 - 初音尸兄的远程投射物（原作：车顶投掷大葱击杀怪物控） */

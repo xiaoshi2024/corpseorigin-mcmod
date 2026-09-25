@@ -7,6 +7,8 @@ import net.minecraft.tags.BiomeTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.village.poi.PoiManager;
+import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -110,6 +112,34 @@ public final class ModSpawns {
                 SpawnPlacementTypes.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 Mob::checkMobSpawnRules);
+
+        // 哈姆是"村里的狗"：只在村庄旁边刷（判据抄原版猫，见 corpseorigin$hamSpawnRules）
+        SpawnPlacementsInvoker.corpseorigin$register(
+                ModEntities.HAM,
+                SpawnPlacementTypes.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                (type, level, reason, pos, random) -> corpseorigin$hamSpawnRules(type, level, reason, pos, random));
+    }
+
+    /**
+     * 哈姆的生成规则：和平模式拦掉 → 常规生物落地判定 → <b>必须在村庄旁边</b>。
+     * <p>
+     * 村庄判据完全照搬原版猫（{@code CatSpawner.spawnInVillage}）：2 个区段内有村庄，
+     * 且 48 格内至少有 5 张被村民占用的床。
+     * {@code isCloseToVillage} 对绝大多数位置直接返回 false，所以那个稍贵的 POI 计数
+     * 只在村庄附近才真正执行，不会拖慢野外刷怪。
+     */
+    private static boolean corpseorigin$hamSpawnRules(EntityType<? extends Mob> type, ServerLevelAccessor level,
+                                                      EntitySpawnReason reason, BlockPos pos, RandomSource random) {
+        if (level.getDifficulty() == Difficulty.PEACEFUL) {
+            return false;
+        }
+        if (!Mob.checkMobSpawnRules(type, level, reason, pos, random)) {
+            return false;
+        }
+        return level.getLevel().isCloseToVillage(pos, 2)
+                && level.getLevel().getPoiManager().getCountInRange(
+                        home -> home.is(PoiTypes.HOME), pos, 48, PoiManager.Occupancy.IS_OCCUPIED) > 4L;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -122,7 +152,12 @@ public final class ModSpawns {
     }
 
     /**
-     * 尸兄专用生成规则：原版怪物那套（站实心地上 + 暗处）之后，再看"是不是在尸水泉边上"。
+     * 尸兄专用生成规则：和平模式拦掉 → 原版怪物那套（站实心地上 + 暗处）→ 再看"是不是在尸水泉边上"。
+     * <p>
+     * ⚠️ <b>和平模式这一判必须自己写</b>：26.2 起 {@code Monster.checkMonsterSpawnRules} 里
+     * <b>已经不含</b>和平模式判断了 —— 原版把这条挪到了 {@code EntityType#isAllowedInPeaceful()}
+     * （由 {@code Mob#checkDespawn} 负责清除已存在的、{@code EntityType#canSummon} 负责挡召唤）。
+     * 所以类型上的 {@code notInPeaceful()} 管"已经存在的会被清掉"，这里管"压根不刷"。
      * <p>
      * 权重是全局的、没法按位置变，所以"湖边更密"是在这里再做一道概率门实现的：
      * <b>湖边直接放行，别处只有 {@link #farFromLakeChance} 的几率通过</b>。
@@ -131,6 +166,9 @@ public final class ModSpawns {
      */
     private static boolean corpseorigin$zbSpawnRules(EntityType<? extends Mob> type, ServerLevelAccessor level,
                                                     EntitySpawnReason reason, BlockPos pos, RandomSource random) {
+        if (level.getDifficulty() == Difficulty.PEACEFUL) {
+            return false;
+        }
         if (!Monster.checkMonsterSpawnRules(type, level, reason, pos, random)) {
             return false;
         }
@@ -194,8 +232,8 @@ public final class ModSpawns {
                 ModEntities.MIKU_ZB, spawn.mikuZbWeight, 1, 1);
         BiomeModifications.addSpawn(OVERWORLD, MobCategory.MONSTER,
                 ModEntities.COCO_ZOMBIE, spawn.cocoZombieWeight, 1, 1);
-        BiomeModifications.addSpawn(OVERWORLD, MobCategory.MONSTER,
-                ModEntities.COCO_ZOMBIE_X, spawn.cocoZombieXWeight, 1, 1);
+        // CoCo 尸兄·二阶段（合体形态）刻意不进生成表：它按设定是企鹅与大叔的合体产物，
+        // 只应由合体流程产生（生成规则仍保留，刷怪蛋 / 指令 / 合体照常能用）。
 
         // 雪原：CoCo 企鹅（尸兄线的起点）
         BiomeModifications.addSpawn(SNOWY, MobCategory.CREATURE,
@@ -204,5 +242,9 @@ public final class ModSpawns {
         // 主世界：大叔（打他会吐尸兄虫）
         BiomeModifications.addSpawn(OVERWORLD, MobCategory.CREATURE,
                 ModEntities.UNCLE, spawn.uncleWeight, 1, 1);
+
+        // 主世界：哈姆（有规则卡着"只在村庄附近"，权重再低也只在村里出）
+        BiomeModifications.addSpawn(OVERWORLD, MobCategory.CREATURE,
+                ModEntities.HAM, spawn.hamWeight, 1, 1);
     }
 }

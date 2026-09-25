@@ -42,6 +42,17 @@ public final class ModDataComponents {
                             .build()
             );
 
+    // ✅ 「角色记忆书」保存的角色数据快照（原主人 Uuid + 身份 + 已学技能 + 进化点）
+    public static final DataComponentType<CompoundTag> CHARACTER_MEMORY =
+            Registry.register(
+                    BuiltInRegistries.DATA_COMPONENT_TYPE,
+                    Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "character_memory"),
+                    DataComponentType.<CompoundTag>builder()
+                            .persistent(CompoundTag.CODEC)
+                            .networkSynchronized(ByteBufCodecs.COMPOUND_TAG)
+                            .build()
+            );
+
     public static void init() {
         CorpseOrigin.LOGGER.info("CorpseOrigin data components registered");
     }

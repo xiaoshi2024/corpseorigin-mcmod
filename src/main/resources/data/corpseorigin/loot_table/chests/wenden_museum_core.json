@@ -1,0 +1,50 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1.0,
+      "bonus_rolls": 0.0,
+      "entries": [
+        { "type": "minecraft:item", "name": "corpseorigin:blood_wing_blade", "weight": 5 },
+        { "type": "minecraft:item", "name": "corpseorigin:blood_lotus_lantern", "weight": 5 },
+        { "type": "minecraft:item", "name": "corpseorigin:guigun_club", "weight": 6 },
+        { "type": "minecraft:item", "name": "corpseorigin:guigun_weap", "weight": 6 },
+        { "type": "minecraft:item", "name": "corpseorigin:tian_gang_key", "weight": 3 },
+        { "type": "minecraft:item", "name": "corpseorigin:dog_cage", "weight": 16 },
+        { "type": "minecraft:item", "name": "corpseorigin:magician_rabbit", "weight": 4 },
+        { "type": "minecraft:item", "name": "corpseorigin:medusa_eye", "weight": 18 },
+        { "type": "minecraft:item", "name": "corpseorigin:parcel_bomb", "weight": 20 },
+        { "type": "minecraft:item", "name": "corpseorigin:billiard_eight", "weight": 20 },
+        { "type": "minecraft:item", "name": "corpseorigin:null_s_agent", "weight": 14 },
+        { "type": "minecraft:item", "name": "corpseorigin:blue_s_agent", "weight": 12 },
+        { "type": "minecraft:item", "name": "corpseorigin:s_agent", "weight": 6 }
+      ]
+    },
+    {
+      "rolls": {
+        "type": "minecraft:uniform",
+        "min": 2.0,
+        "max": 4.0
+      },
+      "bonus_rolls": 0.0,
+      "entries": [
+        { "type": "minecraft:item", "name": "corpseorigin:parcel_bomb", "weight": 20 },
+        { "type": "minecraft:item", "name": "corpseorigin:billiard_eight", "weight": 20 },
+        { "type": "minecraft:item", "name": "corpseorigin:medusa_eye", "weight": 18 },
+        { "type": "minecraft:item", "name": "corpseorigin:magician_rabbit", "weight": 4 },
+        { "type": "minecraft:item", "name": "corpseorigin:dog_cage", "weight": 16 },
+        { "type": "minecraft:item", "name": "corpseorigin:null_s_agent", "weight": 14 },
+        { "type": "minecraft:item", "name": "corpseorigin:blue_s_agent", "weight": 12 },
+        { "type": "minecraft:item", "name": "corpseorigin:s_agent", "weight": 6 }
+      ]
+    },
+    {
+      "rolls": 1.0,
+      "bonus_rolls": 0.0,
+      "entries": [
+        { "type": "minecraft:item", "name": "corpseorigin:black_gold_heart", "weight": 1 },
+        { "type": "minecraft:empty", "weight": 49 }
+      ]
+    }
+  ]
+}

@@ -12,6 +12,28 @@ public final class FreeGrowth {
     private FreeGrowth() {}
     public static boolean isFree(String role){return "mortal".equals(role)||"corpse_brother".equals(role);}
     public static boolean isFree(ServerPlayer p){return isFree(CharacterManager.getInstance().getPlayerCharacterId(p));}
+
+    /**
+     * 自由路线（凡人 / 尸兄）能学会的技能上限。
+     * <p>
+     * 这两个沙盒角色的卖点是"招式全靠探索凑"，代价原本只有"没有角色专属形态"；
+     * 但技能表攒到十几个之后玩法会退化成"我全都有"，所以给一条硬上限：
+     * 学满之后不再接受新技能，已经学会的不回收。
+     * <p>
+     * 只卡<b>学习</b>这一环 —— 三条入口（技能树 / 获取式解锁 / 拜师）都查这里。
+     */
+    public static final int SKILL_LIMIT = 10;
+
+    /**
+     * 自由角色是不是已经学满技能了；<b>非自由角色恒为 false</b>（固定角色不受这条限制）。
+     * <p>
+     * 只数"已学会"的条数：{@code learnedSkills} 是玩家级扁平集合，而 {@code CharacterManager}
+     * 换角色时会整份清空（只有 凡人 ↔ 尸兄 互切才保留），所以自由角色身上不会混进固定角色的旧技能。
+     */
+    public static boolean skillLimitReached(ServerPlayer p){
+        return isFree(p)
+                && PlayerCharacterData.get(p).getLearnedSkills(p.getUUID()).size()>=SKILL_LIMIT;
+    }
     public static List<ISkill> skills(){
         var result=new LinkedHashMap<String,ISkill>();
         for(var role:CharacterManager.getInstance().getRegisteredCharacters())

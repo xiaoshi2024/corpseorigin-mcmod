@@ -72,8 +72,20 @@ public final class SkillUnlockManager {
         ICharacter character = CharacterManager.getInstance().getPlayerCharacter(player);
         PlayerCharacterData data = PlayerCharacterData.get(player);
 
+        List<ISkill> candidates = new ArrayList<>(character.getSkills());
+        // 固定角色也能靠「获取物」学到别的角色的招式（形态 / 身体改造类除外，见 SkillLearningRules.crossLearnable）。
+        // 凡人 / 尸兄的 getSkills() 本来就是全体角色的并集，下面的去重保证不会重复处理。
+        for (ISkill skill : xiaoshi2022.corpseorigin.growth.FreeGrowth.skills()) {
+            if (!SkillLearningRules.crossLearnable(skill)) continue;
+            if (candidates.stream().anyMatch(s -> s.getId().getPath().equals(skill.getId().getPath()))) continue;
+            candidates.add(skill);
+        }
+
         List<ISkill> newly = new ArrayList<>();
-        for (ISkill skill : character.getSkills()) {
+        for (ISkill skill : candidates) {
+            // 自由路线学满就不再多给。这条扫描每 20 tick 跑一次，所以这里<b>不</b>刷提示，
+            // 只在玩家主动学（SkillManager.learn）或拜师时提示，免得每秒弹一次。
+            if (xiaoshi2022.corpseorigin.growth.FreeGrowth.skillLimitReached(player)) break;
             if (xiaoshi2022.corpseorigin.growth.WeaponEligibility.skillReason(player,skill.getId().getPath())!=null) continue;
             boolean innate = SkillLearningRules.innate(character.getId(), skill.getId().getPath());
             if (!innate && skill.getUnlockSources().isEmpty()) {

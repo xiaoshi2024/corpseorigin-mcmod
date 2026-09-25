@@ -62,6 +62,17 @@ public final class SkillCommand {
                                         .executes(ctx -> {
                                             ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
                                             String path = StringArgumentType.getString(ctx, "skill");
+                                            // 只允许解锁目标「当前角色」的技能：跨角色技能即使写进已学集合，
+                                            // 技能轮盘也不会显示、激活也找不到（纯死数据）。
+                                            // 凡人 / 尸兄的 getSkills() 本身就是全部角色技能的并集，自由角色照旧全能解锁。
+                                            boolean own = CharacterManager.getInstance().getPlayerCharacter(target)
+                                                    .getSkills().stream()
+                                                    .anyMatch(skill -> skill.getId().getPath().equals(path));
+                                            if (!own) {
+                                                ctx.getSource().sendFailure(Component.translatable(
+                                                        "command.corpseorigin.skill.not_own", path));
+                                                return 0;
+                                            }
                                             // 作弊解锁：跳过进化点、等级与前置
                                             PlayerCharacterData data = PlayerCharacterData.get(target);
                                             data.learnSkill(target.getUUID(), path);
