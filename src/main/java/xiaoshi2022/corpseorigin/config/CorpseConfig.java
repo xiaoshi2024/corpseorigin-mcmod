@@ -85,6 +85,32 @@ public final class CorpseConfig {
          * 湖边直接放行、别处只有这个几率通过。设 1.0 = 取消聚集。
          */
         public float nearBywaterChance = 0.2F;
+
+        /**
+         * 自然生成的尸兄是否按"游戏日"提升进化等级（越后期越强）。
+         * <p>
+         * 关掉就一律人1 —— 想回到"高阶只能靠吃血肉突破"的老手感时用。
+         */
+        public boolean evolutionLevelRamp = true;
+        /**
+         * 每多少个游戏日把自然生成的等级上限提高 1 档。
+         * <p>
+         * 默认 8：第 0~7 天全是人1，第 8~15 天到人2……约 56 天摸到默认上限（地4）。
+         */
+        public int daysPerEvolutionLevel = 8;
+        /**
+         * 自然生成的最高进化等级（1~10）。
+         * <p>
+         * 默认 8（地4）。注意 6 级以上会顺带带上突变器官 —— 那是"突破"过才有的东西，
+         * 想让它更稀罕就把这个值压低、或把 {@link #levelDecay} 调大。
+         */
+        public int maxEvolutionLevel = 8;
+        /**
+         * 等级分布朝"当前上限"集中的程度：离上限每远一级，权重除以它。
+         * <p>
+         * 默认 2.0 —— 上限附近最多、往下逐级减半；调到 1.1 接近均摊，调到 4 就几乎只剩上限那一级。
+         */
+        public float levelDecay = 2.0F;
     }
 
     /** 名字来源 */
@@ -389,6 +415,9 @@ public final class CorpseConfig {
             names.consentedChance = 1;
         }
         spawn.nearBywaterChance = clamp(spawn.nearBywaterChance, 0.0F, 1.0F);
+        spawn.daysPerEvolutionLevel = Math.max(1, spawn.daysPerEvolutionLevel);
+        spawn.maxEvolutionLevel = Math.clamp(spawn.maxEvolutionLevel, 1, 10);
+        spawn.levelDecay = clamp(spawn.levelDecay, 1.1F, 10.0F);
         skin.tintStrength = Math.max(0.0F, skin.tintStrength);
         // 缩到 0 或负数会把模型压成一张纸、甚至翻面，给个下限；放太大也没意义（模型本来就有 5 格高）
         mutantBody.scale = clamp(mutantBody.scale, 0.05F, 4.0F);

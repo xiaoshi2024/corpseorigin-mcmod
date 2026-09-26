@@ -34,6 +34,9 @@ import xiaoshi2022.corpseorigin.registry.ModBlockEntities;
 import xiaoshi2022.corpseorigin.registry.ModBlocks;
 import xiaoshi2022.corpseorigin.skill.EvolutionManager;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 象棋尸兄方块实体。
  * <p>
@@ -48,8 +51,9 @@ import xiaoshi2022.corpseorigin.skill.EvolutionManager;
  * 近战（ServerPlayerGameMode mixin）、弹射物（Projectile mixin）、爆炸（wasExploded）、
  * 技能直接调 API。HP 归零播 die、掉落自身方块物品。
  * <p>
- * 【行动】{@link #movePiece} 走子：校验目标格 → 方块整体搬迁（HP 等状态保留），
- * 视觉上模型从旧位置平滑滑到新位置（渲染偏移，无需动画文件配合）。
+ * 【行动】{@link #movePiece} 走子：校验目标格（有乘客时还要求上方净空）→ 方块整体搬迁
+ * （HP 等状态保留），模型从旧位置平滑滑到新位置（渲染偏移，无需动画文件配合），
+ * 站在它背上的生物按同一条缓动曲线一起滑过去（保持相对位置）。
  * <p>
  * 【GeckoLib 5.5.5 说明】{@code AnimationController} 的回调参数是
  * {@code AnimationTest}，不是旧的 {@code AnimationState}；返回类型也不再是
@@ -170,7 +174,9 @@ public class CNChessZbrsBlockEntity extends BlockEntity implements GeoBlockEntit
      * 校验：不在处决/死亡动画中、走子冷却已结束、目标格在世界内、
      * 目标为空气或可替换方块且无碰撞箱（不能挤进别的方块/实体占位）。
      * <p>
-     * 搬迁时 HP 等全部状态原样保留；模型从旧位置平滑滑到新位置。
+     * 搬迁时 HP 等全部状态原样保留；模型从旧位置平滑滑到新位置，
+     * 站在它<b>背上</b>的生物按同一条缓动曲线一起滑过去（保持相对位置、不结算摔落伤害）；
+     * 目标格上方放不下这些生物时，整次走子会被拒绝。
      *
      * @return 是否移动成功
      */
@@ -192,6 +198,17 @@ public class CNChessZbrsBlockEntity extends BlockEntity implements GeoBlockEntit
         BlockPos oldPos = this.worldPosition;
         BlockState selfState = this.getBlockState();
 
+        // 0. 先记下"站在它背上"的生物（含各自相对方块的局部偏移）
+        BackRiders back = ridersOnBack(level, oldPos);
+        double dx = destination.getX() - oldPos.getX();
+        double dy = destination.getY() - oldPos.getY();
+        double dz = destination.getZ() - oldPos.getZ();
+        // 0.5 有乘客的话，目标格上方也得放得下它们 —— 否则这次走子直接不成立，
+        //     不能把背上的人挤进墙里
+        if (!ridersFit(level, back, dx, dy, dz)) {
+            return false;
+        }
+
         // 1. 在新位置放方块（新方块实体）
         level.setBlock(destination, selfState, Block.UPDATE_CLIENTS);
         if (!(level.getBlockEntity(destination) instanceof CNChessZbrsBlockEntity moved)) {
@@ -205,7 +222,141 @@ public class CNChessZbrsBlockEntity extends BlockEntity implements GeoBlockEntit
 
         // 3. 删掉旧方块（不掉落）
         level.removeBlock(oldPos, false);
+
+        // 4. 背上的生物跟着模型一起滑过去（每 tick 由 registerCarryTick 推进）
+        if (!back.isEmpty()) {
+            CARRIED_MOVES.add(new CarriedMove(back, oldPos, destination, moved.moveDuration));
+        }
         return true;
+    }
+
+    /**
+     * "站在它背上"的生物，以及它们各自相对方块原点的局部偏移（格）。
+     * <p>
+     * 判定与 {@link #crushVictims} 同一套：脚底与本方块同格。
+     * 骑在别人身上的会由它自己的载具带走，这里跳过，免得被搬两次。
+     */
+    private record BackRiders(List<LivingEntity> riders, List<Vec3> local) {
+        boolean isEmpty() {
+            return riders.isEmpty();
+        }
+    }
+
+    private static BackRiders ridersOnBack(ServerLevel level, BlockPos pos) {
+        AABB cell = new AABB(
+                pos.getX(),       pos.getY(),       pos.getZ(),
+                pos.getX() + 1.0, pos.getY() + 1.0, pos.getZ() + 1.0
+        );
+        List<LivingEntity> riders = new ArrayList<>();
+        List<Vec3> local = new ArrayList<>();
+        for (LivingEntity living : level.getEntitiesOfClass(LivingEntity.class, cell)) {
+            if (!living.isAlive() || living.isPassenger()) {
+                continue;
+            }
+            // 再确认一次：脚底确实与本方块同高，避免只是身体探进来
+            double feetY = living.getY();
+            if (feetY < pos.getY() || feetY >= pos.getY() + 1.0) {
+                continue;
+            }
+            riders.add(living);
+            local.add(living.position().subtract(pos.getX(), pos.getY(), pos.getZ()));
+        }
+        return new BackRiders(riders, local);
+    }
+
+    /**
+     * 有乘客时：把它们按这次位移挪到目标格，检查每只的碰撞箱都放得下。
+     * <p>
+     * 用各乘客自己的碰撞箱（而不是拍脑袋的固定高度），高矮胖瘦都能算准。
+     */
+    private static boolean ridersFit(ServerLevel level, BackRiders back, double dx, double dy, double dz) {
+        for (LivingEntity living : back.riders()) {
+            if (!level.noCollision(living, living.getBoundingBox().move(dx, dy, dz))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // ==================== 走子：背上的生物随模型滑动 ====================
+
+    /**
+     * 正在"背着生物滑行"的走子（运行时状态，不持久化）。
+     * <p>
+     * 挂在服务端全局 tick 上、而不是方块自己的 4 tick 调度：乘客每 4 tick 才挪一下的话，
+     * 模型是每帧插值滑过去的，看着就不像"一起滑"。
+     */
+    private static final List<CarriedMove> CARRIED_MOVES = new ArrayList<>();
+
+    /** 注册每 tick 推进乘客滑动的回调（由服务端事件注册处调用一次）。 */
+    public static void registerCarryTick() {
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_SERVER_TICK.register(server -> {
+            if (!CARRIED_MOVES.isEmpty()) {
+                CARRIED_MOVES.removeIf(CarriedMove::advance);
+            }
+        });
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(
+                server -> CARRIED_MOVES.clear());
+    }
+
+    /**
+     * 一次"背着生物走子"的滑动：每 tick 把乘客摆到模型当前应在的位置上。
+     * <p>
+     * 位置 = 终点 + (起点 − 终点) × 剩余比例 + 乘客的局部偏移，
+     * 其中剩余比例来自 {@link #remainingFactor}——与客户端画模型用的是同一条曲线，
+     * 所以乘客和模型是重叠着滑过去的。
+     */
+    private static final class CarriedMove {
+        private final BackRiders back;
+        /** 方块起点相对终点的偏移（格） */
+        private final double offsetX, offsetY, offsetZ;
+        private final double toX, toY, toZ;
+        private final int duration;
+        private int elapsed;
+
+        CarriedMove(BackRiders back, BlockPos from, BlockPos to, int duration) {
+            this.back = back;
+            this.offsetX = from.getX() - to.getX();
+            this.offsetY = from.getY() - to.getY();
+            this.offsetZ = from.getZ() - to.getZ();
+            this.toX = to.getX();
+            this.toY = to.getY();
+            this.toZ = to.getZ();
+            this.duration = Math.max(1, duration);
+        }
+
+        /** @return true 表示滑完了，可以从列表里丢掉 */
+        boolean advance() {
+            float factor = remainingFactor(this.elapsed / (float) this.duration);
+            List<LivingEntity> riders = this.back.riders();
+            List<Vec3> local = this.back.local();
+            for (int i = 0; i < riders.size(); i++) {
+                LivingEntity living = riders.get(i);
+                if (!living.isAlive() || living.isRemoved()) {
+                    continue;
+                }
+                Vec3 offset = local.get(i);
+                living.teleportTo(
+                        this.toX + this.offsetX * factor + offset.x,
+                        this.toY + this.offsetY * factor + offset.y,
+                        this.toZ + this.offsetZ * factor + offset.z);
+                // 滑动不是"掉下来"，不该结算摔落伤害
+                living.resetFallDistance();
+            }
+            return ++this.elapsed > this.duration;
+        }
+    }
+
+    /**
+     * smoothstep 缓动后的"剩余比例"：1 = 还在起点，0 = 已经到终点。
+     * <p>
+     * 客户端画模型偏移（{@link #getRenderOffset}）与服务端搬乘客都用它，
+     * 保证两边算的是同一条曲线。
+     */
+    private static float remainingFactor(float progress) {
+        float clamped = Mth.clamp(progress, 0.0F, 1.0F);
+        float eased = clamped * clamped * (3.0F - 2.0F * clamped);
+        return 1.0F - eased;
     }
 
     /** 搬迁时继承战斗状态（moveCooldown 由 beginMoveAnim 重新设定）。 */
@@ -245,10 +396,8 @@ public class CNChessZbrsBlockEntity extends BlockEntity implements GeoBlockEntit
             this.moveAnimActive = false;
             return Vec3.ZERO;
         }
-        progress = Mth.clamp(progress, 0.0F, 1.0F);
-        // smoothstep 缓动：起步/收尾慢，中段快
-        float eased = progress * progress * (3.0F - 2.0F * progress);
-        float factor = 1.0F - eased;
+        // smoothstep 缓动：起步/收尾慢，中段快（与服务端搬乘客共用 remainingFactor）
+        float factor = remainingFactor(progress);
         return new Vec3(
                 this.moveOffsetX * factor,
                 this.moveOffsetY * factor,

@@ -31,6 +31,8 @@ import net.minecraft.world.level.storage.ValueOutput;
 import org.slf4j.Logger;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinLoader;
 import xiaoshi2022.corpseorigin.client.skin.ZbSkinState;
+import xiaoshi2022.corpseorigin.entity.evolution.ZbEvolution;
+import xiaoshi2022.corpseorigin.entity.evolution.ZbOrganGrowth;
 import xiaoshi2022.corpseorigin.registry.ModSounds;
 import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
@@ -374,7 +376,40 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         if (usesNamedSkin() && getPlayerSkinName().isEmpty()) {
             setPlayerSkinName(ZbNameGenerator.random(this.getRandom()));
         }
+        // 自然生成：按游戏日掷进化等级（越后期越强，见 ZbEvolution.rollSpawnLevel）
+        if (reason == EntitySpawnReason.NATURAL && rollsSpawnEvolution()) {
+            rollSpawnEvolution(level);
+        }
         return super.finalizeSpawn(level, difficulty, reason, spawnGroupData);
+    }
+
+    /**
+     * 自然生成时是否按"游戏日"掷进化等级（见 {@link #rollSpawnEvolution}）。
+     * <p>
+     * 固定强度的子类会覆写成 {@code false}：它们的属性不随等级走
+     * （见 {@code AotumanZbEntity#updateAttributesForEvolution}），渲染器也不带器官层，
+     * 掷出高阶只会得到"看不见的器官 + 不变的强度"。
+     */
+    protected boolean rollsSpawnEvolution() {
+        return true;
+    }
+
+    /**
+     * 自然生成的变异尸兄：等级按"越后期越强"掷（{@link ZbEvolution#rollSpawnLevel}），
+     * 越过临界（地2 = 6 级）的顺带带上相应数量的突变器官 ——
+     * 和靠吃血肉突破上来的尸兄同源，不是一个独立的强化表。
+     */
+    private void rollSpawnEvolution(ServerLevelAccessor level) {
+        int evolutionLevel = ZbEvolution.rollSpawnLevel(this.getRandom(), level.getGameTime());
+        if (evolutionLevel <= 1) {
+            return;
+        }
+        setEvolutionLevel(evolutionLevel);
+        for (int i = 0; i < evolutionLevel - ZbEvolution.BREAKTHROUGH_LEVEL; i++) {
+            if (!ZbOrganGrowth.tryMutateOrgan(this)) {
+                break;
+            }
+        }
     }
 
     @Environment(EnvType.CLIENT)

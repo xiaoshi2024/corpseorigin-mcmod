@@ -9,12 +9,18 @@ import com.geckolib.animation.RawAnimation;
 import com.geckolib.renderer.GeoItemRenderer;
 import com.geckolib.util.GeckoLibUtil;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import xiaoshi2022.corpseorigin.client.renderer.item.GuigunClubRenderer;
+import xiaoshi2022.corpseorigin.skill.chapter.RoleChapterSkill;
 
 import java.util.function.Consumer;
 
@@ -36,6 +42,21 @@ public final class GuigunClubItem extends Item implements GeoItem {
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<GuigunClubItem>("main", 0, test -> test.setAndContinue(IDLE)));
+    }
+
+    /**
+     * 手里握着尸棍右键 → 直接打出尸兄鬼棍的棍招（尸棍共振 / 尸棍重击），不必先在技能轮盘里选中。
+     * <p>
+     * 这两招绑同一把兵器，{@link RoleChapterSkill#castWithWeapon} 会放当前能放的那一招；
+     * 「兵器 + 角色」都要匹配，所以人类鬼棍握着尸棍不会出招。
+     */
+    @Override
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
+        if (player instanceof ServerPlayer serverPlayer
+                && RoleChapterSkill.castWithWeapon(serverPlayer, serverPlayer.getItemInHand(hand))) {
+            return InteractionResult.SUCCESS_SERVER;
+        }
+        return super.use(level, player, hand);
     }
 
     @Override

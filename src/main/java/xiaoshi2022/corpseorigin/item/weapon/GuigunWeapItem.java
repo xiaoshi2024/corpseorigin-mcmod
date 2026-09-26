@@ -11,13 +11,18 @@ import com.geckolib.util.GeckoLibUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import xiaoshi2022.corpseorigin.client.renderer.item.GuigunWeapRenderer;
+import xiaoshi2022.corpseorigin.skill.chapter.RoleChapterSkill;
 
 import java.util.function.Consumer;
 
@@ -70,6 +75,21 @@ public final class GuigunWeapItem extends Item implements GeoItem {
         if (stack.getItem() instanceof GuigunWeapItem weapon) {
             weapon.triggerAnim(player, GeoItem.getOrAssignId(stack, level), CONTROLLER, "swing");
         }
+    }
+
+    /**
+     * 手里握着三节棍右键 → 直接打出「棍术横扫」，不必先在技能轮盘里选中。
+     * <p>
+     * 「兵器 + 角色」的匹配与判定都在 {@link RoleChapterSkill#castWithWeapon} 里，
+     * 所以角色不符（例如人类鬼棍握着尸棍）时这里不会出招，右键回到原本的行为。
+     */
+    @Override
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
+        if (player instanceof ServerPlayer serverPlayer
+                && RoleChapterSkill.castWithWeapon(serverPlayer, serverPlayer.getItemInHand(hand))) {
+            return InteractionResult.SUCCESS_SERVER;
+        }
+        return super.use(level, player, hand);
     }
 
     @Override

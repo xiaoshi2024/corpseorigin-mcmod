@@ -112,6 +112,9 @@ public final class ServerEvents {
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> RESPAWN_SYNC.remove(handler.player.getUUID()));
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> RESPAWN_SYNC.clear());
 
+        // 每 tick 推进象棋尸兄背上生物的滑动（走子时乘客与模型同步滑过去）
+        xiaoshi2022.corpseorigin.block.entity.CNChessZbrsBlockEntity.registerCarryTick();
+
         // 每 tick 推进天线宝宝盔甲的吸食（抓取 → 持续吸血 → 松手/被打断）
         // 玩家和穿戴该套装的生物共用同一套逻辑
         ServerTickEvents.END_SERVER_TICK.register(

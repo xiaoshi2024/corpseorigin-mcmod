@@ -36,29 +36,70 @@ public final class SkillLearningRules {
                 && !CROSS_ROLE_EXCLUDED.contains(skill.getId().getPath());
     }
 
+    /**
+     * 鬼棍两种形态天生的招式 —— <b>按形态给，不按前缀混着给</b>。
+     * <p>
+     * 人类形态只有三节棍棍法与金针刺穴，尸兄形态只有尸棍那两招。
+     * 早先按 {@code guigun_} 前缀一刀切，会让人类鬼棍把尸棍招式也记进"已学会"
+     * （虽然放不出来，但那是别人的招式，不该算在他头上）。
+     */
+    private static final Set<String> GUIGUN_HUMAN_SKILLS = Set.of("guigun_sweep", "guigun_guard");
+    private static final Set<String> GUIGUN_CORPSE_SKILLS = Set.of("guigun_resonance", "guigun_crush");
+
     public static boolean innate(String role, String path) {
         return "longyou".equals(role) && !THUNDER.contains(path)
                 || "xiaojingang".equals(role) && path.startsWith("gourd_")
-                || ("guigun_human".equals(role) || "guigun_corpse".equals(role)) && path.startsWith("guigun_")
+                || "guigun_human".equals(role) && GUIGUN_HUMAN_SKILLS.contains(path)
+                || "guigun_corpse".equals(role) && GUIGUN_CORPSE_SKILLS.contains(path)
                 || "hei_wuchou".equals(role) && path.startsWith("wuchou_")
                 || "bai_wusheng".equals(role) && path.startsWith("wusheng_");
     }
+    /**
+     * 学习消耗的进化点（技能树用）。
+     * <p>
+     * 档位（保守梯度，点数整体上调一档）：
+     * <pre>
+     * 普通招式（冷却 &lt; 200）      4
+     * 中坚招式（冷却 200 ~ 599）   6
+     * 强力招式（冷却 ≥ 600）       10
+     * 辅助（UTILITY）              4
+     * 被动                         5
+     * 终极（ULTIMATE）             18
+     * </pre>
+     * 下面几个 {@code case} 是已经单独调过的例外（龙右雷系 / 空间异能），保持原值。
+     */
     public static int cost(String path, SkillType type, int cooldown, boolean active) {
         return switch (path) {
             case "thunder_power" -> 8;
             case "corpse_king_thunder" -> 15;
             case "natural_judgment" -> 30;
             case "spatial_blink" -> 8;
-            default -> type == SkillType.ULTIMATE ? 15 : !active ? 4
-                    : type == SkillType.UTILITY ? 3 : cooldown >= 600 ? 8 : cooldown >= 200 ? 5 : 3;
+            default -> type == SkillType.ULTIMATE ? 18 : !active ? 5
+                    : type == SkillType.UTILITY ? 4 : cooldown >= 600 ? 10 : cooldown >= 200 ? 6 : 4;
         };
     }
-    public static int level(String path, SkillType type) {
+
+    /**
+     * 学习所需的最低进化等级（技能树用）。等级 → 阶层的换算见 {@code EvolutionTier}：
+     * 人 1-4 / 地 5-8 / 天 9 / 神 10-12。
+     * <p>
+     * 档位（保守梯度，整体只抬一格）：
+     * <pre>
+     * 辅助（UTILITY）/ 被动 / 普通招式（冷却 &lt; 200）   2（人2）
+     * 中坚招式（冷却 200 ~ 599）                       3（人3）
+     * 强力招式（冷却 ≥ 600）                           4（人4）
+     * 终极（ULTIMATE）                                 5（地1）
+     * </pre>
+     * 辅助 / 被动优先于冷却判定（与 {@link #cost} 的优先级一致）。
+     * 下面几个 {@code case} 是已经单独调过的例外，保持原值。
+     */
+    public static int level(String path, SkillType type, int cooldown, boolean active) {
         return switch (path) {
             case "thunder_power" -> 2;
             case "corpse_king_thunder" -> 3;
             case "natural_judgment" -> 5;
-            default -> type == SkillType.ULTIMATE ? 3 : 1;
+            default -> type == SkillType.ULTIMATE ? 5 : !active ? 2
+                    : type == SkillType.UTILITY ? 2 : cooldown >= 600 ? 4 : cooldown >= 200 ? 3 : 2;
         };
     }
 }

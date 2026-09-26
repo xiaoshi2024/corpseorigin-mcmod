@@ -52,6 +52,15 @@ public class AotumanZbEntity extends LowerLevelZbEntity {
     }
 
     /**
+     * 凹凸曼是固定强度的特殊形态，不参与父类那条"按游戏日掷进化等级"，
+     * 免得掷出高阶却既不涨强度、又长出它模型上没有的器官。
+     */
+    @Override
+    protected boolean rollsSpawnEvolution() {
+        return false;
+    }
+
+    /**
      * 覆盖父类的"越进化越强"曲线。
      * <p>
      * 父类这个方法会把血量/攻击/移速按 {@code evolutionLevel} 重新写一遍，

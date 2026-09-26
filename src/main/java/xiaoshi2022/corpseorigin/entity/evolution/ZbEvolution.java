@@ -1,6 +1,7 @@
 package xiaoshi2022.corpseorigin.entity.evolution;
 
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.npc.villager.AbstractVillager;
@@ -24,10 +25,20 @@ public final class ZbEvolution {
 
     public static final int MAX_LEVEL = 10;
 
+    /**
+     * 正常进化的等级上限：过了它就得靠"超脱临界"（突破）才能继续涨。
+     * <p>
+     * 也是"有没有突变器官"的分界线 —— 突破一次长一个，所以 6 级 = 1 个器官。
+     */
+    public static final int BREAKTHROUGH_LEVEL = 5;
+
     /** 临界突破基础成功率。 */
     public static final float BREAKTHROUGH_CHANCE = 0.15F;
     /** 每次突破失败后叠加的成功率。 */
     public static final float BREAKTHROUGH_BONUS = 0.10F;
+
+    /** 一个游戏日的游戏刻数。 */
+    private static final long TICKS_PER_DAY = 24000L;
 
     private ZbEvolution() {}
 
@@ -63,7 +74,7 @@ public final class ZbEvolution {
             return false;
         }
 
-        if (current < 5) {
+        if (current < BREAKTHROUGH_LEVEL) {
             // 正常进化
             self.setFleshEnergy(self.getFleshEnergy() - thresholdForLevel(current));
             evolve(self, level, false);
@@ -94,5 +105,53 @@ public final class ZbEvolution {
         self.playSound(ModSounds.GROUND_CHI, 1.2F, critical ? 0.7F : 1.0F);
         QiEffects.burst(level, self.getX(), self.getY() + 1.0, self.getZ(),
                 critical ? 0xc0182a : 0x8ce06a, critical ? 18 : 10, 0.5);
+    }
+
+    // ==================== 自然生成的等级 ====================
+
+    /**
+     * 自然生成的尸兄该是多少级：<b>越后期越强</b>。
+     * <p>
+     * 先算出当天的等级上限：{@code 上限 = 1 + 游戏日 / spawn.daysPerEvolutionLevel}，
+     * 封顶 {@code spawn.maxEvolutionLevel}；再在上限之内按权重抽一个等级 ——
+     * 权重<b>以当前上限为峰</b>往下衰减，也就是世界的平均强度随天数整体抬升，
+     * 同时总有一小撮更弱的，不会清一色。
+     * <p>
+     * 所以第 0 天全是人1（和原来一样），之后每一档台阶都往上移一层；
+     * {@code spawn.levelDecay} 控制分布有多集中在上限附近（越大越集中）。
+     * <p>
+     * 把 {@code spawn.evolutionLevelRamp} 关掉就一律人1（回到"高阶只能靠吃血肉突破"）。
+     * 数值全在 {@code config/corpseorigin.json} 的 {@code spawn} 段，不用改代码。
+     *
+     * @param gameTime 世界游戏刻（{@code LevelAccessor#getGameTime()}）
+     * @return 1 ~ {@code spawn.maxEvolutionLevel}
+     */
+    public static int rollSpawnLevel(RandomSource random, long gameTime) {
+        var config = xiaoshi2022.corpseorigin.config.CorpseConfig.get().spawn;
+        if (!config.evolutionLevelRamp) {
+            return 1;
+        }
+        long days = Math.max(0L, gameTime) / TICKS_PER_DAY;
+        int cap = (int) Math.min(config.maxEvolutionLevel,
+                1L + days / Math.max(1, config.daysPerEvolutionLevel));
+        cap = Math.max(1, Math.min(MAX_LEVEL, cap));
+
+        double decay = Math.max(1.1, config.levelDecay);
+        double[] weights = new double[cap];
+        double total = 0.0;
+        for (int i = 0; i < cap; i++) {
+            // 离上限越远越稀有：i = cap-1（正好是上限）权重 1，往下每级除以 decay
+            weights[i] = 1.0 / Math.pow(decay, cap - 1 - i);
+            total += weights[i];
+        }
+
+        double roll = random.nextDouble() * total;
+        for (int i = 0; i < cap; i++) {
+            roll -= weights[i];
+            if (roll <= 0.0) {
+                return i + 1;
+            }
+        }
+        return cap;
     }
 }

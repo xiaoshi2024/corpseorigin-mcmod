@@ -24,12 +24,20 @@ public final class SkillManager {
     /** 每玩家 → 技能路径 → 冷却结束时间戳（毫秒） */
     private static final Map<UUID, Map<String, Long>> COOLDOWNS = new HashMap<>();
 
+    /** 激活技能（服务端，含校验）：要求已学会，与 {@link #activate(ServerPlayer, String, boolean)} 等价。 */
+    public static boolean activate(ServerPlayer player, String skillPath) {
+        return activate(player, skillPath, true);
+    }
+
     /**
      * 激活技能（服务端，含校验）。
      *
+     * @param requireLearned {@code false} = <b>不校验"是否已学会"</b>。
+     *                       给"握着兵器就是钥匙"的招式用（见 {@code RoleChapterSkill#castWithWeapon}）：
+     *                       兵器在手就能使，不必先去技能树点亮。
      * @return true 表示成功激活并发送冷却同步包
      */
-    public static boolean activate(ServerPlayer player, String skillPath) {
+    public static boolean activate(ServerPlayer player, String skillPath, boolean requireLearned) {
         if (xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.PATH.equals(skillPath)
                 && xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.isChanneling(player)) {
             xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.cancel(player);
@@ -71,9 +79,10 @@ public final class SkillManager {
             return false;
         }
 
-        // 校验已学习（「原体保底」例外见 isOriginalBodyFallback）
+        // 校验已学习（「原体保底」例外见 isOriginalBodyFallback；兵器招式由调用方声明免检）
         PlayerCharacterData data = PlayerCharacterData.get(player);
-        if (!data.hasLearned(player.getUUID(), skillPath) && !isOriginalBodyFallback(player, skillPath)
+        if (requireLearned && !data.hasLearned(player.getUUID(), skillPath)
+                && !isOriginalBodyFallback(player, skillPath)
                 && xiaoshi2022.corpseorigin.skill.longyou.UndeadBodyState.getDynamicSkill(player, skillPath) == null) {
             CorpseOrigin.LOGGER.warn("玩家 {} 尝试激活未学习的技能: {}",
                     player.getName().getString(), skillPath);

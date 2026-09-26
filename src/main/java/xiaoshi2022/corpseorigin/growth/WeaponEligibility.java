@@ -22,17 +22,27 @@ public final class WeaponEligibility {
         return CharacterManager.getInstance().getPlayerCharacter(p).getMaxInnerPower()>0
                 ||p.getAttachedOrCreate(SurvivalGrowth.JOURNAL).getBooleanOr("inner_power",false);
     }
+    /** 当前是不是"尸兄身体" —— 尸棍这类尸兄专属兵器的持有资格，也是尸棍招式的资格。 */
+    public static boolean corpseBody(ServerPlayer p){
+        return xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.isCorpse(p);
+    }
     public static Component skillReason(ServerPlayer p,String skill){
         if((skill.equals("blood_wing_blade")||skill.equals("dark_siphon"))&&!vampire(p))
             return Component.translatable("message.corpseorigin.weapon_eligibility.text_01");
         if(skill.equals("tian_gang_blood_lotus")&&(!lineage(p)||!innerInheritance(p)))
             return Component.translatable("message.corpseorigin.weapon_eligibility.text_02");
+        // 尸棍那两招是尸兄身体的招式：人形角色（含人类鬼棍）拿到尸棍也不该学会、更不该放出来
+        if((skill.equals("guigun_resonance")||skill.equals("guigun_crush"))&&!corpseBody(p))
+            return Component.translatable("message.corpseorigin.weapon_eligibility.text_04");
         return null;
     }
     public static Component itemReason(ServerPlayer p,ItemStack stack){
         if(stack.getItem() instanceof xiaoshi2022.corpseorigin.item.sword.JuQue
                 &&xiaoshi2022.corpseorigin.skill.EvolutionManager.getLevel(PlayerCharacterData.get(p).getEarnedPoints(p.getUUID()))<2)
             return Component.translatable("message.corpseorigin.weapon_eligibility.text_03");
+        // 尸棍是尸兄身体的兵器：人类形态（含人类鬼棍）连挥都挥不动它（三节棍才是给人形用的）
+        if(stack.is(ModItems.GUIGUN_CLUB)&&!corpseBody(p))
+            return Component.translatable("message.corpseorigin.weapon_eligibility.text_04");
         if(stack.is(ModItems.BLOOD_WING_BLADE))return skillReason(p,"blood_wing_blade");
         if(stack.is(ModItems.TIAN_GANG_KEY))return skillReason(p,"tian_gang_blood_lotus");
         return null;

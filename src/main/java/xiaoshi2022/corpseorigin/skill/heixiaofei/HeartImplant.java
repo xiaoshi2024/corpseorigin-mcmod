@@ -24,9 +24,21 @@ public final class HeartImplant {
     private HeartImplant() {}
     public static boolean active(Player p) { return p.getAttachedOrCreate(FEIGNING); }
 
+    /**
+     * 谁可以承装黑金心脏：黑小飞本人，或<b>已经是尸兄</b>的身体。
+     * <p>
+     * 心脏本来就是尸兄器官，原著里只有黑小飞这一例。把尸兄也放进来之后，
+     * 植入 / 假死 / 唤醒 / 感染度收尾都认这一个判定（属性加成见 {@code SkillRework#attributes}）——
+     * 想收回这个口子，只改这一个方法即可。
+     */
+    public static boolean canBear(ServerPlayer p) {
+        return HeiXiaoFei.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(p))
+                || xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.isCorpse(p);
+    }
+
     public static InteractionResult implant(ServerPlayer actor, ServerPlayer target, ItemStack stack) {
         if (!target.isAlive() || target.isSpectator() || active(actor) || active(target)
-                || !"heixiaofei".equals(CharacterManager.getInstance().getPlayerCharacterId(target))) {
+                || !canBear(target)) {
             actor.sendOverlayMessage(Component.translatable("item.corpseorigin.black_gold_heart.invalid"));
             return InteractionResult.FAIL;
         }
@@ -52,7 +64,7 @@ public final class HeartImplant {
     public static void wake(ServerPlayer p) {
         if (!active(p)) return;
         clear(p);
-        if (p.isAlive() && "heixiaofei".equals(CharacterManager.getInstance().getPlayerCharacterId(p))) {
+        if (p.isAlive() && canBear(p)) {
             p.setHealth(p.getMaxHealth());
             p.sendOverlayMessage(Component.translatable("gui.corpseorigin.heart.awake"));
         }
@@ -80,7 +92,7 @@ public final class HeartImplant {
                     if (speed != null) speed.removeModifier(IMMOBILE);
                     continue;
                 }
-                if (!p.isAlive() || p.isSpectator() || !"heixiaofei".equals(CharacterManager.getInstance().getPlayerCharacterId(p))) {
+                if (!p.isAlive() || p.isSpectator() || !canBear(p)) {
                     clear(p); continue;
                 }
                 if (speed != null && !speed.hasModifier(IMMOBILE)) speed.addTransientModifier(

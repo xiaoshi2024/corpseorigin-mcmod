@@ -77,7 +77,7 @@ public final class SkillRework {
                 if(!p.isAlive()) {p.setAttached(GOLD,0L);p.setAttached(LOTUS_ARMOR,0L);continue;}
                 if(!role.equals("xiaolu") && !xiaoshi2022.corpseorigin.growth.FreeGrowth.isFree(p))p.setAttached(GOLD,0L);
                 if(!role.equals("shichaozhizi") && !xiaoshi2022.corpseorigin.growth.FreeGrowth.isFree(p))p.setAttached(LOTUS_ARMOR,0L);
-                if(role.equals("heixiaofei") && PlayerCharacterData.get(p).hasLearned(p.getUUID(),"black_gold_heart") && p.tickCount%20==0) {
+                if(xiaoshi2022.corpseorigin.skill.heixiaofei.HeartImplant.canBear(p) && PlayerCharacterData.get(p).hasLearned(p.getUUID(),"black_gold_heart") && p.tickCount%20==0) {
                     p.heal(2);buff(p,MobEffects.REGENERATION,25,1);
                     // The heart is now a client-only inventory preview; its passive effects stay server-side.
                 }
@@ -129,9 +129,13 @@ public final class SkillRework {
         boolean enhanced=!Set.of("mortal","xiaohui","xiaoyanzi","chuangshang_xingcunzhe","yanhuang_budui").contains(role);
         double health=enhanced?40:0,attack=enhanced?9:0,armor=enhanced?6:0;
         if(Set.of("heixiaofei","tushu","zhaoritian","chongmu","jingang_zb","guigun_corpse","hei_wuchou","bai_wusheng").contains(role)){health=80;attack=17;armor=12;}
-        if(role.equals("heixiaofei") && PlayerCharacterData.get(p).hasLearned(p.getUUID(),"black_gold_heart")){health+=60;attack+=8;armor+=8;}
         // Existing boss/form attributes already establish their own much higher baseline.
         if(Set.of("longyou","zuohufa","shichaozhizi").contains(role)){health=0;attack=9;armor=0;}
+        // 黑金心脏强化：黑小飞与（Boss 形态以外的）尸兄身体同权。
+        // 上一行把 Boss 形态刻意置零 —— 它们自带远高的本体数值，不叠加这一份。
+        if(!Set.of("longyou","zuohufa","shichaozhizi").contains(role)
+                && xiaoshi2022.corpseorigin.skill.heixiaofei.HeartImplant.canBear(p)
+                && PlayerCharacterData.get(p).hasLearned(p.getUUID(),"black_gold_heart")){health+=60;attack+=8;armor+=8;}
         modifier(p,Attributes.MAX_HEALTH,"rework_health",health);
         modifier(p,Attributes.ATTACK_DAMAGE,"rework_attack",attack);
         modifier(p,Attributes.ARMOR,"rework_armor",armor);

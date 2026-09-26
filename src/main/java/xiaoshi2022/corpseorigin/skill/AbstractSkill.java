@@ -36,25 +36,25 @@ public abstract class AbstractSkill implements ISkill {
         this.innerPowerCost = innerPowerCost;
     }
 
-    /** 主动技能（默认 1 点 / 1 级 / 不消耗内力） */
+    /** 主动技能（点数 / 等级由 SkillLearningRules 按类型与冷却推导，不消耗内力） */
     protected AbstractSkill(String path, SkillType type, int cooldownTicks) {
         this(path, type, cooldownTicks,
                 xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.cost(path, type, cooldownTicks, true),
-                xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.level(path, type), true, 0);
+                xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.level(path, type, cooldownTicks, true), true, 0);
     }
 
     /** 主动技能（指定内力消耗） */
     protected AbstractSkill(String path, SkillType type, int cooldownTicks, int innerPowerCost) {
         this(path, type, cooldownTicks,
                 xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.cost(path, type, cooldownTicks, true),
-                xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.level(path, type), true, innerPowerCost);
+                xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.level(path, type, cooldownTicks, true), true, innerPowerCost);
     }
 
     /** 被动技能（不进技能轮盘、无冷却） */
     protected AbstractSkill(String path, SkillType type) {
         this(path, type, 0,
                 xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.cost(path, type, 0, false),
-                xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.level(path, type), false, 0);
+                xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.level(path, type, 0, false), false, 0);
     }
 
     @Override

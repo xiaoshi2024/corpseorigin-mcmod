@@ -37,11 +37,15 @@ public final class SkillUnlockManager {
         }
     }
 
-    /** Black Xiaofei remains human until the black-gold heart is actually implanted. */
+    /**
+     * 植入黑金心脏之后按"尸兄身体"收尾：感染度顶到 100、恢复意识。
+     * <p>
+     * 黑小飞是在这一步从人类转为尸兄；本来就是尸兄的（见 {@code HeartImplant.canBear}）
+     * 只是补一次感染度，不会重复转换。
+     */
     private static void applyBlackGoldHeartInfection(ServerPlayer player) {
         if (player.tickCount % SCAN_INTERVAL_TICKS != 0
-                || !xiaoshi2022.corpseorigin.character.HeiXiaoFei.ID.equals(
-                    CharacterManager.getInstance().getPlayerCharacterId(player))
+                || !xiaoshi2022.corpseorigin.skill.heixiaofei.HeartImplant.canBear(player)
                 || !xiaoshi2022.corpseorigin.component.PlayerRelicComponent.has(player,
                     xiaoshi2022.corpseorigin.skill.heixiaofei.BlackGoldHeartSkill.RELIC_ID)) return;
         var corpse = xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.get(player);
