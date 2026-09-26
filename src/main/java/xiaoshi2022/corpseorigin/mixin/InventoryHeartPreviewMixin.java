@@ -51,9 +51,17 @@ public abstract class InventoryHeartPreviewMixin extends AbstractContainerScreen
     @Unique
     private boolean corpseorigin$hasHeart() {
         var player = minecraft.player;
-        return player != null && player.isAlive()
-                && "heixiaofei".equals(player.getAttachedOrCreate(ChapterActorState.ROLE))
-                && ClientState.hasLearned("black_gold_heart");
+        if (player == null || !player.isAlive() || !ClientState.hasLearned("black_gold_heart")) {
+            return false;
+        }
+        // 黑小飞本人，或已经是尸兄的身体 —— 与服务端 HeartImplant.canBear 同一口径。
+        // 客户端读不到 PLAYER_CORPSE 附件（它不参与同步），所以"尸兄"这半边走广播下来的缓存，
+        // 和感染条 HUD 用的是同一份数据。
+        if ("heixiaofei".equals(player.getAttachedOrCreate(ChapterActorState.ROLE))) {
+            return true;
+        }
+        var self = xiaoshi2022.corpseorigin.client.CorpseOriginClient.corpseDataCache.get(player.getUUID());
+        return self != null && self.isCorpse;
     }
 
     @Inject(method = "extractBackground", at = @At("HEAD"))

@@ -22,6 +22,7 @@
     "ProjectileOwnBodyMixin",
     "NestProjectileMixin",
     "ServerPlayerGameModeMixin",
+    "ServerLevelFireSpreadMixin",
     "ServerPlayerShellMixin",
     "SpawnPlacementsInvoker"
   ],

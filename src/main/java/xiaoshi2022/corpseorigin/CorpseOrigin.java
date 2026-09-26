@@ -130,6 +130,7 @@ public class CorpseOrigin implements ModInitializer {
         xiaoshi2022.corpseorigin.skill.chapter.FiveElementsCombat.register();
         xiaoshi2022.corpseorigin.skill.chapter.SkillRework.register();
         xiaoshi2022.corpseorigin.skill.chapter.GuigunCombat.register();
+        xiaoshi2022.corpseorigin.skill.chapter.FlameSea.register();
         xiaoshi2022.corpseorigin.skill.chapter.WuchangCombat.register();
         xiaoshi2022.corpseorigin.skill.chapter.ImpactTerrain.register();
         xiaoshi2022.corpseorigin.skill.chapter.BodySkillState.register();

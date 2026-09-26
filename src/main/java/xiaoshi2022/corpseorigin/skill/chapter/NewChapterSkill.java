@@ -6,6 +6,11 @@ import xiaoshi2022.corpseorigin.entity.GourdOrganEntity;
 import xiaoshi2022.corpseorigin.growth.GourdOrganState;
 public final class NewChapterSkill extends AbstractSkill {
     private final int form,blood;
+
+    /** 「烈焰火海」的铺火范围：以玩家为中心、沿视线铺一段扇环（不是向前喷一条长线）。 */
+    private static final double FIRE_INNER_RADIUS=1.5,FIRE_OUTER_RADIUS=5.0,FIRE_RADIUS_STEP=1.0;
+    /** 一次脉冲铺多宽的一段弧；10 次脉冲 ≈ 480°，所以原地转一圈就能把火连成环。 */
+    private static final float FIRE_ARC_DEGREES=48.0F,FIRE_ARC_STEP_DEGREES=12.0F;
     public NewChapterSkill(String id,int cooldown,int blood,int form){
         super(id,SkillType.COMBAT,cooldown);this.form=form;this.blood=blood;
     }
@@ -48,7 +53,7 @@ public final class NewChapterSkill extends AbstractSkill {
             if(form==4){target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.POISON,160,1));target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOWNESS,80,1));}
             if(form==5)target.igniteForSeconds(8);
         }
-        if(form==5)ignite(p,origin,destination);
+        if(form==5)ignite(p);
         var mid=origin.lerp(destination,.5);
         QiEffects.cloud((net.minecraft.server.level.ServerLevel)p.level(),mid,form==5?0xff7a1a:form==4?0x4fc3f7:0xc0182a,(float)Math.max(.5,Math.min(8,origin.distanceTo(destination)/2)),12);
         ChapterCombat.emptyCast(p);
@@ -62,16 +67,28 @@ public final class NewChapterSkill extends AbstractSkill {
         if(!GourdCapture.begin(p,target))p.sendOverlayMessage(Component.translatable("skill.corpseorigin.gourd_devour.busy"));
     }
 
-    private void ignite(ServerPlayer p,net.minecraft.world.phys.Vec3 origin,net.minecraft.world.phys.Vec3 end){
-        if(!p.mayBuild()||p.isSpectator())return;
-        for(int i=2;i<=Math.ceil(origin.distanceTo(end));i+=2){
-            var point=origin.lerp(end,Math.min(1,i/Math.max(1,origin.distanceTo(end))));
-            var ground=p.level().clip(new net.minecraft.world.level.ClipContext(point,point.add(0,-3,0),net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,p));
-            if(ground.getType()!=net.minecraft.world.phys.HitResult.Type.BLOCK)continue;
-            var pos=ground.getBlockPos().relative(ground.getDirection());
-            if(!p.level().hasChunkAt(pos)||!p.level().getWorldBorder().isWithinBounds(pos)||!p.level().mayInteract(p,pos)||!p.level().isEmptyBlock(pos))continue;
-            var fire=net.minecraft.world.level.block.BaseFireBlock.getState(p.level(),pos);
-            if(fire.canSurvive(p.level(),pos))p.level().setBlockAndUpdate(pos,fire);
+    /**
+     * 「烈焰火海」铺火：以玩家为中心、沿视线方向铺一段扇环。
+     * <p>
+     * 每次脉冲只铺一小段弧，而脉冲之间玩家能转视角 —— 所以原地转一圈，火就围成一个环。
+     * 铺下的火登记在 {@link FlameSea}：不蔓延、{@link FlameSea#LIFETIME_TICKS} 后自行熄灭。
+     */
+    private void ignite(ServerPlayer p){
+        if(!p.mayBuild()||p.isSpectator()||!(p.level() instanceof net.minecraft.server.level.ServerLevel level))return;
+        var look=p.getLookAngle();
+        var flat=new net.minecraft.world.phys.Vec3(look.x,0,look.z);
+        if(flat.lengthSqr()<1.0E-6)flat=new net.minecraft.world.phys.Vec3(0,0,1);
+        flat=flat.normalize();
+        for(float offset=-FIRE_ARC_DEGREES/2;offset<=FIRE_ARC_DEGREES/2;offset+=FIRE_ARC_STEP_DEGREES){
+            var direction=flat.yRot(offset);
+            for(double radius=FIRE_INNER_RADIUS;radius<=FIRE_OUTER_RADIUS;radius+=FIRE_RADIUS_STEP){
+                var point=p.position().add(direction.x*radius,0,direction.z*radius);
+                var ground=level.clip(new net.minecraft.world.level.ClipContext(point,point.add(0,-3,0),net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,p));
+                if(ground.getType()!=net.minecraft.world.phys.HitResult.Type.BLOCK)continue;
+                var pos=ground.getBlockPos().relative(ground.getDirection());
+                if(!level.hasChunkAt(pos)||!level.getWorldBorder().isWithinBounds(pos)||!level.mayInteract(p,pos)||!level.isEmptyBlock(pos))continue;
+                FlameSea.place(level,pos);
+            }
         }
     }
 }
