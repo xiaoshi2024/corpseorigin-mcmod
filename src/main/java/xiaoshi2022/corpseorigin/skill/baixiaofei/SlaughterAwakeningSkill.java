@@ -49,6 +49,25 @@ public class SlaughterAwakeningSkill implements ISkill {
         return 1200;  // 60s
     }
 
+    /**
+     * 杀戮觉醒是白小飞在地级中期才稳定掌握的底牌，门槛定为「地3 + 3 点」：
+     * <ul>
+     *   <li>{@link #getRequiredLevel()} = <b>7</b> —— 绝对进化等级 7，
+     *       也就是 {@code EvolutionTier.DI} 的子级 3（地3）；</li>
+     *   <li>{@link #getCost()} = <b>3</b> —— 学要花 3 点进化点。</li>
+     * </ul>
+     * 本类直接实现 {@link ISkill}（不是 AbstractSkill），不写这两个方法就走接口默认的 1 点 / 1 级。
+     */
+    @Override
+    public int getRequiredLevel() {
+        return 7;
+    }
+
+    @Override
+    public int getCost() {
+        return 3;
+    }
+
     @Override
     public void onActivate(ServerPlayer player) {
         // ==================== 正面效果 ====================

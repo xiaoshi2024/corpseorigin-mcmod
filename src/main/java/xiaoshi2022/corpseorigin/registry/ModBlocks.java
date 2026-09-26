@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.block.CNChessZbrsBlock;
 import xiaoshi2022.corpseorigin.block.CloneChamberBlock;
 import xiaoshi2022.corpseorigin.block.ZBRFleshBlock;
 
@@ -35,6 +36,20 @@ public final class ModBlocks {
                     .noOcclusion()
                     .randomTicks()
                     .setId(blockKey("zbr_flesh")))
+    );
+
+    /** 象棋尸兄（方块实体，GeckoLib 动画） */
+    public static final Block CN_CHESS_ZBRS = register(
+            "cn_chess_zbrs",
+            new CNChessZbrsBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.NETHERITE_BLOCK)
+                    // 挖掘硬度 -1 = 不可挖掘（同基岩）；爆炸抗性设 0，
+                    // 这样爆炸会"选中"方块并回调 wasExploded，由我们折成 HP 伤害，
+                    // 而不是直接被炸没
+                    .strength(-1.0F, 0.0F)
+                    .mapColor(MapColor.COLOR_BLACK)
+                    .noOcclusion()
+                    .randomTicks()
+                    .setId(blockKey("cn_chess_zbrs")))
     );
 
     private static Block register(String name, Block block) {

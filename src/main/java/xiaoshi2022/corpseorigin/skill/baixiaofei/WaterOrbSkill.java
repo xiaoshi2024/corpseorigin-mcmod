@@ -18,6 +18,20 @@ public class WaterOrbSkill extends AbstractSkill {
     public WaterOrbSkill() {
         super(PATH, SkillType.COMBAT, 160);   // 8s
     }
+
+    /**
+     * 水异能是白小飞在《尸巢之战篇》后期才觉醒的异能，门槛抬到「天级」：
+     * {@link #getRequiredLevel()} = <b>9</b> —— 绝对进化等级 9，也就是 {@code EvolutionTier.TIAN}。
+     * <p>
+     * 这一条同时管住技能树与自由角色（凡人 / 尸兄）的「发现」：
+     * {@code BalanceRules.discoveryLevel} 取 requiredLevel 与 9 的较大值，
+     * 所以天级之前连随机机遇都刷不出这条技能。
+     */
+    @Override
+    public int getRequiredLevel() {
+        return 9;
+    }
+
     @Override public net.minecraft.network.chat.Component checkUsable(net.minecraft.server.level.ServerPlayer p) {
         return null;
     }

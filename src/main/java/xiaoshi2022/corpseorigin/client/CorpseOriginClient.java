@@ -37,6 +37,7 @@ import xiaoshi2022.corpseorigin.client.hud.SkillHotbarOverlay;
 import xiaoshi2022.corpseorigin.client.render.CorpsePlayerRenderHandler;
 import xiaoshi2022.corpseorigin.client.render.laser.BloodLotusLaserManager;
 import xiaoshi2022.corpseorigin.client.render.thunder.ThunderFxManager;
+import xiaoshi2022.corpseorigin.client.renderer.blockentity.CNChessZbrsRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.blockentity.CloneChamberRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.*;
 import xiaoshi2022.corpseorigin.client.skin.clone.ClientSkinCache;
@@ -238,6 +239,12 @@ public class CorpseOriginClient implements ClientModInitializer {
         );
         // 尸兄肉块（GeckoLib 动画方块）
         
+        // 象棋尸兄（GeckoLib 动画方块实体）
+        BlockEntityRendererRegistry.register(
+                ModBlockEntities.CN_CHESS_ZBRS,
+                CNChessZbrsRenderer::new
+        );
+
         // 3. 模型层注册
         ModModelLayers.register();
 

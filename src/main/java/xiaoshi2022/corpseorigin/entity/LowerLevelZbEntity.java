@@ -59,6 +59,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     // ==================== 饥饿值 ====================
     private static final EntityDataAccessor<Integer> DATA_HUNGER =
             SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.INT);
+    // ==================== 突变器官配置（客户端渲染要读，走同步） ====================
+    private static final EntityDataAccessor<String> DATA_ORGAN_LOADOUT =
+            SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.STRING);
 
     /** 饥饿阈值：低于这个值才攻击同类 */
     private static final int HUNGER_THRESHOLD = 30;
@@ -82,7 +85,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     }
 
     // ==================== GeckoLib ====================
-    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
+    private final AnimatableInstanceCache cache = new xiaoshi2022.corpseorigin.entity.animation.ZbLayerAnimationCache(this);
 
     // ==================== 皮肤系统 ====================
     @Environment(EnvType.CLIENT)
@@ -122,6 +125,11 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>("movement", 5, this::movementController));
         controllers.add(new AnimationController<>("attack", 2, this::attackController));
+        // 挂在身上的突变器官各用自己的渲染状态取 clip（本体管理器读不到 clip，CONTINUE 即什么都不播）
+        controllers.add(new AnimationController<LowerLevelZbEntity>("custom_organs", 4, test -> {
+            String clip = test.getData(xiaoshi2022.corpseorigin.entity.animation.ZbLayerAnimationCache.CLIP);
+            return clip == null ? PlayState.CONTINUE : test.setAndContinue(RawAnimation.begin().thenLoop(clip));
+        }));
     }
 
     private PlayState movementController(AnimationTest<LowerLevelZbEntity> test) {
@@ -169,6 +177,11 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
                 }
 
                 setHunger(getHunger() + hungerGain);
+
+                // 吸血器官：命中回血（与玩家 vampire 口径一致，尸兄不消耗血能）
+                if (xiaoshi2022.corpseorigin.entity.evolution.ZbOrganEffects.hasTrait(this, "vampire")) {
+                    this.heal(2.0F);
+                }
             }
 
             float pitch = 0.8F + this.random.nextFloat() * 0.4F;
@@ -251,6 +264,38 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         builder.define(DATA_SKIN_STATE, ZbSkinState.NOT_LOADED.getCode());
         builder.define(DATA_EVOLUTION_LEVEL, 1);
         builder.define(DATA_HUNGER, 100);  // ✅ 默认满饥饿
+        builder.define(DATA_ORGAN_LOADOUT, "[]");
+    }
+
+    // ==================== 血肉能量 / 临界突破（仅服务端，走 NBT） ====================
+
+    private int fleshEnergy;
+    private int breakthroughFailures;
+
+    public int getFleshEnergy() {
+        return this.fleshEnergy;
+    }
+
+    public void setFleshEnergy(int value) {
+        this.fleshEnergy = Math.max(0, value);
+    }
+
+    public int getBreakthroughFailures() {
+        return this.breakthroughFailures;
+    }
+
+    public void setBreakthroughFailures(int value) {
+        this.breakthroughFailures = Math.max(0, value);
+    }
+
+    // ==================== 突变器官配置 ====================
+
+    public String getOrganLoadout() {
+        return this.entityData.get(DATA_ORGAN_LOADOUT);
+    }
+
+    public void setOrganLoadout(String json) {
+        this.entityData.set(DATA_ORGAN_LOADOUT, json == null ? "[]" : json);
     }
 
     // ==================== 自定义 ID 系统 ====================
@@ -270,7 +315,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     }
 
     public void setEvolutionLevel(int level) {
-        this.entityData.set(DATA_EVOLUTION_LEVEL, Math.max(1, Math.min(5, level)));
+        // 1-5 为普通进化；6-10 为吸食血肉超脱临界后的等级
+        this.entityData.set(DATA_EVOLUTION_LEVEL, Math.max(1, Math.min(xiaoshi2022.corpseorigin.entity.evolution.ZbEvolution.MAX_LEVEL, level)));
         updateAttributesForEvolution();
     }
 
@@ -370,6 +416,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
                 setHunger(getHunger() - 1);
             }
 
+            // 突变器官效果（解剖属性 / 夜视 / 翅膀缓落）
+            xiaoshi2022.corpseorigin.entity.evolution.ZbOrganEffects.tick(this);
+
             // ✅ 极度饥饿时显示粒子效果
             if (this.isStarving() && this.tickCount % 20 == 0) {
                 if (this.level() instanceof ServerLevel serverLevel) {
@@ -409,6 +458,24 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         ZbSkinLoader.loadSkinAsync(this, playerName);
     }
 
+    // ==================== 器官：水下呼吸 / 摔落免疫 ====================
+
+    @Override
+    public boolean canBreatheUnderwater() {
+        // 长了腮就能在水下正常呼吸，不溺水
+        return super.canBreatheUnderwater()
+                || xiaoshi2022.corpseorigin.entity.evolution.ZbOrganEffects.hasTrait(this, "gills");
+    }
+
+    @Override
+    public boolean causeFallDamage(double distance, float multiplier, net.minecraft.world.damagesource.DamageSource source) {
+        // 长了翅膀：免疫摔落伤害（配合空中缓落）
+        if (xiaoshi2022.corpseorigin.entity.evolution.ZbOrganEffects.hasTrait(this, "wings")) {
+            return false;
+        }
+        return super.causeFallDamage(distance, multiplier, source);
+    }
+
     // ==================== NBT ====================
 
     @Override
@@ -419,6 +486,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         output.putInt("SkinState", this.entityData.get(DATA_SKIN_STATE));
         output.putInt("EvolutionLevel", this.getEvolutionLevel());
         output.putInt("Hunger", this.getHunger());
+        output.putInt("FleshEnergy", this.fleshEnergy);
+        output.putInt("BreakthroughFailures", this.breakthroughFailures);
+        output.putString("OrganLoadout", this.getOrganLoadout());
     }
 
     @Override
@@ -436,5 +506,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
 
         Optional<Integer> levelOpt = input.getInt("EvolutionLevel");
         levelOpt.ifPresent(this::setEvolutionLevel);
+
+        this.fleshEnergy = input.getIntOr("FleshEnergy", 0);
+        this.breakthroughFailures = input.getIntOr("BreakthroughFailures", 0);
+        this.setOrganLoadout(input.getStringOr("OrganLoadout", "[]"));
     }
 }

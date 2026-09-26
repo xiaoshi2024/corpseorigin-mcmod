@@ -8,8 +8,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.item.MedusaEyeItem;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+import xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockSource;
 import xiaoshi2022.corpseorigin.entity.OsmiumIceSpearEntity;
 
 import java.util.List;
@@ -41,6 +43,18 @@ public class OsmiumIceSpikeSkill implements ISkill {
     @Override
     public SkillType getSkillType() {
         return SkillType.COMBAT;
+    }
+
+    /**
+     * 只有吃下「美杜莎之眼」才能觉醒。
+     * <p>
+     * 声明获取式来源即关闭技能树的点数路径：{@code SkillManager.learn} 对有来源的技能
+     * 一律转交 {@code SkillUnlockManager}，不扣点、不检查等级；技能界面那行也会显示
+     * 「需要 美杜莎之眼」而不是「点击学习」。
+     */
+    @Override
+    public List<SkillUnlockSource> getUnlockSources() {
+        return List.of(SkillUnlockSource.relic(MedusaEyeItem.RELIC_ID));
     }
 
     @Override

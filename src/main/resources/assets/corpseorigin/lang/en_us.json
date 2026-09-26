@@ -580,6 +580,7 @@
   "gui.corpseorigin.skill_tree.scroll_hint": "Scroll to see more skills",
   "gui.corpseorigin.skill_tree.requires": "Needs %s",
   "relic.corpseorigin.black_gold_heart": "Black Gold Heart",
+  "relic.corpseorigin.medusa_eye": "Medusa's Eye",
   "pet.corpseorigin.ham": "Ham Pet",
   "skill.corpseorigin.unlocked_by_source": "You learned a skill from an acquisition: %s",
   "command.corpseorigin.skill.unlocked": "Unlocked skill %2$s for %1$s",
@@ -1124,10 +1125,15 @@
   "skill.corpseorigin.gourd_devour.captured": "Captured: pulling into the gourd...",
   "skill.corpseorigin.gourd_devour.busy": "A capture is in progress, or this target cannot be captured",
   "message.corpseorigin.character_book.disabled": "This server has disabled character-book selection for %s",
-  "gui.corpseorigin.character_book.disabled": "Disabled by server"
-,
+  "gui.corpseorigin.character_book.disabled": "Disabled by server",
   "message.corpseorigin.gourd.pet_stored": "Gourd fed: stored flesh %s/%s. Merge to transfer it to blood.",
   "message.corpseorigin.gourd.stay": "Gourd staying; following and feeding paused (%s/%s flesh). Right-click to follow, sneak-right-click to merge.",
   "message.corpseorigin.gourd.follow": "Gourd following and foraging (%s/%s flesh). Right-click to stay, sneak-right-click to merge.",
-  "message.corpseorigin.gourd.transferred": "Merged: gained %s blood; %s flesh remains stored."
+  "message.corpseorigin.gourd.transferred": "Merged: gained %s blood; %s flesh remains stored.",
+  "block.corpseorigin.cn_chess_zbrs": "Chess ZBR",
+  "item.corpseorigin.cn_chess_zbrs": "Chess ZBR",
+  "command.corpseorigin.chesszb.executed": "Chess ZBR begins execution at (%s, %s, %s); the creature on its back will be crushed",
+  "command.corpseorigin.chesszb.not_found": "There is no Chess ZBR at (%s, %s, %s)",
+  "command.corpseorigin.chesszb.move_blocked": "The way is blocked; the Chess ZBR did not move",
+  "command.corpseorigin.chesszb.moved": "Chess ZBR moved %s block(s) %s"
 }

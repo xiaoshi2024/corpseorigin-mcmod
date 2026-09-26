@@ -4,6 +4,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.block.entity.CNChessZbrsBlockEntity;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
 import xiaoshi2022.corpseorigin.block.entity.ZBRFleshBlockEntity;
 
@@ -25,6 +26,14 @@ public final class ModBlockEntities {
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,
                     CorpseOrigin.id("zbr_flesh"),
                     new BlockEntityType<>(ZBRFleshBlockEntity::new, Set.of(ModBlocks.ZBR_FLESH))
+            );
+
+    /** 象棋尸兄（GeckoLib 动画方块实体） */
+    public static final BlockEntityType<CNChessZbrsBlockEntity> CN_CHESS_ZBRS =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    CorpseOrigin.id("cn_chess_zbrs"),
+                    new BlockEntityType<>(CNChessZbrsBlockEntity::new, Set.of(ModBlocks.CN_CHESS_ZBRS))
             );
 
     private ModBlockEntities() {

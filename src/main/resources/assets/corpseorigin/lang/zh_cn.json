@@ -580,6 +580,7 @@
   "gui.corpseorigin.skill_tree.scroll_hint": "滚轮滑动查看更多技能",
   "gui.corpseorigin.skill_tree.requires": "需要 %s",
   "relic.corpseorigin.black_gold_heart": "黑金心脏",
+  "relic.corpseorigin.medusa_eye": "美杜莎之眼",
   "pet.corpseorigin.ham": "哈姆宠物",
   "skill.corpseorigin.unlocked_by_source": "获得物让你领悟了技能：%s",
   "command.corpseorigin.skill.unlocked": "已为 %1$s 解锁技能 %2$s",
@@ -1124,10 +1125,16 @@
   "skill.corpseorigin.gourd_devour.captured": "已捕获：正在拉入葫芦…",
   "skill.corpseorigin.gourd_devour.busy": "正在捕获吞噬，或目标无法被捕获",
   "message.corpseorigin.character_book.disabled": "服务器已禁用通过角色书选择：%s",
-  "gui.corpseorigin.character_book.disabled": "服务器禁用"
-,
+  "gui.corpseorigin.character_book.disabled": "服务器禁用",
   "message.corpseorigin.gourd.pet_stored": "葫芦已进食：储存血肉 %s/%s，合体时转入气血",
   "message.corpseorigin.gourd.stay": "葫芦原地停留，停止跟随和觅食（血肉 %s/%s）；右键恢复，潜行右键合体",
   "message.corpseorigin.gourd.follow": "葫芦恢复跟随和觅食（血肉 %s/%s）；右键停留，潜行右键合体",
-  "message.corpseorigin.gourd.transferred": "合体转入 %s 气血，葫芦保留 %s 血肉"
+  "message.corpseorigin.gourd.transferred": "合体转入 %s 气血，葫芦保留 %s 血肉",
+
+  "block.corpseorigin.cn_chess_zbrs": "象棋尸兄",
+  "item.corpseorigin.cn_chess_zbrs": "象棋尸兄",
+  "command.corpseorigin.chesszb.executed": "象棋尸兄开始处决（%s, %s, %s），背上的生物将被夹碎",
+  "command.corpseorigin.chesszb.not_found": "该位置（%s, %s, %s）没有象棋尸兄",
+  "command.corpseorigin.chesszb.move_blocked": "那边过不去，象棋尸兄没有移动",
+  "command.corpseorigin.chesszb.moved": "象棋尸兄向 %s 移动了 %s 格"
 }

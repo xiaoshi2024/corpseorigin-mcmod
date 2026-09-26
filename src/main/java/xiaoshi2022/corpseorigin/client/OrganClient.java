@@ -35,7 +35,7 @@ public final class OrganClient {
                 if(error!=null){status=Component.translatable("gui.corpseorigin.label.089");return;}
                 xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.clearCatalog();
                 var local=new java.util.LinkedHashMap<String,OrganDefinition>();
-                Component problem=OrganPackCatalog.load(root,local);
+                Component problem=OrganPackCatalog.load(root,local,new java.util.LinkedHashMap<>());
                 if(!problem.equals(Component.empty())&&mc.player!=null)mc.player.sendSystemMessage(problem);
                 if(mc.player!=null)ClientPlayNetworking.send(new OrganEvolutionPayload("","refresh"));
                 status=Component.translatable("gui.corpseorigin.label.090");

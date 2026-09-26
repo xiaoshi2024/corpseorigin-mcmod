@@ -40,6 +40,12 @@ public final class ModItems {
             new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,22f,-2.4f)
                     .rarity(Rarity.EPIC).setId(itemKey("blood_wing_blade"))));
 
+    public static final Item CN_CHESS_ZBRS = register(
+            "cn_chess_zbrs",
+            new BlockItem(ModBlocks.CN_CHESS_ZBRS, new Item.Properties()
+                    .setId(itemKey("cn_chess_zbrs")))
+    );
+
     /** 鬼棍·人类的三节棍：五六米长的三段棍身，GeoItem 三维模型 */
     public static final Item GUIGUN_WEAP = register("guigun_weap",
             new xiaoshi2022.corpseorigin.item.weapon.GuigunWeapItem(new Item.Properties()
@@ -318,6 +324,7 @@ public final class ModItems {
                 output.accept(ZB_WORM_ITEM);
                 output.accept(CHARACTER_MEMORY);
                 output.accept(LEEK);
+                output.accept(CN_CHESS_ZBRS);
             })
             .build();
 

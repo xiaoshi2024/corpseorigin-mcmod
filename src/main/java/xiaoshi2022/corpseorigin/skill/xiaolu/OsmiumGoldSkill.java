@@ -6,8 +6,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.item.MedusaEyeItem;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+import xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockSource;
+
+import java.util.List;
 
 /**
  * 小鹿·锇金化 - 短暂获得抗性 II
@@ -32,6 +36,18 @@ public class OsmiumGoldSkill implements ISkill {
     @Override
     public SkillType getSkillType() {
         return SkillType.DEFENSE;
+    }
+
+    /**
+     * 只有吃下「美杜莎之眼」才能觉醒。
+     * <p>
+     * 声明获取式来源即关闭技能树的点数路径：{@code SkillManager.learn} 对有来源的技能
+     * 一律转交 {@code SkillUnlockManager}，不扣点、不检查等级；技能界面那行也会显示
+     * 「需要 美杜莎之眼」而不是「点击学习」。
+     */
+    @Override
+    public List<SkillUnlockSource> getUnlockSources() {
+        return List.of(SkillUnlockSource.relic(MedusaEyeItem.RELIC_ID));
     }
 
     @Override

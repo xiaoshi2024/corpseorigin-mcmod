@@ -45,6 +45,23 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
         this.shadowRadius = 0.5f;
         // ✅ 添加手持物品渲染层
         this.withRenderLayer(new ItemInHandGeoLayer<>(context, this));
+        // ✅ 突变器官渲染层（进化到 6 级以上的尸兄）
+        this.withRenderLayer(new xiaoshi2022.corpseorigin.client.render.layer.ZbOrganLayer(context, this));
+    }
+
+    /**
+     * 全身替换器官生效时不再提交本体几何 —— 只留下骨骼挂点，
+     * 器官由 {@link xiaoshi2022.corpseorigin.client.render.layer.ZbOrganLayer} 提交。
+     * <p>
+     * 只跳过"本体模型"这一项：随后照常跑的 {@code submitPerBoneRenderTasks} 与渲染层不受影响，
+     * 所以器官与手持物品都还在。
+     */
+    @Override
+    public void submitRenderTasks(com.geckolib.renderer.base.RenderPassInfo<LivingEntityRenderState> info,
+                                  net.minecraft.client.renderer.OrderedSubmitNodeCollector collector,
+                                  RenderType renderType) {
+        if (xiaoshi2022.corpseorigin.client.render.layer.ZbOrganLayer.replacesBody(info.renderState())) return;
+        super.submitRenderTasks(info, collector, renderType);
     }
 
     @Override

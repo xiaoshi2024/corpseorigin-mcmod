@@ -29,6 +29,11 @@ public final class ServerEvents {
 
     public static void register() {
         ServerLivingEntityEvents.AFTER_DEATH.register((victim, source) -> {
+            // 低阶尸兄击杀活体：吸食血肉积累能量、进化、突破临界
+            if (source.getEntity() instanceof xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity killer
+                    && victim instanceof net.minecraft.world.entity.LivingEntity prey && prey != killer) {
+                xiaoshi2022.corpseorigin.entity.evolution.ZbEvolution.onKill(killer, prey);
+            }
             if (!(source.getEntity() instanceof ServerPlayer killer) || victim == killer) return;
             boolean corpseBrother = BuiltInRegistries.ENTITY_TYPE.getKey(victim.getType())
                     .getNamespace().equals(CorpseOrigin.MOD_ID);

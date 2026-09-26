@@ -84,8 +84,8 @@ public final class OrganEditorScreen extends Screen {
                 }
             }
             var root=destination.getParent();
-            var bundled=destination.resolve("CorpseOrigin-Organs.zip");
-            var pack=root.resolve("CorpseOrigin-Organs.zip");
+            var bundled=destination.resolve(xiaoshi2022.corpseorigin.growth.OrganLibrary.EXAMPLE_PACK_ZIP);
+            var pack=root.resolve(xiaoshi2022.corpseorigin.growth.OrganLibrary.EXAMPLE_PACK_ZIP);
             if(!Files.exists(pack))Files.copy(bundled,pack);
             net.minecraft.util.Util.getPlatform().openPath(root.toAbsolutePath());
             OrganClient.status=Component.translatable("gui.corpseorigin.label.053");

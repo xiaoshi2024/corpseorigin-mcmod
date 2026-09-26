@@ -173,6 +173,7 @@ public class CorpseOrigin implements ModInitializer {
 				SkillCommand.register(dispatcher);
 				xiaoshi2022.corpseorigin.command.EvolutionPointsCommand.register(dispatcher);
 				xiaoshi2022.corpseorigin.command.TenguLaserCommand.register(dispatcher);
+				xiaoshi2022.corpseorigin.command.ChessZbCommand.register(dispatcher);
 				}
 		);
 
