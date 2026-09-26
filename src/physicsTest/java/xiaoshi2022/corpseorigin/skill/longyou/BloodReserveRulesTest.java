@@ -9,7 +9,7 @@ public final class BloodReserveRulesTest {
         check(BloodReserveRules.eligible("jingang_zb", true, 20), "High-level corpse");
         check(!BloodReserveRules.eligible("mortal", false, 20), "Human excluded at maximum level");
         check(!BloodReserveRules.eligible("corpse_brother", false, 9), "Lost corpse body");
-        for (String role : new String[]{"longyou", "zuohufa", "shichaozhizi"}) {
+        for (String role : new String[]{"longyou", "zuohufa", "shichaozhizi", "kaiweinai"}) {
             check(BloodReserveRules.eligible(role, true, 1), role + " innate reserve");
             check(BloodReserveRules.eligible(role, false, 1), role + " before corpse state synchronization");
         }

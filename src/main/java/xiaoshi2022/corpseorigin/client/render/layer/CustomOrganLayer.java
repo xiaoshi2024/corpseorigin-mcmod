@@ -33,6 +33,9 @@ public final class CustomOrganLayer extends RenderLayer<AvatarRenderState,Player
     private static String previewMotion = "idle";
     public static void beginPreview(List<OrganSlot> slots, String motion) { previewSlots=List.copyOf(slots);previewMotion=motion; }
     public static void endPreview() { previewSlots=null; }
+    public static boolean isPreviewing(net.minecraft.world.entity.player.Player player) {
+        return previewSlots != null && player == Minecraft.getInstance().player;
+    }
     private record Frame(OrganSlot slot, Renderer renderer, AvatarRenderState state) {}
     @SuppressWarnings({"rawtypes","unchecked"})
     public CustomOrganLayer(RenderLayerParent parent, EntityRendererProvider.Context ctx) {super(parent);if(context!=ctx)clearCatalog();context=ctx;}

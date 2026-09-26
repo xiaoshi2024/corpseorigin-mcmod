@@ -32,6 +32,9 @@ public final class EvolutionGeoRenderer extends GeoReplacedEntityRenderer<Player
     public static void extract(AbstractClientPlayer player, AvatarRenderState parent, float partial) {
         var corpse = xiaoshi2022.corpseorigin.client.CorpseOriginClient.corpseDataCache.get(player.getUUID());
         var body = player.getAttachedOrCreate(SurvivalGrowth.BODY);
+        // An explicitly saved empty loadout means no organs, not legacy wings.
+        if (body.contains(xiaoshi2022.corpseorigin.growth.OrganLibrary.BODY_KEY)
+                || xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.isPreviewing(player)) return;
         if(xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.hasCustomFrames(parent))return;
         if (instance == null || parent.isInvisible || corpse == null || !corpse.isCorpse || corpse.isDisguised()
                 || !(body.getBooleanOr("wings", false) || body.getBooleanOr("gills", false))) return;

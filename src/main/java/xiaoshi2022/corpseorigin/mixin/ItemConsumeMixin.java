@@ -6,7 +6,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,11 +23,11 @@ import xiaoshi2022.corpseorigin.skill.longyou.BloodReserve;
  * 这里的"气血"是 {@link BloodReserve} 那条血肉储备（0~{@link BloodReserve#MAX}，HUD 上那条电池条），
  * <b>不是原版血量</b> —— 本模组的感染条、内力条、气血条是三份不同资源。
  * <p>
- * 钩子挂在 {@link Item#finishUsingItem} 的 TAIL —— 26.2 里所有"吃完"的效果都从
- * {@code Consumable.onConsume} 结算，这一步之后进食动作已完成。
+ * 在消耗结算开始时读取食物标签，避免最后一份食物被扣除后变成空栈。
+ * 此时进食动作已完成，提前松手不会进入 {@link Consumable#onConsume}。
  * 生肉判定走 Fabric 约定标签（整合包 / 其他模组的生肉同样生效）。
  */
-@Mixin(Item.class)
+@Mixin(Consumable.class)
 public class ItemConsumeMixin {
 
     /** 吃生肉补的气血（与「尸兄肉块」zbr_flesh 同档）。 */
@@ -35,8 +35,8 @@ public class ItemConsumeMixin {
     /** 吃生鱼补的气血（小份）。 */
     private static final int RAW_FISH_BLOOD = 10;
 
-    @Inject(method = "finishUsingItem", at = @At("TAIL"))
-    private void corpseorigin$onFinishUsing(ItemStack stack, Level level, LivingEntity entity,
+    @Inject(method = "onConsume", at = @At("HEAD"))
+    private void corpseorigin$onFinishUsing(Level level, LivingEntity entity, ItemStack stack,
                                             CallbackInfoReturnable<ItemStack> cir) {
         if (level.isClientSide() || !(entity instanceof ServerPlayer player)) return;
         if (!KaiWeiNai.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(player))) return;

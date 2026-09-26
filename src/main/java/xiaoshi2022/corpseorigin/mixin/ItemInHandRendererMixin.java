@@ -20,6 +20,26 @@ import xiaoshi2022.corpseorigin.client.renderer.armor.AntennaArmFirstPerson;
 @Mixin(ItemInHandRenderer.class)
 public abstract class ItemInHandRendererMixin {
 
+    @Inject(method = "submitArmWithItem", at = @At("HEAD"), cancellable = true)
+    private void corpseorigin$injectChest(net.minecraft.client.player.AbstractClientPlayer player,
+            float partialTick, float pitch, net.minecraft.world.InteractionHand hand, float swing,
+            net.minecraft.world.item.ItemStack stack, float equip, PoseStack poses,
+            SubmitNodeCollector collector, int light, CallbackInfo ci) {
+        HumanoidArm arm = hand == net.minecraft.world.InteractionHand.MAIN_HAND
+                ? player.getMainArm() : player.getMainArm().getOpposite();
+        if (!xiaoshi2022.corpseorigin.client.render.SagentInjectionPose.active(player, arm, stack)) return;
+        float t = xiaoshi2022.corpseorigin.client.render.SagentInjectionPose.approach(player, partialTick);
+        float side = arm == HumanoidArm.RIGHT ? 1 : -1;
+        poses.pushPose();
+        // Move from the held side to the left chest, below the eye line, needle facing inward.
+        poses.translate(side * .48f * (1 - t) - .12f * t, -.40f - .12f * t, -.72f + .35f * t);
+        poses.mulPose(com.mojang.math.Axis.XP.rotationDegrees(-90));
+        ((ItemInHandRenderer)(Object)this).renderItem(player, stack,
+                net.minecraft.world.item.ItemDisplayContext.NONE, poses, collector, light);
+        poses.popPose();
+        ci.cancel();
+    }
+
     @Inject(method = "renderPlayerArm", at = @At("HEAD"), cancellable = true)
     private void corpseorigin$renderAntennaArm(PoseStack poseStack, SubmitNodeCollector collector, int packedLight,
                                                float equipProgress, float swingProgress, HumanoidArm arm,

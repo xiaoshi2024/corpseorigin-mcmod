@@ -8,6 +8,7 @@ public final class BloodReserveRules {
 
     public static boolean eligible(String role, boolean corpse, int level) {
         return "longyou".equals(role) || "zuohufa".equals(role) || "shichaozhizi".equals(role)
+                || "kaiweinai".equals(role)
                 || corpse && ("corpse_brother".equals(role) || level >= MIN_LEVEL);
     }
 }
