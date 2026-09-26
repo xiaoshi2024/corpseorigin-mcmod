@@ -17,7 +17,8 @@ public class DarkCouncilK implements ICharacter {
 
     private static final List<ISkill> SKILLS = List.of(
             new BatCloakSkill(),
-            new BloodWingBladeSkill()
+            new BloodWingBladeSkill(),
+            new xiaoshi2022.corpseorigin.skill.heixiaofei.DarkSiphonSkill()
     );
 
     @Override

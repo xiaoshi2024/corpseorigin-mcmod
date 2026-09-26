@@ -64,9 +64,10 @@ public final class SurvivalGrowth {
     }
     public static void register() {
         OrganEnergy.register();
+        VampirePhysiology.register();
         ServerLivingEntityEvents.AFTER_DAMAGE.register((target, source, base, taken, blocked) -> {
             if (taken > 0 && source.getEntity() instanceof ServerPlayer player && source.getDirectEntity() == player
-                    && target != player && !target.isAlliedTo(player) && eligible(player) && active(player, "vampire"))
+                    && target != player && !target.isAlliedTo(player) && eligible(player) && WeaponEligibility.vampire(player))
                 player.heal(Math.min(OrganEvolution.power(player,"vampire")?3:2, taken * (OrganEvolution.power(player,"vampire")?.20f:.15f)));
         });
         UseEntityCallback.EVENT.register((player, level, hand, target, hit) -> {

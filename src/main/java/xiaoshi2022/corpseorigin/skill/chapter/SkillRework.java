@@ -106,7 +106,6 @@ public final class SkillRework {
                 var p=s.owner;var t=s.target;
                 if(!xiaoshi2022.corpseorigin.growth.WeaponEligibility.vampire(p))return true;
                 if(!p.isAlive() || p.isRemoved() || p.level()!=s.level || t.level()!=s.level || !ChapterCombat.canHit(p,t)
-                        || (!CharacterManager.getInstance().getPlayerCharacterId(p).equals("heixiaofei") && !xiaoshi2022.corpseorigin.growth.FreeGrowth.learned(p,"dark_siphon"))
                         || !p.getMainHandItem().is(ModItems.BLOOD_WING_BLADE) || p.distanceToSqr(t)>12.25 || !p.hasLineOfSight(t) || p.isShiftKeyDown())return true;
                 if(p.tickCount%5==0){
                     QiEffects.aura(t,"siphon_target",0xa80d27,1.3f,12);

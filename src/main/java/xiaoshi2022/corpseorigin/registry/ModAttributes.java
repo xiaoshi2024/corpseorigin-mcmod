@@ -25,7 +25,7 @@ public final class ModAttributes {
         FabricDefaultAttributeRegistry.register(ModEntities.HAM, HamEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.RED_FIRE_ANT, xiaoshi2022.corpseorigin.entity.CorpseAntEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.BULLET_ANT, xiaoshi2022.corpseorigin.entity.CorpseAntEntity.createAttributes());
-        FabricDefaultAttributeRegistry.register(ModEntities.VAMPIRE_BAT, net.minecraft.world.entity.ambient.Bat.createAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.VAMPIRE_BAT, xiaoshi2022.corpseorigin.entity.VampireBatEntity.createVampireAttributes());
 
         FabricDefaultAttributeRegistry.register(ModEntities.BLACK_GOLD_HEART, SkillConstructEntity.createMobAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.VINE_BIND, SkillConstructEntity.createMobAttributes());

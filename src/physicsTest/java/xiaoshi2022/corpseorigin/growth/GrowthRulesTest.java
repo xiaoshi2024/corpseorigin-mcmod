@@ -6,6 +6,22 @@ import xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules;
 public final class GrowthRulesTest {
     private static int checks;
     public static void main(String[] args) {
+        check(VampireRules.isVampire("k", false));
+        check(VampireRules.isVampire("heixiaofei", false));
+        check(VampireRules.isVampire("corpse_brother", true));
+        check(VampireRules.isVampire("guigun_corpse", true));
+        check(!VampireRules.isVampire("corpse_brother", false));
+        check(!VampireRules.isVampire("mortal", false));
+        // Only exposed, vulnerable K takes sunlight damage; every protection independently wins.
+        check(VampireRules.sunlightHurts("k", true, true, true, true, true, false, false));
+        for (String role : new String[]{"heixiaofei", "corpse_brother", "mortal"})
+            check(!VampireRules.sunlightHurts(role, true, true, true, true, true, false, false));
+        for (int disabled = 0; disabled < 7; disabled++) {
+            boolean[] conditions = {true, true, true, true, true, false, false};
+            conditions[disabled] = !conditions[disabled];
+            check(!VampireRules.sunlightHurts("k", conditions[0], conditions[1], conditions[2],
+                    conditions[3], conditions[4], conditions[5], conditions[6]));
+        }
         check(GrowthRules.progress(0, 5) == 1);
         check(GrowthRules.progress(4, 5) == 5);
         check(GrowthRules.progress(Integer.MAX_VALUE, 5) == 5);

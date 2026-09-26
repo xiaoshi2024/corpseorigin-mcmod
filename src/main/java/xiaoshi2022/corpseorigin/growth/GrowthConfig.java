@@ -6,6 +6,8 @@ import java.util.List;
 /** Server settings under growth in config/corpseorigin.json. */
 public final class GrowthConfig {
     public boolean enabled = true;
+    /** K loses health in direct sunlight; independent of the organ-growth switch. */
+    public boolean vampireSunlightDamage = true;
     public int preyRequired = 5;
     public int flightBloodPerSecond = 6;
     public int aquaticBloodPerSecond = 2;

@@ -15,35 +15,52 @@ import java.util.UUID;
 /** A temporary, killable vanilla bat variant with owner-aware hunting behaviour. */
 public class VampireBatEntity extends Bat {
     private UUID owner;
-    private int remaining = 160;
+    public static final int LIFETIME = 300;
+    private int remaining = LIFETIME;
+    private int biteOffset;
     public VampireBatEntity(EntityType<? extends Bat> type, Level level) { super(type, level); }
     public void setOwner(ServerPlayer player) { owner = player.getUUID(); }
+    public void setBiteSlot(int slot) { biteOffset = Math.floorMod(slot, 5) * 10; }
+    public static net.minecraft.world.entity.ai.attributes.AttributeSupplier.Builder createVampireAttributes() {
+        return Bat.createAttributes().add(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH, 20);
+    }
     @Override protected void customServerAiStep(ServerLevel level) {
         if (--remaining <= 0 || owner == null || !(level.getEntity(owner) instanceof ServerPlayer player)
                 || !player.isAlive() || !"k".equals(CharacterManager.getInstance().getPlayerCharacterId(player))) {
             discard(); return;
         }
         setResting(false);
-        LivingEntity target = level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(12),
+        LivingEntity target = level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(20),
                 e -> !(e instanceof VampireBatEntity) && ChapterCombat.canHit(player,e) && hasLineOfSight(e))
                 .stream().min(java.util.Comparator.comparingDouble(this::distanceToSqr)).orElse(null);
         var destination = target == null ? player.getEyePosition().add(Math.sin(tickCount*.15+getId()),.7,Math.cos(tickCount*.15+getId()))
-                : target.getEyePosition();
+                : target.getBoundingBox().getCenter();
         var direction = destination.subtract(position());
-        setDeltaMovement(getDeltaMovement().scale(.65).add(direction.normalize().scale(.16)));
-        if (target != null && distanceToSqr(target) < 2.25 && tickCount % 20 == 0) {
+        setDeltaMovement(getDeltaMovement().scale(.65).add(direction.normalize().scale(.23)));
+        // Five bats bite ten ticks apart, respecting vanilla damage immunity.
+        if (target != null && position().distanceToSqr(target.getBoundingBox().getCenter()) < 2.25
+                && tickCount % 50 == biteOffset) {
             float health = target.getHealth();
-            if (target.hurtServer(level, damageSources().playerAttack(player), 2))
-                player.heal(Math.min(1, Math.max(0, health-target.getHealth())*.5f));
+            float damage = (float) Math.clamp(player.getAttributeValue(
+                    net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) * .35, 6, 14);
+            var source = new net.minecraft.world.damagesource.DamageSource(
+                    damageSources().playerAttack(player).typeHolder(), this, player);
+            if (target.hurtServer(level, source, damage)) {
+                player.heal(Math.min(2, Math.max(0, health-target.getHealth())*.35f));
+                target.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                        net.minecraft.world.effect.MobEffects.SLOWNESS, 40, 0));
+            }
         }
         if (distanceToSqr(player)>1024) discard();
     }
     @Override protected void addAdditionalSaveData(ValueOutput out) {
         super.addAdditionalSaveData(out); out.putString("Summoner",owner==null?"":owner.toString()); out.putInt("Remaining",remaining);
+        out.putInt("BiteOffset", biteOffset);
     }
     @Override protected void readAdditionalSaveData(ValueInput in) {
         super.readAdditionalSaveData(in);
         try { owner=UUID.fromString(in.getStringOr("Summoner","")); } catch (IllegalArgumentException e) { owner=null; }
-        remaining=Math.min(160,in.getIntOr("Remaining",0));
+        remaining=Math.min(LIFETIME,in.getIntOr("Remaining",0));
+        biteOffset=Math.floorMod(in.getIntOr("BiteOffset",0),50);
     }
 }

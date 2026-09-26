@@ -11,7 +11,7 @@ public final class WeaponEligibility {
     private WeaponEligibility() {}
     public static boolean vampire(ServerPlayer p){
         String role=CharacterManager.getInstance().getPlayerCharacterId(p);
-        return role.equals("k")||role.equals("heixiaofei")||SurvivalGrowth.has(p,"vampire");
+        return VampireRules.isVampire(role,SurvivalGrowth.has(p,"vampire"));
     }
     public static boolean lineage(ServerPlayer p){
         String role=CharacterManager.getInstance().getPlayerCharacterId(p);

@@ -10,7 +10,7 @@ import xiaoshi2022.corpseorigin.skill.SkillType;
  * 冷却：15 秒（300 ticks）。
  * 特效：蝙蝠群粒子 + 披风模型。
  * <p>
- * TODO 实装：范围束缚敌人（定身/减速）+ 蝙蝠粒子。
+ * 召唤五只可击杀的吸血蝙蝠，交错撕咬、吸血并减速。
  */
 public class BatCloakSkill extends AbstractSkill {
 
@@ -24,6 +24,7 @@ public class BatCloakSkill extends AbstractSkill {
             var bat = new xiaoshi2022.corpseorigin.entity.VampireBatEntity(
                     xiaoshi2022.corpseorigin.registry.ModEntities.VAMPIRE_BAT,player.level());
             bat.setOwner(player);
+            bat.setBiteSlot(i);
             bat.setPos(player.getEyePosition().add(Math.cos(i*Math.PI*2/5),.3,Math.sin(i*Math.PI*2/5)));
             player.level().addFreshEntity(bat);
         }
