@@ -144,6 +144,8 @@ public final class CustomOrganLayer extends RenderLayer<AvatarRenderState,Player
     private static final class Renderer extends GeoReplacedEntityRenderer<PlayerGeoAnimatable,AbstractClientPlayer,AvatarRenderState> {
         final OrganDefinition def; final int slot;
         Renderer(EntityRendererProvider.Context ctx,OrganDefinition def,int slot){super(ctx,new Model(def),null);this.def=def;this.slot=slot;shadowRadius=0;}
+        // Attached organs reuse the player entity, but must never draw a second player name tag.
+        @Override public boolean shouldShowName(AbstractClientPlayer player,double distanceSquared){return false;}
         @Override public long getInstanceId(PlayerGeoAnimatable a,AbstractClientPlayer e){return Long.MIN_VALUE+1+slot;}
         @Override public AvatarRenderState fillRenderState(PlayerGeoAnimatable a,AbstractClientPlayer e,AvatarRenderState s,float p){return super.fillRenderState((PlayerGeoAnimatable)e,e,s,p);}
         @Override public AvatarRenderState createRenderState(PlayerGeoAnimatable a,AbstractClientPlayer e){return super.createRenderState((PlayerGeoAnimatable)e,e);}
