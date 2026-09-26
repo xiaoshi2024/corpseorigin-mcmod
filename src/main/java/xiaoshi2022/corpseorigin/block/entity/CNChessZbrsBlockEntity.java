@@ -74,8 +74,13 @@ public class CNChessZbrsBlockEntity extends BlockEntity implements GeoBlockEntit
     /** 免疫即死者只受的普通伤害（仙人掌类型，8 点） */
     private static final float NON_FATAL_DAMAGE = 8.0F;
 
-    /** 默认最大生命值：40（玩家满血 20 的两倍） */
-    private static final float DEFAULT_MAX_HEALTH = 40.0F;
+    /**
+     * 默认最大生命值：40（玩家满血 20 的两倍）。
+     * <p>
+     * 公开是因为"把整只棋子吸收成气血"要按它折算（见 {@code BloodReserve.CHESS_ZBRS_BLOOD}）——
+     * 以后改血量，那边给的气血会自动跟着变。
+     */
+    public static final float DEFAULT_MAX_HEALTH = 40.0F;
 
     /** 受击无敌帧（tick，同实体） */
     private static final int INVULN_TICKS = 10;

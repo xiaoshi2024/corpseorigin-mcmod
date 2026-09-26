@@ -992,6 +992,7 @@
   "gui.corpseorigin.label.096": "The End",
   "gui.corpseorigin.label.097": "Blocking",
   "gui.corpseorigin.label.098": "  |  Points: ",
+  "gui.corpseorigin.label.099": "No bundled example pack; the folder is open — drop your own pack in",
   "gui.corpseorigin.skill_wheel.cost": "Inner power %1$s / Blood %2$s",
   "message.corpseorigin.opportunity.lessons": "Training progress: %1$s / %2$s lessons toward a skill opportunity",
   "message.corpseorigin.opportunity.disabled": "Village skill opportunities are disabled; normal training rewards still apply",

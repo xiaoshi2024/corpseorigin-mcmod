@@ -992,6 +992,7 @@
   "gui.corpseorigin.label.096": "末地",
   "gui.corpseorigin.label.097": "格挡中",
   "gui.corpseorigin.label.098": "  |  点数：",
+  "gui.corpseorigin.label.099": "未内置示例包，已直接打开目录；把你的器官包放进去即可",
   "gui.corpseorigin.skill_wheel.cost": "内力 %1$s / 气血 %2$s",
   "message.corpseorigin.opportunity.lessons": "修行积累：%1$s / %2$s次传承后获得技能机遇",
   "message.corpseorigin.opportunity.disabled": "服务器已关闭村落技能机遇，仍获得普通修行奖励",

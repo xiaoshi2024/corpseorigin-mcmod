@@ -70,25 +70,36 @@ public final class OrganEditorScreen extends Screen {
     }
     private java.nio.file.Path preset(){return FabricLoader.getInstance().getConfigDir().resolve("corpseorigin/organ-preset.json");}
     public void refreshCatalog(){init();}
+    /**
+     * 打开器官资源包目录，并把 jar 里内置的示例包释放进去。
+     * <p>
+     * ⚠️ 示例包是由 {@code build.gradle} 从 {@code examples/organ-pack} 打进 jar 的。
+     * 开发环境、或那份目录缺失时 {@code findPath} 会是空的 —— 这时<b>不能整件事失败</b>：
+     * 目录照样打开、提示"没有内置示例"，让玩家把自己的包丢进去。
+     * （原来这里直接 {@code orElseThrow()}，示例包一缺按钮就崩。）
+     */
     private void openExamples(){
         try {
-            var source=FabricLoader.getInstance().getModContainer("corpseorigin").orElseThrow()
-                    .findPath("corpseorigin_examples/organ-pack").orElseThrow();
             var destination=FabricLoader.getInstance().getConfigDir().resolve("corpseorigin/organ/examples");
             Files.createDirectories(destination);
-            try(var paths=Files.walk(source)){
-                for(var entry:paths.toList()){
-                    var target=destination.resolve(source.relativize(entry).toString());
-                    if(Files.isDirectory(entry))Files.createDirectories(target);
-                    else if(!Files.exists(target))Files.copy(entry,target);
+            var root=destination.getParent();
+            var source=FabricLoader.getInstance().getModContainer("corpseorigin")
+                    .flatMap(container->container.findPath("corpseorigin_examples/organ-pack"));
+            if(source.isPresent()){
+                try(var paths=Files.walk(source.get())){
+                    for(var entry:paths.toList()){
+                        var target=destination.resolve(source.get().relativize(entry).toString());
+                        if(Files.isDirectory(entry))Files.createDirectories(target);
+                        else if(!Files.exists(target))Files.copy(entry,target);
+                    }
                 }
             }
-            var root=destination.getParent();
             var bundled=destination.resolve(xiaoshi2022.corpseorigin.growth.OrganLibrary.EXAMPLE_PACK_ZIP);
             var pack=root.resolve(xiaoshi2022.corpseorigin.growth.OrganLibrary.EXAMPLE_PACK_ZIP);
-            if(!Files.exists(pack))Files.copy(bundled,pack);
+            if(Files.exists(bundled)&&!Files.exists(pack))Files.copy(bundled,pack);
             net.minecraft.util.Util.getPlatform().openPath(root.toAbsolutePath());
-            OrganClient.status=Component.translatable("gui.corpseorigin.label.053");
+            OrganClient.status=Component.translatable(source.isPresent()
+                    ?"gui.corpseorigin.label.053":"gui.corpseorigin.label.099");
         }catch(Exception e){
             OrganClient.status=Component.translatable("gui.corpseorigin.label.054");
             xiaoshi2022.corpseorigin.CorpseOrigin.LOGGER.warn("Cannot open organ examples",e);
