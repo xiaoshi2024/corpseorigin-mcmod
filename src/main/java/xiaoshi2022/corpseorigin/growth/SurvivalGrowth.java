@@ -27,6 +27,7 @@ import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
 import xiaoshi2022.corpseorigin.event.EvolutionEventHandler;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.util.WorldCalendar;
 import java.util.List;
 
 /** Server-authoritative body traits and one-time personal opportunities. */
@@ -78,7 +79,9 @@ public final class SurvivalGrowth {
             if (FreeGrowth.isFree(serverPlayer) && player.isShiftKeyDown()
                     && target instanceof net.minecraft.world.entity.npc.villager.Villager
                     && player.getMainHandItem().is(net.minecraft.world.item.Items.EMERALD)) {
-                String lesson="village_training:"+Math.floorDiv(level.getGameTime(),24000);
+                // Sleeping advances the world's dayTime directly; gameTime only advances
+                // by the few ticks spent in bed, so it cannot identify the new calendar day.
+                String lesson="village_training:"+Math.floorDiv(WorldCalendar.dayTime(serverPlayer.level()),24000);
                 if(claim(serverPlayer,lesson)) {
                     player.getMainHandItem().shrink(1);
                     FreeGrowth.opportunity(serverPlayer,lesson);
@@ -139,6 +142,7 @@ public final class SurvivalGrowth {
             }
         });
     }
+
     private static void explore(ServerPlayer player) {
         ServerLevel level = (ServerLevel)player.level();
         for (var reward : CorpseConfig.get().growth.exploration) {

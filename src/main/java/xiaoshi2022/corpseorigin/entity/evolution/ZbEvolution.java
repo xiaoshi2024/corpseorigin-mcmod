@@ -123,15 +123,15 @@ public final class ZbEvolution {
      * 把 {@code spawn.evolutionLevelRamp} 关掉就一律人1（回到"高阶只能靠吃血肉突破"）。
      * 数值全在 {@code config/corpseorigin.json} 的 {@code spawn} 段，不用改代码。
      *
-     * @param gameTime 世界游戏刻（{@code LevelAccessor#getGameTime()}）
+     * @param dayTime 主世界日历刻数（睡觉跨天也会前进）
      * @return 1 ~ {@code spawn.maxEvolutionLevel}
      */
-    public static int rollSpawnLevel(RandomSource random, long gameTime) {
+    public static int rollSpawnLevel(RandomSource random, long dayTime) {
         var config = xiaoshi2022.corpseorigin.config.CorpseConfig.get().spawn;
         if (!config.evolutionLevelRamp) {
             return 1;
         }
-        long days = Math.max(0L, gameTime) / TICKS_PER_DAY;
+        long days = Math.max(0L, dayTime) / TICKS_PER_DAY;
         int cap = (int) Math.min(config.maxEvolutionLevel,
                 1L + days / Math.max(1, config.daysPerEvolutionLevel));
         cap = Math.max(1, Math.min(MAX_LEVEL, cap));

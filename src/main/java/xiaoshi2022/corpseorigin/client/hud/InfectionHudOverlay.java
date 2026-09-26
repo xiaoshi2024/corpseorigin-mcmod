@@ -16,6 +16,7 @@ import xiaoshi2022.corpseorigin.skill.EvolutionManager;
 import xiaoshi2022.corpseorigin.skill.EvolutionTier;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState;
 import xiaoshi2022.corpseorigin.skill.longyou.BloodReserve;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
 
 /** Draws the compact status HUD in the top-right corner. */
 public final class InfectionHudOverlay {
@@ -79,7 +80,10 @@ public final class InfectionHudOverlay {
 
         boolean isCorpse = false;
         var selfData = CorpseOriginClient.corpseDataCache.get(mc.player.getUUID());
-        if (selfData != null && selfData.isCorpse) {
+        // The corpse cache can briefly contain the previous body's state after
+        // switching saves/bodies. The current role is authoritative for this HUD.
+        if (selfData != null && selfData.isCorpse
+                && !CharacterManager.getInstance().isMortal(mc.player)) {
             isCorpse = true;
         }
 

@@ -400,7 +400,10 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
      * 和靠吃血肉突破上来的尸兄同源，不是一个独立的强化表。
      */
     private void rollSpawnEvolution(ServerLevelAccessor level) {
-        int evolutionLevel = ZbEvolution.rollSpawnLevel(this.getRandom(), level.getGameTime());
+        // Use the calendar day: sleeping advances dayTime, while gameTime only
+        // advances by the few ticks spent sleeping.
+        int evolutionLevel = ZbEvolution.rollSpawnLevel(this.getRandom(),
+                xiaoshi2022.corpseorigin.util.WorldCalendar.dayTime(level.getLevel()));
         if (evolutionLevel <= 1) {
             return;
         }
