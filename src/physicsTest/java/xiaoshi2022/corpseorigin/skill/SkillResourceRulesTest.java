@@ -16,7 +16,11 @@ public final class SkillResourceRulesTest {
         check(!mixed.affordable(120, 39, 600), "Dual resource rejects missing mana");
         check(!mixed.affordable(120, 120, 39), "Dual resource rejects missing blood");
         check(mixed.affordable(120, 40, 40), "Dual resource exact threshold");
-        check(SkillResourceRules.cost("blood_wing_blade", 10).affordable(0, 0, 15), "Vampire ability uses blood only");
+        var bloodBlade = SkillResourceRules.cost("blood_wing_blade", 10);
+        check(bloodBlade.inner() == 10 && bloodBlade.blood() == 0, "Blood blade costs only qi");
+        check(bloodBlade.affordable(100, 10, 0), "Exact qi casts without blood");
+        check(!bloodBlade.affordable(100, 9, 600), "Blood cannot replace blade qi");
+        check(!bloodBlade.affordable(0, 100, 600), "No qi constitution cannot fire blade");
         for (String path : new String[]{"hound_unleashed", "dog_eye_cannon", "peel_shell", "flesh_abandon", "detach_guardian"})
             check(SkillResourceRules.cost(path, 0).affordable(0, 0, 0), "Item/escape stays free: " + path);
         check(SkillResourceRules.poetryStage(1) + SkillResourceRules.poetryStage(2)

@@ -487,7 +487,7 @@
   "skill.corpseorigin.bat_cloak": "蝙蝠披风",
   "skill.corpseorigin.bat_cloak.desc": "召唤5只拥有20点生命的吸血蝙蝠，追击20格内敌人，持续15秒。交错撕咬造成主人攻击力35%的伤害（6至14点），吸血回复主人并使目标减速；可被击杀。",
   "skill.corpseorigin.blood_wing_blade": "血翼黑刃",
-  "skill.corpseorigin.blood_wing_blade.desc": "手持血翼黑刃，以当前攻击力的150%重击目标，将实际伤害的40%转为生命，最多回复4点。",
+  "skill.corpseorigin.blood_wing_blade.desc": "主手持血翼黑刃右键直接发射血光剑气，消耗10点气，冷却10秒。飞行约24格，碰墙消失，造成攻击力150%的伤害，将实际伤害的40%转为生命，最多回复4点。需要吸血鬼体质与气感。",
   "skill.corpseorigin.tyrant_strike": "暴龙一击",
   "skill.corpseorigin.tyrant_strike.desc": "武神阁学来的贯注重击：对正前方单体重击并大幅击飞。冷却 15 秒，消耗内力 8。",
   "skill.corpseorigin.mouth_snake": "嘴里吐蛇",

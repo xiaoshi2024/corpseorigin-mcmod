@@ -19,7 +19,7 @@ public final class SkillResourceRules {
             // 收内力的话它反而永远挥不动这把兵器（见 RoleChapterSkill#castWithWeapon）。
             case "gourd_link", "gourd_devour", "guigun_sweep", "guigun_resonance", "guigun_crush", "wuchou_blade", "wuchou_step", "wusheng_twin", "wusheng_cross" -> new Cost(0,0);
             case "guigun_guard" -> new Cost(20,0);
-            case "ancient_poetry_sword", "water_orb", "tian_gang_blood_lotus" -> new Cost(10, 0);
+            case "ancient_poetry_sword", "water_orb", "tian_gang_blood_lotus", "blood_wing_blade" -> new Cost(10, 0);
             case "spatial_blink", "sword_flower", "round_dance", "power_strike", "osmium_gold", "osmium_ice_spike" -> new Cost(15, 0);
             case "meteor_sword", "corpse_king_thunder" -> new Cost(25, 0);
             case "tengu_divine_array", "corpse_king_infrasound" -> new Cost(40, 0);
@@ -29,7 +29,7 @@ public final class SkillResourceRules {
             case "natural_judgment" -> new Cost(80, 0);
             case "thunder_power" -> new Cost(5, 0);
             case "swarm_bite", "water_bite", "pounce_combo", "bear_charge" -> new Cost(0, 8);
-            case "heart_grab_ambush", "chameleon_disguise", "bag_capture", "severed_arm_strike", "bat_cloak", "blood_wing_blade", "chrysanthemum_shield", "killing_gas", "ground_burrow", "mouth_snake" -> new Cost(0, 15);
+            case "heart_grab_ambush", "chameleon_disguise", "bag_capture", "severed_arm_strike", "bat_cloak", "chrysanthemum_shield", "killing_gas", "ground_burrow", "mouth_snake" -> new Cost(0, 15);
             case "summon_swarm", "corpse_fish_eggs", "muscle_rage", "thousand_eyes", "xuanwu_body" -> new Cost(0, 25);
             case "antenna_block", "jingang_infant_convergence", "merge_guardian" -> new Cost(0, 10);
             case "son_of_corpse_nest", "golden_cicada_shell" -> new Cost(0, 40);

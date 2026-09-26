@@ -21,10 +21,6 @@ public class ExoskeletonModel extends EntityModel<AvatarRenderState> {
     private final ModelPart group6;
     private final ModelPart rightItem;
 
-    // ✅ 动画状态
-    private boolean isSwinging = false;
-    private float swingTime = 0.0F;
-
     public ExoskeletonModel(ModelPart root) {
         super(root);
         // ✅ 直接获取，不加安全检查
@@ -166,14 +162,9 @@ public class ExoskeletonModel extends EntityModel<AvatarRenderState> {
         applyIdleAnimationAdditive(state.ageInTicks);
         applyWalkAnimationAdditive(state.walkAnimationPos, state.walkAnimationSpeed);
 
-        if (isSwinging) {
-            swingTime += 0.05F;
-            applyAttackAnimationAdditive(swingTime);
-            if (swingTime >= 1.75F) {
-                isSwinging = false;
-                swingTime = 0.0F;
-            }
-        }
+        // Renderers/models are shared by many players. Only the current entity's
+        // interpolated swing progress may drive its pose; never retain animation state here.
+        applyAttackAnimationAdditive(Mth.clamp(state.attackTime, 0.0F, 1.0F));
     }
 
     /**
@@ -234,8 +225,7 @@ public class ExoskeletonModel extends EntityModel<AvatarRenderState> {
     /**
      * ✅ 叠加式攻击动画
      */
-    private void applyAttackAnimationAdditive(float time) {
-        float attackProgress = Math.min(time / 1.75F, 1.0F);
+    private void applyAttackAnimationAdditive(float attackProgress) {
         float attackAngle = Mth.sin(attackProgress * Mth.PI) * 0.5F;
 
         if (group2 != null) {
@@ -254,15 +244,6 @@ public class ExoskeletonModel extends EntityModel<AvatarRenderState> {
         if (group6 != null) {
             group6.yRot -= spread;
         }
-    }
-
-    /**
-     * ✅ 触发挥砍动画（由外部调用）
-     */
-    public void triggerSwing() {
-        this.isSwinging = true;
-        this.swingTime = 0.0F;
-        resetAllParts();
     }
 
     /**

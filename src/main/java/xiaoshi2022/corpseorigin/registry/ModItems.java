@@ -37,7 +37,7 @@ public final class ModItems {
     public static final Item PARCEL_BOMB = register("parcel_bomb",new Item(new Item.Properties().setId(itemKey("parcel_bomb"))));
     public static final Item BILLIARD_EIGHT = register("billiard_eight",new BilliardEightItem(new Item.Properties().setId(itemKey("billiard_eight"))));
     public static final Item BLOOD_WING_BLADE = register("blood_wing_blade",
-            new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,22f,-2.4f)
+            new xiaoshi2022.corpseorigin.item.weapon.BloodWingBladeItem(new Item.Properties().sword(ToolMaterial.DIAMOND,22f,-2.4f)
                     .rarity(Rarity.EPIC).setId(itemKey("blood_wing_blade"))));
 
     public static final Item CN_CHESS_ZBRS = register(

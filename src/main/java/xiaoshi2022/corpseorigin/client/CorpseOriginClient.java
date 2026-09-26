@@ -41,7 +41,6 @@ import xiaoshi2022.corpseorigin.client.renderer.blockentity.CNChessZbrsRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.blockentity.CloneChamberRenderer;
 import xiaoshi2022.corpseorigin.client.renderer.entity.*;
 import xiaoshi2022.corpseorigin.client.skin.clone.ClientSkinCache;
-import xiaoshi2022.corpseorigin.event.client.AttackAnimationHandler;
 import xiaoshi2022.corpseorigin.event.client.ClientEntityEventHandler;
 import xiaoshi2022.corpseorigin.network.*;
 import xiaoshi2022.corpseorigin.registry.*;
@@ -195,6 +194,8 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         // 2. 实体渲染器
         EntityRendererRegistry.register(ModEntities.LOWER_LEVEL_ZB, LowerLevelZbRenderer::new);
+        EntityRendererRegistry.register(ModEntities.BLOOD_WING_BEAM,
+                xiaoshi2022.corpseorigin.client.renderer.entity.BloodWingBeamRenderer::new);
         EntityRendererRegistry.register(ModEntities.AOTUMAN_ZB, AotumanZbRenderer::new);
         EntityRendererRegistry.register(ModEntities.JUQUE_BEAM, JuQueBeamRenderer::new);
         EntityRendererRegistry.register(ModEntities.FLYING_GREAT_SWORD, FlyingGreatSwordRenderer::new);
@@ -258,7 +259,6 @@ public class CorpseOriginClient implements ClientModInitializer {
         CorpsePlayerRenderHandler.register();
 
         // ✅ 注册客户端攻击事件监听
-        AttackAnimationHandler.register();
         // ✅ 注册客户端实体事件
         ClientEntityEventHandler.register();
 

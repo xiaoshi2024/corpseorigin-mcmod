@@ -88,6 +88,13 @@ tasks.register('beeWheelPhysicsTest', JavaExec) {
 
 tasks.named('check') { dependsOn beeWheelPhysicsTest }
 
+tasks.register('exoskeletonAnimationTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.client.model.ExoskeletonAnimationTest'
+}
+tasks.named('check') { dependsOn exoskeletonAnimationTest }
+
 tasks.register('qiDensityTest', JavaExec) {
     dependsOn physicsTestClasses
     classpath = sourceSets.physicsTest.runtimeClasspath

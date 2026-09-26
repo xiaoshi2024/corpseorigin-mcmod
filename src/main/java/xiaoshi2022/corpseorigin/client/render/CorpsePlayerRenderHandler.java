@@ -24,9 +24,4 @@ public final class CorpsePlayerRenderHandler {
         return LAYER_MAP.values().stream().findFirst().orElse(null);
     }
 
-    public static void triggerSwingAll() {
-        for (ExoskeletonRenderLayer layer : LAYER_MAP.values()) {
-            layer.triggerSwing();
-        }
-    }
 }

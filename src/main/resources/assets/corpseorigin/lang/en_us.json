@@ -474,7 +474,7 @@
   "skill.corpseorigin.bat_cloak": "Bat Cloak",
   "skill.corpseorigin.bat_cloak.desc": "Summon 5 killable vampire bats with 20 health for 15 seconds. Hunt enemies within 20 blocks with staggered bites dealing 35% of your attack damage (6 to 14), healing you and slowing the target.",
   "skill.corpseorigin.blood_wing_blade": "Blood Wing Blade",
-  "skill.corpseorigin.blood_wing_blade.desc": "Strike with the equipped Blood Wing Blade for 150% of current attack damage and heal for 40% of actual damage, up to 4 health.",
+  "skill.corpseorigin.blood_wing_blade.desc": "Right-click with the Blood Wing Blade in your main hand to fire a blood-red sword wave. Costs 10 qi, cooldown 10 seconds. Travels about 24 blocks, stops at walls, deals 150% attack damage and heals 40% of actual damage, up to 4 health. Requires vampire physiology and qi aptitude.",
   "skill.corpseorigin.tyrant_strike": "Tyrant Strike",
   "skill.corpseorigin.tyrant_strike.desc": "A piercing heavy blow learned at the Martial God Pavilion: massive damage and knockback on a single target ahead. Cooldown 15s, inner power 8.",
   "skill.corpseorigin.mouth_snake": "Mouth Snake",

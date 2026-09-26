@@ -4,13 +4,9 @@ import xiaoshi2022.corpseorigin.skill.AbstractSkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
 
 /**
- * K·血翼黑刃 —— 近战血刃攻击并吸取生命。
- * <p>
- * 设定效果：挥出血翼黑刃重击近身目标，并将造成的伤害转化为自身生命回复。
+ * 血翼黑刃：主手右键或技能栏发射血光剑气，消耗10点内力。
  * 冷却：10 秒（200 ticks）。
- * 特效：血刃武器模型 + 血粒子。
- * <p>
- * TODO 实装：近战重击 + 吸血回复 + 血刃武器模型。
+ * 命中按实际伤害吸血；武器使用与技能栏共用服务器校验和冷却。
  */
 public class BloodWingBladeSkill extends AbstractSkill {
 
@@ -25,14 +21,16 @@ public class BloodWingBladeSkill extends AbstractSkill {
         return null;
     }
     @Override public void onActivate(net.minecraft.server.level.ServerPlayer player) {
-        var target=xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.aim(player,4);
-        if(target==null){xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.emptyCast(player);return;}
-        float before=target.getHealth();
-        float damage = (float) player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) * 1.5f;
-        if(target.hurtServer((net.minecraft.server.level.ServerLevel)player.level(),player.damageSources().playerAttack(player),damage)) {
-            player.heal(Math.min(4,Math.max(0,before-target.getHealth())*.4f));
-            player.getMainHandItem().hurtAndBreak(1,player,net.minecraft.world.entity.EquipmentSlot.MAINHAND);
-        }
+        var beam = new xiaoshi2022.corpseorigin.entity.BloodWingBeamEntity(
+                xiaoshi2022.corpseorigin.registry.ModEntities.BLOOD_WING_BEAM, player.level());
+        beam.setOwner(player);
+        beam.setPos(player.getEyePosition().add(0, -.1, 0));
+        beam.setDamage((float) player.getAttributeValue(
+                net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) * 1.5f);
+        beam.setLevel(4); // 16 ticks at 1.5 blocks/tick = 24 blocks.
+        beam.shootFromRotation(player, player.getXRot(), player.getYRot(), 0, beam.getVelocity(), 0);
+        player.level().addFreshEntity(beam);
+        player.getMainHandItem().hurtAndBreak(1,player,net.minecraft.world.entity.EquipmentSlot.MAINHAND);
         player.swing(net.minecraft.world.InteractionHand.MAIN_HAND,true);
     }
 }

@@ -123,7 +123,4 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
         UUID_CACHE.clear();
     }
 
-    public void triggerSwing() {
-        model.triggerSwing();
-    }
 }
