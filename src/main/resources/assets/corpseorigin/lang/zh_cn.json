@@ -1140,5 +1140,10 @@
   "command.corpseorigin.chesszb.executed": "象棋尸兄开始处决（%s, %s, %s），背上的生物将被夹碎",
   "command.corpseorigin.chesszb.not_found": "该位置（%s, %s, %s）没有象棋尸兄",
   "command.corpseorigin.chesszb.move_blocked": "那边过不去，象棋尸兄没有移动",
-  "command.corpseorigin.chesszb.moved": "象棋尸兄向 %s 移动了 %s 格"
+  "command.corpseorigin.chesszb.moved": "象棋尸兄向 %s 移动了 %s 格",
+  "message.corpseorigin.raw_meat.queued": "消化生肉：待恢复气血 +%1$s（待消化 %2$s/%3$s，每2秒恢复1点）",
+  "tooltip.corpseorigin.raw_meat.slow": "消化后恢复 %1$s 点气血，每 %2$s 秒恢复 1 点；连续进食不加速",
+  "tooltip.corpseorigin.raw_meat.pending": "待消化：%1$s/%2$s；本次可补充：%3$s 点",
+  "tooltip.corpseorigin.raw_meat.instant": "开胃奶体质：立即恢复 %s 点气血",
+  "tooltip.corpseorigin.raw_meat.full_hunger": "气血不足且仍可吸收时，饱食度满也能进食"
 }

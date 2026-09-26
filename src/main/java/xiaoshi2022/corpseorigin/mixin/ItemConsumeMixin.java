@@ -6,6 +6,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.component.Consumable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -13,12 +14,11 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import xiaoshi2022.corpseorigin.character.CharacterManager;
-import xiaoshi2022.corpseorigin.character.KaiWeiNai;
 import xiaoshi2022.corpseorigin.skill.longyou.BloodReserve;
+import xiaoshi2022.corpseorigin.skill.longyou.RawMeatDigestion;
 
 /**
- * 开胃奶体质：吃生肉即可直接补<b>气血</b>。
+ * 生肉缓慢补气血；开胃奶保留生肉和生鱼的即时恢复天赋。
  * <p>
  * 这里的"气血"是 {@link BloodReserve} 那条血肉储备（0~{@link BloodReserve#MAX}，HUD 上那条电池条），
  * <b>不是原版血量</b> —— 本模组的感染条、内力条、气血条是三份不同资源。
@@ -35,11 +35,23 @@ public class ItemConsumeMixin {
     /** 吃生鱼补的气血（小份）。 */
     private static final int RAW_FISH_BLOOD = 10;
 
+    /** Allow the normal eating animation at full hunger only when blood can benefit. */
+    @Inject(method = "canConsume", at = @At("RETURN"), cancellable = true)
+    private void corpseorigin$allowBloodMeal(LivingEntity entity, ItemStack stack,
+                                            CallbackInfoReturnable<Boolean> cir) {
+        if (!cir.getReturnValue() && entity instanceof Player player
+                && RawMeatDigestion.canSupplement(player, stack)) cir.setReturnValue(true);
+    }
+
     @Inject(method = "onConsume", at = @At("HEAD"))
     private void corpseorigin$onFinishUsing(Level level, LivingEntity entity, ItemStack stack,
                                             CallbackInfoReturnable<ItemStack> cir) {
         if (level.isClientSide() || !(entity instanceof ServerPlayer player)) return;
-        if (!KaiWeiNai.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(player))) return;
+        if (!RawMeatDigestion.canSupplement(player, stack)) return;
+        if (RawMeatDigestion.mode(player) == RawMeatDigestion.SLOW) {
+            RawMeatDigestion.enqueue(player);
+            return;
+        }
 
         boolean meat = stack.is(ConventionalItemTags.RAW_MEAT_FOODS);
         boolean fish = !meat && stack.is(ConventionalItemTags.RAW_FISH_FOODS);

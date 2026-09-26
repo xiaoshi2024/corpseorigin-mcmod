@@ -182,6 +182,7 @@ public class CorpseOriginClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        RawMeatTooltip.init();
         OrganClient.register();
         HeartRecoveryScreen.register();
         // 1. 按键绑定

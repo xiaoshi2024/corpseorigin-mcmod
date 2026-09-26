@@ -144,6 +144,13 @@ tasks.register('bloodReserveRulesTest', JavaExec) {
 }
 tasks.named('check') { dependsOn bloodReserveRulesTest }
 
+tasks.register('rawMeatDigestionRulesTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.skill.longyou.RawMeatDigestionRulesTest'
+}
+tasks.named('check') { dependsOn rawMeatDigestionRulesTest }
+
 tasks.register('skillResourceRulesTest', JavaExec) {
     dependsOn physicsTestClasses
     classpath = sourceSets.physicsTest.runtimeClasspath

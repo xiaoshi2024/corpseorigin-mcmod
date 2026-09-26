@@ -31,6 +31,7 @@ public final class BloodReserve {
             b -> b.initializer(() -> 0).persistent(com.mojang.serialization.Codec.INT)
                     .syncWith(ByteBufCodecs.VAR_INT, AttachmentSyncPredicate.all()));
     public static void init() {
+        RawMeatDigestion.init();
         net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents.DISCONNECT.register((h,s)->COMBAT.remove(h.player.getUUID()));
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(s->COMBAT.clear());
         net.fabricmc.fabric.api.event.player.UseItemCallback.EVENT.register((player, level, hand) -> {

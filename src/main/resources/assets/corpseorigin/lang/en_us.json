@@ -1139,5 +1139,10 @@
   "command.corpseorigin.chesszb.executed": "Chess ZBR begins execution at (%s, %s, %s); the creature on its back will be crushed",
   "command.corpseorigin.chesszb.not_found": "There is no Chess ZBR at (%s, %s, %s)",
   "command.corpseorigin.chesszb.move_blocked": "The way is blocked; the Chess ZBR did not move",
-  "command.corpseorigin.chesszb.moved": "Chess ZBR moved %s block(s) %s"
+  "command.corpseorigin.chesszb.moved": "Chess ZBR moved %s block(s) %s",
+  "message.corpseorigin.raw_meat.queued": "Digesting meat: +%1$s pending blood (%2$s/%3$s queued, 1 blood every 2 seconds)",
+  "tooltip.corpseorigin.raw_meat.slow": "Restores %1$s blood over time, 1 every %2$s seconds; meals do not increase the rate",
+  "tooltip.corpseorigin.raw_meat.pending": "Pending: %1$s/%2$s; this meal can add: %3$s blood",
+  "tooltip.corpseorigin.raw_meat.instant": "Kai Wei Nai: instantly restores %s blood",
+  "tooltip.corpseorigin.raw_meat.full_hunger": "Can eat at full hunger when blood is missing and absorption has room"
 }
