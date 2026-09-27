@@ -261,6 +261,11 @@ public final class CloneGameplayTest implements FabricClientGameTest {
             System.out.println("CRESCENT_PREVIEW="+context.takeScreenshot("crescent-sword-qi"));
             context.getInput().pressKey(options -> options.keyToggleGui);
             // Exercise the actual player weapon entry point, including eligibility and owner power.
+            context.runOnClient(client->{
+                for(int id:new int[]{-20001,-20002}){
+                    var preview=client.level.getEntity(id);if(preview!=null)preview.discard();
+                }
+            });
             server.runOnServer(s->{
                 var p=s.getPlayerList().getPlayers().getFirst();
                 for(var e:p.level().getEntitiesOfClass(CloneAvatarEntity.class,p.getBoundingBox().inflate(30)))e.discard();

@@ -139,6 +139,9 @@ public final class RenderRegressionTest implements ClientModInitializer {
                 String loadout = "[{\"organ\":\"test\",\"joint\":\"body\"}]";
                 parts.putString(xiaoshi2022.corpseorigin.growth.OrganLibrary.BODY_KEY, loadout);
                 parts.putInt("wings", 3);
+                parts.putBoolean("gourd_detached", true);
+                parts.putString("gourd_entity", java.util.UUID.randomUUID().toString());
+                parts.putBoolean("gourd_dead", true);
                 original.put("EvolutionParts", parts);
                 var skills = new net.minecraft.nbt.ListTag();
                 skills.add(net.minecraft.nbt.StringTag.valueOf("role_skill"));
@@ -162,6 +165,12 @@ public final class RenderRegressionTest implements ClientModInitializer {
                 require(restored.getEvolutionParts().getStringOr("organ_loadout", "").equals(loadout),
                         "Custom organ loadout lost through cloning/save-load");
                 require(parts.getIntOr("wings", 0) == 3, "Cloning changed source body");
+                require(!restored.getEvolutionParts().contains("gourd_entity")
+                        && !restored.getEvolutionParts().getBooleanOr("gourd_detached", false),
+                        "Cultivated gourd retained donor entity/detachment");
+                if (corpse) require(restored.getEvolutionParts().getBooleanOr("gourd_dead", false),
+                        "Cultivation unexpectedly revived a destroyed donor organ");
+                require(parts.getBooleanOr("gourd_detached", false), "Cloning recalled donor gourd");
                 if (!corpse) require(!restored.getEvolutionParts().contains("wings"), "Clean-water clone inherited mutation");
             }
         }

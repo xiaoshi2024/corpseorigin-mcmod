@@ -110,6 +110,10 @@ public class CharacterShellStateComponent extends ShellStateComponent {
         }
         if ("xiaojingang".equals(organRole) || "kaiweinai".equals(organRole))
             parts.putString(ORGAN_ROLE_KEY, organRole);
+        // Cultivation creates a new organ, never a link to the donor's detached entity.
+        // Preserve destruction/health: this must not resurrect a dead organ.
+        parts.remove("gourd_entity");
+        parts.remove("gourd_detached");
         data.put("EvolutionParts", parts);
     }
 
