@@ -20,6 +20,7 @@ import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.character.InnerPowerManager;
 import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
+import xiaoshi2022.corpseorigin.skill.chapter.FiveElementsCombat;
 import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.util.*;
@@ -116,6 +117,8 @@ public final class InfrasoundFieldHandler {
         QiEffects.burst(level, caster.getX(), caster.getY() + caster.getBbHeight() * 0.5, caster.getZ(),
                 0x7a5cff, 1, 0.0);
         pulse(caster, level, field);
+        // 次声波起手就震断附近的木系束缚
+        FiveElementsCombat.breakBindingsNear(caster, FIELD_RADIUS);
         return true;
     }
 
@@ -152,6 +155,10 @@ public final class InfrasoundFieldHandler {
             // 声场期间持续"下令"：跟随施术者、扑向他当前攻击的目标
             if (caster.tickCount % 10 == 0) {
                 orderControlled(level, caster, field);
+            }
+            // 声场期间持续震断：有人躲进半径里也会被震开
+            if (caster.tickCount % 10 == 0) {
+                FiveElementsCombat.breakBindingsNear(caster, FIELD_RADIUS);
             }
         }
     }

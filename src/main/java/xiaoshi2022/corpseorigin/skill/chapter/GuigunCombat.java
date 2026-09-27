@@ -66,6 +66,8 @@ public final class GuigunCombat {
     private static void pulse(ServerPlayer p, ServerLevel level) {
         level.playSound(null, p.getX(), p.getY(), p.getZ(),
                 SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 1.5f, .5f);
+        // 每次脉冲同步震断
+        FiveElementsCombat.breakBindingsNear(p, 6.5);
         for (LivingEntity t : level.getEntitiesOfClass(LivingEntity.class, p.getBoundingBox().inflate(6.5))) {
             if (!ChapterCombat.canHit(p, t) || p.distanceToSqr(t) > 6.5 * 6.5) continue;
             t.hurtServer(level, p.damageSources().playerAttack(p), 5f);
@@ -139,6 +141,8 @@ public final class GuigunCombat {
             QiEffects.aura(p, "guigun_resonance", RESONANCE_COLOR, 6.5f, 65);
             p.level().playSound(null, p.getX(), p.getY(), p.getZ(),
                     SoundEvents.WARDEN_ROAR, SoundSource.PLAYERS, 1f, .7f);
+            // 起手震断身边的木系束缚
+            FiveElementsCombat.breakBindingsNear(p, 6.5);
         }
     }
     private static final int RESONANCE_TICKS = 60;
@@ -170,6 +174,8 @@ public final class GuigunCombat {
             ChapterCombat.ring(level, impact, 1.6, CRUSH_COLOR, 24);
             ChapterCombat.ring(level, impact, 3, CRUSH_COLOR, 32);
             QiEffects.burst(level, impact.x, impact.y + .1, impact.z, CRUSH_COLOR, 2, .1);
+            // 尸棍重击的冲击波同样震断木系束缚
+            FiveElementsCombat.breakBindingsAt(level, impact, 3.0);
             for (LivingEntity t : level.getEntitiesOfClass(LivingEntity.class,
                     new net.minecraft.world.phys.AABB(impact, impact).inflate(3),
                     t -> ChapterCombat.canHit(p, t) && impact.distanceToSqr(t.getBoundingBox().getCenter()) <= 9)) {

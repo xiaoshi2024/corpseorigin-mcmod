@@ -102,9 +102,20 @@ public final class FiveElementsCombat {
                 } else if (target instanceof Monster) target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 25, 1));
             }
         }
-        BINDINGS.values().removeIf(b -> !role(b.owner,"muxi") || !b.target.isAlive()
-                || b.target.level() != b.owner.level() || b.owner.level().getGameTime() >= b.until
-                || !ChapterCombat.canHit(b.owner, b.target));
+        BINDINGS.values().removeIf(b -> {
+            if (!role(b.owner, "muxi") || !b.target.isAlive()
+                    || b.target.level() != b.owner.level() || b.owner.level().getGameTime() >= b.until
+                    || !ChapterCombat.canHit(b.owner, b.target)) return true;
+            if (holdingShears(b.target)) {
+                if (b.target instanceof ServerPlayer victim) {
+                    victim.sendOverlayMessage(Component.translatable("message.corpseorigin.wood_bind.cut"));
+                }
+                QiEffects.burst((ServerLevel) b.target.level(),
+                        b.target.getX(), b.target.getY() + .8, b.target.getZ(), 0x9aa4b0, 14, .5);
+                return true;
+            }
+            return false;
+        });
         for (Bound b : BINDINGS.values()) {
             // Keep vertical physics, but stop walking, sprinting and horizontal knockback.
             Vec3 movement=b.target.getDeltaMovement();
@@ -223,5 +234,47 @@ public final class FiveElementsCombat {
             QiEffects.cloud(level,position,0xff7a1a,(float)radius,6);
             return false;
         }
+    }
+
+    /** 被绑者手持剪刀 → 自己剪断藤蔓。 */
+    private static boolean holdingShears(LivingEntity target) {
+        return target.getMainHandItem().is(net.minecraft.world.item.Items.SHEARS)
+                || target.getOffhandItem().is(net.minecraft.world.item.Items.SHEARS);
+    }
+
+    /** 次声波震断藤蔓：来源半径内所有绑定立即解除。 */
+    public static int breakBindingsNear(LivingEntity source, double radius) {
+        if (source == null || !(source.level() instanceof ServerLevel level)) return 0;
+        int broken = 0;
+        var it = BINDINGS.values().iterator();
+        while (it.hasNext()) {
+            Bound b = it.next();
+            if (b.target.level() != level) continue;
+            if (b.target.distanceToSqr(source) > radius * radius) continue;
+            if (b.target instanceof ServerPlayer victim) {
+                victim.sendOverlayMessage(Component.translatable("message.corpseorigin.wood_bind.broken"));
+            }
+            QiEffects.burst(level, b.target.getX(), b.target.getY() + .8, b.target.getZ(), 0x7a5cff, 18, .6);
+            it.remove();
+            broken++;
+        }
+        return broken;
+    }
+
+    public static int breakBindingsAt(ServerLevel level, Vec3 center, double radius) {
+        int broken = 0;
+        var it = BINDINGS.values().iterator();
+        while (it.hasNext()) {
+            Bound b = it.next();
+            if (b.target.level() != level) continue;
+            if (b.target.distanceToSqr(center) > radius * radius) continue;
+            if (b.target instanceof ServerPlayer victim) {
+                victim.sendOverlayMessage(Component.translatable("message.corpseorigin.wood_bind.broken"));
+            }
+            QiEffects.burst(level, b.target.getX(), b.target.getY() + .8, b.target.getZ(), 0x7a5cff, 18, .6);
+            it.remove();
+            broken++;
+        }
+        return broken;
     }
 }
