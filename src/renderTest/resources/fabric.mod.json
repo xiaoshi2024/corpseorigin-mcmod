@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "corpseorigin_render_test",
+  "version": "1.0.0",
+  "name": "CorpseOrigin render regression checks",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["xiaoshi2022.corpseorigin.client.RenderRegressionTest"]
+  }
+}

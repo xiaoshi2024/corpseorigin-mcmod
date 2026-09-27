@@ -17,11 +17,19 @@ import xiaoshi2022.corpseorigin.limb.LimbSlots;
  * （见 {@code CorpsePlayerGeoRenderer}）。相比"整具身体换模型"，这样盔甲与皮肤的参照系完全一致，
  * 不需要任何位置/旋转补偿。
  * <p>
- * ⚠️ 必须注入在 {@code setupAnim} 的 TAIL：这个方法每帧都会把 body / 四肢 / 袖子 / 裤子按 state
- * 重设成"显示"，<b>唯独不碰 head</b>；只有最后覆盖才留得住，也才能同时把 head 恢复回来。
+ * 头部在 HEAD 恢复（原版不重置它），TAIL 只追加断肢隐藏，不强制显示部件。
+ * 保留皮肤外层开关、旁观者和 PAL 第一视角的可见性；优先级排在 PAL 2001 之后。
  */
-@Mixin(PlayerModel.class)
+@Mixin(value = PlayerModel.class, priority = 2100)
 public abstract class PlayerModelLimbMixin {
+
+    @Inject(method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;)V",
+            at = @At("HEAD"))
+    private void corpseorigin$resetHead(AvatarRenderState state, CallbackInfo ci) {
+        // Vanilla resets the other body parts, but not the head. Reset before
+        // animation mods apply their first-person visibility, never after them.
+        ((PlayerModel) (Object) this).head.visible = true;
+    }
 
     @Inject(
             method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;)V",
@@ -75,25 +83,25 @@ public abstract class PlayerModelLimbMixin {
         int severed = mask == null ? 0 : (mask & LimbSlots.MASK_ALL);
 
         boolean head = severed(severed, LimbSlots.HEAD);
-        self.head.visible = !head;
-        self.hat.visible = !head;
+        self.head.visible &= !head;
+        self.hat.visible &= !head && state.showHat;
 
         boolean rightArm = severed(severed, LimbSlots.RIGHT_ARM)
                 || (actor!=null && xiaoshi2022.corpseorigin.skill.chapter.BodySkillState.missingForearm(actor));
-        self.rightArm.visible = !rightArm;
-        self.rightSleeve.visible = !rightArm;
+        self.rightArm.visible &= !rightArm;
+        self.rightSleeve.visible &= !rightArm && state.showRightSleeve;
 
         boolean leftArm = severed(severed, LimbSlots.LEFT_ARM);
-        self.leftArm.visible = !leftArm;
-        self.leftSleeve.visible = !leftArm;
+        self.leftArm.visible &= !leftArm;
+        self.leftSleeve.visible &= !leftArm && state.showLeftSleeve;
 
         boolean rightLeg = severed(severed, LimbSlots.RIGHT_LEG);
-        self.rightLeg.visible = !rightLeg;
-        self.rightPants.visible = !rightLeg;
+        self.rightLeg.visible &= !rightLeg;
+        self.rightPants.visible &= !rightLeg && state.showRightPants;
 
         boolean leftLeg = severed(severed, LimbSlots.LEFT_LEG);
-        self.leftLeg.visible = !leftLeg;
-        self.leftPants.visible = !leftLeg;
+        self.leftLeg.visible &= !leftLeg;
+        self.leftPants.visible &= !leftLeg && state.showLeftPants;
 
         // 躯干（body / jacket）永远由原版渲染：它上面挂着胸甲，位置必须和盔甲一致
     }

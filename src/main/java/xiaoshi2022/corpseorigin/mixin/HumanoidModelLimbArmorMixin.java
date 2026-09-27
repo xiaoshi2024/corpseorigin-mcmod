@@ -37,6 +37,9 @@ public abstract class HumanoidModelLimbArmorMixin {
             return;   // 只有玩家（含克隆分身）才有断肢这回事
         }
         HumanoidModel<?> self = (HumanoidModel<?>) (Object) this;
+        // PlayerModel has its own per-frame reset and skin-layer-aware mask.
+        // Restoring its hat here would override skin settings after regrowth.
+        if (self instanceof net.minecraft.client.model.player.PlayerModel) return;
         Integer mask = avatar.getGeckolibData(LimbRenderData.LIMB_MASK);
         int severedMask = mask == null ? 0 : (mask & LimbSlots.MASK_ALL);
         var level=net.minecraft.client.Minecraft.getInstance().level;

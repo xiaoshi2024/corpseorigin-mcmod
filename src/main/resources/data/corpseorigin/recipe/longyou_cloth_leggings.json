@@ -2,15 +2,18 @@
   "type": "minecraft:crafting_shaped",
   "category": "equipment",
   "key": {
-    "N": "minecraft:netherite_ingot",
-    "Z": "corpseorigin:zbr_flesh"
+    "D": "minecraft:diamond",
+    "W": "minecraft:black_wool",
+    "Z": "corpseorigin:zbr_flesh",
+    "N": "minecraft:netherite_ingot"
   },
   "pattern": [
-    "NNN",
-    "NZN",
-    "N N"
+    "DND",
+    "WZW",
+    "W W"
   ],
   "result": {
-    "id": "corpseorigin:longyou_cloth_leggings"
+    "id": "corpseorigin:longyou_cloth_leggings",
+    "count": 1
   }
 }

@@ -15,7 +15,6 @@ import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.ICharacter;
 import xiaoshi2022.corpseorigin.character.MortalCharacter;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
-import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModDataComponents;
 import xiaoshi2022.corpseorigin.registry.ModItems;
 
@@ -75,8 +74,9 @@ public class CharacterMemoryItem extends Item {
 
         ItemStack stack = player.getItemInHand(hand);
         CompoundTag memory = memoryOf(stack);
+        CompoundTag data = CharacterMemoryData.characterData(memory);
         UUID owner = ownerOf(stack);
-        if (memory == null || owner == null) {
+        if (data == null || owner == null) {
             server.sendOverlayMessage(Component.translatable("item.corpseorigin.character_memory.broken"));
             return InteractionResult.FAIL;
         }
@@ -86,12 +86,18 @@ public class CharacterMemoryItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        String characterId = memory.getStringOr("CharacterId", MortalCharacter.ID);
+        String characterId = data.getStringOr("CharacterId", MortalCharacter.ID);
+        CharacterManager manager = CharacterManager.getInstance();
+        if (manager.getRegisteredCharacters().stream().noneMatch(c -> c.getId().equals(characterId))) {
+            server.sendOverlayMessage(Component.translatable("item.corpseorigin.character_memory.broken"));
+            return InteractionResult.FAIL;
+        }
         // ① 正规换角色流程：客户端同步 / 形态自洽 / 属性重套 / 内力重置都在这条路上
-        CharacterManager.getInstance().setPlayerCharacter(server, characterId);
+        if (!manager.setPlayerCharacter(server, characterId)) return InteractionResult.FAIL;
         // ② 再把记忆里的已学技能与进化点盖回去 —— 上一步刚把已学技能清空过
-        PlayerCharacterData.get(server).readNbt(server.getUUID(), memory);
-        CorpseNetwork.sendEvolutionSync(server);
+        PlayerCharacterData.get(server).readNbt(server.getUUID(), data);
+        xiaoshi2022.corpseorigin.skill.EvolutionStats.reconcile(server);
+        manager.syncToClient(server);
 
         ICharacter character = CharacterManager.getInstance().getCharacter(characterId);
         server.sendOverlayMessage(Component.translatable("item.corpseorigin.character_memory.restored",
@@ -104,7 +110,7 @@ public class CharacterMemoryItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display,
                                 Consumer<Component> tooltip, TooltipFlag flag) {
-        CompoundTag memory = memoryOf(stack);
+        CompoundTag memory = CharacterMemoryData.characterData(memoryOf(stack));
         if (memory == null) {
             tooltip.accept(Component.translatable("item.corpseorigin.character_memory.tooltip.empty"));
             return;

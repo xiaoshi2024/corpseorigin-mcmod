@@ -133,12 +133,14 @@ Z
 类型：`minecraft:crafting_shaped`；产物：`corpseorigin:longyou_cloth_chestplate` × 1。
 
 ```text
-NZN
-NNN
-NNN
+D D
+WNW
+WZW
 ```
 
+- `D`：`minecraft:diamond`
 - `N`：`minecraft:netherite_ingot`
+- `W`：`minecraft:black_wool`
 - `Z`：`corpseorigin:zbr_flesh`
 
 ## longyou_cloth_helmet
@@ -148,11 +150,13 @@ NNN
 类型：`minecraft:crafting_shaped`；产物：`corpseorigin:longyou_cloth_helmet` × 1。
 
 ```text
-NNN
-NZN
+DND
+WZW
 ```
 
+- `D`：`minecraft:diamond`
 - `N`：`minecraft:netherite_ingot`
+- `W`：`minecraft:black_wool`
 - `Z`：`corpseorigin:zbr_flesh`
 
 ## longyou_cloth_leggings
@@ -162,12 +166,14 @@ NZN
 类型：`minecraft:crafting_shaped`；产物：`corpseorigin:longyou_cloth_leggings` × 1。
 
 ```text
-NNN
-NZN
-N N
+DND
+WZW
+W W
 ```
 
+- `D`：`minecraft:diamond`
 - `N`：`minecraft:netherite_ingot`
+- `W`：`minecraft:black_wool`
 - `Z`：`corpseorigin:zbr_flesh`
 
 ## xiaolu_armor_chestplate
@@ -178,13 +184,14 @@ N N
 
 ```text
 W W
-WNW
+LIL
 WBW
 ```
 
+- `B`：`minecraft:packed_ice`
+- `I`：`minecraft:iron_ingot`
+- `L`：`minecraft:leather`
 - `W`：`minecraft:yellow_wool`
-- `N`：`minecraft:netherite_ingot`
-- `B`：`minecraft:blue_ice`
 
 ## xiaolu_armor_helmet
 
@@ -194,11 +201,11 @@ WBW
 
 ```text
 WWW
-WNW
+WIW
 ```
 
+- `I`：`minecraft:iron_ingot`
 - `W`：`minecraft:yellow_wool`
-- `N`：`minecraft:netherite_ingot`
 
 ## xiaolu_armor_leggings
 
@@ -207,14 +214,15 @@ WNW
 类型：`minecraft:crafting_shaped`；产物：`corpseorigin:xiaolu_armor_leggings` × 1。
 
 ```text
-WNW
-W W
+WIW
+L L
 B B
 ```
 
+- `B`：`minecraft:packed_ice`
+- `I`：`minecraft:iron_ingot`
+- `L`：`minecraft:leather`
 - `W`：`minecraft:yellow_wool`
-- `N`：`minecraft:netherite_ingot`
-- `B`：`minecraft:blue_ice`
 
 ## zbr_flesh
 

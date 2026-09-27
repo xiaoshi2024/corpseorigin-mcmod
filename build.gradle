@@ -6,8 +6,15 @@ plugins {
 if (project.hasProperty('chapterTests')) {
     apply from: 'tools/chapter-tests.gradle'
 }
+if (project.hasProperty('renderTests')) {
+    apply from: 'src/renderTest/render-tests.gradle'
+}
 
 repositories {
+    maven {
+        url 'https://repo.redlance.org/public'
+        content { includeGroup 'com.zigythebird.playeranim' }
+    }
 	// Add repositories to retrieve artifacts from in here.
 	// You should only use this when depending on other mods because
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
@@ -38,6 +45,10 @@ dependencies {
 
 	//geckolib
 	implementation "curse.maven:geckolib-388172:8819017"
+
+    // Optional Better Combat animation bridge; never bundle or require PAL.
+    compileOnly('com.zigythebird.playeranim:PlayerAnimationLibCommon:1.2.5+mc.26.2') { transitive = false }
+    compileOnly('com.zigythebird.playeranim:PlayerAnimationLibCore:1.2.5+mc.26.2') { transitive = false }
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
@@ -212,6 +223,13 @@ tasks.register('gourdBalanceTest', JavaExec) {
     mainClass = 'xiaoshi2022.corpseorigin.skill.chapter.GourdBalanceTest'
 }
 tasks.named('check') { dependsOn gourdBalanceTest }
+
+tasks.register('characterMemoryDataTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.item.CharacterMemoryDataTest'
+}
+tasks.named('check') { dependsOn characterMemoryDataTest }
 
 jar {
 	def projectName = project.name

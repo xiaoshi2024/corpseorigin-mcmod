@@ -3,11 +3,11 @@
   "category": "equipment",
   "key": {
     "W": "minecraft:yellow_wool",
-    "N": "minecraft:netherite_ingot"
+    "I": "minecraft:iron_ingot"
   },
   "pattern": [
     "WWW",
-    "WNW"
+    "WIW"
   ],
   "result": {
     "id": "corpseorigin:xiaolu_armor_helmet",

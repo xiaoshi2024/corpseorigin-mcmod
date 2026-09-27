@@ -3,12 +3,13 @@
   "category": "equipment",
   "key": {
     "W": "minecraft:yellow_wool",
-    "N": "minecraft:netherite_ingot",
-    "B": "minecraft:blue_ice"
+    "L": "minecraft:leather",
+    "B": "minecraft:packed_ice",
+    "I": "minecraft:iron_ingot"
   },
   "pattern": [
-    "WNW",
-    "W W",
+    "WIW",
+    "L L",
     "B B"
   ],
   "result": {
