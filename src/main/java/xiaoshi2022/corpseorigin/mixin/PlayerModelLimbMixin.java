@@ -81,6 +81,8 @@ public abstract class PlayerModelLimbMixin {
         }
         Integer mask = state.getGeckolibData(LimbRenderData.LIMB_MASK);
         int severed = mask == null ? 0 : (mask & LimbSlots.MASK_ALL);
+        if (actor instanceof net.minecraft.world.entity.player.Player player
+                && xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.disguised(player)) return;
 
         boolean head = severed(severed, LimbSlots.HEAD);
         self.head.visible &= !head;

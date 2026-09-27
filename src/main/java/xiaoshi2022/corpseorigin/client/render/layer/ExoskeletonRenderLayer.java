@@ -49,6 +49,8 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
 
         Entity entity = Minecraft.getInstance().level == null
                 ? null : Minecraft.getInstance().level.getEntity(state.id);
+        if (entity instanceof net.minecraft.world.entity.player.Player player
+                && xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.disguised(player)) return;
 
         var parentModel = this.getParentModel();
         if (parentModel == null) return;

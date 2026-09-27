@@ -15,9 +15,10 @@ public abstract class SwarmClimbMixin {
     private void corpseorigin$swarmClimbs(CallbackInfoReturnable<Boolean> cir) {
         if ((Object)this instanceof Player player
                 && player.horizontalCollision && !player.isSpectator()
-                && "chongqun".equals(player.level().isClientSide()
+                && (xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.climbing(player)
+                    || "chongqun".equals(player.level().isClientSide()
                     ? player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE)
-                    : CharacterManager.getInstance().getPlayerCharacterId(player))) {
+                    : CharacterManager.getInstance().getPlayerCharacterId(player)))) {
             cir.setReturnValue(true);
         }
     }

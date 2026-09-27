@@ -48,6 +48,12 @@ public final class CorpseConfig {
     public xiaoshi2022.corpseorigin.growth.GrowthConfig growth = new xiaoshi2022.corpseorigin.growth.GrowthConfig();
     /** Server-side restrictions on both bound and universal character books. Restart to apply. */
     public CharacterBooks characterBooks = new CharacterBooks();
+    public GourdInheritance gourdInheritance = new GourdInheritance();
+    public static final class GourdInheritance {
+        public boolean enabled = true;
+        public double passiveChance = .40, neutralChance = .30, hostileChance = .25;
+        public double eliteChance = .12, bossChance = .05, automaticMultiplier = .5;
+    }
     public static final class CharacterBooks {
         public List<String> disabledCharacters = new ArrayList<>();
     }
@@ -363,6 +369,7 @@ public final class CorpseConfig {
      * Gson 反序列化时不一定走构造器，所以不能只靠字段初始值。
      */
     private void sanitize() {
+        if (gourdInheritance == null) gourdInheritance = new GourdInheritance();
         if (characterBooks == null) characterBooks = new CharacterBooks();
         if (characterBooks.disabledCharacters == null) characterBooks.disabledCharacters = new ArrayList<>();
         if (growth == null) growth = new xiaoshi2022.corpseorigin.growth.GrowthConfig();

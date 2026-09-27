@@ -86,6 +86,10 @@ public class CorpsePlayerGeoRenderer
      * </ol>
      */
     public static void writeLimbRenderData(AvatarRenderState state, AbstractClientPlayer player, float partialTick) {
+        if (xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.disguised(player)) {
+            state.addGeckolibData(LimbRenderData.LIMB_MASK, null);
+            return;
+        }
         // 左护法变异体形态整具身体都换了，断肢那套不参与 ——
         // 这里必须挡住：GeckoLib 的盔甲管线（GeoArmorRendererCaptureMixin）也会走到这个方法，
         // 一旦让它写进去，玩家的动画控制器快照就被断肢那几条动画（walk / regrow_*）覆盖，

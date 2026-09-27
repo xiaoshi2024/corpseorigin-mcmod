@@ -84,6 +84,8 @@ public class ChapterCostumeLayer extends RenderLayer<AvatarRenderState,PlayerMod
     @Override public void submit(PoseStack poses,SubmitNodeCollector collector,int light,AvatarRenderState state,float yaw,float pitch){
         var level=Minecraft.getInstance().level;if(level==null || state.isInvisible)return;
         var entity=level.getEntity(state.id);if(entity==null)return;
+        if (entity instanceof net.minecraft.world.entity.player.Player player
+                && xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.disguised(player)) return;
         String role=entity.getAttachedOrCreate(ChapterActorState.ROLE), condition=entity.getAttachedOrCreate(ChapterScenes.CONDITION);
         var model=getParentModel();
         if(BodySkillState.missingForearm(entity)){

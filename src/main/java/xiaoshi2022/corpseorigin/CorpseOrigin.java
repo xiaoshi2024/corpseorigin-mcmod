@@ -153,6 +153,7 @@ public class CorpseOrigin implements ModInitializer {
         xiaoshi2022.corpseorigin.character.CharacterBookPolicy.init();
         xiaoshi2022.corpseorigin.growth.GourdOrganState.register();
         xiaoshi2022.corpseorigin.skill.chapter.GourdCapture.register();
+        xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.register();
         xiaoshi2022.corpseorigin.growth.WeaponEligibility.register();
 		xiaoshi2022.corpseorigin.event.GuardianPetDeathHandler.register();
 		APSComboHandler.register();

@@ -122,6 +122,17 @@ public abstract class AvatarRendererMixin {
         state.addGeckolibData(EvolutionGeoRenderer.SNAPSHOT, null);
         xiaoshi2022.corpseorigin.client.render.layer.CustomOrganLayer.extract(player,state,partialTick);
         EvolutionGeoRenderer.extract(player, state, partialTick);
+        if (xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.disguised(player)) {
+            state.skin = player.getSkin();
+            state.addGeckolibData(xiaoshi2022.corpseorigin.client.limb.LimbRenderData.LIMB_MASK, null);
+            state.addGeckolibData(MutantBodyRenderData.BODY_TEXTURE, null);
+            state.addGeckolibData(MutantSalmonRenderer.ACTIVE, false);
+            state.addGeckolibData(NiunaiXRenderData.ACTIVE, false);
+            state.addGeckolibData(NiunaiLinkRenderData.ACTIVE, false);
+            state.addGeckolibData(TianGangHaloRenderData.ACTIVE, false);
+            state.addGeckolibData(ShiChaoBodyRenderData.ACTIVE, false);
+            return;
+        }
         String disguise=player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE);
         String possessedSkin = player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.BodyPossession.SKIN);
         if (!possessedSkin.isEmpty()) {

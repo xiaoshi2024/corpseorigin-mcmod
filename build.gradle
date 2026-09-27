@@ -9,6 +9,9 @@ if (project.hasProperty('chapterTests')) {
 if (project.hasProperty('renderTests')) {
     apply from: 'src/renderTest/render-tests.gradle'
 }
+if (project.hasProperty('gourdTests')) {
+    apply from: 'src/gourdTest/gourd-tests.gradle'
+}
 
 repositories {
     maven {
@@ -230,6 +233,13 @@ tasks.register('characterMemoryDataTest', JavaExec) {
     mainClass = 'xiaoshi2022.corpseorigin.item.CharacterMemoryDataTest'
 }
 tasks.named('check') { dependsOn characterMemoryDataTest }
+
+tasks.register('gourdInheritanceTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceTest'
+}
+tasks.named('check') { dependsOn gourdInheritanceTest }
 
 jar {
 	def projectName = project.name

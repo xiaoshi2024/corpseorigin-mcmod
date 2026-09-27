@@ -26,7 +26,10 @@ public final class NewChapterCharacter implements ICharacter {
             new NewChapterSkill("gourd_devour",200,0,3),
             new NewChapterSkill("gourd_fire",240,30,5),
             new NewChapterSkill("gourd_eyes",240,10,1),
-            new NewChapterSkill("gourd_power",300,20,6));
+            new NewChapterSkill("gourd_power",300,20,6),
+            new xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceSkill(0),
+            new xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceSkill(1),
+            new xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceSkill(2));
         case "guigun_human"->List.of(new GuigunCombat.Sweep(),new GuigunCombat.Guard());
         case "guigun_corpse"->List.of(new GuigunCombat.Resonance(),new GuigunCombat.Crush());
         case "hei_wuchou"->List.of(new WuchangCombat.WuchouBlade(),new WuchangCombat.WuchouStep());

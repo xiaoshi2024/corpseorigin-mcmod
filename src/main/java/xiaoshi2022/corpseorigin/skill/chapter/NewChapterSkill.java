@@ -60,9 +60,9 @@ public final class NewChapterSkill extends AbstractSkill {
     }
     private void devour(ServerPlayer p,net.minecraft.world.phys.Vec3 origin){
         var end=p.level().clip(new net.minecraft.world.level.ClipContext(origin,origin.add(p.getLookAngle().scale(8)),net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,p)).getLocation();
-        var hit=net.minecraft.world.entity.projectile.ProjectileUtil.getEntityHitResult(p,origin,end,new net.minecraft.world.phys.AABB(origin,end).inflate(.7),e->e instanceof net.minecraft.world.entity.LivingEntity t && !(t instanceof net.minecraft.world.entity.player.Player) && !(t instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) && !(t instanceof net.minecraft.world.entity.boss.wither.WitherBoss) && !(t instanceof net.minecraft.world.entity.decoration.ArmorStand) && !(t instanceof net.minecraft.world.entity.TamableAnimal pet && pet.isTame()) && ChapterCombat.canHit(p,t),origin.distanceToSqr(end));
+        var hit=net.minecraft.world.entity.projectile.ProjectileUtil.getEntityHitResult(p,origin,end,new net.minecraft.world.phys.AABB(origin,end).inflate(.7),e->GourdCapture.validPrey(p,GourdCapture.target(e)),origin.distanceToSqr(end));
         if(hit==null){p.sendOverlayMessage(Component.translatable("skill.corpseorigin.gourd_devour.no_target"));return;}
-        var target=(net.minecraft.world.entity.LivingEntity)hit.getEntity();
+        var target=GourdCapture.target(hit.getEntity());
         if(!GourdCapture.edible(target)){p.sendOverlayMessage(Component.translatable("skill.corpseorigin.gourd_devour.too_strong"));return;}
         if(!GourdCapture.begin(p,target))p.sendOverlayMessage(Component.translatable("skill.corpseorigin.gourd_devour.busy"));
     }

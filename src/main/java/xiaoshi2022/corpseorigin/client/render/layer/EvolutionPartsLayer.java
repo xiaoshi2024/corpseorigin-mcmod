@@ -48,6 +48,7 @@ public final class EvolutionPartsLayer extends RenderLayer<AvatarRenderState, Pl
                                  AvatarRenderState state, float yaw, float pitch) {
         var level = Minecraft.getInstance().level;
         if (level == null || state.isInvisible || !(level.getEntity(state.id) instanceof Player player)) return;
+        if (xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.disguised(player)) return;
         // Use the existing synchronized corpse cache, since PLAYER_CORPSE itself is server-only.
         var corpse = xiaoshi2022.corpseorigin.client.CorpseOriginClient.corpseDataCache.get(player.getUUID());
         if (corpse == null || !corpse.isCorpse || corpse.isDisguised()) return;

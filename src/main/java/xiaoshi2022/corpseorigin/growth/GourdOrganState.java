@@ -11,7 +11,9 @@ public final class GourdOrganState {
     private GourdOrganState(){}
     private record Pending(long at, int remaining, int interval, net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension,java.util.function.Consumer<ServerPlayer> action){}
     private static final Map<UUID,Pending> PENDING=new HashMap<>();
-    public static boolean active(Player p){return "xiaojingang".equals(xiaoshi2022.corpseorigin.character.CharacterManager.getInstance().getPlayerCharacterId(p));}
+    public static boolean active(Player p){return "xiaojingang".equals(p.level().isClientSide()
+            ? p.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE)
+            : xiaoshi2022.corpseorigin.character.CharacterManager.getInstance().getPlayerCharacterId(p));}
     public static boolean detached(Player p){return p.getAttachedOrCreate(SurvivalGrowth.BODY).getBooleanOr("gourd_detached",false);}
     public static boolean dead(Player p){return p.getAttachedOrCreate(SurvivalGrowth.BODY).getBooleanOr("gourd_dead",false);}
     public static boolean isCurrent(Player p,GourdOrganEntity e){return e.getUUID().toString().equals(p.getAttachedOrCreate(SurvivalGrowth.BODY).getStringOr("gourd_entity",""));}

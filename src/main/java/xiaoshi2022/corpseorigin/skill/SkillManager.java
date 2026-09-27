@@ -121,6 +121,9 @@ public final class SkillManager {
 
         if (!SkillResources.pay(player, skill.getResourceCost())) return false;
 
+        if (!skillPath.equals("gourd_mortal_disguise") && !skillPath.equals("gourd_inheritance_cycle")
+                && !skillPath.equals("gourd_inheritance"))
+            xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.reveal(player);
         skill.onActivate(player);
 
         // 写冷却

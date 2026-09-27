@@ -60,6 +60,10 @@ public abstract class GeoArmorRendererCaptureMixin {
         if (!(entity instanceof AbstractClientPlayer player)) {
             return;   // 只有玩家（含克隆分身）才有断肢 / 变异体这回事
         }
+        if (xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.disguised(player)) {
+            avatarState.addGeckolibData(xiaoshi2022.corpseorigin.client.limb.LimbRenderData.LIMB_MASK, null);
+            return;
+        }
         if (MutantBodyRenderData.isMutantBody(player)) {
             ZuoGuardianBodyRenderer.writeBodyRenderData(avatarState, player, partialTick);
             return;

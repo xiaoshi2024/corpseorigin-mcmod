@@ -28,7 +28,8 @@ public class PlayerCharacterData extends SavedData {
             Codec.INT.optionalFieldOf("available_points", 0).forGetter(e -> e.availablePoints),
             Codec.BOOL.optionalFieldOf("starter_book", false).forGetter(e -> e.starterBookGiven),
             // 左护法的青龙宠物被击杀后置 true：「唤龙」技能凭它判定"有一条可复活的青龙"
-            Codec.BOOL.optionalFieldOf("guardian_lost", false).forGetter(e -> e.guardianLost)
+            Codec.BOOL.optionalFieldOf("guardian_lost", false).forGetter(e -> e.guardianLost),
+            CompoundTag.CODEC.optionalFieldOf("gourd_memory", new CompoundTag()).forGetter(e -> e.gourdMemory)
     ).apply(inst, PlayerEntry::new));
 
     private static final Codec<PlayerCharacterData> CODEC = RecordCodecBuilder.create(inst -> inst.group(
@@ -97,13 +98,14 @@ public class PlayerCharacterData extends SavedData {
         public boolean starterBookGiven = false;
         /** 左护法的青龙宠物是否已被击杀（可用「唤龙」消耗气血复活；复活 / 重铸后清掉） */
         public boolean guardianLost = false;
+        private CompoundTag gourdMemory = new CompoundTag();
 
         public PlayerEntry() {
         }
 
         private PlayerEntry(String characterId, List<String> learnedSkills,
                             int earnedPoints, int availablePoints, boolean starterBookGiven,
-                            boolean guardianLost) {
+                            boolean guardianLost, CompoundTag gourdMemory) {
             this.characterId = characterId;
             for (String skill : learnedSkills) {
                 this.learnedSkills.add(normalizeSkillId(skill));
@@ -112,6 +114,7 @@ public class PlayerCharacterData extends SavedData {
             this.availablePoints = availablePoints;
             this.starterBookGiven = starterBookGiven;
             this.guardianLost = guardianLost;
+            this.gourdMemory = gourdMemory.copy();
         }
     }
 
@@ -160,6 +163,13 @@ public class PlayerCharacterData extends SavedData {
     }
 
     // ==================== 技能学习相关 ====================
+
+    public CompoundTag getGourdMemory(UUID uuid) { return getEntry(uuid).gourdMemory.copy(); }
+
+    public void setGourdMemory(UUID uuid, CompoundTag memory) {
+        getEntry(uuid).gourdMemory = memory.copy();
+        setDirty();
+    }
 
     public Set<String> getLearnedSkills(UUID uuid) {
         return getEntry(uuid).learnedSkills;
@@ -224,6 +234,7 @@ public class PlayerCharacterData extends SavedData {
         // 开局角色书是否已发也要跟着走：这条 NBT 是换身/换壳搬家用的一条独立通路，
         // 漏掉的话换一次身就会"重置"，下次登录又白给一本
         tag.putBoolean("StarterBook", entry.starterBookGiven);
+        tag.put("GourdMemory", entry.gourdMemory.copy());
         return tag;
     }
 
@@ -250,6 +261,7 @@ public class PlayerCharacterData extends SavedData {
         //   （比如"StarterBook 跟着走"这次修复之前培育的克隆体），缺键会被当成 false 把标记翻回来，
         //   下次登录就白给一本 —— 死亡自动夺舍克隆体正好走这条路。
         entry.starterBookGiven = entry.starterBookGiven || tag.getBooleanOr("StarterBook", false);
+        entry.gourdMemory = tag.getCompound("GourdMemory").orElseGet(CompoundTag::new).copy();
 
         setDirty();
     }

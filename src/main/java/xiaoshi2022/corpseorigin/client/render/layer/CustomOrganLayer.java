@@ -60,7 +60,8 @@ public final class CustomOrganLayer extends RenderLayer<AvatarRenderState,Player
         var corpse=xiaoshi2022.corpseorigin.client.CorpseOriginClient.corpseDataCache.get(player.getUUID());
         boolean preview=previewSlots!=null && player==Minecraft.getInstance().player;
         // Saved loadouts have already passed server-side creative/evolution/level validation.
-        if(context==null || !preview&&(parent.isInvisible || corpse!=null && corpse.isDisguised()))return;
+        if(context==null || !preview&&(parent.isInvisible || corpse!=null && corpse.isDisguised()
+                || xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.disguised(player)))return;
         var body=player.getAttachedOrCreate(SurvivalGrowth.BODY);
         String saved=body.getStringOr(OrganLibrary.BODY_KEY, "");
         var frames=new ArrayList<Frame>();
