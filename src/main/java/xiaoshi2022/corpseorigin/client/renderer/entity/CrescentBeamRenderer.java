@@ -13,16 +13,15 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import xiaoshi2022.corpseorigin.entity.JuQueBeamEntity;
 
-/** A tapered, slightly thick crescent: the mesh defines the silhouette on both sides. */
+/** A swept crescent with a smoothly rounded leading ridge and long, tapered tips. */
 public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRenderer<T, CrescentBeamRenderer.State> {
-    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("corpseorigin", "textures/entity/qi_white.png");
-    private static final int SEGMENTS = 32;
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("corpseorigin", "textures/effect/qi_mist.png");
+    private static final int SEGMENTS = 48;
     private static final float HEIGHT = 1.25F, WIDTH = 1.2F;
-    private static final float[] RINGS = {0, .3F, .8F, 1};
     private final int red, green, blue;
 
     public static final class State extends EntityRenderState {
-        float yaw, pitch;
+        float yaw, pitch, power, time;
     }
 
     protected CrescentBeamRenderer(EntityRendererProvider.Context context, int red, int green, int blue) {
@@ -35,6 +34,8 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
 
     @Override public void extractRenderState(T entity, State state, float partialTick) {
         super.extractRenderState(entity, state, partialTick);
+        state.power=entity.getPower();
+        state.time=entity.tickCount+partialTick;
         var direction=entity.getDeltaMovement();
         if(direction.lengthSqr()<1.0E-8) direction=entity.getLookAngle();
         direction=direction.normalize();
@@ -48,42 +49,51 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
         poses.mulPose(Axis.YP.rotationDegrees(state.yaw));
         poses.mulPose(Axis.XP.rotationDegrees(state.pitch));
         poses.mulPose(Axis.ZP.rotationDegrees(-25));
+        // Spread the two tips more than the blade depth: stronger qi opens wider rather than just inflating.
+        poses.scale(1+.15F*state.power,1+1.2F*state.power,1);
         collector.submitCustomGeometry(poses,RenderTypes.entityTranslucentEmissive(TEXTURE),(pose,out)-> {
-            for(int i=0;i<SEGMENTS;i++) {
+            // Shape the same translucent mist used by QiAuraRenderer into a moving volume.
+            // Multiple flowing sheets fade on every boundary; there is no opaque blade or silhouette image.
+            for(int layer=0;layer<7;layer++) for(int i=0;i<SEGMENTS;i++) {
                 float a=-1+2F*i/SEGMENTS, b=-1+2F*(i+1)/SEGMENTS;
-                for(int band=0;band<RINGS.length-1;band++) {
-                    float inner=RINGS[band], outer=RINGS[band+1];
-                    // Front and back wind in opposite directions; both viewing sides remain visible.
-                    vertex(out,pose,a,inner,1); vertex(out,pose,b,inner,1);
-                    vertex(out,pose,b,outer,1); vertex(out,pose,a,outer,1);
-                    vertex(out,pose,a,outer,-1); vertex(out,pose,b,outer,-1);
-                    vertex(out,pose,b,inner,-1); vertex(out,pose,a,inner,-1);
+                for(int band=0;band<8;band++) {
+                    float inner=band/8F, outer=(band+1)/8F;
+                    vertex(out,pose,a,inner,layer,state.time); vertex(out,pose,b,inner,layer,state.time);
+                    vertex(out,pose,b,outer,layer,state.time); vertex(out,pose,a,outer,layer,state.time);
                 }
-                // The joined outer edge also shows the blade in grazing views.
-                vertex(out,pose,a,1,1); vertex(out,pose,b,1,1);
-                vertex(out,pose,b,1,-1); vertex(out,pose,a,1,-1);
             }
         });
         poses.popPose();
     }
 
-    /** Outer and recessed inner arcs meet at both tips, unlike a uniform-width horseshoe. */
+    /** Round the central ridge while preserving the swept-back silhouette and sharp endpoints. */
     public static float crescentX(float height, float across) {
-        float round=(float)Math.sqrt(Math.max(0,1-height*height));
-        float outer=WIDTH*(round-.55F);
-        float thickness=WIDTH*.52F*(1-height*height);
-        return outer-thickness*(1-across);
+        float t=Math.min(1,Math.abs(height));
+        // A normalized smooth absolute value gives both halves the same tangent at the center.
+        // Unlike a circular outline, the flanks still narrow into long, pointed wings.
+        float rounding=.42F;
+        float sweep=((float)Math.sqrt(t*t+rounding*rounding)-rounding)
+                / ((float)Math.sqrt(1+rounding*rounding)-rounding);
+        float outer=WIDTH*(1.08F*(1-sweep)+.10F*sweep*(1-sweep)-.55F);
+        float inner=WIDTH*(-.55F+.43F*(1-t*t));
+        return inner+(outer-inner)*across;
     }
 
-    private void vertex(VertexConsumer out, PoseStack.Pose pose, float height, float across, int side) {
+    private void vertex(VertexConsumer out, PoseStack.Pose pose, float height, float across, int layer, float time) {
         float core=Math.max(0,1-Math.abs(across-.8F)/.5F);
         int r=(int)(red+(255-red)*core*.85F);
         int g=(int)(green+(255-green)*core*.85F);
         int b=(int)(blue+(255-blue)*core*.85F);
-        int alpha=across==0?35:across==1?210:245;
-        float depth=side*.055F*(1-height*height);
-        out.addVertex(pose.pose(),crescentX(height,across),height*HEIGHT,depth)
-                .setColor(r,g,b,alpha).setUv(.5F,.5F).setOverlay(OverlayTexture.NO_OVERLAY)
-                .setLight(0xF000F0).setNormal(0,0,side);
+        float taper=1-height*height;
+        float flow=(float)Math.sin(height*12+across*8-time*.65F+layer*1.7F);
+        float envelope=(float)Math.pow(Math.sin(Math.PI*across),.7)* (float)Math.pow(taper,.3);
+        int alpha=(int)((layer==3?100:48)*envelope*(.8F+.2F*flow));
+        float depth=((layer-3)*.105F+.045F*flow)*taper;
+        // The inner mist streams behind the advancing front, retaining the crescent at its leading edge.
+        depth-=(1-across)*(1-across)*(.3F+layer*.09F)*taper;
+        float x=crescentX(height,across)+.025F*flow*envelope;
+        out.addVertex(pose.pose(),x,height*HEIGHT,depth)
+                .setColor(r,g,b,alpha).setUv(across,(height+1)*.5F+time*.025F+layer*.13F).setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(0xF000F0).setNormal(0,0,1);
     }
 }

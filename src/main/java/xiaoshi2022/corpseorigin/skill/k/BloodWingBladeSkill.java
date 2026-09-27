@@ -27,7 +27,7 @@ public class BloodWingBladeSkill extends AbstractSkill {
         beam.setPos(player.getEyePosition().add(0, -.1, 0));
         beam.setDamage((float) player.getAttributeValue(
                 net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) * 1.5f);
-        beam.setLevel(4); // 16 ticks at 1.5 blocks/tick = 24 blocks.
+        beam.setLevel(4); // Base 24-block reach; the owner's progression scales the actual range.
         beam.shootFromRotation(player, player.getXRot(), player.getYRot(), 0, beam.getVelocity(), 0);
         player.level().addFreshEntity(beam);
         player.getMainHandItem().hurtAndBreak(1,player,net.minecraft.world.entity.EquipmentSlot.MAINHAND);

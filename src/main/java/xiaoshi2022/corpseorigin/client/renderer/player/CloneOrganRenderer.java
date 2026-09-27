@@ -63,6 +63,11 @@ public final class CloneOrganRenderer
         return context != null;
     }
 
+    @Override public boolean shouldShowName(CloneAvatarEntity entity, double distanceSquared) { return false; }
+
+    @Override public void postRenderPass(RenderPassInfo<AvatarRenderState> info,
+                                        net.minecraft.client.renderer.SubmitNodeCollector collector) {}
+
     /** 取（或创建）某个器官在第 {@code index} 个槽位上的渲染器 */
     public static CloneOrganRenderer get(OrganDefinition def, int index) {
         if (context == null) {

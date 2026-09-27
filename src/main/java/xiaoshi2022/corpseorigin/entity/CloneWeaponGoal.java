@@ -61,7 +61,7 @@ public class CloneWeaponGoal extends Goal {
         }
 
         double distSqr = this.mob.distanceToSqr(target);
-        int range = CloneWeaponArts.preferredRange(stack);
+        double range = Math.max(CloneWeaponArts.preferredRange(stack), CloneWeaponArts.attackRange(this.mob,stack)*.7);
         boolean lineOfSight = this.mob.hasLineOfSight(target);
 
         this.mob.getLookControl().setLookAt(target, 30F, 30F);

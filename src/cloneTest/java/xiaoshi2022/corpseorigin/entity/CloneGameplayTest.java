@@ -18,14 +18,18 @@ import java.util.*;
 
 /** Real client/server regression: equipment, projectiles, role AI, flight, persistence and GEO extraction. */
 public final class CloneGameplayTest implements FabricClientGameTest {
-    private UUID flyer, fighter, gourd, niunai, flyingTarget, beamTarget;
+    private UUID flyer, fighter, gourd, niunai, flyingTarget, beamTarget, lowQi, highQi;
     private static void require(boolean condition, String message) { if (!condition) throw new AssertionError(message); }
 
     private static CloneAvatarEntity clone(ServerPlayer player, String role, double x, double z, CompoundTag organs) {
+        return clone(player,role,x,z,organs,0);
+    }
+    private static CloneAvatarEntity clone(ServerPlayer player, String role, double x, double z, CompoundTag organs, int earned) {
         ShellState body = ShellState.of(player, player.blockPosition());
         var component = body.getComponent().as(CharacterShellStateComponent.class);
         CompoundTag data = new CompoundTag();
         data.putString("CharacterId", role);
+        data.putInt("Earned",earned);
         data.put("EvolutionParts", organs.copy());
         CompoundTag serialized = new CompoundTag(); serialized.put("Data", data); component.readNbt(serialized);
         var clone = ModEntities.CLONE_AVATAR.create(player.level(), EntitySpawnReason.COMMAND);
@@ -119,6 +123,25 @@ public final class CloneGameplayTest implements FabricClientGameTest {
                 shooter.setTarget(victim);shooter.setItemSlot(EquipmentSlot.MAINHAND,new ItemStack(ModItems.JUQUE_TW));
                 require(CloneWeaponArts.fire(shooter,shooter.getMainHandItem())>0,"Beam was not launched");
                 require(CloneWeaponArts.fire(shooter,shooter.getMainHandItem())==0,"Repeated beam ignored cooldown");
+                var weak=clone(p,"mortal",-22,-20,new CompoundTag(),0);
+                var strong=clone(p,"mortal",-20,-20,new CompoundTag(),2300);
+                weak.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(4);
+                strong.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(4);
+                var shortBeam=new JuQueBeamEntity(p.level(),weak).setLevel(2);
+                var longBeam=new JuQueBeamEntity(p.level(),strong).setLevel(2);
+                require(shortBeam.getPower()==0&&longBeam.getPower()==1,"Qi did not use the clone body's own evolution level");
+                require(shortBeam.getMaxRange()==21&&longBeam.getMaxRange()==63,"Incorrect progression range endpoints");
+                longBeam.setLevel(2);
+                require(longBeam.getMaxRange()==63,"Repeated level assignment stacked range");
+                var qiSaved=net.minecraft.world.level.storage.TagValueOutput.createWithContext(net.minecraft.util.ProblemReporter.DISCARDING,p.level().registryAccess());
+                longBeam.saveWithoutId(qiSaved);
+                var qiRestored=new JuQueBeamEntity(ModEntities.JUQUE_BEAM,p.level());
+                qiRestored.load(net.minecraft.world.level.storage.TagValueInput.create(net.minecraft.util.ProblemReporter.DISCARDING,p.level().registryAccess(),qiSaved.buildResult()));
+                require(qiRestored.getPower()==1&&qiRestored.getMaxRange()==63,"Reload lost qi strength/range");
+                shortBeam.setPos(-22,230,-15);longBeam.setPos(-20,230,-15);
+                shortBeam.setDeltaMovement(0,0,1.5);longBeam.setDeltaMovement(0,0,1.5);
+                lowQi=shortBeam.getUUID();highQi=longBeam.getUUID();
+                p.level().addFreshEntity(shortBeam);p.level().addFreshEntity(longBeam);
 
                 var a=clone(p,"xiaojingang",2,0,wings()); gourd=a.getUUID();
                 a.setItemSlot(EquipmentSlot.MAINHAND,new ItemStack(ModItems.JUQUE_TW));
@@ -139,9 +162,21 @@ public final class CloneGameplayTest implements FabricClientGameTest {
                 var fighting=clone(p,"baixiaofei",8,12,new CompoundTag());fighter=fighting.getUUID();
                 fighting.setActive(true);fighting.setNoAi(false);fighting.setTarget(target(p,8,201,16));
             });
-            context.waitTicks(120);
+            context.waitTicks(20);
             server.runOnServer(s->{
                 var level=s.getPlayerList().getPlayers().getFirst().level();
+                require(level.getEntity(lowQi)==null,"Low-strength qi exceeded its maximum range");
+                require(level.getEntity(highQi) instanceof JuQueBeamEntity beam && beam.getZ()>6,"High-strength qi did not travel beyond the base range");
+            });
+            context.runOnClient(client->{
+                JuQueBeamEntity synced=null;
+                for(var entity:client.level.entitiesForRendering())if(entity.getUUID().equals(highQi)&&entity instanceof JuQueBeamEntity beam)synced=beam;
+                require(synced!=null&&synced.getPower()==1,"Client did not receive qi opening strength");
+            });
+            context.waitTicks(100);
+            server.runOnServer(s->{
+                var level=s.getPlayerList().getPlayers().getFirst().level();
+                require(level.getEntity(highQi)==null,"High-strength qi exceeded its bounded range");
                 require(level.getEntity(beamTarget) instanceof LivingEntity victim && victim.getHealth()<2000,"Clone sword beam did not damage target");
                 var flying=(CloneAvatarEntity)level.getEntity(flyer);
                 require(flying!=null&&flying.getY()>203,"Winged clone never took off toward elevated target");
@@ -169,6 +204,7 @@ public final class CloneGameplayTest implements FabricClientGameTest {
                     var c=list.stream().filter(e->e.getUUID().equals(id)).findFirst().orElseThrow(()->new AssertionError("Clone not tracked on client"));
                     var renderer=(xiaoshi2022.corpseorigin.client.renderer.entity.CloneAvatarRenderer)client.getEntityRenderDispatcher().getRenderer(c);
                     var state=renderer.createRenderState();renderer.extractRenderState(c,state,0);
+                    require(client.getEntityRenderDispatcher().getRenderer(state)==renderer,"Render-state dispatch bypassed clone organ layers");
                     if(id.equals(gourd)){
                         require(state.getGeckolibData(xiaoshi2022.corpseorigin.client.render.layer.CloneRoleGeoLayer.SNAPSHOT_GOURD)!=null,"Gourd snapshot absent");
                         var frames=state.getGeckolibData(xiaoshi2022.corpseorigin.client.render.layer.CloneRoleGeoLayer.SNAPSHOT_ORGAN);
@@ -188,6 +224,27 @@ public final class CloneGameplayTest implements FabricClientGameTest {
                     xiaoshi2022.corpseorigin.client.CorpseOriginClient.cloneBodyDataCache.remove(chamberId);
                 }
             });
+            server.runOnServer(s->{
+                var p=s.getPlayerList().getPlayers().getFirst();
+                for(var old:p.level().getEntitiesOfClass(CloneAvatarEntity.class,p.getBoundingBox().inflate(90)))old.discard();
+                var direct=clone(p,"xiaojingang",-2.5,6,new CompoundTag());
+                var inheritedParts=new CompoundTag();inheritedParts.putString(CharacterShellStateComponent.ORGAN_ROLE_KEY,"xiaojingang");
+                var inherited=clone(p,"mortal",0,6,inheritedParts);
+                var custom=clone(p,"kaiweinai",2.5,6,wings());
+                int label=0;
+                for(var display:List.of(direct,inherited,custom)) {
+                    display.setActive(true);display.setYRot(0);display.yBodyRot=0;display.setYHeadRot(0);
+                    display.setCustomName(net.minecraft.network.chat.Component.literal("BODY "+(++label)));
+                    display.setCustomNameVisible(true);
+                }
+            });
+            context.getInput().lookAt(0,0);
+            context.waitTicks(10);
+            System.out.println("ORGAN_PREVIEW="+context.takeScreenshot("clone-organs-labels"));
+            context.getInput().pressKey(options -> options.keyToggleGui);
+            context.waitTicks(2);
+            System.out.println("ORGAN_GEOMETRY_PREVIEW="+context.takeScreenshot("clone-organs-geometry"));
+            context.getInput().pressKey(options -> options.keyToggleGui);
             // Freeze real client projectile instances for visual inspection of both shared renderers.
             context.runOnClient(client->{
                 client.player.setYRot(0);client.player.setXRot(0);
@@ -199,8 +256,29 @@ public final class CloneGameplayTest implements FabricClientGameTest {
                 gold.setYRot(180);blood.setYRot(180);
                 client.level.addEntity(gold);client.level.addEntity(blood);
             });
+            context.getInput().pressKey(options -> options.keyToggleGui);
             context.waitTicks(3);
             System.out.println("CRESCENT_PREVIEW="+context.takeScreenshot("crescent-sword-qi"));
+            context.getInput().pressKey(options -> options.keyToggleGui);
+            // Exercise the actual player weapon entry point, including eligibility and owner power.
+            server.runOnServer(s->{
+                var p=s.getPlayerList().getPlayers().getFirst();
+                for(var e:p.level().getEntitiesOfClass(CloneAvatarEntity.class,p.getBoundingBox().inflate(30)))e.discard();
+                var sword=new ItemStack(ModItems.JUQUE_TW);
+                p.setItemSlot(EquipmentSlot.MAINHAND,sword);
+                xiaoshi2022.corpseorigin.character.PlayerCharacterData.get(p).setPoints(p.getUUID(),2300,2300);
+                p.setYRot(0);p.setXRot(0);
+                xiaoshi2022.corpseorigin.item.sword.JuQue.releaseBeamStatic(p,sword);
+                var beams=p.level().getEntitiesOfClass(JuQueBeamEntity.class,p.getBoundingBox().inflate(4));
+                require(beams.stream().anyMatch(b->b.getOwner()==p&&b.getPower()==1F&&b.getMaxRange()==63),
+                        "Player sword did not emit strength-scaled qi through its real weapon entry point");
+                // Slow this real server projectile only for the screenshot, preserving its synchronized state.
+                for(var b:beams)if(b.getOwner()==p){b.setPos(0,202.6,5);b.setDeltaMovement(0,0,.02);}
+            });
+            context.waitTicks(4);
+            context.getInput().pressKey(options -> options.keyToggleGui);
+            System.out.println("PLAYER_QI_PREVIEW="+context.takeScreenshot("player-shaped-qi"));
+            context.getInput().pressKey(options -> options.keyToggleGui);
             System.out.println("CLONE_GAMEPLAY_REGRESSION_PASS");
         }
     }

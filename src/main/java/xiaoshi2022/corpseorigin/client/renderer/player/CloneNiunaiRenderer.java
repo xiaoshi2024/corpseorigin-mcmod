@@ -43,6 +43,10 @@ public final class CloneNiunaiRenderer
         return instance;
     }
 
+    // This pass shares the body's state, so preserve its name but never submit a second entity label.
+    @Override public void postRenderPass(com.geckolib.renderer.base.RenderPassInfo<AvatarRenderState> info,
+                                        net.minecraft.client.renderer.SubmitNodeCollector collector) {}
+
     @Override
     public AvatarRenderState fillRenderState(PlayerGeoAnimatable animatable, CloneAvatarEntity entity,
                                             AvatarRenderState state, float partialTick) {

@@ -39,6 +39,10 @@ public class CharacterShellStateComponent extends ShellStateComponent {
 
     public int getCloneInnerCapacity() { return Math.max(0, data.getIntOr("CloneInnerCapacity", 0)); }
 
+    public int getEvolutionLevel() {
+        return xiaoshi2022.corpseorigin.skill.EvolutionManager.getLevel(data.getIntOr("Earned", 0));
+    }
+
     public boolean hasLearnedSkill(String path) {
         return data.getList("LearnedSkills").map(list -> list.stream().anyMatch(tag ->
                 tag instanceof net.minecraft.nbt.StringTag text

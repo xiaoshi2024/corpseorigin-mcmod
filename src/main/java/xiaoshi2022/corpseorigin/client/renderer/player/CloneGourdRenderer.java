@@ -50,6 +50,12 @@ public final class CloneGourdRenderer
         return instance;
     }
 
+    @Override public boolean shouldShowName(CloneAvatarEntity entity, double distanceSquared) { return false; }
+
+    /** The owning body submits entity labels; an attached model must never submit them again. */
+    @Override public void postRenderPass(com.geckolib.renderer.base.RenderPassInfo<AvatarRenderState> info,
+                                        net.minecraft.client.renderer.SubmitNodeCollector collector) {}
+
     @Override
     public long getInstanceId(PlayerGeoAnimatable animatable, CloneAvatarEntity entity) {
         return Long.MIN_VALUE + 17;

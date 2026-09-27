@@ -86,8 +86,14 @@ public final class CloneWeaponArts {
         var target = caster.getTarget();
         var stack = caster.getMainHandItem();
         if (target == null || !isWeapon(stack) || !xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.canHit(caster, target)
-                || !caster.hasLineOfSight(target) || caster.distanceToSqr(target) > Math.pow(preferredRange(stack), 2)) return;
+                || !caster.hasLineOfSight(target) || caster.distanceToSqr(target) > Math.pow(attackRange(caster,stack), 2)) return;
         fire(caster, stack);
+    }
+
+    public static double attackRange(CloneAvatarEntity caster, ItemStack stack) {
+        if(stack.is(ModItems.JUQUE_TW)||stack.is(ModItems.BLOOD_WING_BLADE))
+            return JuQueBeamEntity.rangeFor(stack.is(ModItems.JUQUE_TW)?JuQue.BEAM_LEVEL:4,JuQueBeamEntity.powerFor(caster));
+        return preferredRange(stack);
     }
 
     public static int fire(CloneAvatarEntity caster, ItemStack stack) {
