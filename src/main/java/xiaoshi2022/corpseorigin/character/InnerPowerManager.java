@@ -1,7 +1,11 @@
 package xiaoshi2022.corpseorigin.character;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
+import xiaoshi2022.corpseorigin.growth.FreeGrowth;
+import xiaoshi2022.corpseorigin.growth.SurvivalGrowth;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.skill.EvolutionManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,7 +14,7 @@ import java.util.UUID;
 /**
  * 内力管理器 - 服务端运行时内力值管理（不持久化，上线即满）。
  * <p>
- * 内力上限由角色的 {@link ICharacter#getMaxInnerPower()} 决定：
+ * 内力上限来自角色天赋、自由路线传承，或无内力角色的天级觉醒：
  * <ul>
  *   <li>0 → 无气感，不能施放需要内力的技能；气血不能代替内力。</li>
  *   <li>> 0 → 有内力，技能激活时消耗内力，每 tick 自然回复</li>
@@ -43,8 +47,28 @@ public final class InnerPowerManager {
      * 获取玩家内力上限。
      */
     public static int getMaxInnerPower(ServerPlayer player) {
-        return Math.max(CharacterManager.getInstance().getPlayerCharacter(player).getMaxInnerPower(),
-                xiaoshi2022.corpseorigin.growth.FreeGrowth.innerPower(player));
+        return InnerPowerRules.capacity(
+                CharacterManager.getInstance().getPlayerCharacter(player).getMaxInnerPower(),
+                FreeGrowth.innerPower(player), evolutionLevel(player));
+    }
+
+    private static int evolutionLevel(ServerPlayer player) {
+        return EvolutionManager.getLevel(PlayerCharacterData.get(player).getEarnedPoints(player.getUUID()));
+    }
+
+    /** Covers level-ups and existing saves; the role-scoped notice never refills qi every tick. */
+    private static void awakenAtTianTier(ServerPlayer player) {
+        var character = CharacterManager.getInstance().getPlayerCharacter(player);
+        if (!InnerPowerRules.awakensAtTier(character.getMaxInnerPower(),
+                FreeGrowth.innerPower(player), evolutionLevel(player))) return;
+        var journal = player.getAttachedOrCreate(SurvivalGrowth.JOURNAL);
+        String key = "tian_qi_notice:" + character.getId();
+        if (journal.getBooleanOr(key, false)) return;
+        var copy = journal.copy();
+        copy.putBoolean(key, true);
+        player.setAttached(SurvivalGrowth.JOURNAL, copy);
+        reset(player);
+        player.sendSystemMessage(Component.translatable("message.corpseorigin.inner_power.tian_awakened"));
     }
 
     /**
@@ -121,6 +145,7 @@ public final class InnerPowerManager {
      * 服务端每 tick 调用：自然回复内力。
      */
     public static void tickRegen(ServerPlayer player) {
+        awakenAtTianTier(player);
         if (xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.isChanneling(player)) return;
         if (xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager.hasActiveAPS(player)) return;
         int max = getMaxInnerPower(player);

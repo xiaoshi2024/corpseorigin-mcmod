@@ -126,6 +126,14 @@ tasks.register('growthRulesTest', JavaExec) {
 }
 tasks.named('check') { dependsOn growthRulesTest }
 
+tasks.register('innerPowerRulesTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.character.InnerPowerRulesTest'
+}
+
+tasks.named('check') { dependsOn innerPowerRulesTest }
+
 tasks.register('organSlotTest', JavaExec) {
     dependsOn physicsTestClasses
     classpath = sourceSets.physicsTest.runtimeClasspath

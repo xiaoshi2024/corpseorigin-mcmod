@@ -50,6 +50,7 @@ public final class FreeGrowth {
     }
     public static void awaken(ServerPlayer p){
         if(!isFree(p))return;
+        if(InnerPowerManager.getMaxInnerPower(p)>0)return;
         var journal=p.getAttachedOrCreate(SurvivalGrowth.JOURNAL).copy();
         if(journal.getBooleanOr("inner_power",false))return;
         journal.putBoolean("inner_power",true);p.setAttached(SurvivalGrowth.JOURNAL,journal);
@@ -59,7 +60,7 @@ public final class FreeGrowth {
     public static int innerPower(ServerPlayer p){
         if(!isFree(p)
                 ||!p.getAttachedOrCreate(SurvivalGrowth.JOURNAL).getBooleanOr("inner_power",false))return 0;
-        return 100+20*(EvolutionManager.getLevel(PlayerCharacterData.get(p).getEarnedPoints(p.getUUID()))-1);
+        return InnerPowerRules.growthCapacity(EvolutionManager.getLevel(PlayerCharacterData.get(p).getEarnedPoints(p.getUUID())));
     }
     public static void opportunity(ServerPlayer p,String event){
         if(!isFree(p))return;

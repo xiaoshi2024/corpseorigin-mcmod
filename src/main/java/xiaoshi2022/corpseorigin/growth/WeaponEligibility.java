@@ -19,8 +19,7 @@ public final class WeaponEligibility {
                 ||PlayerCharacterData.get(p).hasLearned(p.getUUID(),"tiangang_zhi");
     }
     public static boolean innerInheritance(ServerPlayer p){
-        return CharacterManager.getInstance().getPlayerCharacter(p).getMaxInnerPower()>0
-                ||p.getAttachedOrCreate(SurvivalGrowth.JOURNAL).getBooleanOr("inner_power",false);
+        return InnerPowerManager.getMaxInnerPower(p)>0;
     }
     /** 当前是不是"尸兄身体" —— 尸棍这类尸兄专属兵器的持有资格，也是尸棍招式的资格。 */
     public static boolean corpseBody(ServerPlayer p){

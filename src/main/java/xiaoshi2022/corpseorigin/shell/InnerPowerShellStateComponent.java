@@ -2,8 +2,6 @@ package xiaoshi2022.corpseorigin.shell;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
-import xiaoshi2022.corpseorigin.character.CharacterManager;
-import xiaoshi2022.corpseorigin.character.ICharacter;
 import xiaoshi2022.corpseorigin.character.InnerPowerManager;
 
 /**
@@ -52,8 +50,7 @@ public class InnerPowerShellStateComponent extends ShellStateComponent {
 
     @Override
     public void applyTo(ServerPlayer player) {
-        ICharacter character = CharacterManager.getInstance().getPlayerCharacter(player);
-        int max = character.getMaxInnerPower();
+        int max = InnerPowerManager.getMaxInnerPower(player);
         if (max <= 0) {
             // 无内力角色：清空缓存
             InnerPowerManager.set(player, 0);

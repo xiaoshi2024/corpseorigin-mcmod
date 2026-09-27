@@ -24,8 +24,8 @@ import java.util.UUID;
  *   <li>10 级起所有角色获得原版创造式飞行许可（双击空格起飞）；</li>
  *   <li>实际升空（abilities.flying）期间才计费，悬停站立不扣 —— 每 tick 自然回 1/20 内力，
  *       飞行每秒净耗 1 点，神·前期自由角色 280 内力可连续飞约 4 分半，等级越高上限越大；</li>
- *   <li>自由路线（凡人 / 尸兄）到 10 级还没开气感的，自动解锁内力（{@link FreeGrowth#awaken}）；</li>
- *   <li>天生无内力的角色（如部分尸兄角色）走气血兜底：每秒扣气血储备，
+ *   <li>无内力角色已在天级（9 级）统一觉醒气感，由 {@link InnerPowerManager} 管理；</li>
+ *   <li>保留无内力状态的气血兜底：每秒扣气血储备，
  *       内力/气血任一见底都会强制落地 + 缓降，资源回到安全线以上才能再起飞，防止空槽抖动；</li>
  *   <li>翅膀飞行（{@link OrganEnergy}）激活时完全让位：同一时间只有一套系统计费，
  *       翅膀飞不了了只要神级资格还在，mayfly 不收走，无缝切回内力计费。</li>
@@ -101,10 +101,6 @@ public final class ShenFlight {
 
         boolean allowed = isAllowed(player);
 
-        // 自由路线（凡人 / 尸兄）到神级自动开气感；awaken 自带"已解锁就跳过"判断
-        if (allowed && FreeGrowth.isFree(player)) {
-            FreeGrowth.awaken(player);
-        }
         // 首次解锁给一条提示（持久化标记，不刷屏）
         if (allowed) {
             noticeOnce(player);
