@@ -21,7 +21,7 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
     private final int red, green, blue;
 
     public static final class State extends EntityRenderState {
-        float yaw, pitch, power, time;
+        float yaw, pitch, power, time, roll;
     }
 
     protected CrescentBeamRenderer(EntityRendererProvider.Context context, int red, int green, int blue) {
@@ -32,9 +32,15 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
 
     @Override public State createRenderState() { return new State(); }
 
+    @Override protected net.minecraft.world.phys.AABB getBoundingBoxForCulling(T entity) {
+        // Include the entire rotated mist so large tips remain visible when the center is off-screen.
+        return super.getBoundingBoxForCulling(entity).inflate(1.4*JuQueBeamEntity.openingScale(entity.getPower()));
+    }
+
     @Override public void extractRenderState(T entity, State state, float partialTick) {
         super.extractRenderState(entity, state, partialTick);
         state.power=entity.getPower();
+        state.roll=entity.getSlashRoll();
         state.time=entity.tickCount+partialTick;
         var direction=entity.getDeltaMovement();
         if(direction.lengthSqr()<1.0E-8) direction=entity.getLookAngle();
@@ -48,9 +54,10 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
         poses.pushPose();
         poses.mulPose(Axis.YP.rotationDegrees(state.yaw));
         poses.mulPose(Axis.XP.rotationDegrees(state.pitch));
-        poses.mulPose(Axis.ZP.rotationDegrees(-25));
+        poses.mulPose(Axis.ZP.rotationDegrees(state.roll));
+        poses.mulPose(Axis.YP.rotationDegrees(90));
         // Spread the two tips more than the blade depth: stronger qi opens wider rather than just inflating.
-        poses.scale(1+.15F*state.power,1+1.2F*state.power,1);
+        poses.scale(JuQueBeamEntity.bladeScale(state.power),JuQueBeamEntity.openingScale(state.power),1+2*state.power);
         collector.submitCustomGeometry(poses,RenderTypes.entityTranslucentEmissive(TEXTURE),(pose,out)-> {
             // Shape the same translucent mist used by QiAuraRenderer into a moving volume.
             // Multiple flowing sheets fade on every boundary; there is no opaque blade or silhouette image.
@@ -68,15 +75,7 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
 
     /** Round the central ridge while preserving the swept-back silhouette and sharp endpoints. */
     public static float crescentX(float height, float across) {
-        float t=Math.min(1,Math.abs(height));
-        // A normalized smooth absolute value gives both halves the same tangent at the center.
-        // Unlike a circular outline, the flanks still narrow into long, pointed wings.
-        float rounding=.42F;
-        float sweep=((float)Math.sqrt(t*t+rounding*rounding)-rounding)
-                / ((float)Math.sqrt(1+rounding*rounding)-rounding);
-        float outer=WIDTH*(1.08F*(1-sweep)+.10F*sweep*(1-sweep)-.55F);
-        float inner=WIDTH*(-.55F+.43F*(1-t*t));
-        return inner+(outer-inner)*across;
+        return JuQueBeamEntity.crescentX(height,across);
     }
 
     private void vertex(VertexConsumer out, PoseStack.Pose pose, float height, float across, int layer, float time) {

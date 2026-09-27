@@ -66,13 +66,13 @@ public final class ModEntities {
     // ✅ 新增剑气实体
     public static final EntityType<BloodWingBeamEntity> BLOOD_WING_BEAM = register(
             "blood_wing_beam", EntityType.Builder.<BloodWingBeamEntity>of(BloodWingBeamEntity::new, MobCategory.MISC)
-                    .sized(.5f, .5f).clientTrackingRange(8).updateInterval(1));
+                    .sized(.5f, .5f).clientTrackingRange(32).updateInterval(1));
 
     public static final EntityType<JuQueBeamEntity> JUQUE_BEAM = register(
             "juque_beam",
             EntityType.Builder.<JuQueBeamEntity>of(JuQueBeamEntity::new, MobCategory.MISC)
                     .sized(0.5f, 0.5f)
-                    .clientTrackingRange(4)
+                    .clientTrackingRange(32)
                     .updateInterval(1)
     );
 

@@ -23,6 +23,15 @@ public final class BalanceRulesTest {
         check(BalanceRules.discoveryLevel(3,true)==9);
         check(BalanceRules.discoveryLevel(12,true)==12);
         check(BalanceRules.discoveryLevel(2,false)==2);
+        check(BalanceRules.swordQiDamage(10000,100,15,15)==25);
+        check(BalanceRules.swordQiDamage(10000,100,1,15)==10);
+        check(BalanceRules.swordQiDamage(10000,100,20,1)<=60.001f);
+        check(BalanceRules.swordQiDamage(10,100,1,15)<2);
+        check(BalanceRules.swordQiDamage(10,100,15,15)==10);
+        check(BalanceRules.swordQiDamage(100,100,15,0)==100);
+        check(BalanceRules.swordQiDamage(Float.NaN,100,15,15)==0);
+        check(BalanceRules.swordQiDamage(Float.POSITIVE_INFINITY,100,15,15)==0);
+        check(BalanceRules.swordQiDamage(-10,100,15,15)==0);
         System.out.println("Balance rules: "+checks+" regression checks passed.");
     }
     private static void check(boolean result){checks++;if(!result)throw new AssertionError("Balance check "+checks);}

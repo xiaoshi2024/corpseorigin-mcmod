@@ -11,7 +11,6 @@ import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
 
 /** Uses the existing flying qi collision/trail, with owner-safe lifesteal hits. */
 public final class BloodWingBeamEntity extends JuQueBeamEntity {
-    private float hitDamage = 4;
 
     public BloodWingBeamEntity(EntityType<? extends Projectile> type, Level level) {
         super(type, level);
@@ -20,7 +19,6 @@ public final class BloodWingBeamEntity extends JuQueBeamEntity {
     @Override
     public BloodWingBeamEntity setDamage(float damage) {
         super.setDamage(damage);
-        hitDamage = damage;
         return this;
     }
 
@@ -43,7 +41,7 @@ public final class BloodWingBeamEntity extends JuQueBeamEntity {
                 && hit.getEntity() instanceof LivingEntity target
                 && ChapterCombat.canHit(owner, target)) {
             float before = target.getHealth();
-            if (target.hurtServer(level, damageSources().indirectMagic(this, owner), hitDamage)) {
+            if (target.hurtServer(level, damageSources().mobProjectile(this, owner), damageFor(owner,target))) {
                 // 命中吸血对分身同样生效（生物 heal 是通用能力）
                 owner.heal(Math.min(4, Math.max(0, before - target.getHealth()) * .4f));
             }

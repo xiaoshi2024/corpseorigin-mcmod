@@ -28,6 +28,8 @@ public class JuQueBeamEntity extends Projectile {
             SynchedEntityData.defineId(JuQueBeamEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Float> POWER =
             SynchedEntityData.defineId(JuQueBeamEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Float> SLASH_ROLL =
+            SynchedEntityData.defineId(JuQueBeamEntity.class, EntityDataSerializers.FLOAT);
 
     private double travelled;
     private int knockbackStrength = 1;
@@ -49,6 +51,7 @@ public class JuQueBeamEntity extends Projectile {
         builder.define(DAMAGE, 4.0F);
         builder.define(LEVEL, 1);
         builder.define(POWER, 0F);
+        builder.define(SLASH_ROLL, -25F);
     }
 
     public JuQueBeamEntity setLevel(int level) {
@@ -58,8 +61,10 @@ public class JuQueBeamEntity extends Projectile {
 
     @Override public void setOwner(Entity owner) {
         super.setOwner(owner);
-        if (!level().isClientSide() && owner instanceof LivingEntity living)
+        if (!level().isClientSide() && owner instanceof LivingEntity living) {
             entityData.set(POWER, powerFor(living));
+            entityData.set(SLASH_ROLL,(random.nextBoolean()?1:-1)*(12+random.nextFloat()*33));
+        }
     }
 
     /** Snapshot the firing body's own progression and current attack, including equipment and buffs. */
@@ -78,9 +83,78 @@ public class JuQueBeamEntity extends Projectile {
     }
 
     public float getPower() { return entityData.get(POWER); }
+    public float getSlashRoll() { return entityData.get(SLASH_ROLL); }
+
+    private static int combatLevel(LivingEntity entity) {
+        if(entity instanceof net.minecraft.server.level.ServerPlayer player)
+            return xiaoshi2022.corpseorigin.skill.EvolutionManager.getLevel(
+                    xiaoshi2022.corpseorigin.character.PlayerCharacterData.get(player).getEarnedPoints(player.getUUID()));
+        if(entity instanceof CloneAvatarEntity clone){
+            var body=clone.getBodyState();
+            var character=body==null?null:body.getComponent().as(xiaoshi2022.corpseorigin.shell.CharacterShellStateComponent.class);
+            return character==null?1:character.getEvolutionLevel();
+        }
+        return 0;
+    }
+
+    protected float damageFor(LivingEntity owner, LivingEntity target) {
+        return xiaoshi2022.corpseorigin.growth.BalanceRules.swordQiDamage(
+                entityData.get(DAMAGE),target.getMaxHealth(),combatLevel(owner),combatLevel(target));
+    }
 
     public static double rangeFor(int techniqueLevel, float power) {
-        return 1.5*(12+Math.clamp(techniqueLevel,1,20))*(1+2*Math.clamp(power,0,1));
+        return 1.5*(12+Math.clamp(techniqueLevel,1,20))*(2+10*Math.clamp(power,0,1));
+    }
+
+    public static float openingScale(float power) { return 2+10*Math.clamp(power,0,1); }
+    public static float bladeScale(float power) { return 2+4*Math.clamp(power,0,1); }
+
+    /** Shared visual/collision profile, including the rounded ridge and pointed tips. */
+    public static float crescentX(float height,float across) {
+        float t=Math.min(1,Math.abs(height)),rounding=.42F;
+        float sweep=((float)Math.sqrt(t*t+rounding*rounding)-rounding)
+                /((float)Math.sqrt(1+rounding*rounding)-rounding);
+        float outer=1.2F*(1.08F*(1-sweep)+.10F*sweep*(1-sweep)-.55F);
+        float inner=1.2F*(-.55F+.43F*(1-t*t));
+        return inner+(outer-inner)*across;
+    }
+
+    private HitResult findQiHit(Vec3 start,Vec3 motion) {
+        HitResult nearest=ProjectileUtil.getHitResultOnMoveVector(this,this::canHitEntity);
+        Vec3 end=nearest.getType()==HitResult.Type.BLOCK?nearest.getLocation():start.add(motion);
+        double best=nearest.getType()==HitResult.Type.MISS?Double.POSITIVE_INFINITY:start.distanceToSqr(nearest.getLocation());
+        Vec3 direction=motion.lengthSqr()>1.0E-8?motion.normalize():getLookAngle();
+        var rotation=new org.joml.Quaternionf().rotationY((float)Math.atan2(direction.x,direction.z))
+                .rotateX((float)-Math.asin(Math.clamp(direction.y,-1,1)))
+                .rotateZ((float)Math.toRadians(getSlashRoll())).rotateY((float)Math.PI/2);
+        float power=getPower(),width=bladeScale(power),height=openingScale(power);
+        var candidates=level().getEntities(this,getBoundingBox().expandTowards(motion).inflate(1.4*height),
+                e->e instanceof LivingEntity&&canHitEntity(e));
+        // Sweep overlapping sections of the actual crescent, rather than a huge enclosing cube.
+        // Motion sweeps prevent fast beams from jumping over targets between ticks.
+        for(var target:candidates){
+            var visible=level().clip(new net.minecraft.world.level.ClipContext(start,target.getBoundingBox().getCenter(),
+                    net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,this));
+            if(visible.getType()!=HitResult.Type.MISS)continue;
+            for(int section=0;section<=32;section++){
+                float h=-1+section/16F;
+                var local=rotation.transform(new org.joml.Vector3f(crescentX(h,.5F)*width,h*1.25F*height,0));
+                var offset=new Vec3(local.x,local.y,local.z);
+                double radius=.55+(crescentX(h,1)-crescentX(h,0))*width*.5;
+                var bounds=target.getBoundingBox().inflate(radius);
+                Vec3 from=start.add(offset),to=end.add(offset);
+                var hit=bounds.contains(from)?java.util.Optional.of(from):bounds.clip(from,to);
+                if(hit.isEmpty())continue;
+                double distance=from.distanceToSqr(hit.get());
+                if(distance<best){best=distance;nearest=new EntityHitResult(target,hit.get());}
+            }
+        }
+        return nearest;
+    }
+
+    @Override public boolean shouldRenderAtSqrDistance(double distance) {
+        double visibleRange=getMaxRange()+32;
+        return distance<visibleRange*visibleRange;
     }
 
     public double getMaxRange() { return rangeFor(entityData.get(LEVEL),getPower()); }
@@ -120,12 +194,14 @@ public class JuQueBeamEntity extends Projectile {
         // would obscure its crescent and leave an unrelated red cloud behind the player's sword.
 
         // 移动和碰撞检测
-        HitResult hitResult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
-
-        if (hitResult.getType() != HitResult.Type.MISS) {
-            this.onHit(hitResult);
-            this.discard();
-            return;
+        // Only the server decides impacts. A client's owner/tracking data can arrive after the projectile.
+        if(!level().isClientSide()) {
+            HitResult hitResult = findQiHit(pos,motion);
+            if (hitResult.getType() != HitResult.Type.MISS) {
+                this.onHit(hitResult);
+                this.discard();
+                return;
+            }
         }
 
         this.setPos(pos.add(motion));
@@ -138,8 +214,14 @@ public class JuQueBeamEntity extends Projectile {
 
     @Override
     protected boolean canHitEntity(Entity entity) {
-        return super.canHitEntity(entity) && (!(getOwner() instanceof xiaoshi2022.corpseorigin.entity.CloneAvatarEntity clone)
-                || !(entity instanceof LivingEntity target) || xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.canHit(clone, target));
+        Entity owner=getOwner();
+        // Vanilla's leftOwner guard expires once the tiny projectile center leaves the caster.
+        // The growing crescent can still overlap them, so exclude the caster for the entire flight.
+        if(entity==owner || owner!=null && owner.isPassengerOfSameVehicle(entity))return false;
+        if(owner!=null && entity instanceof OwnerBound owned && owned.isOwnedBy(owner))return false;
+        if(owner instanceof LivingEntity caster && entity instanceof LivingEntity target
+                && !xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.canHit(caster,target))return false;
+        return super.canHitEntity(entity);
     }
 
     @Override
@@ -151,8 +233,8 @@ public class JuQueBeamEntity extends Projectile {
 
         if (!this.level().isClientSide() && owner instanceof LivingEntity livingOwner) {
             if (target instanceof LivingEntity livingTarget && target != owner) {
-                float damage = this.getEntityData().get(DAMAGE);
-                DamageSource damageSource = this.damageSources().indirectMagic(this, livingOwner);
+                float damage = damageFor(livingOwner,livingTarget);
+                DamageSource damageSource = this.damageSources().mobProjectile(this, livingOwner);
 
                 livingTarget.hurt(damageSource, damage);
                 if (this.knockbackStrength > 0) {
@@ -188,6 +270,8 @@ public class JuQueBeamEntity extends Projectile {
         this.ticksExisted = input.getIntOr("TicksExisted", 0);
         float power=input.getFloatOr("Power",0);
         entityData.set(POWER,Float.isFinite(power)?Math.clamp(power,0,1):0);
+        float roll=input.getFloatOr("SlashRoll",-25);
+        entityData.set(SLASH_ROLL,Float.isFinite(roll)?Math.clamp(roll,-45,45):-25);
         double distance=input.getDoubleOr("Travelled",0);
         travelled=Double.isFinite(distance)?Math.clamp(distance,0,getMaxRange()):0;
     }
@@ -199,6 +283,7 @@ public class JuQueBeamEntity extends Projectile {
         output.putInt("Level", this.getEntityData().get(LEVEL));
         output.putInt("TicksExisted", this.ticksExisted);
         output.putFloat("Power",getPower());
+        output.putFloat("SlashRoll",getSlashRoll());
         output.putDouble("Travelled",travelled);
     }
 
