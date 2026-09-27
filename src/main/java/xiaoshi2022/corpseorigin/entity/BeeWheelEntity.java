@@ -50,6 +50,49 @@ public class BeeWheelEntity extends SkillConstructEntity {
         itemAnimation(player,"shoot");
     }
     public Entity ropeOwner(){return level().getEntity(entityData.get(OWNER_ID));}
+    public void initializeClone(CloneAvatarEntity clone) {
+        entityData.set(OWNER_ID, clone.getId());
+        launcher = clone.getMainHandItem();
+    }
+    /** AI reels a successfully hooked enemy in, then returns the actual wheel to its holder. */
+    public void tickCloneWheel(ServerLevel level, CloneAvatarEntity clone) {
+        phaseTicks++;
+        Vec3 hand = clone.getEyePosition().add(0, -.25, 0);
+        if (!clone.getMainHandItem().is(xiaoshi2022.corpseorigin.registry.ModItems.BEE_WHEEL)
+                || hand.distanceToSqr(position()) > RANGE * RANGE || phaseTicks > 80)
+            entityData.set(PHASE, RETURNING);
+        if (phase() == RETURNING) {
+            Vec3 delta = hand.subtract(position());
+            if (delta.lengthSqr() < 2) { discard(); return; }
+            setPos(position().add(delta.normalize().scale(Math.min(2, delta.length()))));
+            return;
+        }
+        if (phase() == TARGET) {
+            if (!(level.getEntity(targetId) instanceof LivingEntity target) || !ChapterCombat.canHit(clone, target)
+                    || !clone.hasLineOfSight(target)) { entityData.set(PHASE, RETURNING); return; }
+            setPos(target.getBoundingBox().getCenter());
+            Vec3 pull = hand.subtract(position());
+            if (pull.lengthSqr() < 4) { entityData.set(PHASE, RETURNING); return; }
+            target.setDeltaMovement(target.getDeltaMovement().scale(.5).add(pull.normalize().scale(.45)));
+            target.hurtMarked = true;
+            return;
+        }
+        Vec3 start = position(), end = start.add(getDeltaMovement());
+        if (!level.hasChunkAt(BlockPos.containing(end))) { entityData.set(PHASE, RETURNING); return; }
+        var wall = level.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        var hit = ProjectileUtil.getEntityHitResult(this, start, wall.getLocation(), new AABB(start, end).inflate(.35),
+                e -> e instanceof LivingEntity living && !(e instanceof SkillConstructEntity)
+                        && ChapterCombat.canHit(clone, living), start.distanceToSqr(wall.getLocation()));
+        if (hit != null) {
+            var target = (LivingEntity) hit.getEntity();
+            target.hurtServer(level, clone.damageSources().mobAttack(clone), 28);
+            targetId = target.getUUID();
+            setPos(hit.getLocation());
+            setDeltaMovement(Vec3.ZERO);
+            entityData.set(PHASE, TARGET);
+        } else if (wall.getType() != HitResult.Type.MISS) entityData.set(PHASE, RETURNING);
+        else setPos(end);
+    }
     public int phase(){return entityData.get(PHASE);}
     public static BeeWheelEntity active(ServerPlayer player){
         var entity=findOwned(player,"bee_wheel");

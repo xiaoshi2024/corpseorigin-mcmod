@@ -19,14 +19,14 @@ public class VampireBatEntity extends Bat {
     private int remaining = LIFETIME;
     private int biteOffset;
     public VampireBatEntity(EntityType<? extends Bat> type, Level level) { super(type, level); }
-    public void setOwner(ServerPlayer player) { owner = player.getUUID(); }
+    public void setOwner(net.minecraft.world.entity.LivingEntity player) { owner = player.getUUID(); }
     public void setBiteSlot(int slot) { biteOffset = Math.floorMod(slot, 5) * 10; }
     public static net.minecraft.world.entity.ai.attributes.AttributeSupplier.Builder createVampireAttributes() {
         return Bat.createAttributes().add(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH, 20);
     }
     @Override protected void customServerAiStep(ServerLevel level) {
-        if (--remaining <= 0 || owner == null || !(level.getEntity(owner) instanceof ServerPlayer player)
-                || !player.isAlive() || !"k".equals(CharacterManager.getInstance().getPlayerCharacterId(player))) {
+        if (--remaining <= 0 || owner == null || !(level.getEntity(owner) instanceof LivingEntity player)
+                || !player.isAlive() || !"k".equals(ChapterCombat.actorRole(player))) {
             discard(); return;
         }
         setResting(false);
@@ -44,7 +44,7 @@ public class VampireBatEntity extends Bat {
             float damage = (float) Math.clamp(player.getAttributeValue(
                     net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE) * .35, 6, 14);
             var source = new net.minecraft.world.damagesource.DamageSource(
-                    damageSources().playerAttack(player).typeHolder(), this, player);
+                    ChapterCombat.attackSource(player).typeHolder(), this, player);
             if (target.hurtServer(level, source, damage)) {
                 player.heal(Math.min(2, Math.max(0, health-target.getHealth())*.35f));
                 target.addEffect(new net.minecraft.world.effect.MobEffectInstance(

@@ -7,6 +7,11 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.model.geom.EntityModelSet;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.model.geom.PartPose;
+import net.minecraft.client.model.geom.builders.CubeListBuilder;
+import net.minecraft.client.model.geom.builders.LayerDefinition;
+import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.player.PlayerModel;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -48,6 +53,7 @@ import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
 import xiaoshi2022.corpseorigin.client.CorpseOriginClient;
 import xiaoshi2022.corpseorigin.client.model.ExoskeletonModel;
 import xiaoshi2022.corpseorigin.client.model.clone.VoxelModel;
+import xiaoshi2022.corpseorigin.client.render.layer.CloneRoleGeoLayer;
 import xiaoshi2022.corpseorigin.client.render.layer.ExoskeletonRenderLayer;
 import xiaoshi2022.corpseorigin.client.renderer.CloneArmorSupport;
 import xiaoshi2022.corpseorigin.client.skin.clone.ClientSkinCache;
@@ -90,10 +96,20 @@ public class CloneChamberRenderer
     private final BlockModelResolver modelResolver;
     private final PlayerModel cloneModel;
     private final VoxelModel voxelModel;
+    /** 仓内克隆人的翅膀 / 鱼鳃（和实体上的 EvolutionPartsLayer 同一套手绘模型） */
+    private final ModelPart leftWingPart;
+    private final ModelPart rightWingPart;
+    private final ModelPart gillsPart;
     @Nullable
     private final ExoskeletonModel exoskeletonModel;
     @Nullable
     private HumanoidArmorLayer<AvatarRenderState, PlayerModel, PlayerModel> armorLayer;
+
+    private static ModelPart bakeExtraPart(String name, CubeListBuilder cubes) {
+        MeshDefinition mesh = new MeshDefinition();
+        mesh.getRoot().addOrReplaceChild(name, cubes, PartPose.ZERO);
+        return LayerDefinition.create(mesh, 16, 16).bakeRoot().getChild(name);
+    }
 
     public CloneChamberRenderer(BlockEntityRendererProvider.Context context) {
         this.modelResolver = context.blockModelResolver();
@@ -102,6 +118,22 @@ public class CloneChamberRenderer
         this.cloneModel = new PlayerModel(
                 entityModels.bakeLayer(ModModelLayers.CLONE_DUMMY), false);
         this.voxelModel = new VoxelModel(this.cloneModel);
+
+        // 角色专属外观用的 GEO 渲染器由 CloneAvatarRenderer 在实体渲染器注册时创建
+        // （客户端启动就会建，早于任何仓渲染）；这里不重复初始化。
+
+        this.leftWingPart = bakeExtraPart("wing_left", CubeListBuilder.create()
+                .addBox(1, 1, 2.5f, 13, 1, 1).addBox(3, 2, 2.7f, 10, 4, .6f)
+                .addBox(4, 6, 2.7f, 7, 4, .6f).addBox(5, 10, 2.7f, 4, 3, .6f));
+        this.rightWingPart = bakeExtraPart("wing_right", CubeListBuilder.create()
+                .addBox(-14, 1, 2.5f, 13, 1, 1).addBox(-13, 2, 2.7f, 10, 4, .6f)
+                .addBox(-11, 6, 2.7f, 7, 4, .6f).addBox(-9, 10, 2.7f, 4, 3, .6f));
+        CubeListBuilder fins = CubeListBuilder.create();
+        for (int i = 0; i < 3; i++) {
+            fins.addBox(-4.8f, 2 + i * 2, -1, .8f, 1, 4);
+            fins.addBox(4, 2 + i * 2, -1, .8f, 1, 4);
+        }
+        this.gillsPart = bakeExtraPart("gills", fins);
 
         ExoskeletonModel baked = null;
         try {
@@ -407,23 +439,8 @@ public class CloneChamberRenderer
         } else {
             pose.translate(VOXEL_X, VOXEL_Y, VOXEL_Z);
         }
-        pose.scale(-1.0F, -1.0F, 1.0F);
-        pose.translate(0.0F, MODEL_LIFT, 0.0F);
 
-        if (!grown) {
-            this.voxelModel.completeness = Math.min(1.0F, progress);
-
-            collector.submitCustomGeometry(
-                    pose,
-                    RenderTypes.entityCutout(skin.body().texturePath()),
-                    (poseEntry, consumer) -> {
-                        PoseStack local = new PoseStack();
-                        local.last().pose().set(poseEntry.pose());
-                        local.last().normal().set(poseEntry.normal());
-                        this.voxelModel.render(local, consumer,
-                                state.lightCoords, OverlayTexture.NO_OVERLAY, -1);
-                    });
-        } else {
+        if (grown) {
             AvatarRenderState avatar = new AvatarRenderState();
             avatar.skin = skin;
             avatar.lightCoords = state.lightCoords;
@@ -442,6 +459,38 @@ public class CloneChamberRenderer
             avatar.legsEquipment = equipmentAt(state.equipment, 2);
             avatar.feetEquipment = equipmentAt(state.equipment, 3);
 
+            // ★ 角色专属外观（小金刚尸兄 / 开胃奶背挂……）：与实体上是同一套 GEO 管线，
+            //   只是数据源换成 CloneBodySyncS2C 的缓存（培育中的身体还没成为实体）。
+            //   ⚠️ 必须排在下面的 scale(-1,-1,1) 之前：GEO 走的是原版实体渲染那套变换，
+            //   自己会做翻转与位移，多翻一次模型就反了。
+            boolean roleGeo = false;
+            try {
+                CloneRoleGeoLayer.extractForChamber(state.bodyUuid, avatar, 0.0F);
+                // 背挂长在背后，先提交（深度测试会让身体正常挡住它）
+                roleGeo = !CloneRoleGeoLayer.replacesBody(avatar)
+                        && CloneRoleGeoLayer.submitReplacing(avatar, pose, collector, camera);
+            } catch (Throwable t) {
+                CorpseOrigin.LOGGER.warn("[CorpseOrigin] 仓内角色外观渲染失败，已回退原样: {}", t.toString());
+            }
+            if (roleGeo) {
+                pose.scale(-1.0F, -1.0F, 1.0F);
+                pose.translate(0.0F, MODEL_LIFT, 0.0F);
+                this.cloneModel.setupAnim(avatar);
+                CloneRoleGeoLayer.submitOrgans(avatar, pose, collector, this.cloneModel);
+                // 整身替换型：原版克隆人 / 盔甲 / 尸兄零件全部不画（与玩家侧同一取舍）
+                pose.popPose();
+                return;
+            }
+
+            pose.scale(-1.0F, -1.0F, 1.0F);
+            pose.translate(0.0F, MODEL_LIFT, 0.0F);
+
+            if (CloneRoleGeoLayer.replacesBody(avatar)) {
+                this.cloneModel.setupAnim(avatar);
+                CloneRoleGeoLayer.submitOrgans(avatar, pose, collector, this.cloneModel);
+                pose.popPose();
+                return;
+            }
             collector.submitModel(
                     this.cloneModel,
                     avatar,
@@ -469,6 +518,29 @@ public class CloneChamberRenderer
                 armor.submit(pose, collector, state.lightCoords, avatar, 0.0F, 0.0F);
             }
             renderCorpseParts(pose, collector, state, avatar);
+            // ★ 葫芦（葫芦小金刚）：挂在 body 骨骼上，所以要在模型姿势摆好之后、
+            //   用"模型根"空间的 pose 提交（与实体上的层走同一条锚点变换）。
+            //   先显式摆一次姿势，保证读到的 body 骨骼位置就是这一帧的。
+            this.cloneModel.setupAnim(avatar);
+            CloneRoleGeoLayer.submitBackMount(avatar, pose, collector, this.cloneModel, camera);
+            CloneRoleGeoLayer.submitGourd(avatar, pose, collector, this.cloneModel, camera);
+            CloneRoleGeoLayer.submitOrgans(avatar, pose, collector, this.cloneModel);
+        } else {
+            pose.scale(-1.0F, -1.0F, 1.0F);
+            pose.translate(0.0F, MODEL_LIFT, 0.0F);
+
+            this.voxelModel.completeness = Math.min(1.0F, progress);
+
+            collector.submitCustomGeometry(
+                    pose,
+                    RenderTypes.entityCutout(skin.body().texturePath()),
+                    (poseEntry, consumer) -> {
+                        PoseStack local = new PoseStack();
+                        local.last().pose().set(poseEntry.pose());
+                        local.last().normal().set(poseEntry.normal());
+                        this.voxelModel.render(local, consumer,
+                                state.lightCoords, OverlayTexture.NO_OVERLAY, -1);
+                    });
         }
 
         pose.popPose();
@@ -644,6 +716,40 @@ public class CloneChamberRenderer
                     state.lightCoords,
                     OverlayTexture.NO_OVERLAY,
                     null);
+        }
+
+        // 翅膀 / 鱼鳃：角色外观包按身体 UUID 缓存；锚在 cloneModel.body 上手绘
+        if (corpse && state.bodyUuid != null) {
+            CorpseOriginClient.ClientCloneBody cloneBody =
+                    CorpseOriginClient.cloneBodyDataCache.get(state.bodyUuid);
+            if (cloneBody != null) {
+                boolean wings = cloneBody.hasTrait("wings");
+                boolean hasGills = cloneBody.hasTrait("gills");
+                if (wings || hasGills) {
+                    this.cloneModel.setupAnim(avatar);
+                    pose.pushPose();
+                    this.cloneModel.body.translateAndRotate(pose);
+                    ClientLevel clientLevel = Minecraft.getInstance().level;
+                    float time = clientLevel == null ? 0F : clientLevel.getGameTime();
+                    if (wings) {
+                        float flap = (float) Math.sin(time * .12) * .35f;
+                        this.leftWingPart.yRot = .35f + flap;
+                        this.rightWingPart.yRot = -.35f - flap;
+                        collector.order(2).submitModelPart(this.leftWingPart, pose,
+                                RenderTypes.entityCutout(CorpseOrigin.id("textures/entity/chapter_blood.png")),
+                                state.lightCoords, OverlayTexture.NO_OVERLAY, null);
+                        collector.order(2).submitModelPart(this.rightWingPart, pose,
+                                RenderTypes.entityCutout(CorpseOrigin.id("textures/entity/chapter_blood.png")),
+                                state.lightCoords, OverlayTexture.NO_OVERLAY, null);
+                    }
+                    if (hasGills) {
+                        collector.order(2).submitModelPart(this.gillsPart, pose,
+                                RenderTypes.entityCutout(CorpseOrigin.id("textures/entity/chapter_xuanwu.png")),
+                                state.lightCoords, OverlayTexture.NO_OVERLAY, null);
+                    }
+                    pose.popPose();
+                }
+            }
         }
 
         if (redEye > 0) {

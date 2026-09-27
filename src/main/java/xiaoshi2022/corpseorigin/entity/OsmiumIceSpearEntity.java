@@ -40,7 +40,9 @@ public class OsmiumIceSpearEntity extends Entity implements GeoEntity {
     @Override public void tick() {
         super.tick(); if (level().isClientSide()) return;
         Vec3 next = position().add(velocity); AABB sweep = getBoundingBox().expandTowards(velocity).inflate(.35);
-        for (LivingEntity target : level().getEntitiesOfClass(LivingEntity.class, sweep, e -> e.isAlive() && !e.getUUID().equals(owner))) {
+        for (LivingEntity target : level().getEntitiesOfClass(LivingEntity.class, sweep, e -> e.isAlive() && !e.getUUID().equals(owner)
+                && (!(((ServerLevel)level()).getEntity(owner) instanceof LivingEntity caster)
+                    || xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.canHit(caster,e)))) {
             target.hurtServer((ServerLevel) level(), ownerSource(target), 12f); discard(); return;
         }
         setPos(next); if (++age > 50 || !level().noCollision(getBoundingBox())) discard();

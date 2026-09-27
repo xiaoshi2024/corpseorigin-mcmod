@@ -13,6 +13,13 @@ import net.minecraft.world.phys.Vec3;
 /** Shared targeting for the corpse-nest chapter: walls, pets and teams are respected. */
 public final class ChapterCombat {
     private ChapterCombat() {}
+    public static String actorRole(LivingEntity actor) {
+        return actor instanceof xiaoshi2022.corpseorigin.entity.CloneAvatarEntity clone ? clone.getBodyRole()
+                : actor instanceof ServerPlayer player ? xiaoshi2022.corpseorigin.character.CharacterManager.getInstance().getPlayerCharacterId(player) : "";
+    }
+    public static net.minecraft.world.damagesource.DamageSource attackSource(LivingEntity actor) {
+        return actor instanceof Player player ? actor.damageSources().playerAttack(player) : actor.damageSources().mobAttack(actor);
+    }
     /** Visible release even when the directional attack misses; never invent a target. */
     public static void emptyCast(ServerPlayer player) {
         player.swing(net.minecraft.world.InteractionHand.MAIN_HAND,true);
@@ -23,12 +30,26 @@ public final class ChapterCombat {
         QiEffects.cloud((ServerLevel)player.level(),start.lerp(end,.5),0xaaccee,1.1f,10);
     }
     public static boolean canHit(ServerPlayer owner, LivingEntity target) {
+        if (target instanceof Player player && !owner.canHarmPlayer(player)) return false;
+        return canHit((LivingEntity) owner, target);
+    }
+    /**
+     * 任意生物版本：克隆分身放技能时用这套 —— 创造/旁观、同盟、主人的仆从都不可命中。
+     * 玩家专属的"队伍友军伤害规则"（{@link ServerPlayer#canHarmPlayer}）仍走上面的重载。
+     */
+    public static boolean canHit(LivingEntity owner, LivingEntity target) {
+        if (owner instanceof ServerPlayer player && target instanceof Player other && !player.canHarmPlayer(other)) return false;
+        if (owner instanceof xiaoshi2022.corpseorigin.entity.CloneAvatarEntity clone && !clone.canAttackWithSkills(target)) return false;
         if (target instanceof xiaoshi2022.corpseorigin.entity.OwnerBound body && body.isOwnedBy(owner)) return false;
         if (target == owner || !target.isAlive() || target.isSpectator() || owner.isAlliedTo(target)) return false;
-        if (target instanceof Player player && (player.isCreative() || !owner.canHarmPlayer(player))) return false;
+        if (target instanceof Player player && player.isCreative()) return false;
         return !(target instanceof TamableAnimal pet && pet.isOwnedBy(owner));
     }
     public static LivingEntity aim(ServerPlayer player, double range) {
+        return aim((LivingEntity) player, range);
+    }
+    /** 任意生物版本的视线索敌：克隆分身放指向性招式时用。 */
+    public static LivingEntity aim(LivingEntity player, double range) {
         Vec3 start = player.getEyePosition();
         Vec3 end = start.add(player.getLookAngle().scale(range));
         var wall = player.level().clip(new ClipContext(start, end, ClipContext.Block.COLLIDER,
@@ -49,11 +70,21 @@ public final class ChapterCombat {
      * 命中后沿受击方向击退。粒子由各招式自行绘制。返回命中数。
      */
     public static int arc(ServerPlayer player, Vec3 dir, double range, double halfAngleDeg, float damage, double push) {
+        return arc((LivingEntity) player, dir, range, halfAngleDeg, damage, push);
+    }
+    /**
+     * 任意生物版本的扇形近战：伤害来源在玩家时仍是 playerAttack，
+     * 克隆分身这类生物走 mobAttack（药水 / 击退 / 仇恨都按生物攻击处理）。
+     */
+    public static int arc(LivingEntity player, Vec3 dir, double range, double halfAngleDeg, float damage, double push) {
         Vec3 face = new Vec3(dir.x, 0, dir.z);
         if (face.lengthSqr() < 1.0E-6) face = Vec3.directionFromRotation(0, player.getYRot());
         face = face.normalize();
         double minDot = Math.cos(Math.toRadians(halfAngleDeg));
         var level = (ServerLevel) player.level();
+        var damageSource = player instanceof ServerPlayer serverPlayer
+                ? serverPlayer.damageSources().playerAttack(serverPlayer)
+                : player.damageSources().mobAttack(player);
         int hit = 0;
         for (var t : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(range),
                 target -> canHit(player, target) && player.hasLineOfSight(target))) {
@@ -61,7 +92,7 @@ public final class ChapterCombat {
             double dist = Math.sqrt(to.x * to.x + to.z * to.z);
             if (dist > range || dist < .05) continue;
             if (to.multiply(1 / dist, 0, 1 / dist).dot(face) < minDot) continue;
-            if (t.hurtServer(level, player.damageSources().playerAttack(player), damage)) {
+            if (t.hurtServer(level, damageSource, damage)) {
                 t.push(to.x / dist * push, .32, to.z / dist * push);
                 t.hurtMarked = true;
                 hit++;

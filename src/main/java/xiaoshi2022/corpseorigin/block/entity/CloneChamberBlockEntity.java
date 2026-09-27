@@ -928,7 +928,17 @@ public class CloneChamberBlockEntity extends BlockEntity implements TransferredB
         if (this.clone == null) {
             return;
         }
-        CorpseNetwork.broadcastBodyCorpseSync(level, ownerPlayer(level, this.ownerUuid()),
-                this.bodyUuid(), ShellState.corpseTagOf(this.clone.getComponent()));
+        ServerPlayer owner = ownerPlayer(level, this.ownerUuid());
+        ShellStateComponent component = this.clone.getComponent();
+        CorpseNetwork.broadcastBodyCorpseSync(level, owner,
+                this.bodyUuid(), ShellState.corpseTagOf(component));
+        // 角色外观（翅膀/鱼鳃等附加骨骼）走另一条通道
+        CharacterShellStateComponent character = component == null
+                ? null : component.as(CharacterShellStateComponent.class);
+        CorpseNetwork.broadcastCloneBodySync(level, owner, this.bodyUuid(),
+                character == null ? null : character.getCharacterId(),
+                character == null ? null : character.getEvolutionParts(),
+                character != null && character.isInfant(),
+                character == null ? 0 : character.getBearArms());
     }
 }

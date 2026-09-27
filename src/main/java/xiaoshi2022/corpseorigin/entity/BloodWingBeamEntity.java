@@ -1,7 +1,6 @@
 package xiaoshi2022.corpseorigin.entity;
 
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -25,19 +24,28 @@ public final class BloodWingBeamEntity extends JuQueBeamEntity {
         return this;
     }
 
+    /**
+     * 主人可以是玩家，也可以是拿着血翼黑刃的克隆分身；命中规则两边统一走
+     * {@link ChapterCombat#canHit(LivingEntity, LivingEntity)}（本体 / 创造 / 同盟 / 尸族互斥）。
+     */
     @Override
     protected boolean canHitEntity(Entity entity) {
-        return super.canHitEntity(entity) && getOwner() instanceof ServerPlayer player
-                && entity instanceof LivingEntity living && ChapterCombat.canHit(player, living);
+        return super.canHitEntity(entity)
+                && getOwner() instanceof LivingEntity owner
+                && entity instanceof LivingEntity living
+                && ChapterCombat.canHit(owner, living);
     }
 
     @Override
     protected void onHitEntity(EntityHitResult hit) {
-        if (level() instanceof ServerLevel level && getOwner() instanceof ServerPlayer player
-                && hit.getEntity() instanceof LivingEntity target && ChapterCombat.canHit(player, target)) {
+        if (level() instanceof ServerLevel level
+                && getOwner() instanceof LivingEntity owner
+                && hit.getEntity() instanceof LivingEntity target
+                && ChapterCombat.canHit(owner, target)) {
             float before = target.getHealth();
-            if (target.hurtServer(level, damageSources().indirectMagic(this, player), hitDamage)) {
-                player.heal(Math.min(4, Math.max(0, before - target.getHealth()) * .4f));
+            if (target.hurtServer(level, damageSources().indirectMagic(this, owner), hitDamage)) {
+                // 命中吸血对分身同样生效（生物 heal 是通用能力）
+                owner.heal(Math.min(4, Math.max(0, before - target.getHealth()) * .4f));
             }
             discard();
         }

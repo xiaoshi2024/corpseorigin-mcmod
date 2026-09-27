@@ -40,6 +40,7 @@
     "SkillPoseMixin",
     "AvatarRendererMixin",
     "ClientPlayerGeoAnimatableMixin",
+    "CloneAvatarGeoAnimatableMixin",
     "ClientPlayerInteractionManagerMixin",
     "ClientPlayerShellMixin",
     "EntityMixin",

@@ -1,0 +1,17 @@
+sourceSets {
+    cloneTest {
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+    }
+}
+loom {
+    mods { corpseorigin_clone_test { sourceSet sourceSets.cloneTest } }
+    runs {
+        cloneTest {
+            client()
+            source sourceSets.cloneTest
+            runDir 'run/clone-regression'
+            vmArg '-Dfabric.client.gametest'
+        }
+    }
+}

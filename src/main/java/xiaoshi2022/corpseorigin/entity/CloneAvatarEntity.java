@@ -6,9 +6,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.BossEvent;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemStackWithSlot;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
@@ -28,22 +32,30 @@ import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import org.jetbrains.annotations.Nullable;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
 import xiaoshi2022.corpseorigin.character.LongYou;
+import xiaoshi2022.corpseorigin.character.MortalCharacter;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.shell.CharacterShellStateComponent;
 import xiaoshi2022.corpseorigin.shell.ShellBodyIndex;
 import xiaoshi2022.corpseorigin.shell.ShellState;
 import xiaoshi2022.corpseorigin.shell.TransferredBody;
+import xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState;
+import xiaoshi2022.corpseorigin.skill.chapter.CloneCaster;
+import xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities;
 import xiaoshi2022.corpseorigin.skill.longyou.InfrasoundFieldHandler;
 
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -87,6 +99,10 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     private static final EntityDataAccessor<Boolean> DATA_CORPSE_CLONE =
             SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.BOOLEAN);
 
+    /** 同步：这具分身是不是已晋升的 BOSS（客户端可据此做表现，血条本身走 BossEvent） */
+    private static final EntityDataAccessor<Boolean> DATA_BOSS =
+            SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.BOOLEAN);
+
     /** 同步：这具身体穿的盔甲（头/胸/腿/脚），客户端渲染要用 */
     private static final EntityDataAccessor<ItemStack> DATA_HEAD_EQUIPMENT =
             SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.ITEM_STACK);
@@ -101,6 +117,56 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     @Nullable
     private ShellState bodyState;
 
+    /** 这具身体保存时的角色 id（由 {@link #syncBodyCorpseData} 刷新，技能 AI 直接读） */
+    private String bodyRole = MortalCharacter.ID;
+    /** 这具身体保存时是不是金刚婴儿形态 */
+    private boolean bodyInfant;
+    /** 这具身体保存时的巨熊臂层数 */
+    private int bodyBearArms;
+
+    /** BOSS 血条（仅服务端持有，原版自动同步给看见它的玩家） */
+    @Nullable
+    private ServerBossEvent bossEvent;
+    private final Set<ServerPlayer> bossViewers = new java.util.HashSet<>();
+    private boolean organFlying;
+    private boolean bodySnapshotApplied;
+    public boolean isOrganFlying() { return organFlying; }
+    public void setOrganFlying(boolean flying) { organFlying = flying; }
+
+    /** Attack skills use the same owner/team filtering as melee and projectiles. */
+    public boolean canAttackWithSkills(LivingEntity target) {
+        UUID owner = getOwnerUuid();
+        if (owner != null && owner.equals(target.getUUID())) return false;
+        if (target instanceof CloneAvatarEntity other && owner != null && owner.equals(other.getOwnerUuid())) return false;
+        if (target instanceof net.minecraft.world.entity.TamableAnimal pet && owner != null
+                && pet.getOwnerReference() != null && owner.equals(pet.getOwnerReference().getUUID())) return false;
+        return !(target instanceof ZombieKin) && !ZombieKin.isZombieKing(target);
+    }
+
+    @Override public boolean canBreatheUnderwater() {
+        return CloneOrganEffects.hasTrait(this, "gills") || super.canBreatheUnderwater();
+    }
+    @Override public boolean causeFallDamage(double distance, float multiplier, DamageSource source) {
+        return !CloneOrganEffects.hasTrait(this, "wings") && super.causeFallDamage(distance, multiplier, source);
+    }
+    @Override public boolean doHurtTarget(ServerLevel level, net.minecraft.world.entity.Entity target) {
+        if (target instanceof LivingEntity living && !xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.canHit(this, living)) return false;
+        float before = target instanceof LivingEntity living ? living.getHealth() : 0;
+        boolean hit = super.doHurtTarget(level, target);
+        if (hit && target instanceof LivingEntity living && CloneOrganEffects.hasTrait(this, "vampire"))
+            heal(Math.min(4, Math.max(0, before - living.getHealth()) * .25F));
+        return hit;
+    }
+
+    private void persistOrganState() {
+        if (!bodySnapshotApplied || bodyState == null) return;
+        var character = bodyState.getComponent().as(CharacterShellStateComponent.class);
+        if (character != null) {
+            character.setEvolutionParts(getAttachedOrCreate(xiaoshi2022.corpseorigin.growth.SurvivalGrowth.BODY));
+            character.setCreatureState(getAttachedOrCreate(CreatureAbilities.INFANT), getAttachedOrCreate(CreatureAbilities.BEAR_ARMS));
+        }
+    }
+
     /** 派生出这具分身的克隆仓（位置）：夺舍后旧身体要还回那座仓，才能来回换 */
     @Nullable
     private BlockPos sourceChamberPos;
@@ -112,6 +178,41 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         for (EquipmentSlot slot : ShellState.EQUIPMENT_SLOTS) {
             this.setDropChance(slot, 2.0F);
         }
+        // ★ 允许捡起地上的模组武器（白名单见 CloneWeaponArts#isWeapon）：
+        //   走原版 Mob 的拾取 → 自动装备 → 死亡必掉流程，主手武器也会在被击杀时掉回地上
+        this.setCanPickUpLoot(true);
+        this.setDropChance(EquipmentSlot.MAINHAND, 2.0F);
+    }
+
+    /** 只捡模组战斗武器，杂物 / 药剂 / 方块一律无视，避免克隆体扫光地面。 */
+    @Override
+    public boolean wantsToPickUp(ServerLevel level, ItemStack stack) {
+        // MobPickupMixin restricts ordinary mobs to lamps; clones have their own weapon allowlist.
+        return canHoldItem(stack) && CloneWeaponArts.isWeapon(stack);
+    }
+
+    @Override
+    protected boolean canReplaceCurrentItem(ItemStack candidate, ItemStack current, EquipmentSlot slot) {
+        if (slot == EquipmentSlot.MAINHAND && CloneWeaponArts.isWeapon(candidate)) {
+            if (current.isEmpty() || !CloneWeaponArts.isWeapon(current)) return true;
+            // Keep an equipped weapon stable; identical replacements are accepted only when healthier.
+            if (candidate.is(current.getItem())) return candidate.getDamageValue() < current.getDamageValue();
+        }
+        return super.canReplaceCurrentItem(candidate, current, slot);
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        long shield = getAttachedOrCreate(xiaoshi2022.corpseorigin.growth.SurvivalGrowth.BODY)
+                .getLongOr("clone_niunai_shield_until", 0);
+        if (shield > level.getGameTime() && source.getEntity() instanceof LivingEntity attacker) {
+            var towards = attacker.position().subtract(position()).multiply(1, 0, 1).normalize();
+            if (getLookAngle().multiply(1, 0, 1).normalize().dot(towards) > .3) {
+                level.playSound(null, blockPosition(), SoundEvents.SHIELD_BLOCK.value(), SoundSource.HOSTILE, 1, .7F);
+                return false;
+            }
+        }
+        return super.hurtServer(level, source, amount);
     }
 
     @Override
@@ -122,6 +223,7 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         builder.define(DATA_ACTIVE, false);
         builder.define(DATA_PROGRESS, 0.0F);
         builder.define(DATA_CORPSE_CLONE, false);
+        builder.define(DATA_BOSS, false);
         builder.define(DATA_HEAD_EQUIPMENT, net.minecraft.world.item.ItemStack.EMPTY);
         builder.define(DATA_CHEST_EQUIPMENT, net.minecraft.world.item.ItemStack.EMPTY);
         builder.define(DATA_LEGS_EQUIPMENT, net.minecraft.world.item.ItemStack.EMPTY);
@@ -166,6 +268,10 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
 
     public void setActive(boolean active) {
         this.entityData.set(DATA_ACTIVE, active);
+        if (!active && this.organFlying) {
+            this.organFlying = false;
+            this.setNoGravity(false);
+        }
     }
 
     public boolean isActive() {
@@ -184,11 +290,13 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
 
     @Nullable
     public ShellState getBodyState() {
+        this.persistOrganState();
         return this.bodyState;
     }
 
     public void setBodyState(@Nullable ShellState bodyState) {
         this.bodyState = bodyState;
+        this.bodySnapshotApplied = false;
         this.syncEquipment(bodyState);
         this.syncBodyCorpseData(true);
     }
@@ -230,9 +338,50 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
             this.setHealth(this.getMaxHealth());
         }
 
+        // 角色快照：决定分身的附加骨骼（翅膀/鱼鳃）、角色专属外观（小金刚 / 开胃奶背挂……）与技能 AI
+        this.persistOrganState();
+        net.minecraft.nbt.CompoundTag evolutionParts = this.applyRoleSnapshot();
+        // 带着角色醒过来的分身（龙右身体 / 夺舍还仓的旧身体）直接就是 BOSS 战：
+        // 只在首次 setBodyState（healWhenInherited=true）时晋升，周期重发与重载都不走这里。
+        if (healWhenInherited && !this.isBoss() && this.hasCharacterRole()) {
+            this.promoteToBoss();
+        }
+
         if (this.level() instanceof ServerLevel level) {
             CorpseNetwork.broadcastBodyCorpseSync(level, this.ownerPlayer(), this.getUUID(), tag);
+            CorpseNetwork.broadcastCloneBodySync(level, this.ownerPlayer(), this.getUUID(),
+                    this.bodyRole, evolutionParts, this.bodyInfant, this.bodyBearArms);
         }
+    }
+
+    /**
+     * 从当前身体快照推导"这具身体是谁、会什么"，并把渲染 / AI 要用的附件挂到分身实体上。
+     * <p>
+     * {@code ROLE} / {@code INFANT} / {@code BEAR_ARMS} 这些附件都是 {@code syncWith(all)} 的，
+     * 挂上去客户端就能读到（摆臂姿势、角色专属外观、器官层都按实体取值）；
+     * 但它们<b>不随实体存档</b>，所以读取存档（旧存档 / 区块重载）之后必须重设一次。
+     *
+     * @return 这具身体保存的进化部件（翅膀 / 鱼鳃），供调用方一并广播
+     */
+    private net.minecraft.nbt.CompoundTag applyRoleSnapshot() {
+        CharacterShellStateComponent character = this.bodyState == null ? null
+                : this.bodyState.getComponent().as(CharacterShellStateComponent.class);
+        // 直接按身体自己的身份来：培育出来的克隆体已被清成凡人 —— 外观就是凡人（含附加骨骼）。
+        // 想要"带着某个角色外观"的身体，把旧身体存进克隆仓即可
+        // （那条路存的是玩家现场数据，身份与外观都在）。
+        this.bodyRole = character == null ? MortalCharacter.ID : character.getCharacterId();
+        this.bodyInfant = character != null && character.isInfant();
+        this.bodyBearArms = character == null ? 0 : character.getBearArms();
+        net.minecraft.nbt.CompoundTag evolutionParts = character == null
+                ? new net.minecraft.nbt.CompoundTag() : character.getEvolutionParts();
+        this.setAttached(ChapterActorState.ROLE, this.bodyRole);
+        this.setAttached(CreatureAbilities.INFANT, this.bodyInfant);
+        this.setAttached(CreatureAbilities.BEAR_ARMS, this.bodyBearArms);
+        if (!this.bodySnapshotApplied) {
+            this.setAttached(xiaoshi2022.corpseorigin.growth.SurvivalGrowth.BODY, evolutionParts.copy());
+            this.bodySnapshotApplied = true;
+        }
+        return this.getAttachedOrCreate(xiaoshi2022.corpseorigin.growth.SurvivalGrowth.BODY);
     }
 
     /** 把身体自带的盔甲同步给客户端（渲染克隆人时用） */
@@ -323,14 +472,24 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(2, new CorpseMeleeGoal());
-        this.goalSelector.addGoal(4, new WaterAvoidingRandomStrollGoal(this, 1.0));
-        this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 8.0F));
-        this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+        this.goalSelector.addGoal(1, new CloneFlightGoal(this));
+        // 手持剑气类武器时优先远程游走（巨阙 / 血翼黑刃）
+        this.goalSelector.addGoal(2, new CloneWeaponGoal(this));
+        this.goalSelector.addGoal(3, new CorpseMeleeGoal());
+        // 有角色的分身按角色放技能（鬼棍 / 黑白二将 / 龙右通用爪击）
+        this.goalSelector.addGoal(4, new CloneSkillGoal(this));
+        this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0));
+        this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
+        this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
 
-        // 索敌同样只在尸兄克隆体上启用
+        // 索敌：尸兄克隆体天生猎杀活人；BOSS 分身（含被下界之星晋升的干净人形）也会主动开战
         this.targetSelector.addGoal(0, new CorpseRetaliateGoal());
         this.targetSelector.addGoal(1, new CorpseTargetGoal());
+    }
+
+    /** 这具分身会不会主动战斗：尸兄克隆体，或已晋升的 BOSS。 */
+    public boolean isHostile() {
+        return this.isCorpseClone() || this.isBoss();
     }
 
     /** 这具身体是不是尸兄克隆体（尸水培育出来的） */
@@ -409,10 +568,10 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         CorpseMeleeGoal() { super(CloneAvatarEntity.this, 1.2D, true); }
 
         @Override
-        public boolean canUse() { return isCorpseClone() && super.canUse(); }
+        public boolean canUse() { return isHostile() && super.canUse(); }
 
         @Override
-        public boolean canContinueToUse() { return isCorpseClone() && super.canContinueToUse(); }
+        public boolean canContinueToUse() { return isHostile() && super.canContinueToUse(); }
     }
 
     private final class CorpseRetaliateGoal extends HurtByTargetGoal {
@@ -421,14 +580,14 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         @Override
         public boolean canUse() {
             // 尸王打了也不还手：尸族对龙右只有敬畏（尸兄克隆体也一样）
-            return isCorpseClone()
+            return isHostile()
                     && !ZombieKin.isZombieKing(getLastHurtByMob())
                     && super.canUse();
         }
     }
 
     /**
-     * 尸兄克隆体的索敌：抓"活人"。
+     * 尸兄克隆体 / BOSS 分身的索敌：抓"活人"。
      * <p>
      * ⚠️ 原来是 {@code NearestAttackableTargetGoal<Player>} —— 只认玩家，
      * 所以村民从它面前走过完全不会触发，看着就不像尸兄。
@@ -441,24 +600,25 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         }
 
         @Override
-        public boolean canUse() { return isCorpseClone() && super.canUse(); }
+        public boolean canUse() { return isHostile() && super.canUse(); }
 
         @Override
-        public boolean canContinueToUse() { return isCorpseClone() && super.canContinueToUse(); }
+        public boolean canContinueToUse() { return isHostile() && super.canContinueToUse(); }
     }
 
     /**
-     * 尸兄要吃的东西：玩家、村民（含流浪商人），以及护村的铁傀儡。
+     * 尸兄 / BOSS 分身要打的东西：玩家、村民（含流浪商人），以及护村的铁傀儡。
      * <p>
      * 刻意不放进牛羊猪这类动物 —— 原版僵尸也不猎食它们，尸兄吃的是"人"。
-     * 尸族（{@link ZombieKin}）也排除掉，免得克隆体去啃同类。
+     * 尸族（{@link ZombieKin}）排除掉，免得克隆体去啃同类；自己的本体永远排除，
+     * 哪怕玩家先动手（分身可以被任何玩家攻击，但不会把本体选作目标）。
      */
-    private static boolean isPrey(LivingEntity target) {
-        if (target instanceof ZombieKin) {
+    private boolean isPrey(LivingEntity target) {
+        if (target instanceof ZombieKin || ZombieKin.isZombieKing(target)) {
             return false;
         }
-        // 尸王：尸族不敢对他不敬，尸兄克隆体也一样
-        if (ZombieKin.isZombieKing(target)) {
+        UUID owner = this.getOwnerUuid();
+        if (owner != null && owner.equals(target.getUUID())) {
             return false;
         }
         return target instanceof Player
@@ -496,6 +656,10 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
                 .add(Attributes.MAX_HEALTH, 20.0)
                 .add(Attributes.MOVEMENT_SPEED, MOVEMENT_SPEED)
                 .add(Attributes.ATTACK_DAMAGE, 1.0)
+                // 护甲 / 韧性 / 击退抗性先给 0 打底：晋升 BOSS 时直接改基础值，不用重建属性表
+                .add(Attributes.ARMOR, 0.0)
+                .add(Attributes.ARMOR_TOUGHNESS, 0.0)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.0)
                 .add(Attributes.FOLLOW_RANGE, 16.0);
     }
 
@@ -535,6 +699,162 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         }
     }
 
+    // ==================== BOSS 化 ====================
+
+    /** 精英角色梯队（与 {@code SkillRework.attributes} 的口径一致）：更厚的血甲与更高攻击。 */
+    private static final Set<String> ELITE_ROLES = Set.of(
+            "heixiaofei", "tushu", "zhaoritian", "chongmu", "jingang_zb",
+            "guigun_corpse", "hei_wuchou", "bai_wusheng");
+
+    public boolean isBoss() {
+        return this.entityData.get(DATA_BOSS);
+    }
+
+    /** 这具身体保存时的角色 id（技能 AI / 渲染按角色选用）。 */
+    public String getBodyRole() {
+        return this.bodyRole;
+    }
+
+    /** 这具分身保存的是不是一个有角色（非凡人）的身体。 */
+    public boolean hasCharacterRole() {
+        return this.bodyRole != null && !MortalCharacter.ID.equals(this.bodyRole);
+    }
+
+    /**
+     * 把这具分身晋升为 BOSS：精英属性 + 回满血 + 顶部 BOSS 血条 + 全域索敌。
+     * <p>
+     * 两个来源：苏醒时自带角色（{@link #syncBodyCorpseData} 自动晋升），
+     * 或本体手持下界之星右键手动晋升（{@link #mobInteract}）。
+     */
+    public void promoteToBoss() {
+        if (this.level().isClientSide() || this.isBoss()) {
+            return;
+        }
+        this.applyBossAttributes();
+        this.setHealth(this.getMaxHealth());
+        this.entityData.set(DATA_BOSS, true);
+        this.initBossEvent();
+        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                SoundEvents.WARDEN_ROAR, SoundSource.HOSTILE, 1.4f, 0.75f);
+    }
+
+    /** BOSS 数值：精英角色 80/17/12，普通角色 55/12/8，被手动晋升的凡人 40/9/6。 */
+    private void applyBossAttributes() {
+        double health;
+        double damage;
+        double armor;
+        double toughness;
+        if (this.hasCharacterRole()) {
+            if (ELITE_ROLES.contains(this.bodyRole)) {
+                health = 80.0;
+                damage = 17.0;
+                armor = 12.0;
+                toughness = 8.0;
+            } else {
+                health = 55.0;
+                damage = 12.0;
+                armor = 8.0;
+                toughness = 4.0;
+            }
+        } else {
+            health = 40.0;
+            damage = 9.0;
+            armor = 6.0;
+            toughness = 2.0;
+        }
+        setBase(Attributes.MAX_HEALTH, health);
+        setBase(Attributes.ATTACK_DAMAGE, damage);
+        setBase(Attributes.ARMOR, armor);
+        setBase(Attributes.ARMOR_TOUGHNESS, toughness);
+        setBase(Attributes.KNOCKBACK_RESISTANCE, 0.5);
+        setBase(Attributes.MOVEMENT_SPEED, MOVEMENT_SPEED * 1.15);
+        setBase(Attributes.FOLLOW_RANGE, 40.0);
+    }
+
+    private void setBase(Holder<Attribute> attribute, double value) {
+        AttributeInstance instance = this.getAttribute(attribute);
+        if (instance != null) {
+            instance.setBaseValue(value);
+        }
+    }
+
+    /** 创建（或重载后重建）BOSS 血条。 */
+    private void initBossEvent() {
+        if (this.bossEvent != null) {
+            return;
+        }
+        ServerBossEvent event = new ServerBossEvent(UUID.randomUUID(),
+                Component.translatable("boss.corpseorigin.clone_avatar", this.getDisplayName()),
+                BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.PROGRESS);
+        event.setProgress(Math.max(0F, Math.min(1F, this.getHealth() / this.getMaxHealth())));
+        this.bossEvent = event;
+        this.bossViewers.forEach(event::addPlayer);
+    }
+
+    @Override
+    public void startSeenByPlayer(ServerPlayer player) {
+        super.startSeenByPlayer(player);
+        this.bossViewers.add(player);
+        if (this.bossEvent != null) {
+            this.bossEvent.addPlayer(player);
+        }
+        // 玩家刚加载到这个分身：点对点补发一次身体外观（尸兄骨骼 + 角色骨骼），
+        // 不等每 100 tick 的广播，避免走近时先看到一具"光秃秃"的身体。
+        if (this.bodyState != null) {
+            var character = this.bodyState.getComponent().as(CharacterShellStateComponent.class);
+            CorpseNetwork.sendCloneBodySyncTo(player, this.getUUID(), this.bodyRole,
+                    character == null ? null : character.getEvolutionParts(),
+                    this.bodyInfant, this.bodyBearArms);
+            net.minecraft.nbt.CompoundTag corpseTag =
+                    ShellState.corpseTagOf(this.bodyState.getComponent());
+            CorpseNetwork.sendBodyCorpseSyncTo(player, this.getUUID(), corpseTag);
+        }
+    }
+
+    @Override
+    public void stopSeenByPlayer(ServerPlayer player) {
+        super.stopSeenByPlayer(player);
+        this.bossViewers.remove(player);
+        if (this.bossEvent != null) {
+            this.bossEvent.removePlayer(player);
+        }
+    }
+
+    /**
+     * 本体手持下界之星右键分身：消耗一颗下界之星，把它晋升为 BOSS。
+     * <p>
+     * 只有本体能晋升自己的分身；创造模式不消耗物品。
+     */
+    @Override
+    public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (!this.level().isClientSide() && stack.is(Items.NETHER_STAR) && !this.isBoss()
+                && this.isActive()) {
+            UUID owner = this.getOwnerUuid();
+            if (owner != null && owner.equals(player.getUUID())) {
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+                this.promoteToBoss();
+                player.sendSystemMessage(Component.translatable(
+                        "message.corpseorigin.clone_boss.promoted", this.getDisplayName()));
+                return InteractionResult.CONSUME;
+            }
+            if (owner != null) {
+                player.sendSystemMessage(Component.translatable(
+                        "message.corpseorigin.clone_boss.not_owner"));
+                return InteractionResult.CONSUME;
+            }
+        }
+        return super.mobInteract(player, hand);
+    }
+
+    /** BOSS 分身被击杀时额外掉落经验。 */
+    @Override
+    protected int getBaseExperienceReward(ServerLevel level) {
+        return this.isBoss() ? 50 : super.getBaseExperienceReward(level);
+    }
+
     // ==================== 持久化 ====================
 
     @Override
@@ -548,9 +868,11 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         }
         out.putBoolean("Active", this.isActive());
         out.putFloat("Progress", this.getProgress());
+        out.putBoolean("Boss", this.isBoss());
         if (this.sourceChamberPos != null) {
             out.putLong("SourceChamber", this.sourceChamberPos.asLong());
         }
+        this.persistOrganState();
         if (this.bodyState != null) {
             this.bodyState.writeTo(out.child("BodyState"));
         }
@@ -559,6 +881,9 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     @Override
     protected void readAdditionalSaveData(ValueInput in) {
         super.readAdditionalSaveData(in);
+        // Flight belongs to the current pursuit goal, never to a saved no-gravity flag.
+        this.organFlying = false;
+        this.setNoGravity(false);
         this.abandonedBody = in.getBooleanOr("AbandonedBody", false);
         this.entityData.set(ABANDONED_SKIN, in.getStringOr("AbandonedSkin", ""));
         in.getString("Owner").ifPresent(s -> {
@@ -575,9 +900,18 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         //   （连带低等尸兄属性）和身上这套盔甲重新推出来。直接写字段的话，重进世界后
         //   尸兄克隆体会退回干净人形的属性、盔甲也不会回到槽位上。
         //   这里传 false：重载只恢复属性，不顺手回血。
+        this.bodySnapshotApplied = false;
         this.bodyState = in.child("BodyState").map(ShellState::read).orElse(null);
         this.syncEquipment(this.bodyState);
+        // ★ ROLE / 异兽能力这些附件不随实体存档，重载后必须按身体快照重设一次，
+        //   否则分身会"丢掉角色身份"——角色专属外观（小金刚 / 开胃奶背挂）与摆臂姿势都不再渲染
+        this.applyRoleSnapshot();
         this.syncBodyCorpseData(false);
+        // ★ 重载只重建血条，不重发属性（基础值已随实体存档）、不回血
+        if (in.getBooleanOr("Boss", false)) {
+            this.entityData.set(DATA_BOSS, true);
+            this.initBossEvent();
+        }
     }
 
     // ==================== 消失处理 ====================
@@ -616,6 +950,13 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         super.remove(reason);
         if (this.level().isClientSide() || !(this.level() instanceof ServerLevel level)) return;
 
+        // BOSS 血条与技能状态随实体一起清掉，别给世界留下空血条/残留声场
+        if (this.bossEvent != null) {
+            this.bossEvent.removeAllPlayers();
+            this.bossEvent = null;
+        }
+        CloneCaster.clear(this.getUUID());
+
         ServerPlayer owner = this.ownerPlayer();
         if (owner != null) {
             ShellBodyIndex.remove(owner, new ShellBodyIndex.Entry(
@@ -642,6 +983,13 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     public void tick() {
         super.tick();
         if (abandonedBody) return;
+
+        // BOSS 血条进度实时跟随血量
+        if (this.bossEvent != null && !this.level().isClientSide()) {
+            this.bossEvent.setProgress(Math.max(0F,
+                    Math.min(1F, this.getHealth() / this.getMaxHealth())));
+        }
+
         if (this.level().isClientSide() || !this.isActive()) {
             return;
         }
@@ -653,6 +1001,9 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
 
         // 龙右身体：像尸王那样自己放次声波
         this.tickInfrasound();
+        CloneOrganEffects.tick(this);
+        CloneWeaponArts.tick(this);
+        xiaoshi2022.corpseorigin.skill.chapter.CloneRoleSkills.tick(this);
 
         BlockPos pos = this.blockPosition();
         long chunk = ChunkPos.pack(pos);
@@ -694,6 +1045,7 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
 
     @Override
     public ShellState snapshot() {
+        this.persistOrganState();
         return this.bodyState;
     }
 

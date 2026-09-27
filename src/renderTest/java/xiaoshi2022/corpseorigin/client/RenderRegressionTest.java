@@ -22,6 +22,9 @@ public final class RenderRegressionTest implements ClientModInitializer {
             try {
                 for (boolean slim : new boolean[] {false, true}) checkSkin(slim);
                 checkMaterials();
+                checkOrganAttachment();
+                checkOrganCaches();
+                checkCloneOrganSnapshot();
                 boolean pal = FabricLoader.getInstance().isModLoaded("player_animation_library");
                 if (pal) PalChecks.run();
                 else require(FirstPersonArmorCompat.prepare(new AvatarRenderState(), new AvatarRenderState()) == -1,
@@ -75,6 +78,93 @@ public final class RenderRegressionTest implements ClientModInitializer {
         require(lightTotal == 13 && kingTotal == 20, "Incorrect armor totals");
         require(light.toughness() == 0 && king.toughness() == 4, "Incorrect toughness");
         require(light.knockbackResistance() == 0 && king.knockbackResistance() == .1F, "Incorrect knockback resistance");
+    }
+
+    private static void checkOrganAttachment() {
+        PlayerModel model = model(false);
+        com.mojang.blaze3d.vertex.PoseStack root = new com.mojang.blaze3d.vertex.PoseStack();
+        model.body.resetPose();
+        var origin = xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderer.bodyPose(root, model)
+                .last().pose().transformPosition(new org.joml.Vector3f(0, 1.5F, 0));
+        require(origin.length() < 0.0001F, "GEO shoulder must align with vanilla body pivot");
+        // The shoulder remains on the body joint through crouching, attack twist and roll.
+        model.body.setPos(2, 3, -4);
+        model.body.xRot = .6F;
+        model.body.yRot = -.7F;
+        model.body.zRot = .3F;
+        var mounted = xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderer.bodyPose(root, model).last().pose();
+        var shoulder = mounted.transformPosition(new org.joml.Vector3f(0, 1.5F, 0));
+        require(shoulder.distance(new org.joml.Vector3f(2 / 16F, 3 / 16F, -4 / 16F)) < .0001F,
+                "Back mount detached from translated/rotated body pivot");
+        // Compare against ModelPart's rotation order, independently of the attachment's origin compensation.
+        var joint = new com.mojang.blaze3d.vertex.PoseStack();
+        model.body.translateAndRotate(joint);
+        var expected = joint.last().pose().transformDirection(new org.joml.Vector3f(0, 0, -1));
+        require(mounted.transformDirection(new org.joml.Vector3f(0, 0, 1)).distance(expected) < .0001F,
+                "Back mount must inherit all three body rotations");
+        require(root.last().pose().equals(new org.joml.Matrix4f()), "Attachment mutated the shared pose stack");
+    }
+
+    private static void checkOrganCaches() {
+        var host = new xiaoshi2022.corpseorigin.client.limb.PlayerGeoAnimatable() {
+            final xiaoshi2022.corpseorigin.client.limb.PlayerLayerAnimationCache cache =
+                    new xiaoshi2022.corpseorigin.client.limb.PlayerLayerAnimationCache(this);
+            public void registerControllers(com.geckolib.animatable.manager.AnimatableManager.ControllerRegistrar controllers) {}
+            public com.geckolib.animatable.instance.AnimatableInstanceCache getAnimatableInstanceCache() { return cache; }
+        };
+        var cache = host.cache;
+        long first = Long.MIN_VALUE + 1, second = first + 1, gourd = Long.MIN_VALUE + 17;
+        Object modelA = new Object(), modelB = new Object();
+        cache.prepareOrgan(first, modelA);
+        var a = cache.getManagerForId(first);
+        var b = cache.getManagerForId(second);
+        var g = cache.getManagerForId(gourd);
+        var body = cache.getManagerForId(123);
+        require(a != b && a != g && b != g && body != a && body != g, "Organ animation managers overlap");
+        cache.prepareOrgan(first, modelA);
+        require(a == cache.getManagerForId(first), "Unchanged organ loses its animation each frame");
+        cache.prepareOrgan(first, modelB);
+        require(a != cache.getManagerForId(first) && b == cache.getManagerForId(second)
+                && g == cache.getManagerForId(gourd), "Changing one organ resets another organ");
+        require(xiaoshi2022.corpseorigin.client.limb.PlayerGeoAnimatable.class.isAssignableFrom(
+                xiaoshi2022.corpseorigin.entity.CloneAvatarEntity.class), "Clone animation mixin not applied");
+    }
+
+    private static void checkCloneOrganSnapshot() {
+        for (boolean corpse : new boolean[] {false, true}) {
+            for (String role : new String[] {"xiaojingang", "kaiweinai"}) {
+                var original = new net.minecraft.nbt.CompoundTag();
+                original.putString("CharacterId", role);
+                var parts = new net.minecraft.nbt.CompoundTag();
+                String loadout = "[{\"organ\":\"test\",\"joint\":\"body\"}]";
+                parts.putString(xiaoshi2022.corpseorigin.growth.OrganLibrary.BODY_KEY, loadout);
+                parts.putInt("wings", 3);
+                original.put("EvolutionParts", parts);
+                var skills = new net.minecraft.nbt.ListTag();
+                skills.add(net.minecraft.nbt.StringTag.valueOf("role_skill"));
+                original.put("LearnedSkills", skills);
+                var tag = new net.minecraft.nbt.CompoundTag();
+                tag.put("Data", original);
+                var component = new xiaoshi2022.corpseorigin.shell.CharacterShellStateComponent();
+                component.readNbt(tag);
+                component.applyEvolutionPartsClone(net.minecraft.util.RandomSource.create(7), corpse, 1);
+                component.clearCharacterId();
+                var saved = new net.minecraft.nbt.CompoundTag();
+                component.writeNbt(saved);
+                var restored = new xiaoshi2022.corpseorigin.shell.CharacterShellStateComponent();
+                restored.readNbt(saved);
+                require(restored.getCharacterId().equals(xiaoshi2022.corpseorigin.character.MortalCharacter.ID),
+                        "Cosmetic organs must not restore role identity");
+                require(saved.getCompound("Data").orElseThrow().getList("LearnedSkills").orElseThrow().isEmpty(),
+                        "Cosmetic organs must not retain role skills");
+                require(restored.getEvolutionParts().getStringOr("clone_organ_role", "").equals(role),
+                        "Role organ appearance lost through cloning/save-load");
+                require(restored.getEvolutionParts().getStringOr("organ_loadout", "").equals(loadout),
+                        "Custom organ loadout lost through cloning/save-load");
+                require(parts.getIntOr("wings", 0) == 3, "Cloning changed source body");
+                if (!corpse) require(!restored.getEvolutionParts().contains("wings"), "Clean-water clone inherited mutation");
+            }
+        }
     }
 
     private static final class PalChecks {

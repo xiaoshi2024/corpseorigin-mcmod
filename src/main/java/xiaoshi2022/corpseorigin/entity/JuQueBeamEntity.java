@@ -98,6 +98,12 @@ public class JuQueBeamEntity extends Projectile {
     }
 
     @Override
+    protected boolean canHitEntity(Entity entity) {
+        return super.canHitEntity(entity) && (!(getOwner() instanceof xiaoshi2022.corpseorigin.entity.CloneAvatarEntity clone)
+                || !(entity instanceof LivingEntity target) || xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.canHit(clone, target));
+    }
+
+    @Override
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
 

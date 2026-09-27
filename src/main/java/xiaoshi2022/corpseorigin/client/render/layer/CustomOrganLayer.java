@@ -110,6 +110,8 @@ public final class CustomOrganLayer extends RenderLayer<AvatarRenderState,Player
         parent.addGeckolibData(SNAPSHOTS,List.copyOf(frames));
     }
     @Override public void submit(PoseStack poses,SubmitNodeCollector collector,int light,AvatarRenderState state,float yaw,float pitch) {
+        getParentModel().setupAnim(state);
+        xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderer.submitAttached(state,poses,collector,getParentModel());
         submitFrames(getParentModel(),poses,collector,state);
     }
     public static void submitFrames(PlayerModel model,PoseStack poses,SubmitNodeCollector collector,AvatarRenderState state) {

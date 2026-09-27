@@ -24,15 +24,15 @@ public class GreatTenguEntity extends Entity implements GeoEntity {
     private int laserCooldown;
     private final AnimatableInstanceCache cache=GeckoLibUtil.createInstanceCache(this);
     public GreatTenguEntity(EntityType<? extends GreatTenguEntity> type,Level level){super(type,level);setNoGravity(true);}
-    public void setOwner(ServerPlayer player){owner=player.getUUID();}
-    public boolean isOwnedBy(ServerPlayer player){return owner!=null && owner.equals(player.getUUID());}
+    public void setOwner(net.minecraft.world.entity.LivingEntity player){owner=player.getUUID();}
+    public boolean isOwnedBy(net.minecraft.world.entity.LivingEntity player){return owner!=null && owner.equals(player.getUUID());}
     @Override public void tick(){
         super.tick(); if(!(level() instanceof ServerLevel level))return;
         if(laserCooldown>0)laserCooldown--;
-        if(--remaining<=0 || owner==null || !(level.getEntity(owner) instanceof ServerPlayer player)
-                || !player.isAlive() || !"fengmohuitailang".equals(xiaoshi2022.corpseorigin.character.CharacterManager.getInstance().getPlayerCharacterId(player))){discard();return;}
+        if(--remaining<=0 || owner==null || !(level.getEntity(owner) instanceof net.minecraft.world.entity.LivingEntity player)
+                || !player.isAlive() || !"fengmohuitailang".equals(ChapterCombat.actorRole(player))){discard();return;}
         if(phase==2){
-            if(remaining==100) UndeadBodyState.evolveInside(player);
+            if(remaining==100 && player instanceof ServerPlayer serverPlayer) UndeadBodyState.evolveInside(serverPlayer);
             if(remaining%10==0) ChapterCombat.ring(level,position(),5,0x31e6e8,32);
             if(remaining%20==0 && player.getAttachedOrCreate(UndeadBodyState.STATE)==3) player.hurtServer(level,damageSources().generic(),1);
             return;
@@ -44,7 +44,7 @@ public class GreatTenguEntity extends Entity implements GeoEntity {
             if(entity instanceof net.minecraft.world.entity.LivingEntity target && ChapterCombat.canHit(player,target)
                     && player.distanceToSqr(target)<=4096 && player.hasLineOfSight(target)){
                 for(int i=0;i<48;i++) ChapterCombat.dust(level,position().lerp(target.getEyePosition(),i/48.0),0x21e6e6,2);
-                target.hurtServer(level,damageSources().playerAttack(player),48);
+                target.hurtServer(level,ChapterCombat.attackSource(player),48);
             }
         }
         if(remaining%10!=0)return;
@@ -58,7 +58,7 @@ public class GreatTenguEntity extends Entity implements GeoEntity {
         if(remaining%20!=0)return;
         for(var target:level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,new net.minecraft.world.phys.AABB(center,center).inflate(6)))
             if(ChapterCombat.canHit(player,target) && target.distanceToSqr(center)<=36 && player.hasLineOfSight(target)){
-                target.hurtServer(level,damageSources().playerAttack(player),2);
+                target.hurtServer(level,ChapterCombat.attackSource(player),2);
                 target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOWNESS,25,1));
             }
     }

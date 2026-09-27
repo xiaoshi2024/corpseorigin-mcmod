@@ -25,15 +25,15 @@ public class CorpseAntEntity extends PathfinderMob implements GeoEntity, ZombieK
     private UUID owner;
     private int remaining=400;
     public CorpseAntEntity(EntityType<? extends PathfinderMob> type,Level level){super(type,level);}
-    public void setOwner(ServerPlayer p){owner=p.getUUID();}
-    public boolean ownedBy(ServerPlayer p){return p.getUUID().equals(owner);}
+    public void setOwner(net.minecraft.world.entity.LivingEntity p){owner=p.getUUID();}
+    public boolean ownedBy(net.minecraft.world.entity.LivingEntity p){return p.getUUID().equals(owner);}
     public boolean isBullet(){return getType()==ModEntities.BULLET_ANT;}
     public static AttributeSupplier.Builder createAttributes(){return Mob.createMobAttributes().add(Attributes.MAX_HEALTH,12).add(Attributes.MOVEMENT_SPEED,.32).add(Attributes.FOLLOW_RANGE,18).add(Attributes.ATTACK_DAMAGE,3);}
     @Override protected void registerGoals(){goalSelector.addGoal(0,new net.minecraft.world.entity.ai.goal.FloatGoal(this));}
     @Override protected void customServerAiStep(ServerLevel level){
         if(owner==null)return;
-        if(--remaining<=0 || !(level.getEntity(owner) instanceof ServerPlayer p) || !p.isAlive()
-                || !"chongmu".equals(CharacterManager.getInstance().getPlayerCharacterId(p)) || distanceToSqr(p)>1600){discard();return;}
+        if(--remaining<=0 || !(level.getEntity(owner) instanceof LivingEntity p) || !p.isAlive()
+                || !"chongmu".equals(ChapterCombat.actorRole(p)) || distanceToSqr(p)>1600){discard();return;}
         LivingEntity target=level.getEntitiesOfClass(LivingEntity.class,p.getBoundingBox().inflate(14),
                 e->!(e instanceof CorpseAntEntity) && ChapterCombat.canHit(p,e) && hasLineOfSight(e))
                 .stream().min(java.util.Comparator.comparingDouble(this::distanceToSqr)).orElse(null);
@@ -42,12 +42,12 @@ public class CorpseAntEntity extends PathfinderMob implements GeoEntity, ZombieK
         getNavigation().moveTo(target,1.2);
         if(tickCount%20!=0 || distanceToSqr(target)>3.2 || !hasLineOfSight(target))return;
         triggerAnim("action","attack");
-        if(target.hurtServer(level,damageSources().playerAttack(p),isBullet()?4:2)) {
+        if(target.hurtServer(level,ChapterCombat.attackSource(p),isBullet()?4:2)) {
             if(!isBullet())target.addEffect(new MobEffectInstance(MobEffects.POISON,60,0));
             else {
                 QiEffects.burst(level,getX(),getY()+.4,getZ(),0xd8552c,1,0);
                 for(LivingEntity nearby:level.getEntitiesOfClass(LivingEntity.class,getBoundingBox().inflate(2)))
-                    if(nearby!=target && !(nearby instanceof CorpseAntEntity) && ChapterCombat.canHit(p,nearby) && hasLineOfSight(nearby))nearby.hurtServer(level,damageSources().playerAttack(p),2);
+                    if(nearby!=target && !(nearby instanceof CorpseAntEntity) && ChapterCombat.canHit(p,nearby) && hasLineOfSight(nearby))nearby.hurtServer(level,ChapterCombat.attackSource(p),2);
             }
         }
     }

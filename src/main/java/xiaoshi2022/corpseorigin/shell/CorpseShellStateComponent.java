@@ -44,6 +44,11 @@ public class CorpseShellStateComponent extends ShellStateComponent {
 
         if (!corpseClone) {
             tag.putBoolean("is_corpse", false);
+            // ★ 感染度必须一起归零：这具身体是清水养出来的干净人形，但整份尸兄数据是从本体
+            //   复制来的，`infection` 还留着本体的 100。`getInfection()` 只在 is_corpse 为真时
+            //   才强制返回 100，为假时读的就是这个残留值 —— 于是"换了干净的凡人克隆体，
+            //   感染条却还是满格"。（尸兄克隆体走下面的分支，读的仍然是 100，不受影响。）
+            tag.putInt("infection", 0);
             tag.putInt("extra_eye_count", 0);
             tag.putBoolean("has_wing", false);
             tag.putBoolean("has_tail", false);

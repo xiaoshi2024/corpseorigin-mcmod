@@ -1,6 +1,7 @@
 package xiaoshi2022.corpseorigin.client.renderer.player;
 
 import com.geckolib.constant.DataTickets;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.geckolib.renderer.GeoReplacedEntityRenderer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -40,6 +41,9 @@ public class NiunaiXRenderer
 
     private static NiunaiXRenderer instance;
 
+    private static final com.geckolib.constant.dataticket.DataTicket<Boolean> ATTACHED =
+            com.geckolib.constant.dataticket.DataTicket.create("niunai_attached", Boolean.class);
+
     public NiunaiXRenderer(EntityRendererProvider.Context context) {
         // 第三个参数传 null：见类注释，真正的宿主在 fillRenderState 里换
         super(context, new NiunaiXModel(), null);
@@ -47,7 +51,41 @@ public class NiunaiXRenderer
         this.shadowRadius = 0.0F;
     }
 
-    /** 已初始化好的单例；AvatarRenderer 还没建过时为 null */
+    /** Attached passes carry the animated body transform; severed-body passes use entity space. */
+    @Override
+    public void adjustRenderPose(com.geckolib.renderer.base.RenderPassInfo<AvatarRenderState> info) {
+        if (!Boolean.TRUE.equals(info.renderState().getGeckolibData(ATTACHED))) super.adjustRenderPose(info);
+    }
+
+    @Override
+    public void scaleModelForRender(com.geckolib.renderer.base.RenderPassInfo<AvatarRenderState> info, float x, float y) {
+        if (!Boolean.TRUE.equals(info.renderState().getGeckolibData(ATTACHED))) super.scaleModelForRender(info, x, y);
+    }
+
+    public static PoseStack bodyPose(PoseStack poses, net.minecraft.client.model.player.PlayerModel model) {
+        PoseStack local = new PoseStack();
+        local.last().set(poses.last());
+        model.body.translateAndRotate(local);
+        // GEO uses a feet origin; vanilla body's pivot is at shoulder height (24px).
+        local.translate(0, 24.0 / 16.0, 0);
+        local.scale(1, -1, -1);
+        return local;
+    }
+
+    public static void submitAttached(AvatarRenderState state, PoseStack poses,
+            net.minecraft.client.renderer.SubmitNodeCollector collector,
+            net.minecraft.client.model.player.PlayerModel model) {
+        if (instance == null || state.isInvisible
+                || !Boolean.TRUE.equals(state.getGeckolibData(NiunaiXRenderData.ACTIVE))) return;
+        state.addGeckolibData(ATTACHED, true);
+        try {
+            instance.performRenderPass(state, bodyPose(poses, model), collector,
+                    new net.minecraft.client.renderer.state.level.CameraRenderState());
+        } finally {
+            state.addGeckolibData(ATTACHED, false);
+        }
+    }
+
     public static NiunaiXRenderer get() {
         return instance;
     }

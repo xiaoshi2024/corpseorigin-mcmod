@@ -101,6 +101,20 @@ public class DogCageItem extends Item {
         QiEffects.burst(level, player.getX(), player.getEyeY(), player.getZ(), 0xff7a1a, 8, .1);
         return InteractionResult.SUCCESS;
     }
+    public static boolean fireClone(xiaoshi2022.corpseorigin.entity.CloneAvatarEntity clone, ItemStack stack) {
+        if (!isLoaded(stack) || !(clone.level() instanceof ServerLevel level)) return false;
+        var ball = new SmallFireball(level, clone, clone.getLookAngle()) {
+            @Override protected boolean canHitEntity(net.minecraft.world.entity.Entity entity) {
+                return super.canHitEntity(entity) && (!(entity instanceof LivingEntity living)
+                        || xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.canHit(clone, living));
+            }
+        };
+        ball.setPos(clone.getEyePosition());
+        ball.setDeltaMovement(clone.getLookAngle().scale(.8));
+        if (!level.addFreshEntity(ball)) return false;
+        level.playSound(null, clone.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.HOSTILE, 1, 1);
+        return true;
+    }
     @Override public InteractionResult use(Level level, Player player, InteractionHand hand) {
         if (player.isShiftKeyDown()) return InteractionResult.PASS;
         return fire(player, player.getItemInHand(hand));

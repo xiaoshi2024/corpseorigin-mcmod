@@ -12,6 +12,9 @@ if (project.hasProperty('renderTests')) {
 if (project.hasProperty('gourdTests')) {
     apply from: 'src/gourdTest/gourd-tests.gradle'
 }
+if (project.hasProperty('cloneTests')) {
+    apply from: 'src/cloneTest/clone-tests.gradle'
+}
 
 repositories {
     maven {

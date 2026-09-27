@@ -1,6 +1,8 @@
 package xiaoshi2022.corpseorigin.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
+import net.minecraft.client.model.player.PlayerModel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.player.AvatarRenderer;
@@ -218,6 +220,7 @@ public abstract class LivingEntityRendererSubmitMixin {
         NiunaiXRenderer backMount = NiunaiXRenderer.get();
         if (backMount != null
                 && Boolean.TRUE.equals(avatarState.getGeckolibData(NiunaiXRenderData.ACTIVE))) {
+            // 腰斩形态整身已换成 niunai_link_player，躯干姿态没有意义：清掉上一帧留下的倾角
             backMount.submit(avatarState, poseStack, collector, camera);
         }
 
@@ -273,56 +276,6 @@ public abstract class LivingEntityRendererSubmitMixin {
             double push = LIMB_OVERLAY_PUSH_PIXELS / 16.0;
             Vec3 look = Vec3.directionFromRotation(camera.xRot, camera.yRot);
             poseStack.translate(-look.x * push, -look.y * push, -look.z * push);
-        }
-        renderer.submit(avatarState, poseStack, collector, camera);
-        poseStack.popPose();
-    }
-
-    /**
-     * 开胃奶背挂的垂直校准值（格）。
-     * <p>
-     * {@code niunaix.geo.json} 与 {@code corpse_player.geo.json} 用的是同一套绝对坐标
-     * （脚底 0 / 肩 24 / 头顶 32），理论上零点是齐的，所以这里是 0。
-     * 万一背挂整体偏高/偏低，只改这一个数即可（负值往下压、正值往上抬）。
-     */
-    private static final double NIUNAI_Y_OFFSET = 0.0;
-
-    /**
-     * 开胃奶背挂形态下，在玩家背后<b>补画</b>一层 {@code niunaix}。
-     * <p>
-     * 提交点同断肢（submit 的 TAIL）：原版模型、盔甲、披风、其它模组的层都照常渲染，
-     * 我们只在最上面补一层。背挂长在背后，深度测试会让身体正常挡住它，所以不需要像残桩 / 血管
-     * 那样朝相机前移。
-     * <p>
-     * ⚠️ 原版是在 submit 内部才 scale(state.scale)（体型缩放），我们在 TAIL 补画，
-     * 这一步得自己补，否则缩小状态下的背挂不会跟着缩。
-     */
-    @Inject(method = "submit", at = @At("TAIL"))
-    private void corpseorigin$submitNiunaiBackMount(LivingEntityRenderState state, PoseStack poseStack,
-                                                    SubmitNodeCollector collector, CameraRenderState camera,
-                                                    CallbackInfo ci) {
-        if (!(state instanceof AvatarRenderState avatarState)) {
-            return;
-        }
-        if (!((Object) this instanceof AvatarRenderer<?>)) {
-            return;
-        }
-        // ticket 是 AvatarRendererMixin 每帧写的（不是背挂形态时写 false）；
-        // 不是 true = 这一帧不该出背挂 → 完全走原版渲染
-        if (!Boolean.TRUE.equals(avatarState.getGeckolibData(NiunaiXRenderData.ACTIVE))) {
-            return;
-        }
-
-        NiunaiXRenderer renderer = NiunaiXRenderer.get();
-        if (renderer == null) {
-            return;
-        }
-
-        poseStack.pushPose();
-        poseStack.translate(0.0, NIUNAI_Y_OFFSET, 0.0);
-        float scale = avatarState.scale;
-        if (scale != 1.0F) {
-            poseStack.scale(scale, scale, scale);
         }
         renderer.submit(avatarState, poseStack, collector, camera);
         poseStack.popPose();

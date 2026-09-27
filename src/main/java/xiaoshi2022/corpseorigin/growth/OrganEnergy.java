@@ -19,6 +19,10 @@ public final class OrganEnergy {
     private static void mark(ServerPlayer p,boolean owned){
         p.setAttached(OWNED,owned);
     }
+    /** 翅膀系统当前是否持有这个玩家的飞行许可（神级御空借此让位 / 接管）。 */
+    public static boolean ownsFlight(ServerPlayer p){
+        return p.getAttachedOrCreate(OWNED);
+    }
     public static void tick(ServerPlayer p){
         boolean owned=p.getAttachedOrCreate(OWNED);
         if(p.isCreative()||p.isSpectator()){
@@ -32,8 +36,11 @@ public final class OrganEnergy {
         boolean wings=active&&SurvivalGrowth.has(p,"wings")&&!p.isInWater()&&!p.isPassenger();
         boolean canFly=wings&&(state.flightTicks>0||BloodReserve.get(p)>=flightCost);
         var abilities=p.getAbilities();
-        // Do not claim flight already granted by another source.
-        if(canFly&&!abilities.mayfly){abilities.mayfly=true;mark(p,true);owned=true;p.onUpdateAbilities();}
+        // 翅膀要接管计费时，哪怕 mayfly 是神级御空先给的也照样登记所有权（同一时间只有一套系统扣费）
+        if(canFly&&!owned){
+            if(!abilities.mayfly){abilities.mayfly=true;p.onUpdateAbilities();}
+            mark(p,true);owned=true;
+        }
         if(owned&&canFly&&abilities.flying){
             if(state.flightTicks<=0){
                 if(BloodReserve.spend(p,flightCost))state.flightTicks=20;
@@ -45,10 +52,14 @@ public final class OrganEnergy {
         }
         if(owned&&!canFly){
             boolean falling=abilities.flying||state.wasFlying;
-            abilities.flying=false;abilities.mayfly=false;mark(p,false);p.onUpdateAbilities();
-            if(falling&&p.isAlive()&&!p.onGround()&&!p.isInWater()){
-                p.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING,100,0,false,false,true));
-                p.sendOverlayMessage(Component.translatable("message.corpseorigin.organ_energy.text_01"));
+            mark(p,false);
+            // 神级御空资格还在：mayfly 留给 ShenFlight 无缝接管，不收飞行许可也不发落地保护
+            if(!ShenFlight.isAllowed(p)){
+                abilities.flying=false;abilities.mayfly=false;p.onUpdateAbilities();
+                if(falling&&p.isAlive()&&!p.onGround()&&!p.isInWater()){
+                    p.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING,100,0,false,false,true));
+                    p.sendOverlayMessage(Component.translatable("message.corpseorigin.organ_energy.text_01"));
+                }
             }
         }
         state.wasFlying=owned&&canFly&&abilities.flying;

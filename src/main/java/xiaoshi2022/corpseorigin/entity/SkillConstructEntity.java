@@ -43,6 +43,25 @@ public class SkillConstructEntity extends PathfinderMob implements GeoEntity {
     }
     public String kind(){return BuiltInRegistries.ENTITY_TYPE.getKey(getType()).getPath();}
     public boolean ownedBy(ServerPlayer p){return p.getUUID().equals(owner);}
+    public boolean ownedBy(CloneAvatarEntity clone){return clone.getUUID().equals(owner);}
+    public static SkillConstructEntity findOwned(CloneAvatarEntity clone, String kind) {
+        return clone.level().getEntitiesOfClass(SkillConstructEntity.class, clone.getBoundingBox().inflate(64),
+                e -> e.isAlive() && e.ownedBy(clone) && e.kind().equals(kind)).stream().findFirst().orElse(null);
+    }
+    public static SkillConstructEntity spawn(CloneAvatarEntity clone, EntityType<SkillConstructEntity> type, Entity anchor, int ticks) {
+        var entity = type.create(clone.level(), EntitySpawnReason.TRIGGERED);
+        if (entity == null) throw new IllegalStateException("Cannot create clone skill construct");
+        entity.owner = clone.getUUID();
+        entity.role = clone.getBodyRole();
+        entity.anchor = anchor == null ? null : anchor.getUUID();
+        if (anchor != null) entity.entityData.set(ANCHOR, anchor.getId());
+        entity.life = ticks;
+        entity.setPos(anchor == null ? clone.getEyePosition() : anchor.position());
+        entity.setYRot(clone.getYRot());
+        if (entity instanceof BeeWheelEntity wheel) wheel.initializeClone(clone);
+        clone.level().addFreshEntity(entity);
+        return entity;
+    }
     public static SkillConstructEntity spawn(ServerPlayer p,EntityType<SkillConstructEntity> type,Entity anchor,int ticks) {
         var e=type.create(p.level(),EntitySpawnReason.TRIGGERED);
         if(e==null)throw new IllegalStateException("Cannot create skill construct");
@@ -63,6 +82,11 @@ public class SkillConstructEntity extends PathfinderMob implements GeoEntity {
             return;
         }
         if(!(level() instanceof ServerLevel level))return;
+        if (owner != null && level.getEntity(owner) instanceof CloneAvatarEntity clone) {
+            if (--life <= 0 || !clone.isAlive() || !clone.isActive() || !role.equals(clone.getBodyRole())) { discard(); return; }
+            tickClone(level, clone);
+            return;
+        }
         if(--life<=0 || owner==null || !(level.getEntity(owner) instanceof ServerPlayer p)
                 || !p.isAlive() || !role.equals(CharacterManager.getInstance().getPlayerCharacterId(p))){discard();return;}
         String kind=kind();
@@ -106,6 +130,37 @@ public class SkillConstructEntity extends PathfinderMob implements GeoEntity {
         }
     }
     protected boolean tickConstruct(ServerLevel level,ServerPlayer player){return false;}
+    private void tickClone(ServerLevel level, CloneAvatarEntity clone) {
+        if (this instanceof BeeWheelEntity wheel) { wheel.tickCloneWheel(level, clone); return; }
+        if (anchor != null) {
+            var attached = level.getEntity(anchor);
+            if (!(attached instanceof LivingEntity living) || !living.isAlive()) { discard(); return; }
+            if (kind().equals("vine_bind")) {
+                if (!ChapterCombat.canHit(clone, living)) { discard(); return; }
+                living.setDeltaMovement(living.getDeltaMovement().multiply(.1, 1, .1));
+                living.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOWNESS, 10, 4));
+            }
+            follow(attached);
+            if (kind().equals("slaughter_incarnation") && tickCount >= 48 && tickCount % 20 == 0) {
+                for (var target : level.getEntitiesOfClass(LivingEntity.class, clone.getBoundingBox().inflate(8),
+                        t -> ChapterCombat.canHit(clone, t) && clone.hasLineOfSight(t) && clone.distanceToSqr(t) <= 64))
+                    target.hurtServer(level, clone.damageSources().mobAttack(clone), 32);
+                triggerAnim("action", "attack");
+            }
+            return;
+        }
+        Vec3 start = position(), end = start.add(getDeltaMovement());
+        if (!level.hasChunkAt(net.minecraft.core.BlockPos.containing(end))) { discard(); return; }
+        var wall = level.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        var hit = ProjectileUtil.getEntityHitResult(this, start, wall.getLocation(), new AABB(start, end).inflate(.4),
+                e -> e instanceof LivingEntity living && ChapterCombat.canHit(clone, living), start.distanceToSqr(wall.getLocation()));
+        if (hit != null) {
+            var target = (LivingEntity) hit.getEntity();
+            target.hurtServer(level, clone.damageSources().mobAttack(clone), kind().equals("blood_lotus_petal") ? 40 : 26);
+            discard();
+        } else if (wall.getType() != HitResult.Type.MISS) discard();
+        else { setPos(end); setYRot(getYRot() + 25); }
+    }
     public static SkillConstructEntity findOwned(ServerPlayer player,String kind){
         return player.level().getEntitiesOfClass(SkillConstructEntity.class,player.getBoundingBox().inflate(64),
                 e->e.isAlive() && e.ownedBy(player) && e.kind().equals(kind)).stream().findFirst().orElse(null);

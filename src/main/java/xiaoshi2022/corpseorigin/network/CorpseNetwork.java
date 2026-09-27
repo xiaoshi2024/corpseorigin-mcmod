@@ -99,6 +99,7 @@ public final class CorpseNetwork {
         PayloadTypeRegistry.serverboundPlay().register(CorpsePayloads.SelectCharacterC2S.TYPE, CorpsePayloads.SelectCharacterC2S.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.CharacterSyncS2C.TYPE, CorpsePayloads.CharacterSyncS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.PlayerCorpseSyncS2C.TYPE, CorpsePayloads.PlayerCorpseSyncS2C.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.CloneBodySyncS2C.TYPE, CorpsePayloads.CloneBodySyncS2C.CODEC);
         // Flashback 快照回放专用通道（仅录制端快照注入时会出现）
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.ReplayPlayerBodyS2C.TYPE, CorpsePayloads.ReplayPlayerBodyS2C.CODEC);
 
@@ -753,6 +754,58 @@ public final class CorpseNetwork {
         if (owner != null && owner.level() != level) {
             ServerPlayNetworking.send(owner, packet);
         }
+    }
+
+    /**
+     * 按"身体 uuid"把克隆身体的角色外观（角色 id / 进化部件 / 异兽能力）广播给同维度所有玩家，
+     * 外加可能不在这个维度的 owner。
+     * <p>
+     * 与 {@link #broadcastBodyCorpseSync} 配对：一个管尸兄外骨骼，一个管角色附加骨骼。
+     */
+    public static void broadcastCloneBodySync(ServerLevel level, ServerPlayer owner, java.util.UUID bodyUuid,
+                                              String characterId, CompoundTag evolutionParts,
+                                              boolean infant, int bearArms) {
+        if (level == null || bodyUuid == null) {
+            return;
+        }
+        CorpsePayloads.CloneBodySyncS2C packet = new CorpsePayloads.CloneBodySyncS2C(
+                bodyUuid,
+                characterId == null ? "mortal" : characterId,
+                evolutionParts == null ? new CompoundTag() : evolutionParts.copy(),
+                infant, bearArms);
+        for (ServerPlayer receiver : level.players()) {
+            ServerPlayNetworking.send(receiver, packet);
+        }
+        if (owner != null && owner.level() != level) {
+            ServerPlayNetworking.send(owner, packet);
+        }
+    }
+
+    /** 点对点补发一具克隆身体的角色外观（玩家开始追踪某个分身时用）。 */
+    public static void sendCloneBodySyncTo(ServerPlayer receiver, java.util.UUID bodyUuid,
+                                           String characterId, CompoundTag evolutionParts,
+                                           boolean infant, int bearArms) {
+        if (bodyUuid == null) {
+            return;
+        }
+        ServerPlayNetworking.send(receiver, new CorpsePayloads.CloneBodySyncS2C(
+                bodyUuid,
+                characterId == null ? "mortal" : characterId,
+                evolutionParts == null ? new CompoundTag() : evolutionParts.copy(),
+                infant, bearArms));
+    }
+
+    /** 点对点补发一具身体的尸兄外观（玩家开始追踪某个分身时用，避免广播打扰周围）。 */
+    public static void sendBodyCorpseSyncTo(ServerPlayer receiver, java.util.UUID bodyUuid, CompoundTag corpseTag) {
+        if (bodyUuid == null) {
+            return;
+        }
+        CompoundTag data = corpseTag == null ? new CompoundTag() : corpseTag;
+        ServerPlayNetworking.send(receiver, new CorpsePayloads.PlayerCorpseSyncS2C(
+                bodyUuid,
+                data.getBoolean("is_corpse").orElse(false),
+                data.getInt("corpse_type").orElse(0),
+                data.copy()));
     }
 
     public static void broadcastPlayerCorpseSync(ServerPlayer player) {

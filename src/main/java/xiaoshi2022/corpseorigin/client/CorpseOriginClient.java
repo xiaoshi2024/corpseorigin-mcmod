@@ -69,6 +69,21 @@ public class CorpseOriginClient implements ClientModInitializer {
     public static final java.util.Map<UUID, ClientCorpseData> corpseDataCache = new ConcurrentHashMap<>();
 
     /**
+     * 克隆身体的角色外观缓存（键 = 身体 UUID：仓内是身体稳定 UUID，苏醒后是分身实体 UUID）。
+     * <p>
+     * 翅膀/鱼鳃等"角色附加骨骼"按这份数据在分身与仓内克隆人上手绘，
+     * 和 {@link #corpseDataCache}（尸兄外骨骼）分开存放。
+     */
+    public record ClientCloneBody(String characterId, net.minecraft.nbt.CompoundTag evolutionParts,
+                                  boolean infant, int bearArms) {
+        public boolean hasTrait(String trait) {
+            return this.evolutionParts != null && this.evolutionParts.getBooleanOr(trait, false);
+        }
+    }
+
+    public static final java.util.Map<UUID, ClientCloneBody> cloneBodyDataCache = new ConcurrentHashMap<>();
+
+    /**
      * Flashback 回放专用：快照附件包到达时玩家实体可能还没重建完，
      * 先按 UUID 暂存 evolution_parts 附件 NBT，每 tick 重试回填。
      */
@@ -379,6 +394,12 @@ public class CorpseOriginClient implements ClientModInitializer {
                         payload.playerUuid(), payload.isCorpse());
             });
         });
+
+        // ✅ 接收克隆身体的角色外观（翅膀/鱼鳃/角色标记，按身体 UUID 缓存）
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.CloneBodySyncS2C.TYPE, (payload, context) ->
+                context.client().execute(() -> cloneBodyDataCache.put(payload.bodyUuid(),
+                        new ClientCloneBody(payload.characterId(), payload.evolutionParts(),
+                                payload.infant(), payload.bearArms()))));
 
         // ✅ Flashback 回放：快照补发的 evolution_parts 附件，按 UUID 回填到重建出的玩家实体
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.ReplayPlayerBodyS2C.TYPE, (payload, context) ->

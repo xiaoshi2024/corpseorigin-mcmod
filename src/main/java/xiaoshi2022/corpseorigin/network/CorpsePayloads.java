@@ -214,6 +214,45 @@ public final class CorpsePayloads {
     }
 
     /**
+     * 克隆身体的"角色外观"同步（S2C，按身体 UUID 索引）。
+     * <p>
+     * 尸兄 NBT（外骨骼/红眼/皮肤）走 {@link PlayerCorpseSyncS2C}；本包负责"角色相关的附加骨骼"：
+     * 角色 id（复制层里的角色服装层靠 ROLE 附件，这里只给渲染层做兜底判断）、
+     * 整份进化部件（翅膀/鱼鳃）、金刚婴儿与巨熊臂标记。
+     * <p>
+     * 发送端有两个：克隆仓 BE（键为仓的身体稳定 UUID）和苏醒后的克隆分身实体（键为分身 UUID）。
+     */
+    public record CloneBodySyncS2C(
+            UUID bodyUuid,
+            String characterId,
+            CompoundTag evolutionParts,
+            boolean infant,
+            int bearArms
+    ) implements CustomPacketPayload {
+        public static final Type<CloneBodySyncS2C> TYPE = new Type<>(id("clone_body_sync"));
+
+        public static final StreamCodec<ByteBuf, CloneBodySyncS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8,
+                p -> p.bodyUuid().toString(),
+                ByteBufCodecs.STRING_UTF8,
+                CloneBodySyncS2C::characterId,
+                ByteBufCodecs.COMPOUND_TAG,
+                CloneBodySyncS2C::evolutionParts,
+                ByteBufCodecs.BOOL,
+                CloneBodySyncS2C::infant,
+                ByteBufCodecs.VAR_INT,
+                CloneBodySyncS2C::bearArms,
+                (uuidStr, characterId, evolutionParts, infant, bearArms) ->
+                        new CloneBodySyncS2C(UUID.fromString(uuidStr), characterId, evolutionParts, infant, bearArms)
+        );
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    /**
      * Flashback 回放专用：把某位玩家的 {@code corpseorigin:evolution_parts} 附件整份带回放端（S2C）。
      * <p>
      * Flashback 的快照（初始加载 / seek）只重建原版实体数据，不含 Fabric 附件；而进化器官装配方案、

@@ -368,10 +368,11 @@ public class PlayerCorpseComponent {
     public void readNbt(CompoundTag tag) {
         if (tag == null) tag = new CompoundTag();
         player.setAttached(ModDataAttachments.PLAYER_CORPSE, tag.copy());
-        // 外部整份写入（存档恢复等）也走广播，保持和其他路径一致
-        if (player instanceof ServerPlayer sp) {
-            CorpseNetwork.broadcastPlayerCorpseSync(sp);
-        }
+        // ★ 整份写入（换身夺舍 / 存档恢复）必须把"感染度"也推给客户端。
+        //   只广播尸兄外观的话，HUD 的感染度条会停在上一具身体的数值 ——
+        //   典型表现：从尸兄身体死亡夺舍进干净的凡人克隆体，数据已经是 0（技能也确实清了），
+        //   但条子还是满格。syncToClient 会把感染度包和尸兄外观包一起发出去。
+        syncToClient(player);
     }
 
     public boolean isMindless() {

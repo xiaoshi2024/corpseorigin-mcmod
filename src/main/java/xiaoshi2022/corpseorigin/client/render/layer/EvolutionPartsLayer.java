@@ -12,11 +12,21 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.client.CorpseOriginClient;
+import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.growth.SurvivalGrowth;
 
-/** Additional skeletal parts anchored to the animated player torso; never replaces the skin. */
+/**
+ * 附加骨骼（翅膀 / 鱼鳃），锚在带动画的人形躯干上，绝不替换皮肤。
+ * <p>
+ * 真玩家读自己同步的 {@code evolution_parts} 附件；克隆分身（实体 / 仓内手绘不走这层）
+ * 读 {@code CloneBodySyncS2C} 同步过来的角色外观缓存 —— 两边都是纯 ModelPart 手绘，
+ * 不依赖 GeckoLib 的玩家 animatable 通道。
+ */
 public final class EvolutionPartsLayer extends RenderLayer<AvatarRenderState, PlayerModel> {
     private final ModelPart leftWing, rightWing, gills;
     private static ModelPart bake(String name, CubeListBuilder cubes) {
@@ -44,25 +54,56 @@ public final class EvolutionPartsLayer extends RenderLayer<AvatarRenderState, Pl
         collector.submitModelPart(part, poses, RenderTypes.entityCutout(CorpseOrigin.id(texture)),
                 light, OverlayTexture.NO_OVERLAY, null);
     }
+
+    /** 这一层要画的进化部件来源：真玩家用附件，分身用网络缓存。 */
+    private record PartsSource(Entity entity, CompoundTag body, CorpseOriginClient.ClientCorpseData corpse) {}
+
+    private static PartsSource resolve(Entity entity) {
+        var corpse = CorpseOriginClient.corpseDataCache.get(entity.getUUID());
+        if (corpse == null || !corpse.isCorpse || corpse.isDisguised()) {
+            return null;
+        }
+        if (entity instanceof Player player) {
+            if (xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.disguised(player)) {
+                return null;
+            }
+            return new PartsSource(player, player.getAttachedOrCreate(SurvivalGrowth.BODY), corpse);
+        }
+        if (entity instanceof CloneAvatarEntity) {
+            CorpseOriginClient.ClientCloneBody cloneBody =
+                    CorpseOriginClient.cloneBodyDataCache.get(entity.getUUID());
+            // 没有角色外观包时（旧数据 / 尚未送达）不画翅膀，等下一次同步自愈
+            return cloneBody == null ? null
+                    : new PartsSource(entity, cloneBody.evolutionParts(), corpse);
+        }
+        return null;
+    }
+
     @Override public void submit(PoseStack poses, SubmitNodeCollector collector, int light,
                                  AvatarRenderState state, float yaw, float pitch) {
         var level = Minecraft.getInstance().level;
-        if (level == null || state.isInvisible || !(level.getEntity(state.id) instanceof Player player)) return;
-        if (xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.disguised(player)) return;
-        // Use the existing synchronized corpse cache, since PLAYER_CORPSE itself is server-only.
-        var corpse = xiaoshi2022.corpseorigin.client.CorpseOriginClient.corpseDataCache.get(player.getUUID());
-        if (corpse == null || !corpse.isCorpse || corpse.isDisguised()) return;
+        if (level == null || state.isInvisible) return;
+        Entity resolvedEntity = level.getEntity(state.id);
+        if (resolvedEntity == null) return;
+        PartsSource source = resolve(resolvedEntity);
+        if (source == null) return;
+        CompoundTag body = source.body();
+        boolean wings = body.getBooleanOr("wings", false);
+        boolean hasGills = body.getBooleanOr("gills", false);
+        if (!wings && !hasGills) return;
+
         poses.pushPose();
         getParentModel().body.translateAndRotate(poses);
-        if (SurvivalGrowth.has(player, "wings")) {
-            float flap = (float)Math.sin(player.tickCount * (player.onGround() ? .12 : .4)) * .35f;
+        if (wings) {
+            float flap = (float)Math.sin(resolvedEntity.tickCount * (resolvedEntity.onGround() ? .12 : .4)) * .35f;
             leftWing.yRot = .35f + flap;
             rightWing.yRot = -.35f - flap;
             draw(leftWing, poses, collector, light, "textures/entity/chapter_blood.png");
             draw(rightWing, poses, collector, light, "textures/entity/chapter_blood.png");
         }
-        if (SurvivalGrowth.has(player, "gills"))
+        if (hasGills) {
             draw(gills, poses, collector, light, "textures/entity/chapter_xuanwu.png");
+        }
         poses.popPose();
     }
 }

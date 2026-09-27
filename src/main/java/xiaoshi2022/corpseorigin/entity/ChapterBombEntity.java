@@ -26,7 +26,7 @@ public class ChapterBombEntity extends ThrowableItemProjectile {
         if(!level().isClientSide() && tickCount>80) discard();
     }
     @Override protected boolean canHitEntity(net.minecraft.world.entity.Entity entity) {
-        return super.canHitEntity(entity) && getOwner() instanceof ServerPlayer owner
+        return super.canHitEntity(entity) && getOwner() instanceof net.minecraft.world.entity.LivingEntity owner
                 && entity instanceof net.minecraft.world.entity.LivingEntity target && ChapterCombat.canHit(owner,target);
     }
     @Override protected void onHit(HitResult hit) {
@@ -42,19 +42,19 @@ public class ChapterBombEntity extends ThrowableItemProjectile {
     }
     private void explode(net.minecraft.world.phys.Vec3 center) {
         if(!(level() instanceof ServerLevel level) || center==null){discard();return;}
-        if(getOwner() instanceof ServerPlayer player && player.isAlive() && player.level()==level) {
+        if(getOwner() instanceof net.minecraft.world.entity.LivingEntity player && player.isAlive() && player.level()==level) {
             for(var target:level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
                     new net.minecraft.world.phys.AABB(center,center).inflate(3))) {
                 if(!ChapterCombat.canHit(player,target) || target.distanceToSqr(center)>9)continue;
                 if(level.clip(new ClipContext(center,target.getEyePosition(),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,this)).getType()!=HitResult.Type.MISS)continue;
-                target.hurtServer(level,damageSources().playerAttack(player),getItem().is(ModItems.BILLIARD_EIGHT)?24:16);
+                target.hurtServer(level,player instanceof ServerPlayer p ? damageSources().playerAttack(p) : damageSources().mobAttack(player),getItem().is(ModItems.BILLIARD_EIGHT)?24:16);
             }
             QiEffects.burst(level,center.x,center.y,center.z,0xd8552c,3,.3);
             level.playSound(null,center.x,center.y,center.z,net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE.value(),net.minecraft.sounds.SoundSource.PLAYERS,.8f,1);
         }
         discard();
     }
-    public static void launch(ServerPlayer player,Item item) {
+    public static void launch(net.minecraft.world.entity.LivingEntity player,Item item) {
         var bomb=new ChapterBombEntity(xiaoshi2022.corpseorigin.registry.ModEntities.CHAPTER_BOMB,player.level());
         bomb.setOwner(player); bomb.setItem(new net.minecraft.world.item.ItemStack(item));
         bomb.setPos(player.getEyePosition().add(0,-.15,0));

@@ -65,6 +65,7 @@ public final class SurvivalGrowth {
     }
     public static void register() {
         OrganEnergy.register();
+        ShenFlight.register();
         VampirePhysiology.register();
         ServerLivingEntityEvents.AFTER_DAMAGE.register((target, source, base, taken, blocked) -> {
             if (taken > 0 && source.getEntity() instanceof ServerPlayer player && source.getDirectEntity() == player

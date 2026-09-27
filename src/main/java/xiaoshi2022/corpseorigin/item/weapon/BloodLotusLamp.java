@@ -187,13 +187,15 @@ public class BloodLotusLamp extends Item implements GeoItem {
     /**
      * 长按群吸（只给玩家用）
      */
-    private void drainLife(Player player, ItemStack stack) {
+    public void drainLife(LivingEntity player, ItemStack stack) {
         Level level = player.level();
 
         List<LivingEntity> targets = level.getEntitiesOfClass(
                 LivingEntity.class,
                 player.getBoundingBox().inflate(DRAIN_RANGE),
-                e -> e != player && e.isAlive() && !(e instanceof Player)
+                e -> player instanceof xiaoshi2022.corpseorigin.entity.CloneAvatarEntity
+                        ? xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat.canHit(player, e) && player.hasLineOfSight(e)
+                        : e != player && e.isAlive() && !(e instanceof Player)
         );
 
         if (targets.isEmpty()) {
@@ -211,7 +213,8 @@ public class BloodLotusLamp extends Item implements GeoItem {
         for (LivingEntity target : targets) {
             float healthBefore = target.getHealth();
 
-            target.hurt(player.damageSources().playerAttack(player), DRAIN_DAMAGE);
+            target.hurt(player instanceof Player owner ? player.damageSources().playerAttack(owner)
+                    : player.damageSources().mobAttack(player), DRAIN_DAMAGE);
 
             float healthAfter = target.getHealth();
             float actualDamage = Math.max(0, healthBefore - healthAfter);

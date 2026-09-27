@@ -34,7 +34,7 @@ public class CorpseFishEggEntity extends Entity implements GeoEntity {
     public CorpseFishEggEntity(EntityType<? extends CorpseFishEggEntity> type, Level level) {
         super(type,level); setNoGravity(true);
     }
-    public static CorpseFishEggEntity create(ServerPlayer player, int slot) {
+    public static CorpseFishEggEntity create(LivingEntity player, int slot) {
         var egg=new CorpseFishEggEntity(ModEntities.CORPSE_FISH_EGG,player.level());
         egg.owner=player.getUUID(); egg.slot=slot;
         egg.setPos(player.getEyePosition().add(0,-.5,0));
@@ -51,7 +51,7 @@ public class CorpseFishEggEntity extends Entity implements GeoEntity {
         super.tick();
         if (!(level() instanceof ServerLevel level)) return;
         age++;
-        if (owner==null || !(level.getEntity(owner) instanceof ServerPlayer caster)
+        if (owner==null || !(level.getEntity(owner) instanceof LivingEntity caster)
                 || !caster.isAlive() || caster.isRemoved()) { discard(); return; }
         if (!entityData.get(HOST).isEmpty()) {
             LivingEntity target=host(level);
@@ -63,7 +63,7 @@ public class CorpseFishEggEntity extends Entity implements GeoEntity {
             setDeltaMovement(Vec3.ZERO);
             if(attachedTicks<60 && ++attachedTicks%20==0) {
                 float before=target.getHealth();
-                if(target.hurtServer(level,damageSources().playerAttack(caster),1))
+                if(target.hurtServer(level,ChapterCombat.attackSource(caster),1))
                     caster.heal(Math.min(.5f,Math.max(0,before-target.getHealth())));
                 QiEffects.burst(level,getX(),getY(),getZ(),0xc0182a,2,.1);
             }

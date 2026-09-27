@@ -10,6 +10,8 @@ import java.util.UUID;
 
 public class CharacterShellStateComponent extends ShellStateComponent {
 
+    public static final String ORGAN_ROLE_KEY = "clone_organ_role";
+
     private UUID playerUuid;
     private CompoundTag data = new CompoundTag();
 
@@ -18,6 +20,7 @@ public class CharacterShellStateComponent extends ShellStateComponent {
     public CharacterShellStateComponent(ServerPlayer player) {
         this.playerUuid = player.getUUID();
         this.data = PlayerCharacterData.get(player).writeNbt(player.getUUID());
+        this.data.putInt("CloneInnerCapacity", xiaoshi2022.corpseorigin.character.InnerPowerManager.getMaxInnerPower(player));
         this.data.putBoolean("JingangInfant",player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.INFANT));
         this.data.putInt("BearArms",player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities.BEAR_ARMS));
         this.data.put("EvolutionParts", player.getAttachedOrCreate(xiaoshi2022.corpseorigin.growth.SurvivalGrowth.BODY).copy());
@@ -31,28 +34,78 @@ public class CharacterShellStateComponent extends ShellStateComponent {
         return this.data.getStringOr("CharacterId", MortalCharacter.ID);
     }
 
+    /** 这具身体保存的进化部件 NBT（翅膀 / 鱼鳃 / 吸血体质，渲染分身附加骨骼时用） */
+    public void setEvolutionParts(CompoundTag parts) { this.data.put("EvolutionParts", parts.copy()); }
+
+    public int getCloneInnerCapacity() { return Math.max(0, data.getIntOr("CloneInnerCapacity", 0)); }
+
+    public boolean hasLearnedSkill(String path) {
+        return data.getList("LearnedSkills").map(list -> list.stream().anyMatch(tag ->
+                tag instanceof net.minecraft.nbt.StringTag text
+                        && (text.value().equals(path) || text.value().equals("corpseorigin:" + path)))).orElse(false);
+    }
+
+    public void setCreatureState(boolean infant, int bearArms) {
+        this.data.putBoolean("JingangInfant", infant);
+        this.data.putInt("BearArms", Math.clamp(bearArms, 0, 6));
+    }
+
+    public CompoundTag getEvolutionParts() {
+        return this.data.getCompound("EvolutionParts").orElseGet(CompoundTag::new);
+    }
+
+    /** 这具身体保存时是不是金刚婴儿形态 */
+    public boolean isInfant() {
+        return this.data.getBooleanOr("JingangInfant", false);
+    }
+
+    /** 这具身体保存时的巨熊臂层数（0~6） */
+    public int getBearArms() {
+        return Math.max(0, Math.min(6, this.data.getIntOr("BearArms", 0)));
+    }
+
     /**
-     * 把角色身份清成凡人，但<b>保留</b>进化点与已学技能。
+     * 把角色身份清成凡人，<b>连同该角色的技能一起</b>，只保留进化点。
      * <p>
      * 克隆仓培育出来的身体是"白纸"：肉体的东西（尸兄体质 / 内力 / 进化点）照抄本体，
-     * 但"我是谁"不该跟着被复制 —— 否则克隆一具身体就能白嫖本体的整套角色身份。
-     * 换进这具身体后，用角色选择书重新选角色即可。
+     * 但"我是谁、我会什么"不该跟着被复制 —— 否则克隆一具身体就能白嫖本体的整套角色身份，
+     * 外观也会跟着变（培育出来的是凡人，就该长凡人样）。
+     * <p>
+     * 想留下带角色外观的身体，正确做法是把<b>旧身体存进克隆仓</b>
+     * （{@code CloneChamberBlockEntity#receiveOldBody}）—— 那具身体本来就带着原角色的身份与外观。
+     * <p>
+     * ⚠️ 技能必须跟角色身份一起清。技能本来就是<b>绑定角色</b>的（{@code CharacterManager}
+     * 换角色时会 {@code clearLearnedSkills}），只清身份不清技能的话，换进克隆体的玩家会变成
+     * "凡人身带着上一个角色的一整套招式" —— 那正是"死亡夺舍凡人克隆体后技能还在"的来源。
+     * 凡人 / 尸兄这类<b>自由路线</b>的招式是探索得来的，与角色身份无关，照旧保留。
      */
     public void clearCharacterId() {
         CompoundTag tag = this.data.copy();
+        String previousRole = tag.getStringOr("CharacterId", MortalCharacter.ID);
         tag.putString("CharacterId", MortalCharacter.ID);
+        if (!xiaoshi2022.corpseorigin.growth.FreeGrowth.isFree(previousRole)) {
+            tag.put("LearnedSkills", new net.minecraft.nbt.ListTag());
+        }
         this.data = tag;
     }
 
     public void applyEvolutionPartsClone(net.minecraft.util.RandomSource random, boolean corpseClone, float ratio) {
         CompoundTag parts = data.getCompound("EvolutionParts").orElseGet(CompoundTag::new).copy();
-        if (!corpseClone) parts = new CompoundTag();
+        String organRole = parts.getStringOr(ORGAN_ROLE_KEY, getCharacterId());
+        String loadout = parts.getStringOr(xiaoshi2022.corpseorigin.growth.OrganLibrary.BODY_KEY, "");
+        if (!corpseClone) {
+            parts = new CompoundTag();
+            // Equipped geometry belongs to the physical body, not its learned skills or mutations.
+            if (!loadout.isEmpty()) parts.putString(xiaoshi2022.corpseorigin.growth.OrganLibrary.BODY_KEY, loadout);
+        }
         else for (String trait : xiaoshi2022.corpseorigin.growth.SurvivalGrowth.TRAITS) {
             if (random.nextFloat() > ratio) {
                 parts.remove(trait);
                 parts.remove(trait + "_progress");
             }
         }
+        if ("xiaojingang".equals(organRole) || "kaiweinai".equals(organRole))
+            parts.putString(ORGAN_ROLE_KEY, organRole);
         data.put("EvolutionParts", parts);
     }
 

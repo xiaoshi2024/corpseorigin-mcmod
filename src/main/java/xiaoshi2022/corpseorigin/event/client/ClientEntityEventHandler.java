@@ -35,6 +35,7 @@ public class ClientEntityEventHandler {
                 CorpseOriginClient.tempRedEyeTicks.clear();
                 ExoskeletonRenderLayer.clearCache();
                 CorpseOriginClient.corpseDataCache.clear();
+                CorpseOriginClient.cloneBodyDataCache.clear();
                 CorpseOriginClient.pendingReplayBodies.clear();
                 CorpseOrigin.LOGGER.info("🧹 玩家退出世界，清空所有缓存");
             });
