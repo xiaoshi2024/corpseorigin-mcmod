@@ -25,6 +25,8 @@ public final class CorpseHorrorGameplayTest implements FabricClientGameTest {
     private static void check(boolean ok,String message){if(!ok)throw new AssertionError(message);}
     @Override public void runTest(ClientGameTestContext context){
         var config=CorpseHorror.config();boolean enabled=config.enabled;int worms=config.maggotsPerCorpse;
+        double ribsChance=config.livingRibsChance,maggotChance=config.deathMaggotChance;
+        config.livingRibsChance=1;config.deathMaggotChance=1;
         config.enabled=true;config.maggotsPerCorpse=3;
         try(var world=context.worldBuilder().create()){
             var server=world.getServer();context.waitTicks(50);
@@ -133,6 +135,6 @@ public final class CorpseHorrorGameplayTest implements FabricClientGameTest {
             context.waitTicks(2);
             server.runOnServer(s->{var m=(CorpseMaggotEntity)corpse.level().getEntity(entityId);check(m!=null && m.getHostId()<0,"curing infection dislodges parasite");});
             System.out.println("CorpseHorrorGameplayTest passed: advancing idle, isolated accessory animation, pack targeting, breakable gnaw, delayed death and one maggot burst.");
-        }finally{config.enabled=enabled;config.maggotsPerCorpse=worms;}
+        }finally{config.enabled=enabled;config.maggotsPerCorpse=worms;config.livingRibsChance=ribsChance;config.deathMaggotChance=maggotChance;}
     }
 }

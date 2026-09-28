@@ -1,4 +1,9 @@
 {
+  "subtitles.corpseorigin.corpse_breath": "Corpse brother breathes",
+  "subtitles.corpseorigin.blood_lotus_drain": "Blood lotus drains life",
+  "subtitles.corpseorigin.injection": "Enhancement injection",
+  "subtitles.corpseorigin.thermal_scan": "Thermal scan",
+  "subtitles.corpseorigin.zishu_ion": "Zi Shu ion ball",
   "message.corpseorigin.wood_bind.cut": "The binding vines have been cut.",
   "message.corpseorigin.wood_bind.broken": "You broke free of the binding vines.",
   "command.corpseorigin.vampire_sunlight.enabled": "K's sunlight damage is enabled (1 health every 2 seconds); Hei Xiaofei is immune.",

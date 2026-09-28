@@ -41,6 +41,9 @@ public final class CorpseGrappleGoal extends Goal {
         if(pull.lengthSqr()<6.25 && mob.level().noCollision(mob,mob.getBoundingBox().move(pull.scale(.35))))
             mob.setDeltaMovement(pull.scale(.35).add(0,mob.getDeltaMovement().y,0));
         prey.addEffect(new MobEffectInstance(MobEffects.SLOWNESS,6,0,false,false,true));
+        if((mob.tickCount-started)%20==5 && mob.getRandom().nextDouble()<CorpseHorror.config().grappleEscapeChance){
+            stop();return;
+        }
         if((mob.tickCount-started)%20==8 && mob.level() instanceof ServerLevel level){
             if(prey.hurtServer(level,mob.damageSources().mobAttack(mob),(float)(mob.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE)*.65))){
                 mob.setHunger(mob.getHunger()+8);CorpseHorror.blood(level,prey.position().add(0,prey.getBbHeight()*.65,0),8);

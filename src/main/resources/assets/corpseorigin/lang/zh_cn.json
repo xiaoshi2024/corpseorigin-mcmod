@@ -1,4 +1,9 @@
 {
+  "subtitles.corpseorigin.corpse_breath": "尸兄低沉呼吸",
+  "subtitles.corpseorigin.blood_lotus_drain": "血莲宝灯吸血",
+  "subtitles.corpseorigin.injection": "强化剂注射",
+  "subtitles.corpseorigin.thermal_scan": "热成像扫描",
+  "subtitles.corpseorigin.zishu_ion": "子鼠电光离子球",
   "message.corpseorigin.wood_bind.cut": "束缚藤蔓已被斩断。",
   "message.corpseorigin.wood_bind.broken": "你挣脱了藤蔓束缚。",
   "command.corpseorigin.vampire_sunlight.enabled": "K 的阳光扣血已开启（每2秒1点生命）；黑小飞不受影响。",

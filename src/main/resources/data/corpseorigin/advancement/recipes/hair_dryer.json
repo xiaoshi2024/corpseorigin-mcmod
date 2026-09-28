@@ -1,0 +1,15 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_material": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {"items": [{"items": "minecraft:redstone"}]}
+    },
+    "has_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {"recipe": "corpseorigin:hair_dryer"}
+    }
+  },
+  "requirements": [["has_material", "has_recipe"]],
+  "rewards": {"recipes": ["corpseorigin:hair_dryer"]}
+}

@@ -58,6 +58,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
             SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.BOOLEAN);
     public boolean isCracked(){return entityData.get(DATA_CRACKED);}
     public void setCracked(boolean cracked){entityData.set(DATA_CRACKED,cracked);}
+    private static final EntityDataAccessor<Boolean> DATA_RIBS_VISIBLE =
+            SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.BOOLEAN);
+    public boolean hasVisibleRibs(){return entityData.get(DATA_RIBS_VISIBLE);}
 
     private static final EntityDataAccessor<Integer> DATA_GRAPPLE_TARGET =
             SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.INT);
@@ -244,6 +247,12 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
 
         // ✅ 优先级0：被攻击后立刻反击（最高优先级）
         this.targetSelector.addGoal(0, new HurtByTargetGoal(this));
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this,
+                net.minecraft.world.entity.npc.villager.AbstractVillager.class,10,true,false,
+                (target, level)->ZombieKin.canAttack(this,target)&&!this.isAlliedTo(target)));
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this,
+                UncleEntity.class,12,true,false,
+                (target, level)->ZombieKin.canAttack(this,target)&&!this.isAlliedTo(target)));
 
         // ✅ 优先级1：攻击非尸族玩家（永远）
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<Player>(
@@ -295,6 +304,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         super.defineSynchedData(builder);
         builder.define(DATA_CORPSE_EYE, false);
         builder.define(DATA_CRACKED, false);
+        builder.define(DATA_RIBS_VISIBLE, false);
         builder.define(DATA_PLAYER_NAME, "");
         builder.define(DATA_CUSTOM_ID, "");
         builder.define(DATA_SKIN_STATE, ZbSkinState.NOT_LOADED.getCode());
@@ -486,6 +496,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
 
         if (!this.level().isClientSide()) {
             entityData.set(DATA_HORROR_ACTIVE, xiaoshi2022.corpseorigin.growth.CorpseHorror.applies(this));
+            entityData.set(DATA_RIBS_VISIBLE, xiaoshi2022.corpseorigin.growth.CorpseHorror.ribsVisible(this));
             xiaoshi2022.corpseorigin.growth.CorpseHorror.tick(this);
             // ✅ 每 200 tick（10秒）降低 1 点饥饿值
             if (this.tickCount % 200 == 0) {
@@ -508,6 +519,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         }
 
         if (this.level().isClientSide()) {
+            if (this.tickCount % (90 + Math.floorMod(this.getId(),30)) == 0 && this.isAlive() && this.getTarget() == null)
+                this.playSound(xiaoshi2022.corpseorigin.registry.ModSounds.CORPSE_BREATH,.28f,.72f+this.random.nextFloat()*.12f);
             tickClient();
         }
     }

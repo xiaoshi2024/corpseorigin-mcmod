@@ -21,6 +21,13 @@ public final class CorpseHorror {
                 && !(target instanceof Player p && p.isCreative()) && target.getBbWidth()<2.5
                 && ZombieKin.canAttack(attacker,target) && !attacker.isAlliedTo(target);
     }
+    /** Stable independent rolls, persisted through the entity UUID, including existing saves. */
+    public static boolean roll(LowerLevelZbEntity z,long salt,double chance){
+        return new java.util.Random(z.getUUID().getMostSignificantBits()^z.getUUID().getLeastSignificantBits()^salt).nextDouble()<chance;
+    }
+    public static boolean ribsVisible(LowerLevelZbEntity z){
+        return applies(z)&&config().exposedRibs&&(z.isDeadOrDying()&&z.deathTime>=8||roll(z,0x52494253L,config().livingRibsChance));
+    }
     public static void tick(LowerLevelZbEntity z){
         if(!applies(z) || !z.isAlive() || !(z.level() instanceof ServerLevel level) || z.tickCount%40!=0)return;
         LivingEntity target=z.getTarget();if(!validPrey(z,target) || !z.hasLineOfSight(target))return;
@@ -42,7 +49,7 @@ public final class CorpseHorror {
         if(z.deathTime==18 && !z.horrorWormsReleased){
             z.horrorWormsReleased=true;blood(level,z.position().add(0,.65,0),24);
             z.playSound(net.minecraft.sounds.SoundEvents.SLIME_SQUISH,1.0f,.65f);
-            if(config().maggotsOnDeath){
+            if(config().maggotsOnDeath&&roll(z,0x4D4147474F54L,config().deathMaggotChance)){
                 int worldCount=0;for(Entity e:level.getAllEntities())if(e instanceof CorpseMaggotEntity && ++worldCount>=config().worldMaggotCap)break;
                 int nearby=level.getEntitiesOfClass(CorpseMaggotEntity.class,z.getBoundingBox().inflate(24)).size();
                 int count=Math.max(0,Math.min(config().maggotsPerCorpse,Math.min(config().localMaggotCap-nearby,config().worldMaggotCap-worldCount)));

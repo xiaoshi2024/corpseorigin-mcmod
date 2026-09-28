@@ -31,7 +31,6 @@ import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
-import xiaoshi2022.corpseorigin.effect.SideEffect;
 import xiaoshi2022.corpseorigin.event.EvolutionEventHandler;
 import xiaoshi2022.corpseorigin.registry.ModDataAttachments;
 import xiaoshi2022.corpseorigin.skill.EvolutionManager;
@@ -46,7 +45,7 @@ import java.util.function.Consumer;
  *   <li>没注射过：常规强化 —— 永久最大生命 +30%，境界顶到人3；</li>
  *   <li>注射过：效果更强 —— 永久最大生命 +60%，境界顶到人4。</li>
  * </ul>
- * 无论哪种都会叠加 1 级 {@link SideEffect} 副作用（药剂本身依旧不稳定）。
+ * 口服药剂稳定无副作用（与注射剂不同）。
  * <p>
  * 外观按 GeoItem 走 3D 模型（模型名 {@code kw89}）：右键开始喝时触发几何动画 {@code use}，
  * 喝的动作完全由该动画表现（不走原版饮酒动作）；{@link #USE_TICKS} 到点后才结算药效并消耗物品。
@@ -93,7 +92,6 @@ public final class Kw89Item extends Item implements GeoItem {
             boolean injected = server.getAttachedOrCreate(ModDataAttachments.S_AGENT_INJECTED);
             applyEnhancement(server, injected);
             applyLevelBoost(server, injected);
-            SideEffect.applySideEffect(server, 1);
             server.sendSystemMessage(Component.translatable(injected
                     ? "message.corpseorigin.kw89.text_02" : "message.corpseorigin.kw89.text_01"));
             level.playSound(null, server.getX(), server.getY(), server.getZ(),

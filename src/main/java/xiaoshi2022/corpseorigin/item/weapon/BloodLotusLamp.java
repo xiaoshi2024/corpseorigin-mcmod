@@ -80,6 +80,7 @@ public class BloodLotusLamp extends Item implements GeoItem {
         if (player.isShiftKeyDown()) {
             int stored = stack.getOrDefault(ModDataComponents.STORED_BLOOD_QI, 0);
             if (stored > 0 && !level.isClientSide()) {
+                level.playSound(null,player.getX(),player.getY(),player.getZ(),xiaoshi2022.corpseorigin.registry.ModSounds.BLOOD_LOTUS_DRAIN,net.minecraft.sounds.SoundSource.PLAYERS,.8f,.8f);
                 player.heal(stored);
                 stack.set(ModDataComponents.STORED_BLOOD_QI, 0);
 

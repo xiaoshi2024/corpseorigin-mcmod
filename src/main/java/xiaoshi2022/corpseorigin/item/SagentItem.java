@@ -135,6 +135,7 @@ public final class SagentItem extends Item implements GeoItem {
     @Override
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        if (!level.isClientSide()) level.playSound(null,player.getX(),player.getY(),player.getZ(),xiaoshi2022.corpseorigin.registry.ModSounds.INJECTION,net.minecraft.sounds.SoundSource.PLAYERS,.65f,1.05f);
         // 空药剂不能再注射
         if (EMPTY.equals(variant)) return InteractionResult.FAIL;
         if (level.isClientSide()) return InteractionResult.SUCCESS;

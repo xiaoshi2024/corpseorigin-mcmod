@@ -54,6 +54,7 @@ public final class CorpseConfig {
     public xiaoshi2022.corpseorigin.growth.GrowthConfig growth = new xiaoshi2022.corpseorigin.growth.GrowthConfig();
     public xiaoshi2022.corpseorigin.growth.RealmConfig realm = new xiaoshi2022.corpseorigin.growth.RealmConfig();
     public xiaoshi2022.corpseorigin.growth.CorpseHorrorConfig corpseHorror = new xiaoshi2022.corpseorigin.growth.CorpseHorrorConfig();
+    public xiaoshi2022.corpseorigin.growth.RuinLoot.Config ruinLoot = new xiaoshi2022.corpseorigin.growth.RuinLoot.Config();
     /** Server-side restrictions on both bound and universal character books. Restart to apply. */
     public CharacterBooks characterBooks = new CharacterBooks();
     public GourdInheritance gourdInheritance = new GourdInheritance();
@@ -385,6 +386,8 @@ public final class CorpseConfig {
         realm.sanitize();
         if (corpseHorror == null) corpseHorror = new xiaoshi2022.corpseorigin.growth.CorpseHorrorConfig();
         corpseHorror.sanitize();
+        if(ruinLoot==null)ruinLoot=new xiaoshi2022.corpseorigin.growth.RuinLoot.Config();
+        ruinLoot.sanitize();
         if (gourdInheritance == null) gourdInheritance = new GourdInheritance();
         if (characterBooks == null) characterBooks = new CharacterBooks();
         if (characterBooks.disabledCharacters == null) characterBooks.disabledCharacters = new ArrayList<>();

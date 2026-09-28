@@ -5,4 +5,9 @@
       "corpseorigin:ground_chi"
     ]
   }
+  ,"corpse_breath":{"subtitle":"subtitles.corpseorigin.corpse_breath","sounds":["corpseorigin:corpse_breath"]},
+  "blood_lotus_drain":{"subtitle":"subtitles.corpseorigin.blood_lotus_drain","sounds":["corpseorigin:blood_lotus_drain"]},
+  "injection":{"subtitle":"subtitles.corpseorigin.injection","sounds":["corpseorigin:injection"]},
+  "thermal_scan":{"subtitle":"subtitles.corpseorigin.thermal_scan","sounds":["corpseorigin:thermal_scan"]},
+  "zishu_ion":{"subtitle":"subtitles.corpseorigin.zishu_ion","sounds":["corpseorigin:zishu_ion"]}
 }

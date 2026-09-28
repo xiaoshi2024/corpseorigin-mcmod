@@ -25,7 +25,7 @@ public final class ZishuIonBallEntity extends ThrowableItemProjectile {
                 target.hurtServer(l,damageSources().mobAttack(owner),32);
             }
             l.sendParticles(ParticleTypes.ELECTRIC_SPARK,at.x,at.y,at.z,32,.7,.7,.7,.2);
-            l.playSound(null,blockPosition(),net.minecraft.sounds.SoundEvents.LIGHTNING_BOLT_IMPACT,net.minecraft.sounds.SoundSource.NEUTRAL,1,1.4f);
+            l.playSound(null,blockPosition(),xiaoshi2022.corpseorigin.registry.ModSounds.ZISHU_ION,net.minecraft.sounds.SoundSource.NEUTRAL,1,1.1f);
         }discard();
     }
 }

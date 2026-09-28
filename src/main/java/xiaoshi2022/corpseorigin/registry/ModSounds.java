@@ -16,6 +16,11 @@ public final class ModSounds {
 
     /** 尸兄通用"吃~~"音效 */
     public static final SoundEvent GROUND_CHI = register("ground_chi");
+    public static final SoundEvent CORPSE_BREATH = register("corpse_breath");
+    public static final SoundEvent BLOOD_LOTUS_DRAIN = register("blood_lotus_drain");
+    public static final SoundEvent INJECTION = register("injection");
+    public static final SoundEvent THERMAL_SCAN = register("thermal_scan");
+    public static final SoundEvent ZISHU_ION = register("zishu_ion");
 
     private ModSounds() {
     }

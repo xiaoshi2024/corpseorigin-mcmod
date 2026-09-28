@@ -88,7 +88,7 @@ public final class ZbOrganLayer extends GeoRenderLayer<LowerLevelZbEntity, Void,
             frames.add(new Frame(slot, renderer, organState));
         }
         if (xiaoshi2022.corpseorigin.growth.CorpseHorror.applies(entity)
-                && xiaoshi2022.corpseorigin.growth.CorpseHorror.config().exposedRibs
+                && entity.hasVisibleRibs()
                 && slots.stream().noneMatch(OrganSlot::replacesBody)) {
             var renderer = renderers.computeIfAbsent(RIBS.id(), k -> new OrganRenderer(context, RIBS, -1));
             var state = new LivingEntityRenderState();

@@ -35,6 +35,7 @@ public class CorpseOrigin implements ModInitializer {
 		xiaoshi2022.corpseorigin.config.CorpseConfig.get();
         xiaoshi2022.corpseorigin.growth.RealmProgression.initialize();
         xiaoshi2022.corpseorigin.growth.ThermalSurvey.initialize();
+        xiaoshi2022.corpseorigin.growth.RuinLoot.initialize();
 
 		// ⚠️ 重要：先注册效果
 		ModEffects.init();

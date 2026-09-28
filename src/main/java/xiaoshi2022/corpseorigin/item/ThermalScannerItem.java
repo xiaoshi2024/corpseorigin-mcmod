@@ -12,7 +12,7 @@ public final class ThermalScannerItem extends Item {
     @Override public void appendHoverText(ItemStack s,TooltipContext c,net.minecraft.world.item.component.TooltipDisplay d,java.util.function.Consumer<Component> out,TooltipFlag f){out.accept(Component.translatable("thermal.corpseorigin.hint"));}
     @Override public InteractionResult use(Level l,Player p,InteractionHand h){
         var stack=p.getItemInHand(h);if(p.getCooldowns().isOnCooldown(stack))return InteractionResult.FAIL;
-        if(p instanceof ServerPlayer sp){ThermalSurvey.report(sp);p.getCooldowns().addCooldown(stack,100);}
+        if(p instanceof ServerPlayer sp){ThermalSurvey.report(sp);l.playSound(null,p.getX(),p.getY(),p.getZ(),xiaoshi2022.corpseorigin.registry.ModSounds.THERMAL_SCAN,net.minecraft.sounds.SoundSource.PLAYERS,.55f,1.2f);p.getCooldowns().addCooldown(stack,100);}
         return InteractionResult.SUCCESS;
     }
     @Override public InteractionResult interactLivingEntity(ItemStack s,Player p,LivingEntity e,InteractionHand h){
