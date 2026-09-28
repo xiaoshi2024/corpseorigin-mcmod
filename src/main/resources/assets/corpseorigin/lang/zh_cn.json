@@ -1,4 +1,9 @@
 {
+  "entity.corpseorigin.damo": "小青蛙·达摩",
+  "entity.corpseorigin.tian_doctor": "天·博士",
+  "message.corpseorigin.damo.qi": "小青蛙传授了你气感。传送后气感会消失。",
+  "message.corpseorigin.tian_doctor.trade": "天博士交给你一份高科技图纸。",
+  "message.corpseorigin.tian_doctor.hired": "天博士接受熟鸡肉，成为你的雇佣战力。",
   "entity.corpseorigin.zbr_fish": "尸兄鱼",
   "item.corpseorigin.zbr_fish_spawn_egg": "尸兄鱼刷怪蛋",
   "subtitles.corpseorigin.corpse_breath": "尸兄低沉呼吸",

@@ -242,6 +242,8 @@ public final class ModSpawns {
         // 主世界：大叔（打他会吐尸兄虫）
         BiomeModifications.addSpawn(OVERWORLD, MobCategory.CREATURE,
                 ModEntities.UNCLE, spawn.uncleWeight, 1, 1);
+        BiomeModifications.addSpawn(OVERWORLD, MobCategory.CREATURE, ModEntities.DAMO, 8, 1, 1);
+        BiomeModifications.addSpawn(OVERWORLD, MobCategory.CREATURE, ModEntities.TIAN_DOCTOR, 2, 1, 1);
 
         // 主世界：哈姆（有规则卡着"只在村庄附近"，权重再低也只在村里出）
         BiomeModifications.addSpawn(OVERWORLD, MobCategory.CREATURE,
