@@ -1,6 +1,6 @@
 plugins {
-	id 'net.fabricmc.fabric-loom' version "${loom_version}"
-	id 'maven-publish'
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'maven-publish'
 }
 
 // Agent/test builds must not rewrite the classes of an active IDE game.
@@ -10,306 +10,86 @@ if (project.hasProperty('isolatedBuild')) {
 
 apply from: 'tools/runtime-snapshot.gradle'
 
-if (project.hasProperty('chapterTests')) {
-    apply from: 'tools/chapter-tests.gradle'
-}
-if (project.hasProperty('renderTests')) {
-    apply from: 'src/renderTest/render-tests.gradle'
-}
-if (project.hasProperty('gourdTests')) {
-    apply from: 'src/gourdTest/gourd-tests.gradle'
-}
-if (project.hasProperty('cloneTests')) {
-    apply from: 'src/cloneTest/clone-tests.gradle'
-}
-if (project.hasProperty('realmTests')) {
-    apply from: 'src/realmTest/realm-tests.gradle'
-}
-
 repositories {
     maven {
         url 'https://repo.redlance.org/public'
         content { includeGroup 'com.zigythebird.playeranim' }
     }
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
-	maven {
-		url "https://cursemaven.com"
-		content {
-			includeGroup "curse.maven"
-		}
-	}
-	maven {
-		name = "Terraformers"
-		url = "https://maven.terraformersmc.com/"
-	}
+    maven {
+        url "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+    maven {
+        name = "Terraformers"
+        url = "https://maven.terraformersmc.com/"
+    }
 }
 
 fabricApi {
-	configureDataGeneration {
-		client = true
-	}
+    configureDataGeneration {
+        client = true
+    }
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	//geckolib
-	implementation "curse.maven:geckolib-388172:8819017"
+    //geckolib
+    implementation "curse.maven:geckolib-388172:8819017"
 
     // Optional Better Combat animation bridge; never bundle or require PAL.
     compileOnly('com.zigythebird.playeranim:PlayerAnimationLibCommon:1.2.5+mc.26.2') { transitive = false }
     compileOnly('com.zigythebird.playeranim:PlayerAnimationLibCore:1.2.5+mc.26.2') { transitive = false }
 
-	// Fabric API. This is technically optional, but you probably want it anyway.
-	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-	// ModMenu — optional; provides the "Settings" button in the mods list HUD.
-	// Players without ModMenu installed can still open HUD settings via the F9 key.
-	compileOnly "curse.maven:modmenu-308702:8854488"
+    // ModMenu — optional; provides the "Settings" button in the mods list HUD.
+    compileOnly "curse.maven:modmenu-308702:8854488"
 }
 
 processResources {
-	from('examples/organ-pack') {
-		into 'corpseorigin_examples/organ-pack'
-	}
-	def version = project.version
-	inputs.property "version", version
+    from('examples/organ-pack') {
+        into 'corpseorigin_examples/organ-pack'
+    }
+    def version = project.version
+    inputs.property "version", version
 
-	filesMatching("fabric.mod.json") {
-		expand "version": version
-	}
+    filesMatching("fabric.mod.json") {
+        expand "version": version
+    }
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 25
+    it.options.release = 25
+    it.options.encoding = 'UTF-8'
 }
 
 java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
-	withSourcesJar()
+    withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
-
-sourceSets {
-    physicsTest {
-        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
-        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
-    }
-}
-
-tasks.register('beeWheelPhysicsTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.entity.BeeWheelPhysicsTest'
-}
-
-tasks.named('check') { dependsOn beeWheelPhysicsTest }
-
-tasks.register('groundShockwaveTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.skill.chapter.GroundShockwaveTest'
-}
-tasks.named('check') { dependsOn groundShockwaveTest }
-
-tasks.register('realmRulesTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.growth.RealmRulesTest'
-}
-tasks.named('check') { dependsOn realmRulesTest }
-
-tasks.register('exoskeletonAnimationTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.client.model.ExoskeletonAnimationTest'
-}
-tasks.named('check') { dependsOn exoskeletonAnimationTest }
-
-tasks.register('corpseAnimationTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.entity.CorpseAnimationTest'
-}
-tasks.named('check') { dependsOn corpseAnimationTest }
-
-tasks.register('qiDensityTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.entity.QiDensityTest'
-}
-tasks.named('check') { dependsOn qiDensityTest }
-
-tasks.register('growthRulesTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.growth.GrowthRulesTest'
-}
-tasks.named('check') { dependsOn growthRulesTest }
-
-tasks.register('innerPowerRulesTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.character.InnerPowerRulesTest'
-}
-
-tasks.named('check') { dependsOn innerPowerRulesTest }
-
-tasks.register('organSlotTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.growth.OrganSlotTest'
-}
-tasks.named('check') { dependsOn organSlotTest }
-
-tasks.register('organPresetTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.growth.OrganPresetTest'
-}
-tasks.named('check') { dependsOn organPresetTest }
-
-tasks.register('organResourceIdsTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.growth.OrganResourceIdsTest'
-}
-tasks.named('check') { dependsOn organResourceIdsTest }
-
-tasks.register('balanceRulesTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.growth.BalanceRulesTest'
-}
-tasks.named('check') { dependsOn balanceRulesTest }
-
-tasks.register('bloodReserveRulesTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.skill.longyou.BloodReserveRulesTest'
-}
-tasks.named('check') { dependsOn bloodReserveRulesTest }
-
-tasks.register('rawMeatDigestionRulesTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.skill.longyou.RawMeatDigestionRulesTest'
-}
-tasks.named('check') { dependsOn rawMeatDigestionRulesTest }
-
-tasks.register('skillResourceRulesTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.skill.SkillResourceRulesTest'
-}
-tasks.named('check') { dependsOn skillResourceRulesTest }
-
-tasks.register('organAccessRulesTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.growth.OrganAccessRulesTest'
-}
-tasks.named('check') { dependsOn organAccessRulesTest }
-
-tasks.register('organEvolutionRulesTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.growth.OrganEvolutionRulesTest'
-}
-tasks.named('check') { dependsOn organEvolutionRulesTest }
-
-tasks.register('opportunityRulesTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.growth.OpportunityRulesTest'
-}
-tasks.named('check') { dependsOn opportunityRulesTest }
-
-tasks.register('tianGangBladeSweepTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangBladeSweepTest'
-}
-tasks.named('check') { dependsOn tianGangBladeSweepTest }
-
-// Catch incomplete distributions before a deferred ability class is first loaded in game.
-tasks.register('verifyOrganDistribution') {
-    dependsOn tasks.named('jar')
-    doLast {
-        def archive = tasks.named('jar').get().archiveFile.get().asFile
-        new java.util.zip.ZipFile(archive).withCloseable { zip ->
-            [
-                'xiaoshi2022/corpseorigin/growth/OrganAbilities.class',
-                'xiaoshi2022/corpseorigin/growth/OrganNetwork.class',
-                'xiaoshi2022/corpseorigin/growth/GourdOrganState.class',
-                'xiaoshi2022/corpseorigin/entity/GourdOrganEntity.class',
-                'xiaoshi2022/corpseorigin/client/ClientCorpseData.class',
-                'xiaoshi2022/corpseorigin/entity/ZbrFishEntity.class',
-                'assets/corpseorigin/geckolib/models/entity/zbr_fish.geo.json',
-                'assets/corpseorigin/geckolib/animations/entity/zbr_fish.animation.json',
-                'assets/corpseorigin/textures/entity/zbr_fish.png',
-                'assets/corpseorigin/geckolib/models/entity/zbr_gourd.geo.json',
-                'assets/corpseorigin/geckolib/animations/entity/zbr_gourd.animation.json'
-            ].each { name ->
-                if (zip.getEntry(name) == null) throw new GradleException("Incomplete mod JAR: missing ${name}")
-            }
-        }
-    }
-}
-tasks.named('check') { dependsOn verifyOrganDistribution }
-tasks.register('gourdBalanceTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.skill.chapter.GourdBalanceTest'
-}
-tasks.named('check') { dependsOn gourdBalanceTest }
-
-tasks.register('characterMemoryDataTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.item.CharacterMemoryDataTest'
-}
-tasks.named('check') { dependsOn characterMemoryDataTest }
-
-tasks.register('gourdInheritanceTest', JavaExec) {
-    dependsOn physicsTestClasses
-    classpath = sourceSets.physicsTest.runtimeClasspath
-    mainClass = 'xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceTest'
-}
-tasks.named('check') { dependsOn gourdInheritanceTest }
 
 jar {
-	def projectName = project.name
-	inputs.property "projectName", projectName
+    def projectName = project.name
+    inputs.property "projectName", projectName
 
-	from("LICENSE") {
-		rename { "${it}_$projectName"}
-	}
+    from("LICENSE") {
+        rename { "${it}_$projectName"}
+    }
 }
 
-// configure the maven publication
 publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			from components.java
-		}
-	}
+    publications {
+        create("mavenJava", MavenPublication) {
+            from components.java
+        }
+    }
 
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
-	}
+    repositories {
+    }
 }

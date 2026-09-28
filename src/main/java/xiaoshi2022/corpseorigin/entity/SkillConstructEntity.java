@@ -95,6 +95,12 @@ public class SkillConstructEntity extends PathfinderMob implements GeoEntity {
             tickClone(level, clone);
             return;
         }
+        if (owner != null && level.getEntity(owner) instanceof TianDoctorEntity doctor) {
+            if (--life <= 0 || !doctor.isAlive()) { discard(); return; }
+            if (this instanceof BeeWheelEntity wheel) wheel.tickDoctorWheel(level, doctor);
+            else discard();
+            return;
+        }
         if(--life<=0 || owner==null || !(level.getEntity(owner) instanceof ServerPlayer p)
                 || !p.isAlive() || !role.equals(CharacterManager.getInstance().getPlayerCharacterId(p))){discard();return;}
         String kind=kind();
@@ -136,6 +142,12 @@ public class SkillConstructEntity extends PathfinderMob implements GeoEntity {
             if(tickCount%8==0)level.playSound(null,getX(),getY(),getZ(),net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH,
                     net.minecraft.sounds.SoundSource.PLAYERS,.35f,1.6f);
         }
+    }
+    public void initializeDoctor(TianDoctorEntity doctor, int lifetime) {
+        owner = doctor.getUUID();
+        life = lifetime;
+        setPos(doctor.getEyePosition());
+        setYRot(doctor.getYRot());
     }
     protected boolean tickConstruct(ServerLevel level,ServerPlayer player){return false;}
     private void tickClone(ServerLevel level, CloneAvatarEntity clone) {

@@ -58,19 +58,22 @@ public final class FreeGrowth {
         p.sendSystemMessage(Component.translatable("message.corpseorigin.opportunity.discovered", skill.get().getName()));
     }
     public static void awaken(ServerPlayer p){
-        if(!isFree(p))return;
-        if(InnerPowerManager.getMaxInnerPower(p)>0)return;
-        var journal=p.getAttachedOrCreate(SurvivalGrowth.JOURNAL).copy();
-        if(journal.getBooleanOr("inner_power",false))return;
-        journal.putBoolean("inner_power",true);p.setAttached(SurvivalGrowth.JOURNAL,journal);
-        InnerPowerManager.reset(p);
-        p.sendSystemMessage(Component.translatable("message.corpseorigin.free_growth.text_02"));
+        InnerPowerManager.awakenQiSense(p);
     }
+    /**
+     * 自由路线（凡人 / 尸兄）的内力上限。
+     * <p>
+     * 没觉醒气感就是 0；觉醒了就按当前进化等级走 {@link InnerPowerRules#growthCapacity(int)}。
+     * <b>绝不能回头调 InnerPowerManager.getMaxInnerPower</b>，
+     * 否则会形成 getMaxInnerPower → innerPower → getMaxInnerPower 的无限递归。
+     */
     public static int innerPower(ServerPlayer p){
-        if(!isFree(p)
-                ||!p.getAttachedOrCreate(SurvivalGrowth.JOURNAL).getBooleanOr("inner_power",false))return 0;
-        return InnerPowerRules.growthCapacity(EvolutionManager.getLevel(PlayerCharacterData.get(p).getEarnedPoints(p.getUUID())));
+        if (!isFree(p) || !hasQiSense(p)) return 0;
+        int level = EvolutionManager.getLevel(
+                PlayerCharacterData.get(p).getEarnedPoints(p.getUUID()));
+        return InnerPowerRules.growthCapacity(level);
     }
+    public static boolean hasQiSense(ServerPlayer p) { return InnerPowerManager.hasQiSense(p); }
     public static void opportunity(ServerPlayer p,String event){
         if(!isFree(p))return;
         var journal=p.getAttachedOrCreate(SurvivalGrowth.JOURNAL).copy();

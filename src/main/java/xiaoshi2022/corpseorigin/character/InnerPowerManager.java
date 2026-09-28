@@ -31,6 +31,20 @@ public final class InnerPowerManager {
     /** 每多少 tick 回复 1 点内力 */
     private static final int REGEN_INTERVAL = 20;
 
+    public static boolean hasQiSense(ServerPlayer player) {
+        return player.getAttachedOrCreate(SurvivalGrowth.JOURNAL).getBooleanOr("qi_sense_awakened", false);
+    }
+
+    public static boolean awakenQiSense(ServerPlayer player) {
+        if (getMaxInnerPower(player) > 0 || hasQiSense(player)) return false;
+        var journal = player.getAttachedOrCreate(SurvivalGrowth.JOURNAL).copy();
+        journal.putBoolean("qi_sense_awakened", true);
+        player.setAttached(SurvivalGrowth.JOURNAL, journal);
+        reset(player);
+        player.sendSystemMessage(Component.translatable("message.corpseorigin.inner_power.tian_awakened"));
+        return getMaxInnerPower(player) > 0;
+    }
+
     /**
      * 获取玩家当前内力值。
      * 如果玩家是无内力角色或从未记录过，返回 0。
@@ -47,9 +61,13 @@ public final class InnerPowerManager {
      * 获取玩家内力上限。
      */
     public static int getMaxInnerPower(ServerPlayer player) {
+        int level = evolutionLevel(player);
+        int learned = FreeGrowth.isFree(player) && hasQiSense(player)
+                ? InnerPowerRules.growthCapacity(level) : 0;
         int base = InnerPowerRules.capacity(
                 CharacterManager.getInstance().getPlayerCharacter(player).getMaxInnerPower(),
-                FreeGrowth.innerPower(player), evolutionLevel(player));
+                learned, level);
+        if (base <= 0 && hasQiSense(player)) base = InnerPowerRules.growthCapacity(evolutionLevel(player));
         return base <= 0 ? 0 : (int)Math.min(100000000L,(long)base + xiaoshi2022.corpseorigin.growth.RealmProgression.qiBonus(player));
     }
 

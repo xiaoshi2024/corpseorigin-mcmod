@@ -102,6 +102,24 @@ public class BeeWheelEntity extends SkillConstructEntity {
         } else if (wall.getType() != HitResult.Type.MISS) entityData.set(PHASE, RETURNING);
         else setPos(end);
     }
+    public void tickDoctorWheel(ServerLevel level, TianDoctorEntity doctor) {
+        Vec3 start = position(), end = start.add(getDeltaMovement());
+        if (!level.hasChunkAt(BlockPos.containing(end))) { discard(); return; }
+        var wall = level.clip(new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+        var hit = ProjectileUtil.getEntityHitResult(this, start, wall.getLocation(), new AABB(start, end).inflate(.35),
+                entity -> entity instanceof LivingEntity living && ZombieKin.isZombieKin(living)
+                        && !ZombieKin.isZombieKing(living), start.distanceToSqr(wall.getLocation()));
+        if (hit != null && hit.getEntity() instanceof LivingEntity target) {
+            target.hurtServer(level, doctor.damageSources().mobAttack(doctor), 28);
+            target.setDeltaMovement(target.getDeltaMovement().add(getDeltaMovement().normalize().scale(.25)));
+            target.hurtMarked = true;
+            discard();
+        } else if (wall.getType() != HitResult.Type.MISS) discard();
+        else {
+            setPos(end);
+            setYRot(getYRot() + 25);
+        }
+    }
     public int phase(){return entityData.get(PHASE);}
     public static BeeWheelEntity active(ServerPlayer player){
         var entity=findOwned(player,"bee_wheel");

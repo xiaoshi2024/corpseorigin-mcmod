@@ -27,7 +27,6 @@ import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
 import xiaoshi2022.corpseorigin.event.EvolutionEventHandler;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
-import xiaoshi2022.corpseorigin.util.WorldCalendar;
 
 import java.util.List;
 
@@ -79,20 +78,6 @@ public final class SurvivalGrowth {
                     || !CorpseConfig.get().growth.enabled || !eligible(serverPlayer)
                     || !(target instanceof LivingEntity living) || !living.isAlive()
                     || player.distanceToSqr(target) > 25 || !player.hasLineOfSight(target)) return InteractionResult.PASS;
-            if (FreeGrowth.isFree(serverPlayer) && player.isShiftKeyDown()
-                    && target instanceof net.minecraft.world.entity.npc.villager.Villager
-                    && player.getMainHandItem().is(net.minecraft.world.item.Items.EMERALD)) {
-                // Sleeping advances the world's dayTime directly; gameTime only advances
-                // by the few ticks spent in bed, so it cannot identify the new calendar day.
-                String lesson="village_training:"+Math.floorDiv(WorldCalendar.dayTime(serverPlayer.level()),24000);
-                if(claim(serverPlayer,lesson)) {
-                    player.getMainHandItem().shrink(1);
-                    FreeGrowth.opportunity(serverPlayer,lesson);
-                    EvolutionEventHandler.awardPoints(serverPlayer,Math.clamp(CorpseConfig.get().growth.villageTrainingPoints,0,100));
-                    player.sendSystemMessage(Component.translatable("message.corpseorigin.survival_growth.text_01"));
-                } else player.sendOverlayMessage(Component.translatable("message.corpseorigin.survival_growth.text_02"));
-                return InteractionResult.SUCCESS;
-            }
             for (var teaching : CorpseConfig.get().growth.teachings) {
                 if(!CorpseConfig.get().growth.teachingEnabled)break;
                 if (teaching == null || teaching.id == null || teaching.id.isBlank()

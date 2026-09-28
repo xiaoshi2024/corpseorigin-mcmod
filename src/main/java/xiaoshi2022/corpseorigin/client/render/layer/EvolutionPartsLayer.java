@@ -21,8 +21,12 @@ import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.growth.SurvivalGrowth;
 
 /**
- * 闄勫姞楠ㄩ锛堢繀鑶€ / 楸奸硟锛夛紝閿氬湪甯﹀姩鐢荤殑浜哄舰韬共涓婏紝缁濅笉鏇挎崲鐨偆銆? * <p>
- * 鐪熺帺瀹惰鑷繁鍚屾鐨?{@code evolution_parts} 闄勪欢锛涘厠闅嗗垎韬紙瀹炰綋 / 浠撳唴鎵嬬粯涓嶈蛋杩欏眰锛? * 璇?{@code CloneBodySyncS2C} 鍚屾杩囨潵鐨勮鑹插瑙傜紦瀛?鈥斺€?涓よ竟閮芥槸绾?ModelPart 鎵嬬粯锛? * 涓嶄緷璧?GeckoLib 鐨勭帺瀹?animatable 閫氶亾銆? */
+ * 在玩家或克隆分身身上绘制翅膀和鱼鳃，不替换原有皮肤。
+ * <p>
+ * 玩家读取同步的 {@code evolution_parts} 附件；克隆分身读取
+ * {@code CloneBodySyncS2C} 同步的外观缓存。部件使用 {@code ModelPart} 绘制，
+ * 不经过 GeckoLib 的玩家 animatable 通道。
+ */
 public final class EvolutionPartsLayer extends RenderLayer<AvatarRenderState, PlayerModel> {
     private final ModelPart leftWing, rightWing, gills;
     private static ModelPart bake(String name, CubeListBuilder cubes) {
@@ -51,7 +55,7 @@ public final class EvolutionPartsLayer extends RenderLayer<AvatarRenderState, Pl
                 light, OverlayTexture.NO_OVERLAY, null);
     }
 
-    /** 杩欎竴灞傝鐢荤殑杩涘寲閮ㄤ欢鏉ユ簮锛氱湡鐜╁鐢ㄩ檮浠讹紝鍒嗚韩鐢ㄧ綉缁滅紦瀛樸€?*/
+    /** 这一层要画的进化部件来源：真玩家用附件，分身用网络缓存*/
     private record PartsSource(Entity entity, CompoundTag body, xiaoshi2022.corpseorigin.client.ClientCorpseData corpse) {}
 
     private static PartsSource resolve(Entity entity) {
@@ -68,7 +72,8 @@ public final class EvolutionPartsLayer extends RenderLayer<AvatarRenderState, Pl
         if (entity instanceof CloneAvatarEntity) {
             CorpseOriginClient.ClientCloneBody cloneBody =
                     CorpseOriginClient.cloneBodyDataCache.get(entity.getUUID());
-            // 娌℃湁瑙掕壊澶栬鍖呮椂锛堟棫鏁版嵁 / 灏氭湭閫佽揪锛変笉鐢荤繀鑶€锛岀瓑涓嬩竴娆″悓姝ヨ嚜鎰?            return cloneBody == null ? null
+            // Clone appearance data may arrive later, so skip the parts until it is available.
+            return cloneBody == null ? null
                     : new PartsSource(entity, cloneBody.evolutionParts(), corpse);
         }
         return null;

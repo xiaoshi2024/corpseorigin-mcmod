@@ -35,6 +35,10 @@ public final class ModItems {
             new Item.Properties().stacksTo(1).setId(itemKey("black_gold_heart"))));
     public static final Item BEE_WHEEL=register("bee_wheel",new BeeWheelItem(new Item.Properties()
             .sword(ToolMaterial.DIAMOND,8,-2.4f).stacksTo(1).setId(itemKey("bee_wheel"))));
+    public static final Item DAMO_SPAWN_EGG = register("damo_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("damo_spawn_egg", ModEntities.DAMO)));
+    public static final Item TIAN_DOCTOR_SPAWN_EGG = register("tian_doctor_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("tian_doctor_spawn_egg", ModEntities.TIAN_DOCTOR)));
     public static final Item DR_MU_EYE = register("dr_mu_eye", new Item(new Item.Properties().setId(itemKey("dr_mu_eye"))));
     public static final Item RED_METEOR_SWORD = register("red_meteor_sword",new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,3,-2.4f).setId(itemKey("red_meteor_sword"))));
     public static final Item PARCEL_BOMB = register("parcel_bomb",new Item(new Item.Properties().setId(itemKey("parcel_bomb"))));
@@ -339,6 +343,8 @@ public final class ModItems {
                 output.accept(ZB_WORM_SPAWN_EGG);
                 output.accept(MIKU_ZB_SPAWN_EGG);
                 output.accept(LOWER_LEVEL_ZB_SPAWN_EGG);
+                output.accept(DAMO_SPAWN_EGG);
+                output.accept(TIAN_DOCTOR_SPAWN_EGG);
                 output.accept(ZB_WORM_ITEM);
                 output.accept(HAIR_DRYER);
                 output.accept(ZISHU_THERMAL_SCANNER);

@@ -24,11 +24,11 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
     public static final Identifier EXOSKELETON_TEXTURE =
             Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "textures/entity/lower_level_zb_eye.png");
 
-    /** 鉁?绾㈢溂鍙犲姞璐村浘 */
+    /** 红眼叠加贴图 */
     public static final Identifier RED_EYE_OVERLAY =
             Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "textures/entity/red_eye_overlay.png");
 
-    /** 鉁?瀹炰綋ID 鈫?UUID 缂撳瓨 */
+    /** 实体ID UUID 缓存 */
     private static final Map<Integer, UUID> UUID_CACHE = new ConcurrentHashMap<>();
 
     private final ExoskeletonModel model;
@@ -54,9 +54,9 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
         var parentModel = this.getParentModel();
         if (parentModel == null) return;
 
-        // ==================== 1. 灏稿厔鍣ㄥ畼娓叉煋锛堝師鏈夐€昏緫锛?====================
-        // 鍒嗚韩鐨勫案鍏勭姸鎬佸凡鎸夊畠鑷繁鐨?uuid 鍚屾杩囨潵锛屾墍浠ヨ繖閲岀洿鎺ョ敤瀹炰綋 uuid
-        // 鏃犲楠ㄩ閫氱敤鍙樼锛堝ぉ绾垮疂瀹濆案鍏勯偅绉嶈嚜甯︽暣濂楃洈鐢插瑙傜殑銆佸乏鎶ゆ硶鍙樺紓浣擄級绠楀案鍏勶紝浣嗕笉闀胯繖鏍瑰案鐪奸楠?
+        // ==================== 1. 尸兄器官渲染（原有逻辑====================
+        // 分身的尸兄状态已按它自己uuid 同步过来，所以这里直接用实体 uuid
+        // 无外骨骼通用变种（天线宝宝尸兄那种自带整套盔甲外观的、左护法变异体）算尸兄，但不长这根尸眼骨
         xiaoshi2022.corpseorigin.client.ClientCorpseData corpseData = CorpseOriginClient.corpseDataCache.get(uuid);
         if (corpseData != null && corpseData.showsCorpseEye()) {
             model.copyFromHead(parentModel.head);
@@ -74,8 +74,8 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
             poseStack.popPose();
         }
 
-        // ==================== 2. 绾㈢溂鐗规晥娓叉煋锛堟潃鎴閱掞級 ====================
-        // 绾㈢溂鏄帺瀹惰嚜宸辩殑鎴樻枟鐘舵€侊紙鎸夌帺瀹?uuid 璁帮級锛屽垎韬窡鐫€涓讳汉涓€璧蜂寒
+        // ==================== 2. 红眼特效渲染（杀戮觉醒） ====================
+        // 红眼是玩家自己的战斗状态（按玩uuid 记），分身跟着主人一起亮
         UUID redEyeUuid = uuid;
         if (entity instanceof xiaoshi2022.corpseorigin.entity.CloneAvatarEntity avatar
                 && avatar.getOwnerUuid() != null) {
@@ -86,7 +86,7 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
             poseStack.pushPose();
 
             submitNodeCollector.order(1).submitModelPart(
-                    parentModel.head,                   // 鉁?head 鐨?pose 涓€瀹氭槸瀵圭殑
+                    parentModel.head,                   // head pose 一定是对的
                     poseStack,
                     RenderTypes.eyes(RED_EYE_OVERLAY),
                     packedLight,
@@ -113,12 +113,12 @@ public class ExoskeletonRenderLayer extends RenderLayer<AvatarRenderState, Playe
         return uuid;
     }
 
-    /** 鉁?瀹炰綋鍗歌浇鏃舵竻鐞?*/
+    /** 实体卸载时清*/
     public static void onEntityRemoved(int entityId) {
         UUID_CACHE.remove(entityId);
     }
 
-    /** 鉁?娓呯┖鎵€鏈夌紦瀛橈紙鐜╁閫€鍑烘椂锛?*/
+    /** 清空所有缓存（玩家退出时*/
     public static void clearCache() {
         UUID_CACHE.clear();
     }

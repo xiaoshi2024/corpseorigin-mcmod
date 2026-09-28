@@ -12,11 +12,11 @@ public final class ShiChaoBodyRenderData {
     public static final DataTicket<Boolean> ACTIVE =
             DataTicket.create("shichao_body_active", Boolean.class);
 
-    /** 杩欎竴甯х殑鏁磋韩绾圭悊锛坽@code shichaozhizi.png} 搴曞浘 + 椤朵笂閭ｅ叿浜哄舰鍙犵帺瀹剁毊鑲わ級锛涚己鐪?= 鐢ㄩ潤鎬佸簳鍥?*/
+    /** 本帧尸巢之子的整身纹理；缺少动态纹理时使用静态底图。 */
     public static final DataTicket<Identifier> BODY_TEXTURE =
             DataTicket.create("shichao_body_texture", Identifier.class);
 
-    /** 杩欎竴甯ф槸涓嶆槸姝ｅ湪鏀俱€屽崈鐪间竾鐩€嶁€斺€?鍔ㄧ敾鎺у埗鍣ㄦ嵁姝ゆ暣娈垫敼鎾?{@code special} */
+    /** 本帧是否正在播放「千眼万目」，供动画控制器选择 {@code special} 动画。 */
     public static final DataTicket<Boolean> SPECIAL =
             DataTicket.create("shichao_body_special", Boolean.class);
 
