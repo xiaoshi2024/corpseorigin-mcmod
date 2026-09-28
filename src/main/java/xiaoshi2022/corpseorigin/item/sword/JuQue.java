@@ -45,7 +45,7 @@ public class JuQue extends Item implements GeoItem {
     private static final RawAnimation IDLE = RawAnimation.begin().thenPlay("idle");
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
-    // 2阶巨阙参数
+    // 巨阙参数（一阶 / 二阶同机制，仅基础攻击力不同）
     private static final float SLOW_CHANCE = 0.3F;
     private static final float DAMAGE_CHANCE = 0.3F;
     private static final int SLOW_DURATION = 150;
@@ -55,15 +55,36 @@ public class JuQue extends Item implements GeoItem {
     public static final int BEAM_LEVEL = 2;
     public static final int COOLDOWN = 60;
 
-    public JuQue(Properties properties) {
+    /** Geo 模型名：一阶 ming_juque、二阶 ming_juque_tw */
+    private final String modelName;
+    /** 二阶巨阙需要进化等级≥2 才可挥动；一阶不设门槛 */
+    private final boolean evolutionGated;
+
+    public JuQue(Properties properties, String modelName, boolean evolutionGated) {
         super(properties);
+        this.modelName = modelName;
+        this.evolutionGated = evolutionGated;
     }
 
+    /** 二阶巨阙：进化等级≥2 才可使用 */
     public static JuQue create(ResourceKey<Item> id) {
         return new JuQue(new Item.Properties()
                 .sword(ToolMaterial.DIAMOND, 26.0F, -2.4F)
                 .rarity(net.minecraft.world.item.Rarity.EPIC)
-                .setId(id));
+                .setId(id), "ming_juque_tw", true);
+    }
+
+    /** 一阶巨阙：无使用门槛，机制与二阶一致，仅基础攻击力更低 */
+    public static JuQue createFirst(ResourceKey<Item> id) {
+        return new JuQue(new Item.Properties()
+                .sword(ToolMaterial.DIAMOND, 16.0F, -2.4F)
+                .rarity(net.minecraft.world.item.Rarity.EPIC)
+                .setId(id), "ming_juque", false);
+    }
+
+    /** 二阶巨阙才有进化等级门槛，一阶（ming_juque）人人可用 */
+    public boolean evolutionGated() {
+        return evolutionGated;
     }
 
     // ==================== 公共发射逻辑（静态，use() 和网络包共用） ====================
@@ -210,7 +231,7 @@ public class JuQue extends Item implements GeoItem {
             @Override
             public @Nullable GeoItemRenderer<JuQue> getGeoItemRenderer() {
                 if (this.renderer == null)
-                    this.renderer = new JuQueRenderer();
+                    this.renderer = new JuQueRenderer(modelName);
                 return this.renderer;
             }
         });

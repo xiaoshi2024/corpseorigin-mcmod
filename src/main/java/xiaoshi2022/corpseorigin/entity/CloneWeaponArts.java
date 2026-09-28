@@ -43,7 +43,7 @@ public final class CloneWeaponArts {
         if (stack == null || stack.isEmpty()) {
             return false;
         }
-        return stack.is(ModItems.JUQUE_TW)
+        return stack.getItem() instanceof JuQue
                 || stack.is(ModItems.BLOOD_WING_BLADE)
                 || stack.is(ModItems.GUIGUN_WEAP)
                 || stack.is(ModItems.GUIGUN_CLUB)
@@ -91,8 +91,8 @@ public final class CloneWeaponArts {
     }
 
     public static double attackRange(CloneAvatarEntity caster, ItemStack stack) {
-        if(stack.is(ModItems.JUQUE_TW)||stack.is(ModItems.BLOOD_WING_BLADE))
-            return JuQueBeamEntity.rangeFor(stack.is(ModItems.JUQUE_TW)?JuQue.BEAM_LEVEL:4,JuQueBeamEntity.powerFor(caster));
+        if(stack.getItem() instanceof JuQue||stack.is(ModItems.BLOOD_WING_BLADE))
+            return JuQueBeamEntity.rangeFor(stack.getItem() instanceof JuQue?JuQue.BEAM_LEVEL:4,JuQueBeamEntity.powerFor(caster));
         return preferredRange(stack);
     }
 
@@ -154,7 +154,7 @@ public final class CloneWeaponArts {
         if (stack.is(ModItems.TIAN_GANG_KEY)) {
             return xiaoshi2022.corpseorigin.skill.chapter.CloneRoleSkills.startKey(caster) ? 400 : 0;
         }
-        if (stack.is(ModItems.JUQUE_TW)) {
+        if (stack.getItem() instanceof JuQue) {
             JuQueBeamEntity beam = new JuQueBeamEntity(caster.level(), caster);
             beam.setDamage((float) caster.getAttributeValue(Attributes.ATTACK_DAMAGE) * JuQue.BEAM_DAMAGE_MULT);
             beam.setLevel(JuQue.BEAM_LEVEL);

@@ -34,6 +34,7 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.effect.SideEffect;
 import xiaoshi2022.corpseorigin.event.EvolutionEventHandler;
+import xiaoshi2022.corpseorigin.registry.ModDataAttachments;
 import xiaoshi2022.corpseorigin.registry.ModItems;
 import xiaoshi2022.corpseorigin.skill.EvolutionManager;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes;
@@ -153,7 +154,11 @@ public final class SagentItem extends Item implements GeoItem {
         // 药效立刻结算，只有物品替换等动画播完
         applyEnhancement(server);
         applyLevelBoost(server);
-        if (YELLOW.equals(variant)) SideEffect.applySideEffect(server, 1);
+        if (YELLOW.equals(variant)) {
+            SideEffect.applySideEffect(server, 1);
+            // 永久记录「注射过黄色强化剂」——口服剂 KW89 据此决定强化强度（死后保留）
+            server.setAttached(ModDataAttachments.S_AGENT_INJECTED, true);
+        }
         if (BLUE.equals(variant)) SideEffect.clearSideEffect(server);
 
         CorpseOrigin.LOGGER.info("玩家 {} 注射了 {} 强化剂", server.getName().getString(), variant);
@@ -196,7 +201,7 @@ public final class SagentItem extends Item implements GeoItem {
 
     /** 死亡重生后清掉强化剂给的属性（进化等级属于永久成长，不在这里回收）。 */
     public static void clearEnhancement(ServerPlayer player) {
-        for (Identifier id : List.of(MODIFIER_YELLOW, MODIFIER_EMPTY)) {
+        for (Identifier id : List.of(MODIFIER_YELLOW, MODIFIER_EMPTY, Kw89Item.MODIFIER_KW89)) {
             AttributeInstance instance = player.getAttribute(Attributes.MAX_HEALTH);
             if (instance == null) continue;
             AttributeModifier modifier = instance.getModifier(id);

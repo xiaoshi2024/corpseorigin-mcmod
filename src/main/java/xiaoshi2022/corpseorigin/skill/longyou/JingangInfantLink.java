@@ -40,7 +40,7 @@ public final class JingangInfantLink {
                 }
                 if (infant.distanceToSqr(parent) > 24 * 24)
                     infant.teleportTo(parent.getX() + 1, parent.getY(), parent.getZ());
-                if (infant.tickCount % 2 == 0) drawCord(infant, parent);
+                if (infant.tickCount % 3 == 0) drawCord(infant, parent);
             }
         });
     }
@@ -108,11 +108,16 @@ public final class JingangInfantLink {
         Vec3 from = parent.position().add(0, .9, 0);
         Vec3 to = infant.position().add(0, .55, 0);
         Vec3 delta = to.subtract(from);
-        int points = Math.max(5, (int)(delta.length() * 5));
+
+        // 每格约 8 个点，间距 ~0.125 格，视觉上接近连续细线
+        int points = Math.max(8, (int)(delta.length() * 8));
+
         for (int i = 0; i <= points; i++) {
             double t = i / (double) points;
-            Vec3 p = from.add(delta.scale(t)).add(0, -.35 * Math.sin(Math.PI * t), 0);
-            ChapterCombat.dust(level, p, 0x7d2535, .75f);
+            Vec3 p = from.add(delta.scale(t)).add(0, -.12 * Math.sin(Math.PI * t), 0);
+
+            // 更暗、更小：0x4a121a + 0.2f
+            ChapterCombat.dust(level, p, 0x4a121a, 0.2f);
         }
     }
 }

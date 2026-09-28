@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "corpseorigin:item/kw89",
+    "model": {
+      "type": "geckolib:geckolib"
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"use": {
+			"animation_length": 1,
+			"bones": {
+				"bone3": {
+					"position": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.9583": {
+							"vector": [0, 3.4, 0]
+						}
+					},
+					"scale": {
+						"0.0": {
+							"vector": [1, 1, 1]
+						},
+						"0.9583": {
+							"vector": [1, 0.08, 1]
+						}
+					}
+				}
+			}
+		}
+	}
+}

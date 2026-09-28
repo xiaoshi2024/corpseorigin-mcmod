@@ -44,6 +44,15 @@ public class ModDataAttachments {
                     .buildAndRegister(Identifier.fromNamespaceAndPath(
                             CorpseOrigin.MOD_ID, "player_relics"));
 
+    // ✅ 是否注射过黄色强化剂（持久化，死后保留）：口服剂 KW89 据此决定强化强度
+    public static final AttachmentType<Boolean> S_AGENT_INJECTED =
+            AttachmentRegistry.<Boolean>builder()
+                    .persistent(com.mojang.serialization.Codec.BOOL)
+                    .initializer(() -> false)
+                    .copyOnDeath()
+                    .buildAndRegister(Identifier.fromNamespaceAndPath(
+                            CorpseOrigin.MOD_ID, "s_agent_injected"));
+
     public static void init() {
         CorpseOrigin.LOGGER.info("CorpseOrigin data attachments registered");
     }

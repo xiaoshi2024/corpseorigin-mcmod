@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "corpseorigin:item/ming_juque",
+    "model": {
+      "type": "geckolib:geckolib"
+    }
+  }
+}

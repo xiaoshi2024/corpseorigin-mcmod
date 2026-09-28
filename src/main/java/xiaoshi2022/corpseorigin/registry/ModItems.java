@@ -72,6 +72,10 @@ public final class ModItems {
     public static final Item BLUE_S_AGENT = register("blue_s_agent",
             new SagentItem(new Item.Properties().rarity(Rarity.RARE).setId(itemKey("blue_s_agent")), SagentItem.BLUE));
 
+    /** KW89 口服强化药剂：没注射过黄色强化剂时给常规强化，注射过的喝了更强 */
+    public static final Item KW89 = register("kw89",
+            new Kw89Item(new Item.Properties().rarity(Rarity.RARE).setId(itemKey("kw89"))));
+
     /** 空药剂：注射后留下的空瓶，也是后续黑色火线仪器的原料 */
     public static final Item NULL_S_AGENT = register("null_s_agent",
             new SagentItem(new Item.Properties().setId(itemKey("null_s_agent")), SagentItem.EMPTY)
@@ -115,6 +119,12 @@ public final class ModItems {
                     .stacksTo(16)
                     .craftRemainder(Items.GLASS_BOTTLE)
                     .setId(itemKey("bywater_bottle")))
+    );
+
+    /** 巨阙一阶：无使用门槛，机制与二阶一致，仅基础攻击力更低 */
+    public static final Item MING_JUQUE = register(
+            "ming_juque",
+            JuQue.createFirst(itemKey("ming_juque"))
     );
 
     public static final Item JUQUE_TW = register(
@@ -284,6 +294,7 @@ public final class ModItems {
             .displayItems((parameters, output) -> {
                 output.accept(BYWATER_BUCKET);
                 output.accept(BYWATER_BOTTLE);
+                output.accept(MING_JUQUE);
                 output.accept(JUQUE_TW);
                 output.accept(BLOOD_WING_BLADE);
                 output.accept(GUIGUN_WEAP);
@@ -291,6 +302,7 @@ public final class ModItems {
                 output.accept(S_AGENT);
                 output.accept(BLUE_S_AGENT);
                 output.accept(NULL_S_AGENT);
+                output.accept(KW89);
                 output.accept(BEE_WHEEL);
                 output.accept(BLACK_GOLD_HEART);
                 output.accept(RED_METEOR_SWORD);

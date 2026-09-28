@@ -36,7 +36,8 @@ public final class WeaponEligibility {
         return null;
     }
     public static Component itemReason(ServerPlayer p,ItemStack stack){
-        if(stack.getItem() instanceof xiaoshi2022.corpseorigin.item.sword.JuQue
+        // 只有二阶巨阙要求进化等级≥2；一阶巨阙人人可用
+        if(stack.getItem() instanceof xiaoshi2022.corpseorigin.item.sword.JuQue juque && juque.evolutionGated()
                 &&xiaoshi2022.corpseorigin.skill.EvolutionManager.getLevel(PlayerCharacterData.get(p).getEarnedPoints(p.getUUID()))<2)
             return Component.translatable("message.corpseorigin.weapon_eligibility.text_03");
         // 尸棍是尸兄身体的兵器：人类形态（含人类鬼棍）连挥都挥不动它（三节棍才是给人形用的）
