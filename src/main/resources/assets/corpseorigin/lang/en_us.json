@@ -1,4 +1,6 @@
 {
+  "entity.corpseorigin.zbr_fish": "Corpse Fish",
+  "item.corpseorigin.zbr_fish_spawn_egg": "Corpse Fish Spawn Egg",
   "subtitles.corpseorigin.corpse_breath": "Corpse brother breathes",
   "subtitles.corpseorigin.blood_lotus_drain": "Blood lotus drains life",
   "subtitles.corpseorigin.injection": "Enhancement injection",

@@ -59,6 +59,8 @@ public class InfectedWaterBlock extends LiquidBlock {
             return;
         }
 
+        xiaoshi2022.corpseorigin.growth.CorpseInfection.touchInfectedWater(living);
+
         if (living instanceof Player player) {
             // 龙右是「尸水之源」，完全免疫尸水；已经是尸兄的泡在里面也没反应
             if (LongYou.isImmuneToInfectedWater(player) || PlayerCorpseComponent.isCorpse(player)) {

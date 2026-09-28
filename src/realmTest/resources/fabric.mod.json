@@ -10,7 +10,8 @@
       "xiaoshi2022.corpseorigin.growth.CorpseHorrorGameplayTest",
       "xiaoshi2022.corpseorigin.growth.HairDryerGameplayTest",
       "xiaoshi2022.corpseorigin.growth.ZishuGameplayTest",
-      "xiaoshi2022.corpseorigin.growth.VillagerHuntGameplayTest"
+      "xiaoshi2022.corpseorigin.growth.VillagerHuntGameplayTest",
+      "xiaoshi2022.corpseorigin.growth.CorpseFishGameplayTest"
     ]
   }
 }

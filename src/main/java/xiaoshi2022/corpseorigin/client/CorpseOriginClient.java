@@ -242,6 +242,7 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.SEVERED_FOREARM,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"severed_forearm"));
         EntityRendererRegistry.register(ModEntities.TIANGANG_HALO,c->new xiaoshi2022.corpseorigin.client.renderer.entity.SkillConstructRenderer(c,"tiangang_halo"));
         EntityRendererRegistry.register(ModEntities.CORPSE_FISH_EGG, CorpseFishEggRenderer::new);
+        EntityRendererRegistry.register(ModEntities.ZBR_FISH, xiaoshi2022.corpseorigin.client.renderer.entity.ZbrFishRenderer::new);
         EntityRendererRegistry.register(ModEntities.COCO_ZOMBIE, CocoZombieRenderer::new);
         EntityRendererRegistry.register(ModEntities.COCO_ZOMBIE_X, CocoZombieXRenderer::new);
         EntityRendererRegistry.register(ModEntities.UNCLE, UncleRenderer::new);

@@ -14,6 +14,7 @@ import xiaoshi2022.corpseorigin.entity.ZombieKin;
 public class ZombieKinEventHandler {
 
     public static void register() {
+        xiaoshi2022.corpseorigin.growth.CorpseInfection.register();
         // ==================== 1. 阻止尸族之间互相伤害（不饥饿时） ====================
         ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
             Entity attacker = source.getEntity();

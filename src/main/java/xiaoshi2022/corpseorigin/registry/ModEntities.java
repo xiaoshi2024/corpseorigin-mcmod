@@ -11,6 +11,9 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.entity.*;
 
 public final class ModEntities {
+    public static final EntityType<ZbrFishEntity> ZBR_FISH = register("zbr_fish",
+            EntityType.Builder.<ZbrFishEntity>of(ZbrFishEntity::new, MobCategory.MONSTER)
+                    .sized(.8f, .5f).clientTrackingRange(8).notInPeaceful());
     public static final EntityType<ZishuRobotEntity> ZISHU_ROBOT=register("zishu_robot",EntityType.Builder.<ZishuRobotEntity>of(ZishuRobotEntity::new,MobCategory.CREATURE).sized(.75f,1.35f).clientTrackingRange(10));
     public static final EntityType<ZishuIonBallEntity> ZISHU_ION_BALL=register("zishu_ion_ball",EntityType.Builder.<ZishuIonBallEntity>of(ZishuIonBallEntity::new,MobCategory.MISC).sized(.3f,.3f).clientTrackingRange(10).updateInterval(1));
     public static final EntityType<CorpseMaggotEntity> CORPSE_MAGGOT = register("corpse_maggot",

@@ -106,6 +106,11 @@ public class BYeffect extends MobEffect {
      * 执行转化逻辑
      */
     private void performTransformation(LivingEntity livingEntity, ServerLevel serverLevel) {
+        if (!livingEntity.isAlive()) return;
+        if (livingEntity instanceof net.minecraft.world.entity.animal.fish.AbstractFish fish) {
+            xiaoshi2022.corpseorigin.growth.CorpseInfection.transformFish(fish, serverLevel);
+            return;
+        }
         if (livingEntity instanceof Villager villager) {
             convertVillagerToZb(villager, serverLevel);
         } else if (livingEntity instanceof ServerPlayer player) {
@@ -229,6 +234,8 @@ public class BYeffect extends MobEffect {
     }
 
     public static boolean canInfect(LivingEntity target) {
+        if (target instanceof net.minecraft.world.entity.animal.fish.AbstractFish)
+            return !xiaoshi2022.corpseorigin.entity.ZombieKin.isZombieKin(target);
         if (target instanceof Villager) {
             return true;
         }

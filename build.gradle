@@ -3,6 +3,13 @@ plugins {
 	id 'maven-publish'
 }
 
+// Agent/test builds must not rewrite the classes of an active IDE game.
+if (project.hasProperty('isolatedBuild')) {
+    layout.buildDirectory = layout.projectDirectory.dir('.gradle/isolated-build')
+}
+
+apply from: 'tools/runtime-snapshot.gradle'
+
 if (project.hasProperty('chapterTests')) {
     apply from: 'tools/chapter-tests.gradle'
 }
@@ -246,6 +253,11 @@ tasks.register('verifyOrganDistribution') {
                 'xiaoshi2022/corpseorigin/growth/OrganNetwork.class',
                 'xiaoshi2022/corpseorigin/growth/GourdOrganState.class',
                 'xiaoshi2022/corpseorigin/entity/GourdOrganEntity.class',
+                'xiaoshi2022/corpseorigin/client/CorpseOriginClient$ClientCorpseData.class',
+                'xiaoshi2022/corpseorigin/entity/ZbrFishEntity.class',
+                'assets/corpseorigin/geckolib/models/entity/zbr_fish.geo.json',
+                'assets/corpseorigin/geckolib/animations/entity/zbr_fish.animation.json',
+                'assets/corpseorigin/textures/entity/zbr_fish.png',
                 'assets/corpseorigin/geckolib/models/entity/zbr_gourd.geo.json',
                 'assets/corpseorigin/geckolib/animations/entity/zbr_gourd.animation.json'
             ].each { name ->

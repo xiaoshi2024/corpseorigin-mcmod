@@ -102,6 +102,8 @@ public final class ModItems {
 
     public static final Item HAM_SPAWN_EGG = register("ham_spawn_egg",
             new SpawnEggItem(spawnEggProperties("ham_spawn_egg", ModEntities.HAM)));
+    public static final Item ZBR_FISH_SPAWN_EGG = register("zbr_fish_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("zbr_fish_spawn_egg", ModEntities.ZBR_FISH)));
 
     private ModItems() {
     }
@@ -326,6 +328,7 @@ public final class ModItems {
                 output.accept(XIAOLU_ARMOR_LEGGINGS.get());
                 output.accept(COCO_PENGUIN_SPAWN_EGG);
                 output.accept(HAM_SPAWN_EGG);
+                output.accept(ZBR_FISH_SPAWN_EGG);
                 output.accept(DOG_CAGE);
                 output.accept(MAGICIAN_RABBIT);
                 output.accept(MEDUSA_EYE);

@@ -21,6 +21,7 @@ public final class ModAttributes {
      * 在模组初始化时调用
      */
     public static void register() {
+        FabricDefaultAttributeRegistry.register(ModEntities.ZBR_FISH, ZbrFishEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.ZISHU_ROBOT, ZishuRobotEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.CORPSE_MAGGOT, CorpseMaggotEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.ZBR_GOURD, xiaoshi2022.corpseorigin.entity.GourdOrganEntity.createAttributes());

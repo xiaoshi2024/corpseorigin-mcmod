@@ -29,12 +29,13 @@ public final class CorpseGrappleGoal extends Goal {
         if(side.lengthSqr()<.01){double a=mob.getId()*2.4;side=new Vec3(Math.cos(a),0,Math.sin(a));}
     }
     @Override public boolean canContinueToUse(){
-        return CorpseHorror.applies(mob) && CorpseHorror.validPrey(mob,prey) && mob.hurtTime==0
+        return prey!=null && mob.getGrappleTarget()==prey.getId() && CorpseHorror.applies(mob) && CorpseHorror.validPrey(mob,prey) && mob.hurtTime==0
                 && mob.tickCount-started<CorpseHorror.config().grappleTicks && mob.distanceToSqr(prey)<6.25
                 && mob.hasLineOfSight(prey) && !(prey instanceof Player p && p.isShiftKeyDown() && !p.onGround());
     }
     @Override public boolean requiresUpdateEveryTick(){return true;}
     @Override public void tick(){
+        if(prey==null)return;
         mob.getLookControl().setLookAt(prey,30,30);
         Vec3 desired=prey.position().add(side.scale((prey.getBbWidth()+mob.getBbWidth())*.48));
         Vec3 pull=desired.subtract(mob.position());
