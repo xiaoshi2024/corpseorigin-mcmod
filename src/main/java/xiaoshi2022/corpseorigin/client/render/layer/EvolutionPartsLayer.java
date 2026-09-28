@@ -21,12 +21,8 @@ import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.growth.SurvivalGrowth;
 
 /**
- * 附加骨骼（翅膀 / 鱼鳃），锚在带动画的人形躯干上，绝不替换皮肤。
- * <p>
- * 真玩家读自己同步的 {@code evolution_parts} 附件；克隆分身（实体 / 仓内手绘不走这层）
- * 读 {@code CloneBodySyncS2C} 同步过来的角色外观缓存 —— 两边都是纯 ModelPart 手绘，
- * 不依赖 GeckoLib 的玩家 animatable 通道。
- */
+ * 闄勫姞楠ㄩ锛堢繀鑶€ / 楸奸硟锛夛紝閿氬湪甯﹀姩鐢荤殑浜哄舰韬共涓婏紝缁濅笉鏇挎崲鐨偆銆? * <p>
+ * 鐪熺帺瀹惰鑷繁鍚屾鐨?{@code evolution_parts} 闄勪欢锛涘厠闅嗗垎韬紙瀹炰綋 / 浠撳唴鎵嬬粯涓嶈蛋杩欏眰锛? * 璇?{@code CloneBodySyncS2C} 鍚屾杩囨潵鐨勮鑹插瑙傜紦瀛?鈥斺€?涓よ竟閮芥槸绾?ModelPart 鎵嬬粯锛? * 涓嶄緷璧?GeckoLib 鐨勭帺瀹?animatable 閫氶亾銆? */
 public final class EvolutionPartsLayer extends RenderLayer<AvatarRenderState, PlayerModel> {
     private final ModelPart leftWing, rightWing, gills;
     private static ModelPart bake(String name, CubeListBuilder cubes) {
@@ -55,8 +51,8 @@ public final class EvolutionPartsLayer extends RenderLayer<AvatarRenderState, Pl
                 light, OverlayTexture.NO_OVERLAY, null);
     }
 
-    /** 这一层要画的进化部件来源：真玩家用附件，分身用网络缓存。 */
-    private record PartsSource(Entity entity, CompoundTag body, CorpseOriginClient.ClientCorpseData corpse) {}
+    /** 杩欎竴灞傝鐢荤殑杩涘寲閮ㄤ欢鏉ユ簮锛氱湡鐜╁鐢ㄩ檮浠讹紝鍒嗚韩鐢ㄧ綉缁滅紦瀛樸€?*/
+    private record PartsSource(Entity entity, CompoundTag body, xiaoshi2022.corpseorigin.client.ClientCorpseData corpse) {}
 
     private static PartsSource resolve(Entity entity) {
         var corpse = CorpseOriginClient.corpseDataCache.get(entity.getUUID());
@@ -72,8 +68,7 @@ public final class EvolutionPartsLayer extends RenderLayer<AvatarRenderState, Pl
         if (entity instanceof CloneAvatarEntity) {
             CorpseOriginClient.ClientCloneBody cloneBody =
                     CorpseOriginClient.cloneBodyDataCache.get(entity.getUUID());
-            // 没有角色外观包时（旧数据 / 尚未送达）不画翅膀，等下一次同步自愈
-            return cloneBody == null ? null
+            // 娌℃湁瑙掕壊澶栬鍖呮椂锛堟棫鏁版嵁 / 灏氭湭閫佽揪锛変笉鐢荤繀鑶€锛岀瓑涓嬩竴娆″悓姝ヨ嚜鎰?            return cloneBody == null ? null
                     : new PartsSource(entity, cloneBody.evolutionParts(), corpse);
         }
         return null;

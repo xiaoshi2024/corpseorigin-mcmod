@@ -53,6 +53,7 @@ public class BloodLotusLamp extends Item implements GeoItem {
     private static final int HEAL_COST_PER_TICK = 1;
     private static final float HEAL_PER_TICK = 1.0F;
     private static final int DRAIN_INTERVAL = 10;
+    private static final int DRAIN_SOUND_INTERVAL = 60;
     private static final int MAX_USE_DURATION = 300;
 
     /** 攻击触发的小范围吸血 */
@@ -118,6 +119,11 @@ public class BloodLotusLamp extends Item implements GeoItem {
         if (!(livingEntity instanceof Player player)) return;
 
         int usedTicks = MAX_USE_DURATION - remainingUseDuration;
+        if (!level.isClientSide() && usedTicks >= 0 && usedTicks % DRAIN_SOUND_INTERVAL == 0) {
+            level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                    xiaoshi2022.corpseorigin.registry.ModSounds.BLOOD_LOTUS_DRAIN,
+                    net.minecraft.sounds.SoundSource.PLAYERS, 0.8f, 1.0f);
+        }
         if (usedTicks > 0 && usedTicks % DRAIN_INTERVAL == 0) {
             if (!level.isClientSide()) {
                 drainLife(player, stack);

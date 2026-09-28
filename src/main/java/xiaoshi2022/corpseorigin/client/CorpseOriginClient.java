@@ -51,11 +51,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CorpseOriginClient implements ClientModInitializer {
 
-    /** 客户端可转移身体列表（UI 显示用，只含轻量信息） */
+    /** 瀹㈡埛绔彲杞Щ韬綋鍒楄〃锛圲I 鏄剧ず鐢紝鍙惈杞婚噺淇℃伅锛?*/
     public static final java.util.List<ClientShellEntry> clientShellEntries =
             new java.util.concurrent.CopyOnWriteArrayList<>();
 
-    /** 客户端轻量身体条目 */
+    /** 瀹㈡埛绔交閲忚韩浣撴潯鐩?*/
     public record ClientShellEntry(
             java.util.UUID uuid,
             java.util.UUID ownerUuid,
@@ -65,14 +65,14 @@ public class CorpseOriginClient implements ClientModInitializer {
     ) {
     }
 
-    // ✅ 客户端尸兄数据缓存（用 UUID 作为键）
+    // 鉁?瀹㈡埛绔案鍏勬暟鎹紦瀛橈紙鐢?UUID 浣滀负閿級
     public static final java.util.Map<UUID, ClientCorpseData> corpseDataCache = new ConcurrentHashMap<>();
 
     /**
-     * 克隆身体的角色外观缓存（键 = 身体 UUID：仓内是身体稳定 UUID，苏醒后是分身实体 UUID）。
+     * 鍏嬮殕韬綋鐨勮鑹插瑙傜紦瀛橈紙閿?= 韬綋 UUID锛氫粨鍐呮槸韬綋绋冲畾 UUID锛岃嫃閱掑悗鏄垎韬疄浣?UUID锛夈€?
      * <p>
-     * 翅膀/鱼鳃等"角色附加骨骼"按这份数据在分身与仓内克隆人上手绘，
-     * 和 {@link #corpseDataCache}（尸兄外骨骼）分开存放。
+     * 缈呰唨/楸奸硟绛?瑙掕壊闄勫姞楠ㄩ"鎸夎繖浠芥暟鎹湪鍒嗚韩涓庝粨鍐呭厠闅嗕汉涓婃墜缁橈紝
+     * 鍜?{@link #corpseDataCache}锛堝案鍏勫楠ㄩ锛夊垎寮€瀛樻斁銆?
      */
     public record ClientCloneBody(String characterId, net.minecraft.nbt.CompoundTag evolutionParts,
                                   boolean infant, int bearArms) {
@@ -84,100 +84,100 @@ public class CorpseOriginClient implements ClientModInitializer {
     public static final java.util.Map<UUID, ClientCloneBody> cloneBodyDataCache = new ConcurrentHashMap<>();
 
     /**
-     * Flashback 回放专用：快照附件包到达时玩家实体可能还没重建完，
-     * 先按 UUID 暂存 evolution_parts 附件 NBT，每 tick 重试回填。
+     * Flashback 鍥炴斁涓撶敤锛氬揩鐓ч檮浠跺寘鍒拌揪鏃剁帺瀹跺疄浣撳彲鑳借繕娌￠噸寤哄畬锛?
+     * 鍏堟寜 UUID 鏆傚瓨 evolution_parts 闄勪欢 NBT锛屾瘡 tick 閲嶈瘯鍥炲～銆?
      */
     public static final Map<UUID, net.minecraft.nbt.CompoundTag> pendingReplayBodies = new ConcurrentHashMap<>();
 
-    /** ✅ 临时红眼状态：UUID → 剩余 tick */
+    /** 鉁?涓存椂绾㈢溂鐘舵€侊細UUID 鈫?鍓╀綑 tick */
     public static final Map<UUID, Integer> tempRedEyeTicks = new ConcurrentHashMap<>();
 
-    /** ✅ 天线宝宝尸兄吸食状态：施术者 UUID → 正在吸的对象与剩余 tick */
+    /** 鉁?澶╃嚎瀹濆疂灏稿厔鍚搁鐘舵€侊細鏂芥湳鑰?UUID 鈫?姝ｅ湪鍚哥殑瀵硅薄涓庡墿浣?tick */
     public static final Map<UUID, AntennaSuck> antennaSucks = new ConcurrentHashMap<>();
 
-    /** 一次进行中的吸食：目标实体 id + 剩余 tick（{@code targetEntityId < 0} = 目标未知，只播动画不转向） */
+    /** 涓€娆¤繘琛屼腑鐨勫惛椋燂細鐩爣瀹炰綋 id + 鍓╀綑 tick锛坽@code targetEntityId < 0} = 鐩爣鏈煡锛屽彧鎾姩鐢讳笉杞悜锛?*/
     public record AntennaSuck(int targetEntityId, int ticks, int totalTicks) {
     }
 
-    /** 这位玩家现在是否正在吸食（盔甲渲染时读它决定播不播 absorb） */
+    /** 杩欎綅鐜╁鐜板湪鏄惁姝ｅ湪鍚搁锛堢洈鐢叉覆鏌撴椂璇诲畠鍐冲畾鎾笉鎾?absorb锛?*/
     public static boolean isAntennaSucking(UUID uuid) {
         AntennaSuck suck = uuid == null ? null : antennaSucks.get(uuid);
         return suck != null && suck.ticks() > 0;
     }
 
     /**
-     * 这次吸食已经进行了多少 tick（-1 = 没在吸）。
+     * 杩欐鍚搁宸茬粡杩涜浜嗗灏?tick锛?1 = 娌″湪鍚革級銆?
      * <p>
-     * 盔甲渲染拿它判断"现在播到动画的哪一段" —— 动画后半段（刺出去那几帧）要把触手
-     * 精确插进目标脑门，得知道进度才能对上动画自己的节奏。
+     * 鐩旂敳娓叉煋鎷垮畠鍒ゆ柇"鐜板湪鎾埌鍔ㄧ敾鐨勫摢涓€娈? 鈥斺€?鍔ㄧ敾鍚庡崐娈碉紙鍒哄嚭鍘婚偅鍑犲抚锛夎鎶婅Е鎵?
+     * 绮剧‘鎻掕繘鐩爣鑴戦棬锛屽緱鐭ラ亾杩涘害鎵嶈兘瀵逛笂鍔ㄧ敾鑷繁鐨勮妭濂忋€?
      */
     public static int getAntennaSuckElapsed(UUID casterUuid) {
         AntennaSuck suck = casterUuid == null ? null : antennaSucks.get(casterUuid);
         return suck == null ? -1 : Math.max(0, suck.totalTicks() - suck.ticks());
     }
 
-    /** ✅ 天线宝宝尸兄的net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.097")窗口：玩家 UUID → 剩余 tick（服务端广播过来的，只影响表现） */
+    /** 鉁?澶╃嚎瀹濆疂灏稿厔鐨刵et.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.097")绐楀彛锛氱帺瀹?UUID 鈫?鍓╀綑 tick锛堟湇鍔＄骞挎挱杩囨潵鐨勶紝鍙奖鍝嶈〃鐜帮級 */
     public static final Map<UUID, Integer> antennaBlocks = new ConcurrentHashMap<>();
 
-    /** 这位玩家现在是否处于格挡动画窗口（盔甲渲染时读它决定播不播格挡动画） */
+    /** 杩欎綅鐜╁鐜板湪鏄惁澶勪簬鏍兼尅鍔ㄧ敾绐楀彛锛堢洈鐢叉覆鏌撴椂璇诲畠鍐冲畾鎾笉鎾牸鎸″姩鐢伙級 */
     public static boolean isAntennaBlocking(UUID uuid) {
         Integer ticks = uuid == null ? null : antennaBlocks.get(uuid);
         return ticks != null && ticks > 0;
     }
 
     /**
-     * ✅ 开胃奶「菊花盾」的格挡窗口：玩家 UUID → 剩余 tick（服务端广播过来的，只影响表现）。
+     * 鉁?寮€鑳冨ザ銆岃強鑺辩浘銆嶇殑鏍兼尅绐楀彛锛氱帺瀹?UUID 鈫?鍓╀綑 tick锛堟湇鍔＄骞挎挱杩囨潵鐨勶紝鍙奖鍝嶈〃鐜帮級銆?
      * <p>
-     * 窗口内背后那套 {@code niunaix} 背挂播 {@code parry}（花瓣张开成盾），并配合服务端
-     * {@code KaiWeiNaiEventHandler} 的箭矢反弹。
+     * 绐楀彛鍐呰儗鍚庨偅濂?{@code niunaix} 鑳屾寕鎾?{@code parry}锛堣姳鐡ｅ紶寮€鎴愮浘锛夛紝骞堕厤鍚堟湇鍔＄
+     * {@code KaiWeiNaiEventHandler} 鐨勭鐭㈠弽寮广€?
      */
     public static final Map<UUID, Integer> niunaiParries = new ConcurrentHashMap<>();
 
-    /** 这位玩家现在是否在菊花盾格挡窗口内（背挂渲染时读它决定播不播 parry） */
+    /** 杩欎綅鐜╁鐜板湪鏄惁鍦ㄨ強鑺辩浘鏍兼尅绐楀彛鍐咃紙鑳屾寕娓叉煋鏃惰瀹冨喅瀹氭挱涓嶆挱 parry锛?*/
     public static boolean isNiunaiParrying(UUID uuid) {
         Integer ticks = uuid == null ? null : niunaiParries.get(uuid);
         return ticks != null && ticks > 0;
     }
 
     /**
-     * ✅ 开胃奶「拦腰斩断」窗口：玩家 UUID → 剩余 tick（服务端广播过来的，只影响表现）。
+     * 鉁?寮€鑳冨ザ銆屾嫤鑵版柀鏂€嶇獥鍙ｏ細鐜╁ UUID 鈫?鍓╀綑 tick锛堟湇鍔＄骞挎挱杩囨潵鐨勶紝鍙奖鍝嶈〃鐜帮級銆?
      * <p>
-     * 窗口内整身模型换成 {@code niunai_link_player}：先播 {@code broken_off}（拦腰斩断）并保持，
-     * 最后 {@link xiaoshi2022.corpseorigin.character.KaiWeiNai#NIUNAI_LINK_RESTORE_TICKS} 那段播
-     * {@code link}（接回）。不死判定全在服务端。
+     * 绐楀彛鍐呮暣韬ā鍨嬫崲鎴?{@code niunai_link_player}锛氬厛鎾?{@code broken_off}锛堟嫤鑵版柀鏂級骞朵繚鎸侊紝
+     * 鏈€鍚?{@link xiaoshi2022.corpseorigin.character.KaiWeiNai#NIUNAI_LINK_RESTORE_TICKS} 閭ｆ鎾?
+     * {@code link}锛堟帴鍥烇級銆備笉姝诲垽瀹氬叏鍦ㄦ湇鍔＄銆?
      */
     public static final Map<UUID, Integer> niunaiLinks = new ConcurrentHashMap<>();
 
-    /** 这位玩家现在是否处于拦腰斩断窗口内（渲染时读它决定要不要整身换模型） */
+    /** 杩欎綅鐜╁鐜板湪鏄惁澶勪簬鎷﹁叞鏂╂柇绐楀彛鍐咃紙娓叉煋鏃惰瀹冨喅瀹氳涓嶈鏁磋韩鎹㈡ā鍨嬶級 */
     public static boolean isNiunaiLink(UUID uuid) {
         Integer ticks = uuid == null ? null : niunaiLinks.get(uuid);
         return ticks != null && ticks > 0;
     }
 
-    /** 拦腰斩断还剩多少 tick（-1 = 不在窗口内） */
+    /** 鎷﹁叞鏂╂柇杩樺墿澶氬皯 tick锛?1 = 涓嶅湪绐楀彛鍐咃級 */
     public static int niunaiLinkRemaining(UUID uuid) {
         Integer ticks = uuid == null ? null : niunaiLinks.get(uuid);
         return ticks == null || ticks <= 0 ? -1 : ticks;
     }
 
     /**
-     * 尸巢之子「千眼万目」的凝视窗口（剩余 tick）。
+     * 灏稿发涔嬪瓙銆屽崈鐪间竾鐩€嶇殑鍑濊绐楀彛锛堝墿浣?tick锛夈€?
      * <p>
-     * 由 {@code ShiChaoSpecialSyncS2C} 写入，渲染时读它决定要不要改播 {@code special} 动画；
-     * 谁是"被定住的"是服务端算的（{@code ThousandEyesHandler}），客户端只看动画。
+     * 鐢?{@code ShiChaoSpecialSyncS2C} 鍐欏叆锛屾覆鏌撴椂璇诲畠鍐冲畾瑕佷笉瑕佹敼鎾?{@code special} 鍔ㄧ敾锛?
+     * 璋佹槸"琚畾浣忕殑"鏄湇鍔＄绠楃殑锛坽@code ThousandEyesHandler}锛夛紝瀹㈡埛绔彧鐪嬪姩鐢汇€?
      */
     public static final Map<UUID, Integer> shiChaoSpecials = new ConcurrentHashMap<>();
 
-    /** 这位玩家现在是否正在放千眼万目（渲染时读它切动画） */
+    /** 杩欎綅鐜╁鐜板湪鏄惁姝ｅ湪鏀惧崈鐪间竾鐩紙娓叉煋鏃惰瀹冨垏鍔ㄧ敾锛?*/
     public static boolean isShiChaoSpecial(UUID uuid) {
         Integer ticks = uuid == null ? null : shiChaoSpecials.get(uuid);
         return ticks != null && ticks > 0;
     }
 
     /**
-     * 取「正在被这位玩家吸食的目标实体」，没有 / 不在客户端（未加载、已死）时返回 null。
+     * 鍙栥€屾鍦ㄨ杩欎綅鐜╁鍚搁鐨勭洰鏍囧疄浣撱€嶏紝娌℃湁 / 涓嶅湪瀹㈡埛绔紙鏈姞杞姐€佸凡姝伙級鏃惰繑鍥?null銆?
      * <p>
-     * 盔甲渲染要靠它算触手转向的角度，所以这里只做解析，不做任何逻辑判定。
+     * 鐩旂敳娓叉煋瑕侀潬瀹冪畻瑙︽墜杞悜鐨勮搴︼紝鎵€浠ヨ繖閲屽彧鍋氳В鏋愶紝涓嶅仛浠讳綍閫昏緫鍒ゅ畾銆?
      */
     public static LivingEntity getAntennaSuckTarget(UUID casterUuid) {
         AntennaSuck suck = casterUuid == null ? null : antennaSucks.get(casterUuid);
@@ -201,7 +201,7 @@ public class CorpseOriginClient implements ClientModInitializer {
         RawMeatTooltip.init();
         OrganClient.register();
         HeartRecoveryScreen.register();
-        // 1. 按键绑定
+        // 1. 鎸夐敭缁戝畾
         CorpseKeyBindings.register();
         ClientPlayNetworking.registerGlobalReceiver(NestRadarPayload.TYPE, (payload, context) ->
                 context.client().execute(() -> {
@@ -209,7 +209,7 @@ public class CorpseOriginClient implements ClientModInitializer {
                     else if (context.client().gui.screen() instanceof NestRadarScreen radar) radar.update(payload.contacts());
                 }));
 
-        // 2. 实体渲染器
+        // 2. 瀹炰綋娓叉煋鍣?
         EntityRendererRegistry.register(ModEntities.LOWER_LEVEL_ZB, LowerLevelZbRenderer::new);
         EntityRendererRegistry.register(ModEntities.ZISHU_ROBOT, xiaoshi2022.corpseorigin.client.renderer.entity.ZishuRobotRenderer::new);
         EntityRendererRegistry.register(ModEntities.ZISHU_ION_BALL, context -> new net.minecraft.client.renderer.entity.ThrownItemRenderer<>(context, 1.5f, true));
@@ -250,45 +250,45 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.MIKU_ZB, MikuZbRenderer::new);
         EntityRendererRegistry.register(ModEntities.LEEK_PROJECTILE, LeekProjectileRenderer::new);
         EntityRendererRegistry.register(ModEntities.OSMIUM_ICE_SPEAR, OsmiumIceSpearRenderer::new);
-        // 左护法蛟龙的节碰撞箱：隐形实体，只需要一个"什么都不画"的绘制器
+        // 宸︽姢娉曡洘榫欑殑鑺傜鎾炵锛氶殣褰㈠疄浣擄紝鍙渶瑕佷竴涓?浠€涔堥兘涓嶇敾"鐨勭粯鍒跺櫒
         EntityRendererRegistry.register(ModEntities.GUARDIAN_PART, GuardianPartRenderer::new);
-        // 尸蛟龙（左护法"脱离"后放出来的宠物 BOSS）
+        // 灏歌洘榫欙紙宸︽姢娉?鑴辩"鍚庢斁鍑烘潵鐨勫疇鐗?BOSS锛?
         EntityRendererRegistry.register(ModEntities.ZUO_FLOOD_LONG, ZuoFloodLongRenderer::new);
-        // 黑色火线克隆仓方块实体渲染器
+        // 榛戣壊鐏嚎鍏嬮殕浠撴柟鍧楀疄浣撴覆鏌撳櫒
         BlockEntityRendererRegistry.register(
                 ModBlockEntities.CLONE_CHAMBER,
                 CloneChamberRenderer::new
         );
-        // 尸兄肉块（GeckoLib 动画方块）
+        // 灏稿厔鑲夊潡锛圙eckoLib 鍔ㄧ敾鏂瑰潡锛?
         
-        // 象棋尸兄（GeckoLib 动画方块实体）
+        // 璞℃灏稿厔锛圙eckoLib 鍔ㄧ敾鏂瑰潡瀹炰綋锛?
         BlockEntityRendererRegistry.register(
                 ModBlockEntities.CN_CHESS_ZBRS,
                 CNChessZbrsRenderer::new
         );
 
-        // 3. 模型层注册
+        // 3. 妯″瀷灞傛敞鍐?
         ModModelLayers.register();
 
-        // ✅ 天线宝宝盔甲动画用到的 query.target_*_rotation（GeckoLib 没内置，得自己注册）
+        // 鉁?澶╃嚎瀹濆疂鐩旂敳鍔ㄧ敾鐢ㄥ埌鐨?query.target_*_rotation锛圙eckoLib 娌″唴缃紝寰楄嚜宸辨敞鍐岋級
         xiaoshi2022.corpseorigin.client.renderer.armor.AntennaZBRitemRenderer.registerMolangQueries();
 
-        // 4. 流体纹理
+        // 4. 娴佷綋绾圭悊
         registerFluidTextures();
 
-        // 5. 玩家尸兄渲染层
+        // 5. 鐜╁灏稿厔娓叉煋灞?
         CorpsePlayerRenderHandler.register();
 
-        // ✅ 注册客户端攻击事件监听
-        // ✅ 注册客户端实体事件
+        // 鉁?娉ㄥ唽瀹㈡埛绔敾鍑讳簨浠剁洃鍚?
+        // 鉁?娉ㄥ唽瀹㈡埛绔疄浣撲簨浠?
         ClientEntityEventHandler.register();
 
-        // ✅ 注册 HUD
+        // 鉁?娉ㄥ唽 HUD
         InfectionHudOverlay.register();
         xiaoshi2022.corpseorigin.client.hud.ThermalHudOverlay.register();
         SkillHotbarOverlay.register();
 
-        // 6. 网络接收
+        // 6. 缃戠粶鎺ユ敹
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.CharacterSyncS2C.TYPE, (payload, context) -> {
             context.client().execute(() ->
                     CharacterManagerBridge.setCharacter(payload.characterId()));
@@ -308,18 +308,18 @@ public class CorpseOriginClient implements ClientModInitializer {
                 context.client().execute(() -> {
                     Minecraft client = context.client();
 
-                    // 文字提示（失败原因、死亡自动夺舍的提示之类）
+                    // 鏂囧瓧鎻愮ず锛堝け璐ュ師鍥犮€佹浜¤嚜鍔ㄥず鑸嶇殑鎻愮ず涔嬬被锛?
                     if (!payload.message().equals(Component.empty()) && client.player != null) {
                         client.player.sendOverlayMessage(payload.message());
                     }
 
                     if (!payload.success()) {
-                        // 换身体失败：别再等落位了，把镜头交还给玩家
+                        // 鎹㈣韩浣撳け璐ワ細鍒啀绛夎惤浣嶄簡锛屾妸闀滃ご浜よ繕缁欑帺瀹?
                         PersistentCameraEntity.unset(client);
                         return;
                     }
 
-                    // 只提示不过场的包（没有目标身体数据），到此为止
+                    // 鍙彁绀轰笉杩囧満鐨勫寘锛堟病鏈夌洰鏍囪韩浣撴暟鎹級锛屽埌姝や负姝?
                     if (!payload.cameraCutscene()) {
                         return;
                     }
@@ -327,10 +327,10 @@ public class CorpseOriginClient implements ClientModInitializer {
                     var player = client.player;
                     if (player == null) return;
 
-                    // ★ Flashback 兼容：回放会把录制到的包原样重放一遍（包括这个同步响应包），
-                    //   回放中绝不能抢相机，否则视角会被拽进意识转移动画
+                    // 鈽?Flashback 鍏煎锛氬洖鏀句細鎶婂綍鍒跺埌鐨勫寘鍘熸牱閲嶆斁涓€閬嶏紙鍖呮嫭杩欎釜鍚屾鍝嶅簲鍖咃級锛?
+                    //   鍥炴斁涓粷涓嶈兘鎶㈢浉鏈猴紝鍚﹀垯瑙嗚浼氳鎷借繘鎰忚瘑杞Щ鍔ㄧ敾
                     if (PersistentCameraEntity.isReplayPlaying()) {
-                        CorpseOrigin.LOGGER.debug("回放中，跳过意识转移相机过场");
+                        CorpseOrigin.LOGGER.debug("鍥炴斁涓紝璺宠繃鎰忚瘑杞Щ鐩告満杩囧満");
                         return;
                     }
 
@@ -339,8 +339,8 @@ public class CorpseOriginClient implements ClientModInitializer {
                     BlockPos targetPos = payload.toPos();
                     Direction targetFacing = payload.toFacing();
 
-                    // ★ 直角分支（尸王换身：金蝉脱壳 / 血肉重塑 / 右键回旧身体）：
-                    //   原地垂直抬起 → 90° 拐弯横着甩出去，全程盖一层黑场；播完才让服务端真正换身
+                    // 鈽?鐩磋鍒嗘敮锛堝案鐜嬫崲韬細閲戣潐鑴卞３ / 琛€鑲夐噸濉?/ 鍙抽敭鍥炴棫韬綋锛夛細
+                    //   鍘熷湴鍨傜洿鎶捣 鈫?90掳 鎷愬集妯潃鐢╁嚭鍘伙紝鍏ㄧ▼鐩栦竴灞傞粦鍦猴紱鎾畬鎵嶈鏈嶅姟绔湡姝ｆ崲韬?
                     if (payload.cameraStyle() == SynchronizationResponsePacket.CameraStyle.RIGHT_ANGLE) {
                         if (PersistentCameraEntity.isLocalPlayerFirstPersonView(client)) {
                             CameraBlackoutScreen.fadeIn(client);
@@ -349,14 +349,14 @@ public class CorpseOriginClient implements ClientModInitializer {
                                     __ -> finishCameraDirect(payload.targetStateUuid(), targetPos,
                                             payload.toWorld())));
                         } else {
-                            // 不接管视角（旁观/第三人称）也必须回包，否则服务端一直等，身体永远换不过来
+                            // 涓嶆帴绠¤瑙掞紙鏃佽/绗笁浜虹О锛変篃蹇呴』鍥炲寘锛屽惁鍒欐湇鍔＄涓€鐩寸瓑锛岃韩浣撴案杩滄崲涓嶈繃鏉?
                             finishCameraDirect(payload.targetStateUuid(), targetPos, payload.toWorld());
                         }
                         return;
                     }
 
-                    // ★ 过场只针对「当前玩家自己的第一人称视角」：相机被别人接管（旁观/切视角）或第三人称时
-                    //   不播过场，但仍然立刻回包，否则服务端会一直等 CameraDonePacket，身体永远换不过来
+                    // 鈽?杩囧満鍙拡瀵广€屽綋鍓嶇帺瀹惰嚜宸辩殑绗竴浜虹О瑙嗚銆嶏細鐩告満琚埆浜烘帴绠★紙鏃佽/鍒囪瑙掞級鎴栫涓変汉绉版椂
+                    //   涓嶆挱杩囧満锛屼絾浠嶇劧绔嬪埢鍥炲寘锛屽惁鍒欐湇鍔＄浼氫竴鐩寸瓑 CameraDonePacket锛岃韩浣撴案杩滄崲涓嶈繃鏉?
                     if (!PersistentCameraEntity.isLocalPlayerFirstPersonView(client)) {
                         finishCamera(payload.targetStateUuid(), startPos, startFacing, targetPos, targetFacing,
                                 payload.toWorld());
@@ -376,10 +376,10 @@ public class CorpseOriginClient implements ClientModInitializer {
                     PersistentCameraEntity.setup(client, cameraGoal);
                 }));
         
-        // ✅ 接收玩家尸兄数据同步（用 UUID）
+        // 鉁?鎺ユ敹鐜╁灏稿厔鏁版嵁鍚屾锛堢敤 UUID锛?
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.PlayerCorpseSyncS2C.TYPE, (payload, context) -> {
             context.client().execute(() -> {
-                // ★ 顺便刷新一次皮肤缓存
+                // 鈽?椤轰究鍒锋柊涓€娆＄毊鑲ょ紦瀛?
                 ClientSkinCache.resolve(payload.playerUuid());
 
                 ClientCorpseData data = new ClientCorpseData(
@@ -387,31 +387,31 @@ public class CorpseOriginClient implements ClientModInitializer {
                         payload.corpseType(),
                         payload.corpseData()
                 );
-                corpseDataCache.put(payload.playerUuid(), data);  // ✅ 用 UUID
-                // ★ 尸巢之子二阶段的 30 格碰撞箱是覆写 Player#getDimensions 得到的（见 PlayerDimensionsMixin），
-                //   客户端也读这份缓存判定，所以形态一变就得让箱子重算一次，否则客户端还停在 1.8 格。
+                corpseDataCache.put(payload.playerUuid(), data);  // 鉁?鐢?UUID
+                // 鈽?灏稿发涔嬪瓙浜岄樁娈电殑 30 鏍肩鎾炵鏄鍐?Player#getDimensions 寰楀埌鐨勶紙瑙?PlayerDimensionsMixin锛夛紝
+                //   瀹㈡埛绔篃璇昏繖浠界紦瀛樺垽瀹氾紝鎵€浠ュ舰鎬佷竴鍙樺氨寰楄绠卞瓙閲嶇畻涓€娆★紝鍚﹀垯瀹㈡埛绔繕鍋滃湪 1.8 鏍笺€?
                 if (Minecraft.getInstance().level != null) {
                     Player synced = Minecraft.getInstance().level.getPlayerByUUID(payload.playerUuid());
                     if (synced != null) {
                         synced.refreshDimensions();
                     }
                 }
-                CorpseOrigin.LOGGER.debug("收到玩家尸兄数据: uuid={}, isCorpse={}",
+                CorpseOrigin.LOGGER.debug("鏀跺埌鐜╁灏稿厔鏁版嵁: uuid={}, isCorpse={}",
                         payload.playerUuid(), payload.isCorpse());
             });
         });
 
-        // ✅ 接收克隆身体的角色外观（翅膀/鱼鳃/角色标记，按身体 UUID 缓存）
+        // 鉁?鎺ユ敹鍏嬮殕韬綋鐨勮鑹插瑙傦紙缈呰唨/楸奸硟/瑙掕壊鏍囪锛屾寜韬綋 UUID 缂撳瓨锛?
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.CloneBodySyncS2C.TYPE, (payload, context) ->
                 context.client().execute(() -> cloneBodyDataCache.put(payload.bodyUuid(),
                         new ClientCloneBody(payload.characterId(), payload.evolutionParts(),
                                 payload.infant(), payload.bearArms()))));
 
-        // ✅ Flashback 回放：快照补发的 evolution_parts 附件，按 UUID 回填到重建出的玩家实体
+        // 鉁?Flashback 鍥炴斁锛氬揩鐓цˉ鍙戠殑 evolution_parts 闄勪欢锛屾寜 UUID 鍥炲～鍒伴噸寤哄嚭鐨勭帺瀹跺疄浣?
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.ReplayPlayerBodyS2C.TYPE, (payload, context) ->
                 context.client().execute(() -> applyReplayBody(payload.playerUuid(), payload.body())));
 
-        // ✅ 接收进化/已学技能同步
+        // 鉁?鎺ユ敹杩涘寲/宸插鎶€鑳藉悓姝?
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.EvolutionSyncS2C.TYPE, (payload, context) ->
                 context.client().execute(() ->
                         ClientState.applyEvolution(
@@ -420,7 +420,7 @@ public class CorpseOriginClient implements ClientModInitializer {
                                 payload.kills(),
                                 payload.learnedSkills(), payload.level(), payload.pointsToNext())));
 
-        // ✅ 接收技能冷却同步
+        // 鉁?鎺ユ敹鎶€鑳藉喎鍗村悓姝?
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.CooldownSyncS2C.TYPE, (payload, context) ->
                 context.client().execute(() ->
                         ClientState.applyCooldown(payload.skillPath(), payload.ticks())));
@@ -429,7 +429,7 @@ public class CorpseOriginClient implements ClientModInitializer {
                 context.client().execute(() ->
                         ClientState.infection = payload.infection()));
 
-        // ✅ 接收内力同步
+        // 鉁?鎺ユ敹鍐呭姏鍚屾
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.InnerPowerSyncS2C.TYPE, (payload, context) ->
                 context.client().execute(() -> {
                     ClientState.innerPower = payload.current();
@@ -440,7 +440,7 @@ public class CorpseOriginClient implements ClientModInitializer {
                 context.client().execute(() ->
                         tempRedEyeTicks.put(payload.playerUuid(), payload.durationTicks())));
 
-        // ✅ 天线宝宝尸兄吸食状态（0 及以下 = 立刻结束，用于被打断）
+        // 鉁?澶╃嚎瀹濆疂灏稿厔鍚搁鐘舵€侊紙0 鍙婁互涓?= 绔嬪埢缁撴潫锛岀敤浜庤鎵撴柇锛?
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.AntennaSuckSyncS2C.TYPE, (payload, context) ->
                 context.client().execute(() -> {
                     if (payload.durationTicks() <= 0) {
@@ -452,7 +452,7 @@ public class CorpseOriginClient implements ClientModInitializer {
                     }
                 }));
 
-        // ✅ 天线宝宝尸兄「格挡」动画信号（0 及以下 = 立刻结束）
+        // 鉁?澶╃嚎瀹濆疂灏稿厔銆屾牸鎸°€嶅姩鐢讳俊鍙凤紙0 鍙婁互涓?= 绔嬪埢缁撴潫锛?
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.AntennaBlockSyncS2C.TYPE, (payload, context) ->
                 context.client().execute(() -> {
                     if (payload.durationTicks() <= 0) {
@@ -462,7 +462,7 @@ public class CorpseOriginClient implements ClientModInitializer {
                     }
                 }));
 
-        // ✅ 开胃奶「菊花盾」格挡窗口（0 及以下 = 立刻结束）
+        // 鉁?寮€鑳冨ザ銆岃強鑺辩浘銆嶆牸鎸＄獥鍙ｏ紙0 鍙婁互涓?= 绔嬪埢缁撴潫锛?
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.NiunaiParrySyncS2C.TYPE, (payload, context) ->
                 context.client().execute(() -> {
                     if (payload.durationTicks() <= 0) {
@@ -472,7 +472,7 @@ public class CorpseOriginClient implements ClientModInitializer {
                     }
                 }));
 
-        // ✅ 开胃奶「拦腰斩断」表现窗口（0 及以下 = 立刻结束）
+        // 鉁?寮€鑳冨ザ銆屾嫤鑵版柀鏂€嶈〃鐜扮獥鍙ｏ紙0 鍙婁互涓?= 绔嬪埢缁撴潫锛?
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.NiunaiLinkSyncS2C.TYPE, (payload, context) ->
                 context.client().execute(() -> {
                     if (payload.durationTicks() <= 0) {
@@ -482,7 +482,7 @@ public class CorpseOriginClient implements ClientModInitializer {
                     }
                 }));
 
-        // ✅ 尸巢之子「千眼万目」凝视窗口（0 及以下 = 立刻结束）
+        // 鉁?灏稿发涔嬪瓙銆屽崈鐪间竾鐩€嶅嚌瑙嗙獥鍙ｏ紙0 鍙婁互涓?= 绔嬪埢缁撴潫锛?
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.ShiChaoSpecialSyncS2C.TYPE, (payload, context) ->
                 context.client().execute(() -> {
                     if (payload.durationTicks() <= 0) {
@@ -494,14 +494,14 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (CorpseKeyBindings.openSkillWheel.consumeClick()) {
-                // 1. 周围有克隆仓 → 打开克隆仓 UI
+                // 1. 鍛ㄥ洿鏈夊厠闅嗕粨 鈫?鎵撳紑鍏嬮殕浠?UI
                 BlockPos nearby = findNearbyCloneChamber();
                 if (nearby != null) {
                     client.gui.setScreen(new CloneChamberScreen(nearby));
                     continue;
                 }
 
-                // 2. 否则走技能轮盘
+                // 2. 鍚﹀垯璧版妧鑳借疆鐩?
                 if (client.gui.screen() instanceof SkillWheelScreen) {
                     client.gui.setScreen(null);
                 } else if (client.gui.screen() == null) {
@@ -509,7 +509,7 @@ public class CorpseOriginClient implements ClientModInitializer {
                 }
             }
 
-            // 技能树保持"按一下打开"
+            // 鎶€鑳芥爲淇濇寔"鎸変竴涓嬫墦寮€"
             while (CorpseKeyBindings.openSkillTree.consumeClick()) {
                 client.gui.setScreen(new SkillTreeScreen());
             }
@@ -553,13 +553,13 @@ public class CorpseOriginClient implements ClientModInitializer {
                 }
             }
 
-            // ✅ 红眼计时自减（安全写法）
+            // 鉁?绾㈢溂璁℃椂鑷噺锛堝畨鍏ㄥ啓娉曪級
             if (!tempRedEyeTicks.isEmpty()) {
                 tempRedEyeTicks.replaceAll((k, v) -> v - 1);
                 tempRedEyeTicks.entrySet().removeIf(e -> e.getValue() <= 0);
             }
 
-            // ✅ Flashback 回放：实体重建可能晚于快照附件包，每 tick 尝试把暂存的附件回填
+            // 鉁?Flashback 鍥炴斁锛氬疄浣撻噸寤哄彲鑳芥櫄浜庡揩鐓ч檮浠跺寘锛屾瘡 tick 灏濊瘯鎶婃殏瀛樼殑闄勪欢鍥炲～
             if (!pendingReplayBodies.isEmpty() && client.level != null) {
                 pendingReplayBodies.entrySet().removeIf(e -> {
                     Player player = client.level.getPlayerByUUID(e.getKey());
@@ -569,49 +569,49 @@ public class CorpseOriginClient implements ClientModInitializer {
                 });
             }
 
-            // ✅ 吸食计时自减
+            // 鉁?鍚搁璁℃椂鑷噺
             if (!antennaSucks.isEmpty()) {
                 antennaSucks.replaceAll((k, v) ->
                         new AntennaSuck(v.targetEntityId(), v.ticks() - 1, v.totalTicks()));
                 antennaSucks.entrySet().removeIf(e -> e.getValue().ticks() <= 0);
             }
 
-            // ✅ 格挡窗口计时自减
+            // 鉁?鏍兼尅绐楀彛璁℃椂鑷噺
             if (!antennaBlocks.isEmpty()) {
                 antennaBlocks.replaceAll((k, v) -> v - 1);
                 antennaBlocks.entrySet().removeIf(e -> e.getValue() <= 0);
             }
 
-            // ✅ 开胃奶菊花盾窗口计时自减
+            // 鉁?寮€鑳冨ザ鑿婅姳鐩剧獥鍙ｈ鏃惰嚜鍑?
             if (!niunaiParries.isEmpty()) {
                 niunaiParries.replaceAll((k, v) -> v - 1);
                 niunaiParries.entrySet().removeIf(e -> e.getValue() <= 0);
             }
 
-            // ✅ 开胃奶拦腰斩断窗口计时自减（减到 0 就自然切回普通模型）
+            // 鉁?寮€鑳冨ザ鎷﹁叞鏂╂柇绐楀彛璁℃椂鑷噺锛堝噺鍒?0 灏辫嚜鐒跺垏鍥炴櫘閫氭ā鍨嬶級
             if (!niunaiLinks.isEmpty()) {
                 niunaiLinks.replaceAll((k, v) -> v - 1);
                 niunaiLinks.entrySet().removeIf(e -> e.getValue() <= 0);
             }
 
-            // ✅ 尸巢之子千眼万目窗口计时自减（减到 0 就切回 idle / walk）
+            // 鉁?灏稿发涔嬪瓙鍗冪溂涓囩洰绐楀彛璁℃椂鑷噺锛堝噺鍒?0 灏卞垏鍥?idle / walk锛?
             if (!shiChaoSpecials.isEmpty()) {
                 shiChaoSpecials.replaceAll((k, v) -> v - 1);
                 shiChaoSpecials.entrySet().removeIf(e -> e.getValue() <= 0);
             }
         });
 
-        // 注册激光 + 水墨渲染
+        // 娉ㄥ唽婵€鍏?+ 姘村ⅷ娓叉煋
         LevelRenderEvents.COLLECT_SUBMITS.register(context -> {
             PoseStack poseStack = context.poseStack();
             SubmitNodeCollector collector = context.submitNodeCollector();
             xiaoshi2022.corpseorigin.client.render.QiAuraRenderer.render(poseStack,collector);
             xiaoshi2022.corpseorigin.client.render.SwordImpactRenderer.render(poseStack,collector);
             BloodLotusLaserManager.getInstance().render(poseStack, collector);
-            // ✅ 尸王雷电（紫色）
+            // 鉁?灏哥帇闆风數锛堢传鑹诧級
             ThunderFxManager.getInstance().render(poseStack, collector);
 
-            // ✅ 水墨意境
+            // 鉁?姘村ⅷ鎰忓
             Minecraft mc = Minecraft.getInstance();
             if (mc.gameRenderer != null && mc.gameRenderer.mainCamera() != null) {
                 Vec3 cameraPos = mc.gameRenderer.mainCamera().position();
@@ -619,7 +619,7 @@ public class CorpseOriginClient implements ClientModInitializer {
             }
         });
 
-// ✅ 接收多目标链条包
+// 鉁?鎺ユ敹澶氱洰鏍囬摼鏉″寘
         ClientPlayNetworking.registerGlobalReceiver(BloodLotusLaserMultiPayload.TYPE, (payload, context) -> {
             context.client().execute(() -> {
                 BloodLotusLaserManager.getInstance().addChains(
@@ -644,7 +644,7 @@ public class CorpseOriginClient implements ClientModInitializer {
             });
         });
 
-        // ✅ 接收紫色雷电特效（落雷 / 球状闪电电弧）
+        // 鉁?鎺ユ敹绱壊闆风數鐗规晥锛堣惤闆?/ 鐞冪姸闂數鐢靛姬锛?
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.ThunderBoltFxS2C.TYPE, (payload, context) -> {
             context.client().execute(() -> {
                 ThunderFxManager.getInstance().addBolt(
@@ -668,13 +668,13 @@ public class CorpseOriginClient implements ClientModInitializer {
                 }
             });
         });
-        // ✅ 新增：接收诗牌落下
+        // 鉁?鏂板锛氭帴鏀惰瘲鐗岃惤涓?
         ClientPlayNetworking.registerGlobalReceiver(APSInkPoemPayload.TYPE, (payload, context) -> {
             context.client().execute(() ->
                     APSInkSceneManager.dropPoem(payload.lineIndex()));
         });
 
-// 每 tick 更新
+// 姣?tick 鏇存柊
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             BloodLotusLaserManager.getInstance().tick();
             xiaoshi2022.corpseorigin.client.render.laser.TianGangBeamState.tick();
@@ -687,16 +687,16 @@ public class CorpseOriginClient implements ClientModInitializer {
 
     private static void finishCamera(java.util.UUID targetUuid, BlockPos startPos, Direction startFacing,
                                      BlockPos targetPos, Direction targetFacing, Identifier targetWorld) {
-        // 第一段（灵魂上天）放完：通知服务端开始换身体，镜头先留在天上，
-        // 等玩家真正落到新身体后再播第二段「下落附身」（见 beginHandoff）
+        // 绗竴娈碉紙鐏甸瓊涓婂ぉ锛夋斁瀹岋細閫氱煡鏈嶅姟绔紑濮嬫崲韬綋锛岄暅澶村厛鐣欏湪澶╀笂锛?
+        // 绛夌帺瀹剁湡姝ｈ惤鍒版柊韬綋鍚庡啀鎾浜屾銆屼笅钀介檮韬€嶏紙瑙?beginHandoff锛?
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
                 new CameraDonePacket(targetUuid));
         PersistentCameraEntity.beginHandoff(startPos, startFacing, targetPos, targetFacing, targetWorld);
     }
 
     /**
-     * 直角分支（尸王换身）的收尾：镜头不飞天也不下落 —— 只回包让服务端换身，
-     * 然后等玩家落到目标位置，在黑幕里把视角交还（见 {@code beginDirectRelease}）。
+     * 鐩磋鍒嗘敮锛堝案鐜嬫崲韬級鐨勬敹灏撅細闀滃ご涓嶉澶╀篃涓嶄笅钀?鈥斺€?鍙洖鍖呰鏈嶅姟绔崲韬紝
+     * 鐒跺悗绛夌帺瀹惰惤鍒扮洰鏍囦綅缃紝鍦ㄩ粦骞曢噷鎶婅瑙掍氦杩橈紙瑙?{@code beginDirectRelease}锛夈€?
      */
     private static void finishCameraDirect(java.util.UUID targetUuid, BlockPos targetPos, Identifier targetWorld) {
         net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(
@@ -704,7 +704,7 @@ public class CorpseOriginClient implements ClientModInitializer {
         PersistentCameraEntity.beginDirectRelease(targetPos, targetWorld);
     }
 
-    /** 找玩家周围 3 格内最近的克隆仓（只认下半格），返回其方块坐标 */
+    /** 鎵剧帺瀹跺懆鍥?3 鏍煎唴鏈€杩戠殑鍏嬮殕浠擄紙鍙涓嬪崐鏍硷級锛岃繑鍥炲叾鏂瑰潡鍧愭爣 */
     public static BlockPos findNearbyCloneChamber() {
         var player = Minecraft.getInstance().player;
         if (player == null || player.level() == null) {
@@ -729,14 +729,14 @@ public class CorpseOriginClient implements ClientModInitializer {
         return null;
     }
 
-    // ==================== 客户端数据类 ====================
+    // ==================== 瀹㈡埛绔暟鎹被 ====================
 
     /**
-     * Flashback 回放：把快照携带的 evolution_parts 附件 NBT 回填给指定 UUID 的玩家。
+     * Flashback 鍥炴斁锛氭妸蹇収鎼哄甫鐨?evolution_parts 闄勪欢 NBT 鍥炲～缁欐寚瀹?UUID 鐨勭帺瀹躲€?
      * <p>
-     * 快照的自定义包在 viewer 的 sendLevelInfo 阶段统一送达，绝大多数玩家实体重建已完成；
-     * 万一还没见到实体（本地玩家的创建包顺序不同），先放进 {@link #pendingReplayBodies}
-     * 由客户端 tick 继续尝试。
+     * 蹇収鐨勮嚜瀹氫箟鍖呭湪 viewer 鐨?sendLevelInfo 闃舵缁熶竴閫佽揪锛岀粷澶у鏁扮帺瀹跺疄浣撻噸寤哄凡瀹屾垚锛?
+     * 涓囦竴杩樻病瑙佸埌瀹炰綋锛堟湰鍦扮帺瀹剁殑鍒涘缓鍖呴『搴忎笉鍚岋級锛屽厛鏀捐繘 {@link #pendingReplayBodies}
+     * 鐢卞鎴风 tick 缁х画灏濊瘯銆?
      */
     public static void applyReplayBody(UUID uuid, net.minecraft.nbt.CompoundTag body) {
         if (uuid == null || body == null) return;
@@ -747,48 +747,6 @@ public class CorpseOriginClient implements ClientModInitializer {
             pendingReplayBodies.remove(uuid);
         } else {
             pendingReplayBodies.put(uuid, body);
-        }
-    }
-
-    public static class ClientCorpseData {
-        public final boolean isCorpse;
-        public final int corpseType;
-        public final CompoundTag data;
-
-        public ClientCorpseData(boolean isCorpse, int corpseType, CompoundTag data) {
-            this.isCorpse = isCorpse;
-            this.corpseType = corpseType;
-            this.data = data;
-        }
-
-        public boolean isDisguised() {
-            return data.getBoolean("is_disguised").orElse(false);
-        }
-
-        public boolean hasConsciousness() {
-            return data.getBoolean("has_consciousness").orElse(false);
-        }
-
-        public int getExtraEyeCount() {
-            return data.getInt("extra_eye_count").orElse(0);
-        }
-
-        public boolean hasWing() {
-            return data.getBoolean("has_wing").orElse(false);
-        }
-
-        public boolean hasTail() {
-            return data.getBoolean("has_tail").orElse(false);
-        }
-
-        /** 尸兄变种：{@code 2} = 无外骨骼通用变种（不长尸眼骨骼） */
-        public int getVariant() {
-            return data.getInt("variant").orElse(0);
-        }
-
-        public boolean showsCorpseEye() {
-            return isCorpse && !isDisguised() && !data.getBooleanOr("evolved_eye_hidden",false)
-                    && xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.hasExoskeleton(getVariant());
         }
     }
 
@@ -812,6 +770,6 @@ public class CorpseOriginClient implements ClientModInitializer {
                 )
         );
 
-        CorpseOrigin.LOGGER.debug("✅ 尸水纹理已注册");
+        CorpseOrigin.LOGGER.debug("Infected water textures registered");
     }
 }

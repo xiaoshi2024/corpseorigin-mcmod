@@ -65,7 +65,7 @@ import java.util.List;
 public class CloneChamberRenderer
         implements BlockEntityRenderer<CloneChamberBlockEntity, CloneChamberRenderState> {
 
-    // ===== 6 个预置 BlockState =====
+    // ===== 6 涓缃?BlockState =====
     private static final BlockState STATE_BODY_LOWER =
             ModBlocks.CLONE_CHAMBER.defaultBlockState()
                     .setValue(CloneChamberBlock.PART, CloneChamberBlock.Part.BODY_LOWER);
@@ -90,13 +90,13 @@ public class CloneChamberRenderer
             ModBlocks.CLONE_CHAMBER.defaultBlockState()
                     .setValue(CloneChamberBlock.PART, CloneChamberBlock.Part.DOOR_RIGHT_UPPER);
 
-    /** 打印完成阈值，和 CloneState.COMPLETE_PROGRESS 一致 */
+    /** 鎵撳嵃瀹屾垚闃堝€硷紝鍜?CloneState.COMPLETE_PROGRESS 涓€鑷?*/
     private static final float COMPLETE_PROGRESS = 0.96F;
 
     private final BlockModelResolver modelResolver;
     private final PlayerModel cloneModel;
     private final VoxelModel voxelModel;
-    /** 仓内克隆人的翅膀 / 鱼鳃（和实体上的 EvolutionPartsLayer 同一套手绘模型） */
+    /** 浠撳唴鍏嬮殕浜虹殑缈呰唨 / 楸奸硟锛堝拰瀹炰綋涓婄殑 EvolutionPartsLayer 鍚屼竴濂楁墜缁樻ā鍨嬶級 */
     private final ModelPart leftWingPart;
     private final ModelPart rightWingPart;
     private final ModelPart gillsPart;
@@ -119,8 +119,8 @@ public class CloneChamberRenderer
                 entityModels.bakeLayer(ModModelLayers.CLONE_DUMMY), false);
         this.voxelModel = new VoxelModel(this.cloneModel);
 
-        // 角色专属外观用的 GEO 渲染器由 CloneAvatarRenderer 在实体渲染器注册时创建
-        // （客户端启动就会建，早于任何仓渲染）；这里不重复初始化。
+        // 瑙掕壊涓撳睘澶栬鐢ㄧ殑 GEO 娓叉煋鍣ㄧ敱 CloneAvatarRenderer 鍦ㄥ疄浣撴覆鏌撳櫒娉ㄥ唽鏃跺垱寤?
+        // 锛堝鎴风鍚姩灏变細寤猴紝鏃╀簬浠讳綍浠撴覆鏌擄級锛涜繖閲屼笉閲嶅鍒濆鍖栥€?
 
         this.leftWingPart = bakeExtraPart("wing_left", CubeListBuilder.create()
                 .addBox(1, 1, 2.5f, 13, 1, 1).addBox(3, 2, 2.7f, 10, 4, .6f)
@@ -139,7 +139,7 @@ public class CloneChamberRenderer
         try {
             baked = new ExoskeletonModel(entityModels.bakeLayer(ModModelLayers.EXOSKELETON));
         } catch (Exception e) {
-            CorpseOrigin.LOGGER.warn("仓内克隆人外骨骼模型烘焙失败，将不渲染外骨骼: {}", e.getMessage());
+            CorpseOrigin.LOGGER.warn("浠撳唴鍏嬮殕浜哄楠ㄩ妯″瀷鐑樼剻澶辫触锛屽皢涓嶆覆鏌撳楠ㄩ: {}", e.getMessage());
         }
         this.exoskeletonModel = baked;
     }
@@ -167,8 +167,8 @@ public class CloneChamberRenderer
         state.entityData = chamber.getCloneEntityData();
         state.partialTick = partialTick;
 
-        // ★ "别的模组的液体"在方块状态里只能记成 OTHER，外观改由渲染器自绘：
-        //   贴图用原版水/熔岩的，颜色取流体自己烘焙模型上的染色
+        // 鈽?"鍒殑妯＄粍鐨勬恫浣?鍦ㄦ柟鍧楃姸鎬侀噷鍙兘璁版垚 OTHER锛屽瑙傛敼鐢辨覆鏌撳櫒鑷粯锛?
+        //   璐村浘鐢ㄥ師鐗堟按/鐔斿博鐨勶紝棰滆壊鍙栨祦浣撹嚜宸辩儤鐒欐ā鍨嬩笂鐨勬煋鑹?
         Fluid storedFluid = chamber.getBlockState().getValue(CloneChamberBlock.FLUID).isUnknown()
                 ? chamber.storedFluid()
                 : null;
@@ -180,19 +180,19 @@ public class CloneChamberRenderer
         }
     }
 
-    /** 没定义染色的水系流体的兜底色：血液红（尸兄模组的培养液就是血） */
+    /** 娌″畾涔夋煋鑹茬殑姘寸郴娴佷綋鐨勫厹搴曡壊锛氳娑茬孩锛堝案鍏勬ā缁勭殑鍩瑰吇娑插氨鏄锛?*/
     private static final int BLOOD_TINT = 0xFF8A0303;
 
     /**
-     * 流体染色：取流体自己烘焙模型上的 tint 源。
+     * 娴佷綋鏌撹壊锛氬彇娴佷綋鑷繁鐑樼剻妯″瀷涓婄殑 tint 婧愩€?
      * <p>
-     * 26.2 的流体模型自带 tint 定义（常量色/生物群系色等），
-     * 语义对应 NeoForge {@code IClientFluidTypeExtensions.getTintColor}。
+     * 26.2 鐨勬祦浣撴ā鍨嬭嚜甯?tint 瀹氫箟锛堝父閲忚壊/鐢熺墿缇ょ郴鑹茬瓑锛夛紝
+     * 璇箟瀵瑰簲 NeoForge {@code IClientFluidTypeExtensions.getTintColor}銆?
      */
     private static int fluidTint(CloneChamberBlockEntity chamber, FluidState fluidState) {
         FluidModel model = Minecraft.getInstance().getModelManager().getFluidStateModelSet().get(fluidState);
-        // 流体没定义染色时 tintSource 为 null（如 BOP 血液）：
-        // 熔岩系按白色（熔岩贴图本身带色），水系兜底成血液红
+        // 娴佷綋娌″畾涔夋煋鑹叉椂 tintSource 涓?null锛堝 BOP 琛€娑诧級锛?
+        // 鐔斿博绯绘寜鐧借壊锛堢啍宀╄创鍥炬湰韬甫鑹诧級锛屾按绯诲厹搴曟垚琛€娑茬孩
         BlockTintSource tintSource = model.tintSource();
         if (tintSource == null) {
             return fluidState.is(FluidTags.LAVA) ? -1 : BLOOD_TINT;
@@ -203,14 +203,14 @@ public class CloneChamberRenderer
         } else {
             tint = tintSource.color(chamber.getBlockState());
         }
-        // 常量色通常按 RGB 记，alpha 位为 0；补成不透明，不然整片液体会被 alpha=0 画没
+        // 甯搁噺鑹查€氬父鎸?RGB 璁帮紝alpha 浣嶄负 0锛涜ˉ鎴愪笉閫忔槑锛屼笉鐒舵暣鐗囨恫浣撲細琚?alpha=0 鐢绘病
         if ((tint & 0xFF000000) == 0) {
             tint |= 0xFF000000;
         }
         return tint;
     }
 
-    /** 另一半仓格有没有液体（决定要不要剔除两半之间的接触面） */
+    /** 鍙︿竴鍗婁粨鏍兼湁娌℃湁娑蹭綋锛堝喅瀹氳涓嶈鍓旈櫎涓ゅ崐涔嬮棿鐨勬帴瑙﹂潰锛?*/
     private static boolean otherHalfHasFluid(CloneChamberBlockEntity chamber) {
         Level level = chamber.getLevel();
         if (level == null) {
@@ -235,21 +235,21 @@ public class CloneChamberRenderer
         pose.mulPose(Axis.YP.rotationDegrees(state.facing.getOpposite().toYRot()));
         pose.translate(-0.5F, -0.5F, -0.5F);
 
-        // ===== 1. 本体 =====
+        // ===== 1. 鏈綋 =====
         BlockState bodyState = state.lowerHalf ? STATE_BODY_LOWER : STATE_BODY_UPPER;
         BlockModelRenderState bodyRenderState = new BlockModelRenderState();
         modelResolver.update(bodyRenderState, bodyState, displayContext);
         bodyRenderState.submit(pose, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
 
-        // ===== 2. 门（向外开：门叶绕铰链转到仓外） =====
+        // ===== 2. 闂紙鍚戝寮€锛氶棬鍙剁粫閾伴摼杞埌浠撳锛?=====
         float angle = state.doorOpen * 90.0F;
 
-        // ===== 3. 克隆人（只在下半格渲染） =====
+        // ===== 3. 鍏嬮殕浜猴紙鍙湪涓嬪崐鏍兼覆鏌擄級 =====
         if (state.lowerHalf && state.hasClone) {
             renderClone(pose, collector, state, camera);
         }
 
-        // 右门：铰链 origin [15.5, 16, 1]
+        // 鍙抽棬锛氶摪閾?origin [15.5, 16, 1]
         pose.pushPose();
         pose.translate(15.5F / 16.0F, 0.0F, 1.0F / 16.0F);
         pose.mulPose(Axis.YP.rotationDegrees(-angle));
@@ -260,7 +260,7 @@ public class CloneChamberRenderer
         rightDoorRenderState.submit(pose, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
         pose.popPose();
 
-        // 左门：铰链 origin [1.5, 16, 1]
+        // 宸﹂棬锛氶摪閾?origin [1.5, 16, 1]
         pose.pushPose();
         pose.translate(1.5F / 16.0F, 0.0F, 1.0F / 16.0F);
         pose.mulPose(Axis.YP.rotationDegrees(angle));
@@ -271,8 +271,8 @@ public class CloneChamberRenderer
         leftDoorRenderState.submit(pose, collector, state.lightCoords, OverlayTexture.NO_OVERLAY, 0);
         pose.popPose();
 
-        // ===== 4. 液体：其它模组的液体自己画（原版画不了方块状态里没记的流体） =====
-        // 放在朝向旋转之内：液体盒对齐的是模型坐标系里的仓内空腔，要跟仓体一起转
+        // ===== 4. 娑蹭綋锛氬叾瀹冩ā缁勭殑娑蹭綋鑷繁鐢伙紙鍘熺増鐢讳笉浜嗘柟鍧楃姸鎬侀噷娌¤鐨勬祦浣擄級 =====
+        // 鏀惧湪鏈濆悜鏃嬭浆涔嬪唴锛氭恫浣撶洅瀵归綈鐨勬槸妯″瀷鍧愭爣绯婚噷鐨勪粨鍐呯┖鑵旓紝瑕佽窡浠撲綋涓€璧疯浆
         if (state.customFluid != null) {
             renderCustomFluid(state, pose, collector);
         }
@@ -281,11 +281,11 @@ public class CloneChamberRenderer
     }
 
     /**
-     * 仓内液体的自绘。
+     * 浠撳唴娑蹭綋鐨勮嚜缁樸€?
      * <p>
-     * 不走原版 {@code FluidRenderer}（它输出的是区块分区局部坐标，且按方块状态剔除邻面，
-     * 用在贝雕渲染器里位置和剔除都对不上），改为直接用原版水/熔岩的贴图
-     * 画一个贴着仓内空腔的液体盒：贴图与渲染层照原版水/熔岩模板选，颜色取流体自己模型上的染色。
+     * 涓嶈蛋鍘熺増 {@code FluidRenderer}锛堝畠杈撳嚭鐨勬槸鍖哄潡鍒嗗尯灞€閮ㄥ潗鏍囷紝涓旀寜鏂瑰潡鐘舵€佸墧闄ら偦闈紝
+     * 鐢ㄥ湪璐濋洉娓叉煋鍣ㄩ噷浣嶇疆鍜屽墧闄ら兘瀵逛笉涓婏級锛屾敼涓虹洿鎺ョ敤鍘熺増姘?鐔斿博鐨勮创鍥?
+     * 鐢讳竴涓创鐫€浠撳唴绌鸿厰鐨勬恫浣撶洅锛氳创鍥句笌娓叉煋灞傜収鍘熺増姘?鐔斿博妯℃澘閫夛紝棰滆壊鍙栨祦浣撹嚜宸辨ā鍨嬩笂鐨勬煋鑹层€?
      */
     private void renderCustomFluid(CloneChamberRenderState state, PoseStack pose, SubmitNodeCollector collector) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -294,7 +294,7 @@ public class CloneChamberRenderer
         }
 
         FluidStateModelSet modelSet = minecraft.getModelManager().getFluidStateModelSet();
-        // 贴图/渲染层用原版水或熔岩的模板
+        // 璐村浘/娓叉煋灞傜敤鍘熺増姘存垨鐔斿博鐨勬ā鏉?
         FluidModel template = modelSet.get(state.customLavaLike
                 ? Fluids.LAVA.defaultFluidState()
                 : Fluids.WATER.defaultFluidState());
@@ -313,13 +313,13 @@ public class CloneChamberRenderer
     }
 
     /**
-     * 画一个贴着仓内空腔的液体盒（空心壳，面都在空腔边界上）。
+     * 鐢讳竴涓创鐫€浠撳唴绌鸿厰鐨勬恫浣撶洅锛堢┖蹇冨３锛岄潰閮藉湪绌鸿厰杈圭晫涓婏級銆?
      * <p>
-     * 空腔对齐 {@code CloneChamberBlock} 的碰撞形状（模型朝北的坐标系，随仓体一起旋转）：
-     * x 0.0625~0.94375、z 0.00625~0.94375；下半从地板顶面 0.0625 起，
-     * 上半到顶盖下沿 0.91875 止。整体再内缩一丝，避免和仓壁表面 z-fighting 穿模。
+     * 绌鸿厰瀵归綈 {@code CloneChamberBlock} 鐨勭鎾炲舰鐘讹紙妯″瀷鏈濆寳鐨勫潗鏍囩郴锛岄殢浠撲綋涓€璧锋棆杞級锛?
+     * x 0.0625~0.94375銆亃 0.00625~0.94375锛涗笅鍗婁粠鍦版澘椤堕潰 0.0625 璧凤紝
+     * 涓婂崐鍒伴《鐩栦笅娌?0.91875 姝€傛暣浣撳啀鍐呯缉涓€涓濓紝閬垮厤鍜屼粨澹佽〃闈?z-fighting 绌挎ā銆?
      * <p>
-     * 上下两半各自画半段，两半之间的接触面剔除掉，整柱液体中间就不会多出一条液面。
+     * 涓婁笅涓ゅ崐鍚勮嚜鐢诲崐娈碉紝涓ゅ崐涔嬮棿鐨勬帴瑙﹂潰鍓旈櫎鎺夛紝鏁存煴娑蹭綋涓棿灏变笉浼氬鍑轰竴鏉℃恫闈€?
      */
     private static void drawFluidBox(PoseStack.Pose pose, VertexConsumer consumer, TextureAtlasSprite sprite,
                                      int tint, int light, boolean lowerHalf, boolean connected) {
@@ -341,7 +341,7 @@ public class CloneChamberRenderer
         face(pose, consumer, sprite, tint, light, Direction.EAST, x0, x1, y0, y1, z0, z1);
     }
 
-    /** 画液体的一个面：四个角按面内平面取坐标（侧面 u 沿水平、v 沿高度，顶/底面 u/v 沿两根水平轴） */
+    /** 鐢绘恫浣撶殑涓€涓潰锛氬洓涓鎸夐潰鍐呭钩闈㈠彇鍧愭爣锛堜晶闈?u 娌挎按骞炽€乿 娌块珮搴︼紝椤?搴曢潰 u/v 娌夸袱鏍规按骞宠酱锛?*/
     private static void face(PoseStack.Pose pose, VertexConsumer consumer, TextureAtlasSprite sprite,
                              int tint, int light, Direction direction,
                              float x0, float x1, float y0, float y1, float z0, float z1) {
@@ -380,8 +380,8 @@ public class CloneChamberRenderer
             }
         }
 
-        // movingBlock 渲染层开背面剔除，绕序写反整面就没了；
-        // 两种绕序各画一遍，任何视角都有一个通过剔除（共面，另一份被剔，不会叠加混合）
+        // movingBlock 娓叉煋灞傚紑鑳岄潰鍓旈櫎锛岀粫搴忓啓鍙嶆暣闈㈠氨娌′簡锛?
+        // 涓ょ缁曞簭鍚勭敾涓€閬嶏紝浠讳綍瑙嗚閮芥湁涓€涓€氳繃鍓旈櫎锛堝叡闈紝鍙︿竴浠借鍓旓紝涓嶄細鍙犲姞娣峰悎锛?
         for (int pass = 0; pass < 2; pass++) {
             for (int i = 0; i < 4; i++) {
                 int idx = pass == 0 ? i : 3 - i;
@@ -395,35 +395,35 @@ public class CloneChamberRenderer
         }
     }
 
-    // ==================== 克隆人渲染 ====================
+    // ==================== 鍏嬮殕浜烘覆鏌?====================
 
     /**
-     * 仓内空间在方块内的中心。
+     * 浠撳唴绌洪棿鍦ㄦ柟鍧楀唴鐨勪腑蹇冦€?
      * <p>
-     * 对齐 {@code CloneChamberBlock} 的碰撞形状：内部 x 0.0625~0.94375、z 0.00625~0.94375，
-     * 地面板顶面在 y 0.0625。直接用方块中心(0.5)会让克隆人偏向后壁。
+     * 瀵归綈 {@code CloneChamberBlock} 鐨勭鎾炲舰鐘讹細鍐呴儴 x 0.0625~0.94375銆亃 0.00625~0.94375锛?
+     * 鍦伴潰鏉块《闈㈠湪 y 0.0625銆傜洿鎺ョ敤鏂瑰潡涓績(0.5)浼氳鍏嬮殕浜哄亸鍚戝悗澹併€?
      */
     private static final float INTERIOR_CENTER_X = (0.0625F + 0.94375F) / 2.0F;
     private static final float INTERIOR_CENTER_Z = (0.00625F + 0.94375F) / 2.0F;
-    /** 仓内地板顶面高度 */
+    /** 浠撳唴鍦版澘椤堕潰楂樺害 */
     private static final float INTERIOR_FLOOR_Y = 0.0625F;
-    /** 模型抬升量：在 Y 翻转之后的坐标系里把模型脚底抬到落点上（负值 = 世界里的向上） */
+    /** 妯″瀷鎶崌閲忥細鍦?Y 缈昏浆涔嬪悗鐨勫潗鏍囩郴閲屾妸妯″瀷鑴氬簳鎶埌钀界偣涓婏紙璐熷€?= 涓栫晫閲岀殑鍚戜笂锛?*/
     private static final float MODEL_LIFT = -1.40F;
 
-    // ===== 两套形态各自独立的落点，改一边不影响另一边 =====
+    // ===== 涓ゅ褰㈡€佸悇鑷嫭绔嬬殑钀界偣锛屾敼涓€杈逛笉褰卞搷鍙︿竴杈?=====
 
-    /** 培育中（体素形态）：自定义几何直接按模型方块坐标重建，单独定位 */
+    /** 鍩硅偛涓紙浣撶礌褰㈡€侊級锛氳嚜瀹氫箟鍑犱綍鐩存帴鎸夋ā鍨嬫柟鍧楀潗鏍囬噸寤猴紝鍗曠嫭瀹氫綅 */
     private static final float VOXEL_X = 0.6F;
     private static final float VOXEL_Y = INTERIOR_FLOOR_Y;
     private static final float VOXEL_Z = INTERIOR_CENTER_Z;
 
-    /** 成熟后（完整模型，走 submitModel 管线） */
+    /** 鎴愮啛鍚庯紙瀹屾暣妯″瀷锛岃蛋 submitModel 绠＄嚎锛?*/
     private static final float BODY_X = INTERIOR_CENTER_X;
     private static final float BODY_Y = INTERIOR_FLOOR_Y;
     private static final float BODY_Z = INTERIOR_CENTER_Z;
 
     private void renderClone(PoseStack pose, SubmitNodeCollector collector, CloneChamberRenderState state, CameraRenderState camera) {
-        // ★ 生物克隆体：用对应生物的渲染器画出和原实体一样的外观
+        // 鈽?鐢熺墿鍏嬮殕浣擄細鐢ㄥ搴旂敓鐗╃殑娓叉煋鍣ㄧ敾鍑哄拰鍘熷疄浣撲竴鏍风殑澶栬
         if (state.entityType != null) {
             renderEntityClone(pose, collector, state, camera);
             return;
@@ -431,7 +431,7 @@ public class CloneChamberRenderer
 
         float progress = state.cloneProgress;
         PlayerSkin skin = ClientSkinCache.resolve(state.ownerUuid);
-        boolean grown = progress >= 1.0F;   // getCloneProgress() 已按这具身体自己的完成度归一化
+        boolean grown = progress >= 1.0F;   // getCloneProgress() 宸叉寜杩欏叿韬綋鑷繁鐨勫畬鎴愬害褰掍竴鍖?
 
         pose.pushPose();
         if (grown) {
@@ -453,31 +453,31 @@ public class CloneChamberRenderer
             avatar.showRightSleeve = true;
             avatar.showCape = false;
 
-            // ★ 盔甲：取这具身体自己穿的那套
+            // 鈽?鐩旂敳锛氬彇杩欏叿韬綋鑷繁绌跨殑閭ｅ
             avatar.headEquipment = equipmentAt(state.equipment, 0);
             avatar.chestEquipment = equipmentAt(state.equipment, 1);
             avatar.legsEquipment = equipmentAt(state.equipment, 2);
             avatar.feetEquipment = equipmentAt(state.equipment, 3);
 
-            // ★ 角色专属外观（小金刚尸兄 / 开胃奶背挂……）：与实体上是同一套 GEO 管线，
-            //   只是数据源换成 CloneBodySyncS2C 的缓存（培育中的身体还没成为实体）。
-            //   ⚠️ 必须排在下面的 scale(-1,-1,1) 之前：GEO 走的是原版实体渲染那套变换，
-            //   自己会做翻转与位移，多翻一次模型就反了。
+            // 鈽?瑙掕壊涓撳睘澶栬锛堝皬閲戝垰灏稿厔 / 寮€鑳冨ザ鑳屾寕鈥︹€︼級锛氫笌瀹炰綋涓婃槸鍚屼竴濂?GEO 绠＄嚎锛?
+            //   鍙槸鏁版嵁婧愭崲鎴?CloneBodySyncS2C 鐨勭紦瀛橈紙鍩硅偛涓殑韬綋杩樻病鎴愪负瀹炰綋锛夈€?
+            //   鈿狅笍 蹇呴』鎺掑湪涓嬮潰鐨?scale(-1,-1,1) 涔嬪墠锛欸EO 璧扮殑鏄師鐗堝疄浣撴覆鏌撻偅濂楀彉鎹紝
+            //   鑷繁浼氬仛缈昏浆涓庝綅绉伙紝澶氱炕涓€娆℃ā鍨嬪氨鍙嶄簡銆?
             boolean roleGeo = false;
             try {
                 CloneRoleGeoLayer.extractForChamber(state.bodyUuid, avatar, 0.0F);
-                // 背挂长在背后，先提交（深度测试会让身体正常挡住它）
+                // 鑳屾寕闀垮湪鑳屽悗锛屽厛鎻愪氦锛堟繁搴︽祴璇曚細璁╄韩浣撴甯告尅浣忓畠锛?
                 roleGeo = !CloneRoleGeoLayer.replacesBody(avatar)
                         && CloneRoleGeoLayer.submitReplacing(avatar, pose, collector, camera);
             } catch (Throwable t) {
-                CorpseOrigin.LOGGER.warn("[CorpseOrigin] 仓内角色外观渲染失败，已回退原样: {}", t.toString());
+                CorpseOrigin.LOGGER.warn("[CorpseOrigin] 浠撳唴瑙掕壊澶栬娓叉煋澶辫触锛屽凡鍥為€€鍘熸牱: {}", t.toString());
             }
             if (roleGeo) {
                 pose.scale(-1.0F, -1.0F, 1.0F);
                 pose.translate(0.0F, MODEL_LIFT, 0.0F);
                 this.cloneModel.setupAnim(avatar);
                 CloneRoleGeoLayer.submitOrgans(avatar, pose, collector, this.cloneModel);
-                // 整身替换型：原版克隆人 / 盔甲 / 尸兄零件全部不画（与玩家侧同一取舍）
+                // 鏁磋韩鏇挎崲鍨嬶細鍘熺増鍏嬮殕浜?/ 鐩旂敳 / 灏稿厔闆朵欢鍏ㄩ儴涓嶇敾锛堜笌鐜╁渚у悓涓€鍙栬垗锛?
                 pose.popPose();
                 return;
             }
@@ -501,14 +501,14 @@ public class CloneChamberRenderer
                     -1,
                     null);
 
-            // ★ 层：先盔甲，再尸兄外骨骼/红眼（放在 submitModel 之后，模型姿势已摆好）
+            // 鈽?灞傦細鍏堢洈鐢诧紝鍐嶅案鍏勫楠ㄩ/绾㈢溂锛堟斁鍦?submitModel 涔嬪悗锛屾ā鍨嬪Э鍔垮凡鎽嗗ソ锛?
             HumanoidArmorLayer<AvatarRenderState, PlayerModel, PlayerModel> armor =
                     this.armorLayer();
             if (armor != null) {
-                // ★ GeckoLib 的 geo 盔甲要有"每槽位渲染数据"才会接管，而那份数据只在实体渲染状态
-                //   创建时由 GeckoLib 的 EntityRendererMixin 填 —— 方块实体渲染没有那一步，
-                //   于是盔甲会掉回原版通道、按 ArmorMaterial 画成钻石甲。
-                //   这里拿一具离屏假身（装备已塞进真实槽位）手动补一次，之后盔甲层自己就会走 geo 通道。
+                // 鈽?GeckoLib 鐨?geo 鐩旂敳瑕佹湁"姣忔Ы浣嶆覆鏌撴暟鎹?鎵嶄細鎺ョ锛岃€岄偅浠芥暟鎹彧鍦ㄥ疄浣撴覆鏌撶姸鎬?
+                //   鍒涘缓鏃剁敱 GeckoLib 鐨?EntityRendererMixin 濉?鈥斺€?鏂瑰潡瀹炰綋娓叉煋娌℃湁閭ｄ竴姝ワ紝
+                //   浜庢槸鐩旂敳浼氭帀鍥炲師鐗堥€氶亾銆佹寜 ArmorMaterial 鐢绘垚閽荤煶鐢层€?
+                //   杩欓噷鎷夸竴鍏风灞忓亣韬紙瑁呭宸插杩涚湡瀹炴Ы浣嶏級鎵嬪姩琛ヤ竴娆★紝涔嬪悗鐩旂敳灞傝嚜宸卞氨浼氳蛋 geo 閫氶亾銆?
                 LivingEntity dummy = CloneArmorSupport.dummyWearer(state.equipment);
                 if (dummy != null) {
                     GeoArmorRenderer.captureRenderStates(avatar, dummy, 0.0F,
@@ -518,9 +518,9 @@ public class CloneChamberRenderer
                 armor.submit(pose, collector, state.lightCoords, avatar, 0.0F, 0.0F);
             }
             renderCorpseParts(pose, collector, state, avatar);
-            // ★ 葫芦（葫芦小金刚）：挂在 body 骨骼上，所以要在模型姿势摆好之后、
-            //   用"模型根"空间的 pose 提交（与实体上的层走同一条锚点变换）。
-            //   先显式摆一次姿势，保证读到的 body 骨骼位置就是这一帧的。
+            // 鈽?钁姦锛堣懌鑺﹀皬閲戝垰锛夛細鎸傚湪 body 楠ㄩ涓婏紝鎵€浠ヨ鍦ㄦā鍨嬪Э鍔挎憜濂戒箣鍚庛€?
+            //   鐢?妯″瀷鏍?绌洪棿鐨?pose 鎻愪氦锛堜笌瀹炰綋涓婄殑灞傝蛋鍚屼竴鏉￠敋鐐瑰彉鎹級銆?
+            //   鍏堟樉寮忔憜涓€娆″Э鍔匡紝淇濊瘉璇诲埌鐨?body 楠ㄩ浣嶇疆灏辨槸杩欎竴甯х殑銆?
             this.cloneModel.setupAnim(avatar);
             CloneRoleGeoLayer.submitBackMount(avatar, pose, collector, this.cloneModel, camera);
             CloneRoleGeoLayer.submitGourd(avatar, pose, collector, this.cloneModel, camera);
@@ -546,19 +546,19 @@ public class CloneChamberRenderer
         pose.popPose();
     }
 
-    // ==================== 生物克隆体渲染 ====================
+    // ==================== 鐢熺墿鍏嬮殕浣撴覆鏌?====================
 
-    /** 缓存的离屏生物实体（按实体类型 ID 缓存，避免每帧重建） */
+    /** 缂撳瓨鐨勭灞忕敓鐗╁疄浣擄紙鎸夊疄浣撶被鍨?ID 缂撳瓨锛岄伩鍏嶆瘡甯ч噸寤猴級 */
     private static final java.util.Map<Identifier, net.minecraft.world.entity.Entity> ENTITY_CACHE = new java.util.HashMap<>();
 
-    /** 离屏实体的 id 发号器：用递减的负数，保证非 0 且不与服务端分配的正数 id 撞车 */
+    /** 绂诲睆瀹炰綋鐨?id 鍙戝彿鍣細鐢ㄩ€掑噺鐨勮礋鏁帮紝淇濊瘉闈?0 涓斾笉涓庢湇鍔＄鍒嗛厤鐨勬鏁?id 鎾炶溅 */
     private static int nextOffscreenId = -1;
 
     /**
-     * 渲染生物克隆体：用该生物类型自己的渲染器画出和原实体完全一致的外观。
+     * 娓叉煋鐢熺墿鍏嬮殕浣擄細鐢ㄨ鐢熺墿绫诲瀷鑷繁鐨勬覆鏌撳櫒鐢诲嚭鍜屽師瀹炰綋瀹屽叏涓€鑷寸殑澶栬銆?
      * <p>
-     * 方案：客户端创建一具同类型的离屏实体，加载存储的 NBT（保留装备/外观/状态），
-     * 再用 {@code EntityRenderDispatcher.submit} 画到仓内。实体不加入世界，纯渲染用。
+     * 鏂规锛氬鎴风鍒涘缓涓€鍏峰悓绫诲瀷鐨勭灞忓疄浣擄紝鍔犺浇瀛樺偍鐨?NBT锛堜繚鐣欒澶?澶栬/鐘舵€侊級锛?
+     * 鍐嶇敤 {@code EntityRenderDispatcher.submit} 鐢诲埌浠撳唴銆傚疄浣撲笉鍔犲叆涓栫晫锛岀函娓叉煋鐢ㄣ€?
      */
     private void renderEntityClone(PoseStack pose, SubmitNodeCollector collector, CloneChamberRenderState state, CameraRenderState camera) {
         Minecraft mc = Minecraft.getInstance();
@@ -566,7 +566,7 @@ public class CloneChamberRenderer
             return;
         }
 
-        // 1. 取（或创建）离屏实体
+        // 1. 鍙栵紙鎴栧垱寤猴級绂诲睆瀹炰綋
         net.minecraft.world.entity.Entity entity = ENTITY_CACHE.get(state.entityType);
         boolean created = false;
         if (entity == null || entity.level() != mc.level) {
@@ -579,7 +579,7 @@ public class CloneChamberRenderer
             ENTITY_CACHE.put(state.entityType, entity);
         }
 
-        // 2. 加载 NBT（保留外观/装备/状态效果）
+        // 2. 鍔犺浇 NBT锛堜繚鐣欏瑙?瑁呭/鐘舵€佹晥鏋滐級
         if (state.entityData != null) {
             net.minecraft.nbt.CompoundTag data = state.entityData.copy();
             entity.load(net.minecraft.world.level.storage.TagValueInput.create(
@@ -588,29 +588,29 @@ public class CloneChamberRenderer
                     data));
         }
 
-        // ★ 实体没加入世界就没有 id（id == 0），而 GeckoLib 提取渲染状态时会给手持物
-        //   调 ItemModelResolver.updateForLiving → Entity.getId()，那里对 id == 0 直接抛
-        //   "Tried to access entity ID before ID assignment"。
-        //   放在 load 之后补，免得被 NBT 里的字段盖掉；只在新建那一帧补一次，缓存的实体沿用。
+        // 鈽?瀹炰綋娌″姞鍏ヤ笘鐣屽氨娌℃湁 id锛坕d == 0锛夛紝鑰?GeckoLib 鎻愬彇娓叉煋鐘舵€佹椂浼氱粰鎵嬫寔鐗?
+        //   璋?ItemModelResolver.updateForLiving 鈫?Entity.getId()锛岄偅閲屽 id == 0 鐩存帴鎶?
+        //   "Tried to access entity ID before ID assignment"銆?
+        //   鏀惧湪 load 涔嬪悗琛ワ紝鍏嶅緱琚?NBT 閲岀殑瀛楁鐩栨帀锛涘彧鍦ㄦ柊寤洪偅涓€甯цˉ涓€娆★紝缂撳瓨鐨勫疄浣撴部鐢ㄣ€?
         if (created) {
             entity.setId(nextOffscreenId--);
         }
 
-        // 3. 定位到仓内中心，适当缩放适应仓体
+        // 3. 瀹氫綅鍒颁粨鍐呬腑蹇冿紝閫傚綋缂╂斁閫傚簲浠撲綋
         pose.pushPose();
         pose.translate(BODY_X, BODY_Y, BODY_Z);
         float scale = 0.9F;
         pose.scale(scale, scale, scale);
-        // 朝向玩家（面朝仓门）
+        // 鏈濆悜鐜╁锛堥潰鏈濅粨闂級
         pose.mulPose(Axis.YP.rotationDegrees(180.0F));
 
-        // 4. 提取实体渲染状态并提交绘制
+        // 4. 鎻愬彇瀹炰綋娓叉煋鐘舵€佸苟鎻愪氦缁樺埗
         @SuppressWarnings({"rawtypes", "unchecked"})
         net.minecraft.client.renderer.entity.EntityRenderer renderer =
                 mc.getEntityRenderDispatcher().getRenderer(entity);
 
-        // GeckoLib 的 createRenderState() 返回 null，必须用 createRenderState(animatable, partialTick)
-        // 它内部会同时完成创建 + extractRenderState + finalizeRenderState
+        // GeckoLib 鐨?createRenderState() 杩斿洖 null锛屽繀椤荤敤 createRenderState(animatable, partialTick)
+        // 瀹冨唴閮ㄤ細鍚屾椂瀹屾垚鍒涘缓 + extractRenderState + finalizeRenderState
         net.minecraft.client.renderer.entity.state.EntityRenderState renderState;
         if (renderer instanceof com.geckolib.renderer.GeoEntityRenderer geoRenderer) {
             renderState = geoRenderer.createRenderState(entity, state.partialTick);
@@ -626,9 +626,9 @@ public class CloneChamberRenderer
             return;
         }
 
-        // ★ 补光照：正常走 EntityRenderDispatcher 时它会先按实体所在位置算好 lightCoords
-        //   再 extract，我们这里是手动 extract 的，不补这一句光照就恒为 0 —— 画出来一片死黑。
-        //   直接用仓格自己的光照即可（克隆体就在仓里）。
+        // 鈽?琛ュ厜鐓э細姝ｅ父璧?EntityRenderDispatcher 鏃跺畠浼氬厛鎸夊疄浣撴墍鍦ㄤ綅缃畻濂?lightCoords
+        //   鍐?extract锛屾垜浠繖閲屾槸鎵嬪姩 extract 鐨勶紝涓嶈ˉ杩欎竴鍙ュ厜鐓у氨鎭掍负 0 鈥斺€?鐢诲嚭鏉ヤ竴鐗囨榛戙€?
+        //   鐩存帴鐢ㄤ粨鏍艰嚜宸辩殑鍏夌収鍗冲彲锛堝厠闅嗕綋灏卞湪浠撻噷锛夈€?
         renderState.lightCoords = state.lightCoords;
 
         mc.getEntityRenderDispatcher().submit(
@@ -638,11 +638,11 @@ public class CloneChamberRenderer
     }
 
     /**
-     * 复制一份仓内克隆人的渲染状态。
+     * 澶嶅埗涓€浠戒粨鍐呭厠闅嗕汉鐨勬覆鏌撶姸鎬併€?
      * <p>
-     * GeckoLib 给每个盔甲槽位各要一份 render state（它靠 {@code CURRENT_SLOT} 决定把穿戴者的
-     * 哪些部位姿势拷到盔甲骨的哪些段上），所以这里每个槽位都新建一份，
-     * 而不是四件盔甲共用同一个对象。
+     * GeckoLib 缁欐瘡涓洈鐢叉Ы浣嶅悇瑕佷竴浠?render state锛堝畠闈?{@code CURRENT_SLOT} 鍐冲畾鎶婄┛鎴磋€呯殑
+     * 鍝簺閮ㄤ綅濮垮娍鎷峰埌鐩旂敳楠ㄧ殑鍝簺娈典笂锛夛紝鎵€浠ヨ繖閲屾瘡涓Ы浣嶉兘鏂板缓涓€浠斤紝
+     * 鑰屼笉鏄洓浠剁洈鐢插叡鐢ㄥ悓涓€涓璞°€?
      */
     private static AvatarRenderState copyRenderState(AvatarRenderState source) {
         AvatarRenderState copy = new AvatarRenderState();
@@ -667,7 +667,7 @@ public class CloneChamberRenderer
         return index < equipment.size() ? equipment.get(index) : ItemStack.EMPTY;
     }
 
-    // ==================== 盔甲 / 尸兄外骨骼 ====================
+    // ==================== 鐩旂敳 / 灏稿厔澶栭楠?====================
 
     @Nullable
     private HumanoidArmorLayer<AvatarRenderState, PlayerModel, PlayerModel> armorLayer() {
@@ -677,7 +677,7 @@ public class CloneChamberRenderer
         return this.armorLayer;
     }
 
-    /** 盔甲层要求一个 RenderLayerParent，这里把它指向仓内这套模型 */
+    /** 鐩旂敳灞傝姹備竴涓?RenderLayerParent锛岃繖閲屾妸瀹冩寚鍚戜粨鍐呰繖濂楁ā鍨?*/
     private record ChamberLayerParent(PlayerModel model)
             implements RenderLayerParent<AvatarRenderState, PlayerModel> {
 
@@ -686,21 +686,21 @@ public class CloneChamberRenderer
     }
 
     /**
-     * 仓内克隆人的尸兄外骨骼与红眼。
+     * 浠撳唴鍏嬮殕浜虹殑灏稿厔澶栭楠间笌绾㈢溂銆?
      * <p>
-     * 和真玩家用的是同一套数据（客户端缓存的尸兄数据按 owner uuid 记）与同一张贴图，
-     * 但贝雕渲染器没有实体渲染层的管道，所以这里手动提交模型部件。
+     * 鍜岀湡鐜╁鐢ㄧ殑鏄悓涓€濂楁暟鎹紙瀹㈡埛绔紦瀛樼殑灏稿厔鏁版嵁鎸?owner uuid 璁帮級涓庡悓涓€寮犺创鍥撅紝
+     * 浣嗚礉闆曟覆鏌撳櫒娌℃湁瀹炰綋娓叉煋灞傜殑绠￠亾锛屾墍浠ヨ繖閲屾墜鍔ㄦ彁浜ゆā鍨嬮儴浠躲€?
      */
     private void renderCorpseParts(PoseStack pose, SubmitNodeCollector collector,
                                    CloneChamberRenderState state, AvatarRenderState avatar) {
         if (state.ownerUuid == null) {
             return;
         }
-        // 尸兄状态按"这具身体"取（服务端按身体 uuid 单独同步过）
-        CorpseOriginClient.ClientCorpseData corpseData =
+        // 灏稿厔鐘舵€佹寜"杩欏叿韬綋"鍙栵紙鏈嶅姟绔寜韬綋 uuid 鍗曠嫭鍚屾杩囷級
+        xiaoshi2022.corpseorigin.client.ClientCorpseData corpseData =
                 state.bodyUuid == null ? null : CorpseOriginClient.corpseDataCache.get(state.bodyUuid);
         boolean corpse = corpseData != null && corpseData.isCorpse && !corpseData.isDisguised();
-        // 红眼是玩家自己的战斗状态，跟着账号走
+        // 绾㈢溂鏄帺瀹惰嚜宸辩殑鎴樻枟鐘舵€侊紝璺熺潃璐﹀彿璧?
         int redEye = CorpseOriginClient.tempRedEyeTicks.getOrDefault(state.ownerUuid, 0);
         if (!corpse && redEye <= 0) {
             return;
@@ -718,7 +718,7 @@ public class CloneChamberRenderer
                     null);
         }
 
-        // 翅膀 / 鱼鳃：角色外观包按身体 UUID 缓存；锚在 cloneModel.body 上手绘
+        // 缈呰唨 / 楸奸硟锛氳鑹插瑙傚寘鎸夎韩浣?UUID 缂撳瓨锛涢敋鍦?cloneModel.body 涓婃墜缁?
         if (corpse && state.bodyUuid != null) {
             CorpseOriginClient.ClientCloneBody cloneBody =
                     CorpseOriginClient.cloneBodyDataCache.get(state.bodyUuid);

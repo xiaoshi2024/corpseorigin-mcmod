@@ -7,6 +7,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.network.chat.Component;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
+import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.registry.ModEffects;
 
@@ -38,7 +39,11 @@ public final class ThermalSurvey {
             }
         }});
     }
-    public static boolean isCorpse(LivingEntity e){return e instanceof Player p?PlayerCorpseComponent.isCorpse(p):ZombieKin.isZombieKin(e);}
+    public static boolean isCorpse(LivingEntity e){
+        if (e instanceof Player p) return PlayerCorpseComponent.isCorpse(p);
+        if (e instanceof CloneAvatarEntity clone) return clone.isCorpseClone() || clone.isCorpseKingBody();
+        return ZombieKin.isZombieKin(e);
+    }
     public static Result scan(ServerPlayer p){
         var data=ThermalSurveyData.get(p);data.visit(p);var chunks=data.chunks(p);int loaded=0,corpses=0,players=0,incubating=0;
         for(long key:chunks)if(p.level().getChunkSource().hasChunk(ChunkPos.getX(key),ChunkPos.getZ(key)))loaded++;

@@ -53,7 +53,7 @@ public final class CorpseHorrorGameplayTest implements FabricClientGameTest {
                 for(int rank:new int[]{4,5,15,4}){
                     progression.setPoints(p.getUUID(),xiaoshi2022.corpseorigin.skill.EvolutionManager.getThreshold(rank),0);
                     xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.syncEvolvedEye(p);
-                    var appearance=new xiaoshi2022.corpseorigin.client.CorpseOriginClient.ClientCorpseData(true,0,component.getDataPublic());
+                    var appearance=new xiaoshi2022.corpseorigin.client.ClientCorpseData(true,0,component.getDataPublic());
                     check(appearance.showsCorpseEye()==(rank<5),"player eye threshold and downgrade at "+rank);
                 }
                 p.level().addFreshEntity(corpse);entityId=corpse.getId();
