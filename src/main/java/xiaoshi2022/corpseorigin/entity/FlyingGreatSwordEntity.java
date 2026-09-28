@@ -1,7 +1,6 @@
 package xiaoshi2022.corpseorigin.entity;
 
 import net.minecraft.core.UUIDUtil;
-import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -21,6 +20,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.util.List;
 import java.util.UUID;

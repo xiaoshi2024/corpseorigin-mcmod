@@ -1,7 +1,9 @@
 package xiaoshi2022.corpseorigin.skill.longyou;
 
 import com.mojang.serialization.Codec;
-import net.fabricmc.fabric.api.attachment.v1.*;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
 import net.minecraft.network.chat.Component;

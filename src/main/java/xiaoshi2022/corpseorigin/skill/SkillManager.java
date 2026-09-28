@@ -5,7 +5,6 @@ import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.ICharacter;
-import xiaoshi2022.corpseorigin.character.InnerPowerManager;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 

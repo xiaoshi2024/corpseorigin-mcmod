@@ -1,12 +1,16 @@
 package xiaoshi2022.corpseorigin.growth;
 
-import java.util.*;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.effect.*;
 import net.minecraft.network.chat.Component;
-import xiaoshi2022.corpseorigin.config.CorpseConfig;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
+import xiaoshi2022.corpseorigin.config.CorpseConfig;
 import xiaoshi2022.corpseorigin.skill.longyou.BloodReserve;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /** Server-owned flight permission and prepaid organ activity, in active ticks. */
 public final class OrganEnergy {

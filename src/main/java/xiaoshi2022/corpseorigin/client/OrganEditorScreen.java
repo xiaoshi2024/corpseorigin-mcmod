@@ -1,17 +1,21 @@
 package xiaoshi2022.corpseorigin.client;
 
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.loader.api.FabricLoader;
-import xiaoshi2022.corpseorigin.growth.*;
+import xiaoshi2022.corpseorigin.growth.OrganLibrary;
+import xiaoshi2022.corpseorigin.growth.OrganSlot;
+import xiaoshi2022.corpseorigin.growth.SurvivalGrowth;
 import xiaoshi2022.corpseorigin.network.OrganEditorPayload;
-import java.util.*;
+
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Compact paged editor: one mounted organ at a time, eight slots per body. */
 public final class OrganEditorScreen extends Screen {

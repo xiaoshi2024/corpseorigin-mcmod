@@ -14,12 +14,7 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.skill.ISkill;
-import xiaoshi2022.corpseorigin.skill.zuohufa.DetachGuardianSkill;
-import xiaoshi2022.corpseorigin.skill.zuohufa.MergeGuardianSkill;
-import xiaoshi2022.corpseorigin.skill.zuohufa.MouthSnakeSkill;
-import xiaoshi2022.corpseorigin.skill.zuohufa.QiLockSkill;
-import xiaoshi2022.corpseorigin.skill.zuohufa.ReviveGuardianSkill;
-import xiaoshi2022.corpseorigin.skill.zuohufa.TyrantStrikeSkill;
+import xiaoshi2022.corpseorigin.skill.zuohufa.*;
 
 import java.util.List;
 

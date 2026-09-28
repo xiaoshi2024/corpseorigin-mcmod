@@ -1,11 +1,16 @@
 package xiaoshi2022.corpseorigin.growth;
+
 import net.minecraft.network.chat.Component;
 import xiaoshi2022.corpseorigin.util.LocalizedException;
 
-import java.nio.file.*;
-import java.util.*;
-import java.util.zip.ZipFile;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.zip.ZipFile;
 
 /** Read manifests in place; never extract user archives or guess model bindings. */
 public final class OrganPackCatalog {

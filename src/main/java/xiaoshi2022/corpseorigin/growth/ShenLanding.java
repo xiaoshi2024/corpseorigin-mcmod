@@ -8,7 +8,10 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.skill.chapter.GroundShockwave;
 import xiaoshi2022.corpseorigin.skill.chapter.GroundShockwaveMath;
-import java.util.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /** Measures actual descent, because flight and skills reset vanilla fallDistance. */
 public final class ShenLanding {

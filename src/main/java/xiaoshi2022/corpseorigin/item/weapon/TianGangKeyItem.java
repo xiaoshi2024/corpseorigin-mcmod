@@ -11,11 +11,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
@@ -23,6 +23,7 @@ import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.skill.SkillManager;
 import xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill;
+
 import java.util.function.Consumer;
 
 /** Blood-lotus treasure: only Zhao Ritian can activate its learned technique. */

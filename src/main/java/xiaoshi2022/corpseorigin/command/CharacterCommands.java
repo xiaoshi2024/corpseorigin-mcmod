@@ -11,8 +11,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.ICharacter;
-import xiaoshi2022.corpseorigin.skill.SkillManager;
 import xiaoshi2022.corpseorigin.character.ShiChaoZhiZi;
+import xiaoshi2022.corpseorigin.skill.SkillManager;
 import xiaoshi2022.corpseorigin.skill.shichaozhizi.SonOfCorpseNestSkill;
 
 import java.util.Collection;

@@ -1,21 +1,29 @@
 package xiaoshi2022.corpseorigin.skill.heixiaofei;
 
-import net.fabricmc.fabric.api.attachment.v1.*;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.*;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.networking.v1.*;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.commands.Commands;
-import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.ai.attributes.*;
 import net.minecraft.world.item.ItemStack;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
-import xiaoshi2022.corpseorigin.character.*;
-import xiaoshi2022.corpseorigin.network.*;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.HeiXiaoFei;
+import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
+import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.network.HeartWakePayload;
 
 public final class HeartImplant {
     public static final AttachmentType<Boolean> FEIGNING = AttachmentRegistry.create(CorpseOrigin.id("heart_feigning"),

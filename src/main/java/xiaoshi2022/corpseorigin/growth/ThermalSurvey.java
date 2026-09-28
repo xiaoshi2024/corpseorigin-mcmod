@@ -1,14 +1,14 @@
 package xiaoshi2022.corpseorigin.growth;
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.network.chat.Component;
-import xiaoshi2022.corpseorigin.entity.ZombieKin;
-import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
+import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
+import xiaoshi2022.corpseorigin.entity.ZombieKin;
 import xiaoshi2022.corpseorigin.registry.ModEffects;
 
 public final class ThermalSurvey {
@@ -41,7 +41,17 @@ public final class ThermalSurvey {
     }
     public static boolean isCorpse(LivingEntity e){
         if (e instanceof Player p) return PlayerCorpseComponent.isCorpse(p);
-        if (e instanceof CloneAvatarEntity clone) return clone.isCorpseClone() || clone.isCorpseKingBody();
+        if (e instanceof CloneAvatarEntity clone) {
+            if (clone.isCorpseClone() || clone.isCorpseKingBody()) return true;
+            var state = clone.getBodyState();
+            var character = state == null ? null : state.getComponent().as(xiaoshi2022.corpseorigin.shell.CharacterShellStateComponent.class);
+            if (character != null) {
+                String role = character.getCharacterId();
+                return role.endsWith("_corpse") || role.equals("guigun_corpse")
+                        || role.equals("hei_wuchou") || role.equals("bai_wusheng");
+            }
+            return false;
+        }
         return ZombieKin.isZombieKin(e);
     }
     public static Result scan(ServerPlayer p){

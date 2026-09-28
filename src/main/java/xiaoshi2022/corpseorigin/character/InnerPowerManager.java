@@ -1,7 +1,7 @@
 package xiaoshi2022.corpseorigin.character;
 
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.growth.FreeGrowth;
 import xiaoshi2022.corpseorigin.growth.SurvivalGrowth;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;

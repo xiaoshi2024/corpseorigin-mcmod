@@ -9,7 +9,9 @@ import net.minecraft.network.chat.Component;
 import xiaoshi2022.corpseorigin.growth.RealmNetworking;
 import xiaoshi2022.corpseorigin.growth.RealmProgression;
 import xiaoshi2022.corpseorigin.growth.RealmRules;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /** Paginated layout stays usable on small windows; every mutation is validated on the server. */
 public final class RealmGrowthScreen extends Screen {

@@ -14,15 +14,18 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 瀹㈡埛绔柇鑲㈢姸鎬佺紦瀛樸€? * <p>
- * 鏁版嵁鏉ユ簮灏辨槸鏈嶅姟绔凡缁忎笅鍙戠殑 PlayerCorpseSyncS2C锛堟暣浠?PLAYER_CORPSE tag锛夛紝
- * 鎵€浠ヤ笉闇€瑕侀澶栫殑缃戠粶鍖呫€傛湇鍔＄姣忔鐘舵€佸彉鍖栨墠鍙戜竴娆★紝涓棿鐨勪竴绉掗潬鏈湴 tick 澶栨帹琛ラ棿锛? * 閬垮厤鎸夊寘棰戠巼涓€璺充竴璺冲湴闀裤€? */
+ * 客户端断肢状态缓存。
+ * <p>
+ * 数据来源就是服务端已经下发的 {@code PlayerCorpseSyncS2C}（整份 PLAYER_CORPSE tag），
+ * 所以不需要额外的网络包。服务端每次状态变化才发一次，中间的一秒靠本地 tick 外推补间，
+ * 避免按包频率一路一跳地长。
+ */
 @Environment(EnvType.CLIENT)
 public final class ClientLimbCache {
 
-    /** 姣忛儴浣嶈繘搴﹀父閲忥細鍊?< 0 琛ㄧず"鏂簡浣嗕笉浼氳嚜鎰? */
+    /** 每部位进度常量：值 < 0 表示"断了但不会自愈" */
     public static final float PERMANENT = -1.0F;
-    /** 瀹屽ソ */
+    /** 完好 */
     public static final float INTACT = -2.0F;
 
     private static final Map<UUID, Entry> CACHE = new ConcurrentHashMap<>();
@@ -30,7 +33,7 @@ public final class ClientLimbCache {
     private ClientLimbCache() {
     }
 
-    /** 涓€娆℃覆鏌撶敤鐨勬柇鑲㈣鍥?*/
+    /** 一次渲染用的断肢视图 */
     public static final class Entry {
         private final CompoundTag tag;
         private final int mask;
@@ -50,12 +53,12 @@ public final class ClientLimbCache {
             return mask;
         }
 
-        /** 璇ラ儴浣嶆槸鍚︽柇浜?*/
+        /** 该部位是否断了 */
         public boolean isSevered(int slot) {
             return (mask & (1 << slot)) != 0;
         }
 
-        /** 鍐嶇敓杩涘害锛? = 鍒氭柇锛? = 闀垮ソ锛涜礋鏁拌 {@link #PERMANENT} / {@link #INTACT} */
+        /** 再生进度：0 = 刚断，1 = 长好；负数见 {@link #PERMANENT} / {@link #INTACT} */
         public float progress(int slot, float partialTick) {
             if (!isSevered(slot)) {
                 return INTACT;
@@ -69,8 +72,11 @@ public final class ClientLimbCache {
     }
 
     /**
-     * 鍙栬鐜╁鐨勬柇鑲㈢姸鎬侊紱杩斿洖 null 琛ㄧず鎸夊師鐗堢帺瀹舵覆鏌撱€?     * <p>
-     * 鍙湁鏈嶅姟绔啓浜?limb_mask 鐨勮韩浣撴墠浼氳蛋鏂偄妯″瀷 鈥斺€?鑰屾湇鍔＄鍙銆岄粦灏忛 + 灏稿厔銆嶅啓杩欎唤鏁版嵁锛?     * 鎵€浠ュ鎴风涓嶉渶瑕併€佷篃鏃犳硶鑷鍒ゆ柇瑙掕壊銆?     */
+     * 取该玩家的断肢状态；返回 null 表示按原版玩家渲染。
+     * <p>
+     * 只有服务端写了 {@code limb_mask} 的身体才会走断肢模型 —— 而服务端只对「黑小飞 + 尸兄」写这份数据，
+     * 所以客户端不需要、也无法自行判断角色。
+     */
     public static Entry get(AbstractClientPlayer player) {
         UUID uuid = player.getUUID();
         xiaoshi2022.corpseorigin.client.ClientCorpseData data = CorpseOriginClient.corpseDataCache.get(uuid);
@@ -95,7 +101,8 @@ public final class ClientLimbCache {
         }
 
         Entry cached = CACHE.get(uuid);
-        // 姣忔鍚屾閮芥槸涓€涓柊 tag 瀹炰緥锛岀敤韬唤姣旇緝鍒ゆ柇鏈夋病鏈夋洿鏂?        if (cached == null || cached.tag != tag) {
+        // 每次同步都是一个新 tag 实例，用身份比较判断有没有更新
+        if (cached == null || cached.tag != tag) {
             cached = new Entry(tag, mask, remaining, totals, currentTick());
             CACHE.put(uuid, cached);
         }

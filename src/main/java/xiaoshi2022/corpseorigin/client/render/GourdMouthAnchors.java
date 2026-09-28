@@ -5,10 +5,11 @@ import com.geckolib.renderer.base.GeoRenderState;
 import com.geckolib.renderer.base.RenderPassInfo;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.phys.Vec3;
-import java.util.HashMap;
-import java.util.Map;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /** Client visual positions only. Never sends client bone coordinates to the server. */
 public final class GourdMouthAnchors {

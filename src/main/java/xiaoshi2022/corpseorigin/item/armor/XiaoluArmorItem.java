@@ -1,4 +1,5 @@
 package xiaoshi2022.corpseorigin.item.armor;
+
 import com.geckolib.animatable.GeoItem;
 import com.geckolib.animatable.client.GeoRenderProvider;
 import com.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -7,10 +8,13 @@ import com.geckolib.renderer.GeoArmorRenderer;
 import com.geckolib.util.GeckoLibUtil;
 import com.google.common.base.Suppliers;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.item.*;
-import net.minecraft.world.item.equipment.*;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.equipment.ArmorMaterial;
+import net.minecraft.world.item.equipment.ArmorType;
 import org.jetbrains.annotations.Nullable;
 import xiaoshi2022.corpseorigin.client.renderer.armor.XiaoluArmorRenderer;
+
 import java.util.function.Consumer;
 
 public class XiaoluArmorItem extends Item implements GeoItem {

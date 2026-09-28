@@ -2,11 +2,12 @@ package xiaoshi2022.corpseorigin.client;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import xiaoshi2022.corpseorigin.network.NestRadarPayload;
+
 import java.util.List;
 
 public final class NestRadarScreen extends Screen {

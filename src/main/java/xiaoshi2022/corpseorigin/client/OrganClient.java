@@ -1,12 +1,16 @@
 package xiaoshi2022.corpseorigin.client;
-import net.minecraft.network.chat.Component;
-import xiaoshi2022.corpseorigin.util.LocalizedException;
 
-import java.util.List;
-import java.util.Arrays;
-import net.fabricmc.fabric.api.client.networking.v1.*;
-import xiaoshi2022.corpseorigin.growth.*;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.network.chat.Component;
+import xiaoshi2022.corpseorigin.growth.OrganDefinition;
+import xiaoshi2022.corpseorigin.growth.OrganEvolutionPayload;
+import xiaoshi2022.corpseorigin.growth.OrganLibrary;
+import xiaoshi2022.corpseorigin.growth.OrganPackCatalog;
 import xiaoshi2022.corpseorigin.network.OrganEditorPayload;
+
+import java.util.Arrays;
+import java.util.List;
 
 public final class OrganClient {
     public static List<OrganDefinition> catalog = List.of();

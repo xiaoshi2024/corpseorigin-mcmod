@@ -4,8 +4,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
-import xiaoshi2022.corpseorigin.skill.*;
-import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
+import xiaoshi2022.corpseorigin.skill.AbstractSkill;
+import xiaoshi2022.corpseorigin.skill.SkillType;
+
 import java.util.List;
 
 /** Ninefold canon: wisdom and qi are passive foundations; advanced arts require Shen. */

@@ -1,11 +1,13 @@
 package xiaoshi2022.corpseorigin.growth;
-import net.minecraft.network.chat.Component;
-import xiaoshi2022.corpseorigin.util.LocalizedException;
 
-import net.fabricmc.fabric.api.networking.v1.*;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import xiaoshi2022.corpseorigin.network.OrganEditorPayload;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.network.chat.Component;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
+import xiaoshi2022.corpseorigin.network.OrganEditorPayload;
+import xiaoshi2022.corpseorigin.util.LocalizedException;
 
 public final class OrganNetwork {
     private static long lastReload=Long.MIN_VALUE;

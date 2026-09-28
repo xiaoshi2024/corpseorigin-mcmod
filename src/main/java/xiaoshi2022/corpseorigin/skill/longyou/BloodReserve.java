@@ -1,8 +1,10 @@
 package xiaoshi2022.corpseorigin.skill.longyou;
 
-import net.fabricmc.fabric.api.attachment.v1.*;
-import net.minecraft.server.level.ServerPlayer;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 
 public final class BloodReserve {

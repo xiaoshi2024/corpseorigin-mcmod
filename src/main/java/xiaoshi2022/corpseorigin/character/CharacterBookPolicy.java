@@ -1,10 +1,13 @@
 package xiaoshi2022.corpseorigin.character;
 
-import net.fabricmc.fabric.api.attachment.v1.*;
-import net.minecraft.network.codec.ByteBufCodecs;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+
 import java.util.*;
 
 /** The server is authoritative; the attachment only disables matching client UI rows. */

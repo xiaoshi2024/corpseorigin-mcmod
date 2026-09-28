@@ -1,7 +1,8 @@
 package xiaoshi2022.corpseorigin.growth;
 
-import java.util.Map;
 import net.minecraft.resources.Identifier;
+
+import java.util.Map;
 
 /** Resource paths are supplied by a server-approved resource pack, never arbitrary files. */
 public record OrganDefinition(String id, String name, String trait, String model, String texture,

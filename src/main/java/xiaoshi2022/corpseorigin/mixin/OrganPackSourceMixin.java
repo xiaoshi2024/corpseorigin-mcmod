@@ -1,18 +1,21 @@
 package xiaoshi2022.corpseorigin.mixin;
 
-import java.nio.file.Path;
-import java.nio.file.Files;
-import java.util.function.Consumer;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.repository.*;
+import net.minecraft.server.packs.repository.FolderRepositorySource;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.world.level.validation.DirectoryValidator;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.function.Consumer;
 
 /** Expose organ packs through the ordinary client resource pack selection/reload flow. */
 @Mixin(FolderRepositorySource.class)

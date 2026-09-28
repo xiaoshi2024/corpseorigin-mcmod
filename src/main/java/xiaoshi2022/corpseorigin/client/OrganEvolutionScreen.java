@@ -1,11 +1,14 @@
 package xiaoshi2022.corpseorigin.client;
 
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.network.chat.Component;
-import xiaoshi2022.corpseorigin.growth.*;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import xiaoshi2022.corpseorigin.growth.OrganDefinition;
+import xiaoshi2022.corpseorigin.growth.OrganEvolution;
+import xiaoshi2022.corpseorigin.growth.OrganEvolutionPayload;
+import xiaoshi2022.corpseorigin.growth.OrganEvolutionRules;
 
 /** A paged, server-authoritative ladder for each registered organ. */
 public final class OrganEvolutionScreen extends Screen {

@@ -4,19 +4,18 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.client.renderer.RenderPipelines;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.client.ClientState;
 import xiaoshi2022.corpseorigin.client.CorpseOriginClient;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
 import xiaoshi2022.corpseorigin.registry.ModEffects;
-import xiaoshi2022.corpseorigin.skill.EvolutionManager;
 import xiaoshi2022.corpseorigin.skill.EvolutionTier;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState;
 import xiaoshi2022.corpseorigin.skill.longyou.BloodReserve;
-import xiaoshi2022.corpseorigin.character.CharacterManager;
 
 /** Draws the compact status HUD in the top-right corner. */
 public final class InfectionHudOverlay {

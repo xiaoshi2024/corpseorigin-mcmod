@@ -1,7 +1,5 @@
 package xiaoshi2022.corpseorigin.skill.chapter;
 
-import java.util.ArrayList;
-import java.util.List;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.server.level.ServerLevel;
@@ -15,6 +13,9 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 黑白二将（尸王麾下京剧双煞）的经典招式：

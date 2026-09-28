@@ -4,18 +4,22 @@ import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.effect.*;
-import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.entity.*;
 import xiaoshi2022.corpseorigin.growth.SurvivalGrowth;
-import xiaoshi2022.corpseorigin.registry.*;
+import xiaoshi2022.corpseorigin.registry.ModEntities;
+import xiaoshi2022.corpseorigin.registry.ModItems;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.SkillResourceRules;
 import xiaoshi2022.corpseorigin.skill.longyou.TianGangCombat;
+
 import java.util.*;
 
 /** Server AI adapters select the actual role's skill catalogue and reuse its cooldown/resource prices. */

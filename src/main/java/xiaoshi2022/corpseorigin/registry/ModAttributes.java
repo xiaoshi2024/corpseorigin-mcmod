@@ -1,7 +1,6 @@
 package xiaoshi2022.corpseorigin.registry;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
-import net.minecraft.world.entity.PathfinderMob;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.entity.*;
 

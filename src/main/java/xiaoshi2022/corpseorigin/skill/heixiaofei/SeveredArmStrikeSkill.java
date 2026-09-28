@@ -1,10 +1,13 @@
 package xiaoshi2022.corpseorigin.skill.heixiaofei;
-import net.minecraft.server.level.ServerPlayer;
+
 import net.minecraft.network.chat.Component;
-import xiaoshi2022.corpseorigin.skill.*;
-import xiaoshi2022.corpseorigin.skill.chapter.BodySkillState;
+import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.entity.SkillConstructEntity;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
+import xiaoshi2022.corpseorigin.skill.AbstractSkill;
+import xiaoshi2022.corpseorigin.skill.SkillType;
+import xiaoshi2022.corpseorigin.skill.chapter.BodySkillState;
+
 public class SeveredArmStrikeSkill extends AbstractSkill {
  public static final String PATH="severed_arm_strike";
  public SeveredArmStrikeSkill(){super(PATH,SkillType.COMBAT,200);}

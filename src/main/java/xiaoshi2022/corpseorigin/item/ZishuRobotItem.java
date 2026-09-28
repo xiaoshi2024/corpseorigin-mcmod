@@ -1,10 +1,14 @@
 package xiaoshi2022.corpseorigin.item;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.item.*;
-import net.minecraft.world.item.context.UseOnContext;
+
 import net.minecraft.server.level.ServerLevel;
-import xiaoshi2022.corpseorigin.registry.ModEntities;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.UseOnContext;
 import xiaoshi2022.corpseorigin.entity.ZishuRobotEntity;
+import xiaoshi2022.corpseorigin.registry.ModEntities;
+
 public final class ZishuRobotItem extends Item {
     public ZishuRobotItem(Properties p){super(p);}
     @Override public void appendHoverText(ItemStack s,TooltipContext c,net.minecraft.world.item.component.TooltipDisplay d,java.util.function.Consumer<net.minecraft.network.chat.Component> out,TooltipFlag f){out.accept(net.minecraft.network.chat.Component.translatable("thermal.corpseorigin.robot_hint"));}

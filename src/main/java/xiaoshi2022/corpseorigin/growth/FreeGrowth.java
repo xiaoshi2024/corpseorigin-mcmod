@@ -1,11 +1,20 @@
 package xiaoshi2022.corpseorigin.growth;
 
-import java.util.*;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
-import xiaoshi2022.corpseorigin.character.*;
-import xiaoshi2022.corpseorigin.skill.*;
+import net.minecraft.server.level.ServerPlayer;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.InnerPowerManager;
+import xiaoshi2022.corpseorigin.character.InnerPowerRules;
+import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.skill.EvolutionManager;
+import xiaoshi2022.corpseorigin.skill.ISkill;
+import xiaoshi2022.corpseorigin.skill.SkillType;
+
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Set;
 
 /** Personal opportunities shared by the two sandbox roles, never by selecting a named role. */
 public final class FreeGrowth {

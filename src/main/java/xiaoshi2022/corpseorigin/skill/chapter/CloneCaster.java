@@ -16,11 +16,7 @@ import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * 克隆分身专用的"角色招式执行器"。

@@ -1,7 +1,8 @@
 package xiaoshi2022.corpseorigin.skill.unlock;
 
-import java.util.Set;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+
+import java.util.Set;
 
 /** Explicit exceptions before conservative default weights; no migration removes learned skills. */
 public final class SkillLearningRules {

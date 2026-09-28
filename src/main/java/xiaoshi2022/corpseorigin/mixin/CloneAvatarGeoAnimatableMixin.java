@@ -6,7 +6,6 @@ import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.animation.AnimationController;
 import com.geckolib.animation.RawAnimation;
 import com.geckolib.animation.object.PlayState;
-import com.geckolib.animation.state.AnimationTest;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import xiaoshi2022.corpseorigin.client.limb.PlayerGeoAnimatable;

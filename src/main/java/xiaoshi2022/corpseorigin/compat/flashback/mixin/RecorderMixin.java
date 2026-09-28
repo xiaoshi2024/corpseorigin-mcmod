@@ -4,10 +4,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import xiaoshi2022.corpseorigin.compat.flashback.ReplaySnapshotInjector;
 
 import java.util.function.Consumer;
-
-import xiaoshi2022.corpseorigin.compat.flashback.ReplaySnapshotInjector;
 
 /**
  * 挂钩 Flashback 录制端的快照扩展点 Recorder#writeCustomSnapshot(Consumer)。

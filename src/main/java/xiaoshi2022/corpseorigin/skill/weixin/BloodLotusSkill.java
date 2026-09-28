@@ -1,8 +1,11 @@
 package xiaoshi2022.corpseorigin.skill.weixin;
+
 import net.minecraft.server.level.ServerPlayer;
-import xiaoshi2022.corpseorigin.skill.*;
 import xiaoshi2022.corpseorigin.entity.SkillConstructEntity;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
+import xiaoshi2022.corpseorigin.skill.AbstractSkill;
+import xiaoshi2022.corpseorigin.skill.SkillType;
+
 public class BloodLotusSkill extends AbstractSkill {
  public BloodLotusSkill(){super("blood_lotus",SkillType.ULTIMATE,1200);}
  @Override public void onActivate(ServerPlayer p){

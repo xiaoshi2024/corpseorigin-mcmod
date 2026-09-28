@@ -1,10 +1,14 @@
 package xiaoshi2022.corpseorigin.growth;
 
-import java.util.*;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.ai.attributes.*;
 import net.minecraft.core.Holder;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+
+import java.util.HashSet;
+import java.util.List;
 
 /** Only equipped, unlocked organs contribute; repeated slots never duplicate bonuses. */
 public final class OrganAnatomy {

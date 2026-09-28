@@ -1,14 +1,22 @@
 package xiaoshi2022.corpseorigin.skill.chapter;
 
-import java.util.*;
-import net.fabricmc.fabric.api.attachment.v1.*;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.network.chat.Component;
 import xiaoshi2022.corpseorigin.growth.GourdOrganState;
 import xiaoshi2022.corpseorigin.skill.longyou.BloodReserve;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /** Short-lived capture: move the real target, shrink only its client render, then resolve normal damage. */
 public final class GourdCapture {

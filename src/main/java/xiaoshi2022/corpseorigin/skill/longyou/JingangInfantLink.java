@@ -1,15 +1,18 @@
 package xiaoshi2022.corpseorigin.skill.longyou;
 
 import com.mojang.serialization.Codec;
-import net.fabricmc.fabric.api.attachment.v1.*;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentSyncPredicate;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
-import xiaoshi2022.corpseorigin.character.*;
-import xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.JinGangZb;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
+import xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities;
 
 public final class JingangInfantLink {
     public static final AttachmentType<String> PARENT = AttachmentRegistry.create(CorpseOrigin.id("jingang_infant_parent"),

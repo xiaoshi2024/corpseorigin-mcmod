@@ -13,7 +13,9 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.hurtingprojectile.SmallFireball;
-import net.minecraft.world.item.*;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.item.component.TooltipDisplay;
@@ -27,6 +29,7 @@ import xiaoshi2022.corpseorigin.character.XiaoYanZi;
 import xiaoshi2022.corpseorigin.entity.HamEntity;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
+
 import java.util.function.Consumer;
 
 /** One serialized Ham per cage; capture/release mutate only on the server. */

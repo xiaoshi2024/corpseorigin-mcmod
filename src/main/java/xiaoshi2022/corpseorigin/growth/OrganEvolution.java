@@ -1,12 +1,12 @@
 package xiaoshi2022.corpseorigin.growth;
-import net.minecraft.network.chat.Component;
-import xiaoshi2022.corpseorigin.util.LocalizedException;
 
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+
 import java.util.List;
 
 public final class OrganEvolution {

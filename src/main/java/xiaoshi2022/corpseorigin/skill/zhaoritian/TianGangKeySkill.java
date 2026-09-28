@@ -1,26 +1,27 @@
 package xiaoshi2022.corpseorigin.skill.zhaoritian;
 
 import com.geckolib.animatable.GeoItem;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.InnerPowerManager;
-import net.minecraft.world.InteractionHand;
 import xiaoshi2022.corpseorigin.item.weapon.TianGangKeyItem;
 import xiaoshi2022.corpseorigin.network.TianGangBeamPayload;
 import xiaoshi2022.corpseorigin.skill.AbstractSkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
 import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;

@@ -39,11 +39,7 @@ import xiaoshi2022.corpseorigin.registry.ModItems;
 import xiaoshi2022.corpseorigin.skill.EvolutionManager;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 
 /**

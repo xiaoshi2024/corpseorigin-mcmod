@@ -5,13 +5,21 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.*;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
-import xiaoshi2022.corpseorigin.growth.*;
+import xiaoshi2022.corpseorigin.growth.OrganDefinition;
+import xiaoshi2022.corpseorigin.growth.OrganLibrary;
+import xiaoshi2022.corpseorigin.growth.SurvivalGrowth;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
 import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
-import java.util.*;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /** Physical abilities are resolved from this body's equipped organs, never from its owner. */
 public final class CloneOrganEffects {

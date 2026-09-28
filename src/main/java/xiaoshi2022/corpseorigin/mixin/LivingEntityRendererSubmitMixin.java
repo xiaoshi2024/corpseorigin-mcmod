@@ -1,8 +1,6 @@
 package xiaoshi2022.corpseorigin.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
-import net.minecraft.client.model.player.PlayerModel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.player.AvatarRenderer;
@@ -14,11 +12,11 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import xiaoshi2022.corpseorigin.character.ShiChaoZhiZi;
+import xiaoshi2022.corpseorigin.character.ZuoHuFa;
 import xiaoshi2022.corpseorigin.client.limb.LimbRenderData;
 import xiaoshi2022.corpseorigin.client.renderer.player.*;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
-import xiaoshi2022.corpseorigin.character.ShiChaoZhiZi;
-import xiaoshi2022.corpseorigin.character.ZuoHuFa;
 
 /**
  * 断肢形态下用 Geolib 模型替换玩家"身体"。

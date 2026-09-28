@@ -1,14 +1,15 @@
 package xiaoshi2022.corpseorigin.growth;
-import net.minecraft.network.chat.Component;
-import xiaoshi2022.corpseorigin.util.LocalizedException;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
-import java.nio.file.Files;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import net.minecraft.network.chat.Component;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.util.LocalizedException;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.*;
 
 public final class OrganLibrary {
     public static final Gson JSON = new GsonBuilder().setPrettyPrinting().create();

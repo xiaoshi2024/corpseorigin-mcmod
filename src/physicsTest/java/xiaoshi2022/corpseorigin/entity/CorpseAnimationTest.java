@@ -1,8 +1,14 @@
 package xiaoshi2022.corpseorigin.entity;
 
-import com.google.gson.*;
-import java.nio.file.*;
-import java.util.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.TreeMap;
 
 /** Guards against a looping idle with mismatched endpoints or an early held last pose. */
 public final class CorpseAnimationTest {

@@ -1,13 +1,18 @@
 package xiaoshi2022.corpseorigin.growth;
+
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
-import xiaoshi2022.corpseorigin.entity.*;
+import xiaoshi2022.corpseorigin.entity.CorpseMaggotEntity;
+import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
+import xiaoshi2022.corpseorigin.entity.ZombieKin;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 
 public final class CorpseHorror {

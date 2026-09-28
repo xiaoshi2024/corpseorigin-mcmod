@@ -2,8 +2,10 @@ package xiaoshi2022.corpseorigin.growth;
 
 import com.mojang.serialization.Codec;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.saveddata.*;
+import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+
 import java.util.*;
 
 /** Per-player, per-dimension visited chunks. Does not infer exploration from world generation. */

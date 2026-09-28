@@ -9,14 +9,22 @@ import com.geckolib.animation.object.PlayState;
 import com.geckolib.util.GeckoLibUtil;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.level.*;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
-import net.minecraft.world.level.*;
-import net.minecraft.world.level.storage.*;
-import net.minecraft.world.phys.*;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
-import xiaoshi2022.corpseorigin.skill.chapter.*;
+import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
+import xiaoshi2022.corpseorigin.skill.chapter.SkillRework;
+
 import java.util.UUID;
 
 /** Short-lived skill geometry with server-side ownership and swept projectile hits. */

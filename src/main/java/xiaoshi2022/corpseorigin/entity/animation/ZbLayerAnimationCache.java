@@ -1,8 +1,8 @@
 package xiaoshi2022.corpseorigin.entity.animation;
 
 import com.geckolib.animatable.GeoAnimatable;
-import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.animatable.instance.InstancedAnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
 import com.geckolib.constant.dataticket.DataTicket;
 
 import java.util.HashMap;

@@ -4,7 +4,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import xiaoshi2022.corpseorigin.entity.GourdOrganEntity;
-import java.util.*;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /** Body attachment owns form/health; detached creatures have stable persisted identities. */
 public final class GourdOrganState {

@@ -1,12 +1,20 @@
 package xiaoshi2022.corpseorigin.entity;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
-import net.minecraft.world.item.*;
-import net.minecraft.world.level.*;
-import net.minecraft.world.phys.*;
+
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
+
 public final class ZishuIonBallEntity extends ThrowableItemProjectile {
     public ZishuIonBallEntity(EntityType<? extends ZishuIonBallEntity> t,Level l){super(t,l);setNoGravity(true);}
     public ZishuIonBallEntity(ServerLevel l,ZishuRobotEntity owner,LivingEntity target){

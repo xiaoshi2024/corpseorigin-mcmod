@@ -9,14 +9,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import xiaoshi2022.corpseorigin.client.renderer.player.CorpsePlayerGeoRenderer;
-import xiaoshi2022.corpseorigin.client.renderer.player.MutantBodyRenderData;
-import xiaoshi2022.corpseorigin.client.renderer.player.ZuoGuardianBodyRenderer;
-import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderData;
-import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiXRenderer;
-import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderData;
-import xiaoshi2022.corpseorigin.client.renderer.player.NiunaiLinkRenderer;
-import xiaoshi2022.corpseorigin.client.renderer.player.TianGangHaloRenderer;
+import xiaoshi2022.corpseorigin.client.renderer.player.*;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;

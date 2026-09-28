@@ -1,9 +1,11 @@
 package xiaoshi2022.corpseorigin.growth;
 
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import xiaoshi2022.corpseorigin.character.*;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.InnerPowerManager;
+import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.registry.ModItems;
 
 /** One authoritative gate for item attacks, item use, skill learning and activation. */

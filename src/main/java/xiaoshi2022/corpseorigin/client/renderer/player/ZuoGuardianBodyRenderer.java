@@ -1,8 +1,8 @@
 package xiaoshi2022.corpseorigin.client.renderer.player;
 
-import com.geckolib.constant.DataTickets;
 import com.geckolib.animation.state.AnimationPoint;
 import com.geckolib.animation.state.ControllerState;
+import com.geckolib.constant.DataTickets;
 import com.geckolib.renderer.GeoReplacedEntityRenderer;
 import com.geckolib.renderer.layer.GeoRenderLayer;
 import com.geckolib.renderer.layer.builtin.ItemInHandGeoLayer;

@@ -2,11 +2,13 @@ package xiaoshi2022.corpseorigin.client.skin;
 
 import com.mojang.authlib.GameProfile;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.player.PlayerSkin;
-import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraft.core.ClientAsset;
+import net.minecraft.world.entity.player.PlayerModelType;
+import net.minecraft.world.entity.player.PlayerSkin;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
-import java.util.*;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
 public final class ChameleonSkins {

@@ -1,5 +1,6 @@
 package xiaoshi2022.corpseorigin.mixin;
 
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -7,9 +8,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import xiaoshi2022.corpseorigin.item.weapon.TianGangKeyItem;
 import xiaoshi2022.corpseorigin.client.render.laser.TianGangBeamState;
+import xiaoshi2022.corpseorigin.item.weapon.TianGangKeyItem;
 import xiaoshi2022.corpseorigin.network.CorpsePayloads;
 import xiaoshi2022.corpseorigin.network.TianGangSwingPayload;
 import xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill;

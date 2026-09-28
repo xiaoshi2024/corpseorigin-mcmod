@@ -2,7 +2,9 @@ package xiaoshi2022.corpseorigin.skill.chapter;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import xiaoshi2022.corpseorigin.skill.*;
+import xiaoshi2022.corpseorigin.skill.AbstractSkill;
+import xiaoshi2022.corpseorigin.skill.SkillResourceRules;
+import xiaoshi2022.corpseorigin.skill.SkillType;
 
 /** Controls are innate; each donor adaptation still requires a successful devour roll. */
 public final class GourdInheritanceSkill extends AbstractSkill {

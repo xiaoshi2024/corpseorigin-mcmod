@@ -1,5 +1,5 @@
 package xiaoshi2022.corpseorigin.character;
-import java.util.List;
+
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
@@ -7,6 +7,9 @@ import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.chapter.GuigunCombat;
 import xiaoshi2022.corpseorigin.skill.chapter.NewChapterSkill;
 import xiaoshi2022.corpseorigin.skill.chapter.WuchangCombat;
+
+import java.util.List;
+
 public final class NewChapterCharacter implements ICharacter {
     /** 鬼棍人类形态被感染（QIANS 效果结束）后自动转化为尸兄形态，见 BYeffect。 */
     public static final String GUIGUN_HUMAN_ID="guigun_human";

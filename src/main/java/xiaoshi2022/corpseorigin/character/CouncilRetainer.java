@@ -1,9 +1,13 @@
 package xiaoshi2022.corpseorigin.character;
+
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import xiaoshi2022.corpseorigin.skill.ISkill;
-import xiaoshi2022.corpseorigin.skill.chapter.*;
+import xiaoshi2022.corpseorigin.skill.chapter.BlackFridaySkill;
+import xiaoshi2022.corpseorigin.skill.chapter.SwordFlowerSkill;
+
 import java.util.List;
+
 /** Independent selectable retainers; the legacy combined identity remains loadable. */
 public class CouncilRetainer implements ICharacter {
     private final String id;

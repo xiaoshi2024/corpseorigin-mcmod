@@ -14,7 +14,10 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Shared visual terrain wave, adapted from 1.21.1 LongyouEarthquakeEntity/Renderer.

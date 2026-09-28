@@ -1,12 +1,11 @@
 package xiaoshi2022.corpseorigin.growth;
-import net.minecraft.network.chat.Component;
-import xiaoshi2022.corpseorigin.util.LocalizedException;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.HitResult;
-import net.minecraft.tags.FluidTags;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
 import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 

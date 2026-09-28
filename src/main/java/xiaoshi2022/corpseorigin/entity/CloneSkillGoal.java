@@ -1,7 +1,6 @@
 package xiaoshi2022.corpseorigin.entity;
 
 import net.minecraft.world.entity.ai.goal.Goal;
-import xiaoshi2022.corpseorigin.character.MortalCharacter;
 import xiaoshi2022.corpseorigin.skill.chapter.CloneCaster;
 
 import java.util.EnumSet;

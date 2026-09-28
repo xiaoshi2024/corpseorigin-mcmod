@@ -1,14 +1,15 @@
 package xiaoshi2022.corpseorigin.skill.chapter;
 
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.Map;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.BaseFireBlock;
+
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 /**
  * 「烈焰火海」铺下的那一层火。

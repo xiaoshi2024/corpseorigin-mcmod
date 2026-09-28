@@ -1,8 +1,9 @@
 package xiaoshi2022.corpseorigin.skill.unlock;
 
-import java.util.List;
 import net.minecraft.world.item.Item;
 import xiaoshi2022.corpseorigin.registry.ModItems;
+
+import java.util.List;
 
 /** Only weapons explicitly required by the skill's activation checks belong here. */
 public final class ItemSkillSources {

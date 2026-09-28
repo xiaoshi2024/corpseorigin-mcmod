@@ -14,11 +14,11 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.entity.FlyingGreatSwordEntity;
-import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.registry.ModDataAttachments;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainGenerator;
 import xiaoshi2022.corpseorigin.skill.baixiaofei.aps.APSTerrainManager;
+import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
 
 import java.util.List;
 

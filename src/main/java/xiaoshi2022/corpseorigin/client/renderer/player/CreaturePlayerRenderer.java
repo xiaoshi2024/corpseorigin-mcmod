@@ -9,8 +9,14 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.client.limb.PlayerGeoAnimatable;
-import xiaoshi2022.corpseorigin.skill.chapter.*;
-import java.util.*;
+import xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState;
+import xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes;
+import xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public final class CreaturePlayerRenderer extends GeoReplacedEntityRenderer<PlayerGeoAnimatable,AbstractClientPlayer,AvatarRenderState> {
     public static final DataTicket<String> MODEL=DataTicket.create("creature_model",String.class);

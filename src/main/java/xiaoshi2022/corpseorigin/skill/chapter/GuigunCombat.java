@@ -1,8 +1,5 @@
 package xiaoshi2022.corpseorigin.skill.chapter;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.network.chat.Component;
@@ -18,6 +15,10 @@ import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.item.weapon.GuigunWeapItem;
 import xiaoshi2022.corpseorigin.skill.SkillType;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * 鬼棍的经典招式（人类·地级 与 尸兄·天级 两套）。

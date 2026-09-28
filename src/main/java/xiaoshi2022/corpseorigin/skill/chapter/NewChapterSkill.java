@@ -1,9 +1,12 @@
 package xiaoshi2022.corpseorigin.skill.chapter;
-import net.minecraft.server.level.ServerPlayer;
+
 import net.minecraft.network.chat.Component;
-import xiaoshi2022.corpseorigin.skill.*;
-import xiaoshi2022.corpseorigin.entity.GourdOrganEntity;
+import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.growth.GourdOrganState;
+import xiaoshi2022.corpseorigin.skill.AbstractSkill;
+import xiaoshi2022.corpseorigin.skill.SkillResourceRules;
+import xiaoshi2022.corpseorigin.skill.SkillType;
+
 public final class NewChapterSkill extends AbstractSkill {
     private final int form,blood;
 

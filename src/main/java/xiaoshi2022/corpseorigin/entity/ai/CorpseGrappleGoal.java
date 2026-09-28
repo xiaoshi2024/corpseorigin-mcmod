@@ -1,13 +1,16 @@
 package xiaoshi2022.corpseorigin.entity.ai;
-import java.util.EnumSet;
+
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.effect.*;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 import xiaoshi2022.corpseorigin.growth.CorpseHorror;
+
+import java.util.EnumSet;
 
 /** Short, breakable close-contact grapple; no forced riding or player input suppression. */
 public final class CorpseGrappleGoal extends Goal {

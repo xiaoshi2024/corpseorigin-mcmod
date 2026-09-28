@@ -8,11 +8,11 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.entity.OsmiumIceSpearEntity;
 import xiaoshi2022.corpseorigin.item.MedusaEyeItem;
 import xiaoshi2022.corpseorigin.skill.ISkill;
 import xiaoshi2022.corpseorigin.skill.SkillType;
 import xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockSource;
-import xiaoshi2022.corpseorigin.entity.OsmiumIceSpearEntity;
 
 import java.util.List;
 import java.util.Optional;

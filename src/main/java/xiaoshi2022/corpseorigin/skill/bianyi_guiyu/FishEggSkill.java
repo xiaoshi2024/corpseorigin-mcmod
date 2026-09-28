@@ -1,8 +1,11 @@
 package xiaoshi2022.corpseorigin.skill.bianyi_guiyu;
+
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.entity.CorpseFishEggEntity;
-import xiaoshi2022.corpseorigin.skill.*;
+import xiaoshi2022.corpseorigin.skill.AbstractSkill;
+import xiaoshi2022.corpseorigin.skill.SkillType;
+
 public class FishEggSkill extends AbstractSkill {
     public FishEggSkill() { super("corpse_fish_eggs",SkillType.COMBAT,200); }
     @Override

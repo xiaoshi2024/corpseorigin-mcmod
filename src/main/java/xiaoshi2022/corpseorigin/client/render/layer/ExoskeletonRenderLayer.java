@@ -14,7 +14,6 @@ import net.minecraft.world.entity.Entity;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.client.CorpseOriginClient;
 import xiaoshi2022.corpseorigin.client.model.ExoskeletonModel;
-import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 
 import java.util.Map;
 import java.util.UUID;

@@ -1,15 +1,14 @@
 package xiaoshi2022.corpseorigin.entity;
 
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ambient.Bat;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterCombat;
+
 import java.util.UUID;
 
 /** A temporary, killable vanilla bat variant with owner-aware hunting behaviour. */

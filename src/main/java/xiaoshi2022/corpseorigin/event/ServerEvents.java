@@ -1,20 +1,20 @@
 package xiaoshi2022.corpseorigin.event;
 
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
+import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.item.CharacterBookItem;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.entity.player.Player;
-import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 
 import java.util.UUID;
 

@@ -1,13 +1,17 @@
 package xiaoshi2022.corpseorigin.event;
-import net.fabricmc.fabric.api.event.player.*;
-import net.fabricmc.fabric.api.attachment.v1.*;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.server.level.ServerPlayer;
+
+import net.fabricmc.fabric.api.attachment.v1.AttachmentRegistry;
+import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
-import xiaoshi2022.corpseorigin.registry.ModItems;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
+import xiaoshi2022.corpseorigin.registry.ModItems;
+
 public final class ConsciousnessInteractions {
     /** Only ordinary corpse roles use the random consciousness/recovery progression. */
     public static boolean requiresRecovery(String role) {

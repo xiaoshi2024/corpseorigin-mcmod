@@ -2,10 +2,12 @@ package xiaoshi2022.corpseorigin.client.render.layer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.player.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
-import net.minecraft.client.model.geom.builders.*;
+import net.minecraft.client.model.geom.builders.CubeListBuilder;
+import net.minecraft.client.model.geom.builders.LayerDefinition;
+import net.minecraft.client.model.geom.builders.MeshDefinition;
+import net.minecraft.client.model.player.PlayerModel;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
@@ -13,7 +15,10 @@ import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
-import xiaoshi2022.corpseorigin.skill.chapter.*;
+import xiaoshi2022.corpseorigin.skill.chapter.BodySkillState;
+import xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState;
+import xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes;
+import xiaoshi2022.corpseorigin.skill.chapter.SkillRework;
 
 /** Role garments and injury geometry keep the player's face and normal limb animation. */
 public class ChapterCostumeLayer extends RenderLayer<AvatarRenderState,PlayerModel> {
