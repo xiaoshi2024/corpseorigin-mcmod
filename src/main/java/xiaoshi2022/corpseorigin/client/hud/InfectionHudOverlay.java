@@ -71,11 +71,13 @@ public final class InfectionHudOverlay {
         // 字体高度按 scale 放大（centeredText 用 mc.font，已经是标准大小，我们单独算行距）
         int scaledLineHeight = Math.round(mc.font.lineHeight * scale);
 
-        int level = EvolutionManager.getLevel(ClientState.earnedPoints);
+        int level = ClientState.evolutionLevel;
         String tierFullName = EvolutionTier.formatFullName(level).getString();
         int tierColor = EvolutionTier.colorOf(level);
-        String evolutionLine = tierFullName + net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.098") + ClientState.availablePoints;
-        graphics.centeredText(mc.font, evolutionLine, x + batteryWidth / 2, y, tierColor);
+        String evolutionLine = tierFullName + net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.098") + compact(ClientState.availablePoints);
+        int labelWidth = Math.min(width-8,mc.font.width(evolutionLine));
+        int labelX = Math.clamp(x+batteryWidth/2-labelWidth/2,4,Math.max(4,width-labelWidth-4));
+        graphics.text(mc.font,mc.font.plainSubstrByWidth(evolutionLine,width-8),labelX,y,tierColor,true);
         y += scaledLineHeight + rowGap;
 
         boolean isCorpse = false;
@@ -102,7 +104,8 @@ public final class InfectionHudOverlay {
             int innerPower = clamp(ClientState.innerPower, 0, maxInnerPower);
             drawBattery(graphics, mc, x, y, innerPower, maxInnerPower, batteryWidth, batteryHeight,
                     rowGap, INNER_POWER_COLOR,
-                    Component.translatable("hud.corpseorigin.inner_power", innerPower, maxInnerPower));
+                    Component.translatable(maxInnerPower>=10000 ? "hud.corpseorigin.inner_power_short" : "hud.corpseorigin.inner_power",
+                            compact(innerPower), compact(maxInnerPower)));
             y += batteryHeight + rowGap;
         }
 
@@ -130,7 +133,7 @@ public final class InfectionHudOverlay {
                 batteryWidth, batteryHeight, batteryWidth, batteryHeight);
 
         int innerWidth = batteryWidth - INNER_PADDING * 2;
-        int filledWidth = max <= 0 ? 0 : (int) Math.round(innerWidth * value / (double) max);
+        int filledWidth = max <= 0 ? 0 : (int) Math.round(innerWidth * (double)value / max);
         if (filledWidth > 0)
             graphics.blit(RenderPipelines.GUI_TEXTURED, BATTERY_FILL,
                     x + INNER_PADDING, y + INNER_PADDING, 0, 0,
@@ -148,5 +151,11 @@ public final class InfectionHudOverlay {
 
     private static int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
+    }
+    private static String compact(int value) {
+        if(value>=1000000000)return String.format(java.util.Locale.ROOT,"%.1fB",value/1e9);
+        if(value>=1000000)return String.format(java.util.Locale.ROOT,"%.1fM",value/1e6);
+        if(value>=10000)return String.format(java.util.Locale.ROOT,"%.1fk",value/1e3);
+        return Integer.toString(value);
     }
 }

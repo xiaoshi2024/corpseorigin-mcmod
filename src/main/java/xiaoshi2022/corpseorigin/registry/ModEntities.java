@@ -11,6 +11,11 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.entity.*;
 
 public final class ModEntities {
+    public static final EntityType<ZishuRobotEntity> ZISHU_ROBOT=register("zishu_robot",EntityType.Builder.<ZishuRobotEntity>of(ZishuRobotEntity::new,MobCategory.CREATURE).sized(.75f,1.35f).clientTrackingRange(10));
+    public static final EntityType<ZishuIonBallEntity> ZISHU_ION_BALL=register("zishu_ion_ball",EntityType.Builder.<ZishuIonBallEntity>of(ZishuIonBallEntity::new,MobCategory.MISC).sized(.3f,.3f).clientTrackingRange(10).updateInterval(1));
+    public static final EntityType<CorpseMaggotEntity> CORPSE_MAGGOT = register("corpse_maggot",
+            EntityType.Builder.<CorpseMaggotEntity>of(CorpseMaggotEntity::new, MobCategory.MONSTER)
+                    .sized(.35f, .25f).clientTrackingRange(8).updateInterval(2).notInPeaceful());
     public static final EntityType<GourdOrganEntity> ZBR_GOURD=register("zbr_gourd",EntityType.Builder.<GourdOrganEntity>of(GourdOrganEntity::new,MobCategory.MISC).sized(.7f,1.2f).clientTrackingRange(12).updateInterval(1));
     private static EntityType<SkillConstructEntity> construct(String id){
         return register(id,EntityType.Builder.<SkillConstructEntity>of(SkillConstructEntity::new,MobCategory.MISC)

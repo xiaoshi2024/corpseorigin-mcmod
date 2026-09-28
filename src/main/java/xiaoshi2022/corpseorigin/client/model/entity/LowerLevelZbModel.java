@@ -16,12 +16,24 @@ public class LowerLevelZbModel extends DefaultedEntityGeoModel<LowerLevelZbEntit
     }
 
     @Override
+    public Identifier getModelResource(GeoRenderState state) {
+        return Boolean.TRUE.equals(state.getGeckolibData(RenderStateData.CRACKED))
+                ? CorpseOrigin.id("entity/lower_level_zb_cracked") : super.getModelResource(state);
+    }
+
+    @Override
+    public Identifier getAnimationResource(LowerLevelZbEntity entity) {
+        return entity.isCracked()
+                ? CorpseOrigin.id("entity/lower_level_zb_cracked") : super.getAnimationResource(entity);
+    }
+
+    @Override
     public Identifier getTextureResource(GeoRenderState renderState) {
         Identifier customSkin = renderState.getGeckolibData(RenderStateData.CUSTOM_SKIN_TEXTURE);
         ZbSkinState skinState = renderState.getGeckolibData(RenderStateData.SKIN_STATE);
 
         // ✅ 加载完成 + 有皮肤 → 用组合纹理
-        if (skinState == ZbSkinState.LOADED && customSkin != null) {
+        if (customSkin != null) {
             return customSkin;
         }
 

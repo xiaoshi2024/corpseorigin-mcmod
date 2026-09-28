@@ -3,6 +3,9 @@
   "package": "xiaoshi2022.corpseorigin.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "CorpseHorrorDeathMixin",
+    "RealmAttributeRangeMixin",
+    "RealmDamageMixin",
     "AbstractArrowAccessor",
     "GourdCaptureMobMixin",
     "HeartFeignPoseMixin",
@@ -33,6 +36,7 @@
     "requireAnnotations": true
   },
   "client": [
+    "RealmHealthHudMixin",
     "OrganPackSourceMixin",
     "TianGangControlsMixin",
     "InventoryHeartPreviewMixin",
@@ -56,6 +60,10 @@
     "LivingEntityRendererMixin",
     "LivingEntityRendererSubmitMixin",
     "PlayerModelLimbMixin",
-    "GourdCaptureRenderMixin"
+    "GourdCaptureRenderMixin",
+    "SwordCameraImpactMixin",
+    "SwordHitStopMixin",
+    "SwordMotionStopMixin",
+    "SwordPostEffectMixin"
   ]
 }

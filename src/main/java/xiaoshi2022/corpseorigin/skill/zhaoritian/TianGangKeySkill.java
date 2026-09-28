@@ -181,7 +181,7 @@ public final class TianGangKeySkill extends AbstractSkill {
                     QiEffects.cloud(level, contact, 0x88AAFF, .8f, 12);
                     continue;
                 }
-                if (target.hurtServer(level, player.damageSources().playerAttack(player), DAMAGE)) {
+                if (target.hurtServer(level, xiaoshi2022.corpseorigin.skill.QiSkillDamageSource.wrap(player.damageSources().playerAttack(player)), DAMAGE)) {
                     target.knockback(.2, -direction.x, -direction.z, player.damageSources().playerAttack(player), DAMAGE);
                     QiEffects.cloud(level, contact, 0xFF173E, .8f, 12);
                 }

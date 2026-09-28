@@ -472,6 +472,18 @@ public class PlayerCorpseComponent {
                 && variant != VARIANT_SHICHAOZHIZI;
     }
 
+    /** Appearance follows the authoritative player realm, independently of legacy corpse levels. */
+    public static void syncEvolvedEye(ServerPlayer player) {
+        var component=get(player);
+        if(!component.isCorpse())return;
+        boolean hidden=xiaoshi2022.corpseorigin.growth.RealmProgression.level(player)>=5;
+        var tag=component.getData();
+        if(tag.getBooleanOr("evolved_eye_hidden",false)!=hidden){
+            tag.putBoolean("evolved_eye_hidden",hidden);
+            component.setData(tag);
+        }
+    }
+
     /**
      * 轻量判定：这具身体现在是不是「开胃奶背挂」形态（尸兄 + 非伪装 + 变种 4）。
      * <p>

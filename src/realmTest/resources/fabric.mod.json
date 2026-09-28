@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "corpseorigin_realm_test",
+  "version": "1.0.0",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-client-gametest": [
+      "xiaoshi2022.corpseorigin.growth.RealmGameplayTest",
+      "xiaoshi2022.corpseorigin.growth.SwordGameplayTest",
+      "xiaoshi2022.corpseorigin.growth.CorpseHorrorGameplayTest",
+      "xiaoshi2022.corpseorigin.growth.HairDryerGameplayTest",
+      "xiaoshi2022.corpseorigin.growth.ZishuGameplayTest"
+    ]
+  }
+}

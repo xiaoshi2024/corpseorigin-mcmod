@@ -47,6 +47,7 @@ public class ItemConsumeMixin {
     private void corpseorigin$onFinishUsing(Level level, LivingEntity entity, ItemStack stack,
                                             CallbackInfoReturnable<ItemStack> cir) {
         if (level.isClientSide() || !(entity instanceof ServerPlayer player)) return;
+        xiaoshi2022.corpseorigin.growth.RealmProgression.onMeal(player, stack);
         if (!RawMeatDigestion.canSupplement(player, stack)) return;
         if (RawMeatDigestion.mode(player) == RawMeatDigestion.SLOW) {
             RawMeatDigestion.enqueue(player);

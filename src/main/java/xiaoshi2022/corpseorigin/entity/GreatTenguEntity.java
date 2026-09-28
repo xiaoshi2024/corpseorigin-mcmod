@@ -44,7 +44,7 @@ public class GreatTenguEntity extends Entity implements GeoEntity {
             if(entity instanceof net.minecraft.world.entity.LivingEntity target && ChapterCombat.canHit(player,target)
                     && player.distanceToSqr(target)<=4096 && player.hasLineOfSight(target)){
                 for(int i=0;i<48;i++) ChapterCombat.dust(level,position().lerp(target.getEyePosition(),i/48.0),0x21e6e6,2);
-                target.hurtServer(level,ChapterCombat.attackSource(player),48);
+                target.hurtServer(level,xiaoshi2022.corpseorigin.skill.QiSkillDamageSource.wrap(ChapterCombat.attackSource(player)),48);
             }
         }
         if(remaining%10!=0)return;
@@ -58,7 +58,7 @@ public class GreatTenguEntity extends Entity implements GeoEntity {
         if(remaining%20!=0)return;
         for(var target:level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,new net.minecraft.world.phys.AABB(center,center).inflate(6)))
             if(ChapterCombat.canHit(player,target) && target.distanceToSqr(center)<=36 && player.hasLineOfSight(target)){
-                target.hurtServer(level,ChapterCombat.attackSource(player),2);
+                target.hurtServer(level,xiaoshi2022.corpseorigin.skill.QiSkillDamageSource.wrap(ChapterCombat.attackSource(player)),2);
                 target.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.SLOWNESS,25,1));
             }
     }

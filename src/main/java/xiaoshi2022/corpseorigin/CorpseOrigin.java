@@ -33,6 +33,8 @@ public class CorpseOrigin implements ModInitializer {
 		// ✅ 0. 配置文件（config/corpseorigin.json）—— 不存在就生成一份默认的，
 		//    后面刷怪权重、名字名单、皮肤染色强度都从它读，所以必须最先加载
 		xiaoshi2022.corpseorigin.config.CorpseConfig.get();
+        xiaoshi2022.corpseorigin.growth.RealmProgression.initialize();
+        xiaoshi2022.corpseorigin.growth.ThermalSurvey.initialize();
 
 		// ⚠️ 重要：先注册效果
 		ModEffects.init();
@@ -134,6 +136,7 @@ public class CorpseOrigin implements ModInitializer {
         xiaoshi2022.corpseorigin.skill.chapter.WuchangCombat.register();
         xiaoshi2022.corpseorigin.skill.chapter.CloneCaster.register();
         xiaoshi2022.corpseorigin.skill.chapter.ImpactTerrain.register();
+        xiaoshi2022.corpseorigin.skill.chapter.SwordRift.register();
         xiaoshi2022.corpseorigin.skill.chapter.BodySkillState.register();
         xiaoshi2022.corpseorigin.skill.longyou.TianGangCombat.register();
         FishEggInteraction.register();

@@ -58,6 +58,12 @@ public interface ISkill {
     /** 冷却时间（ticks） */
     int getCooldownTicks();
 
+    /** Ultimate and super-god techniques retain their full cooldown at every player level. */
+    default boolean hasFixedCooldown() {
+        return getSkillType() == SkillType.ULTIMATE || getRequiredLevel() >= 13
+                || getId().getPath().equals("ancient_poetry_sword");
+    }
+
     /** Legacy base cost; getResourceCost supplies the authoritative two-resource price. */
     default SkillResourceRules.Cost getResourceCost() {
         return SkillResourceRules.cost(getId().getPath(), getInnerPowerCost());

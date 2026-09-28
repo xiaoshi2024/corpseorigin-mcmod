@@ -119,7 +119,7 @@ public final class SkillManager {
             return false;
         }
 
-        if (!SkillResources.pay(player, skill.getResourceCost())) return false;
+        if (!SkillResources.pay(player, SkillBalance.cost(player, skill))) return false;
 
         if (!skillPath.equals("gourd_mortal_disguise") && !skillPath.equals("gourd_inheritance_cycle")
                 && !skillPath.equals("gourd_inheritance"))
@@ -127,7 +127,7 @@ public final class SkillManager {
         skill.onActivate(player);
 
         // 写冷却
-        int ticks = skill.getCooldownTicks();
+        int ticks = SkillBalance.cooldown(player, skill);
         long newEnd = now + ticks * 50L;
         COOLDOWNS.computeIfAbsent(player.getUUID(), k -> new HashMap<>()).put(skillPath, newEnd);
 

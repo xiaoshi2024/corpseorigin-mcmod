@@ -109,13 +109,15 @@ public class JuQue extends Item implements GeoItem {
         beam.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F,
                 beam.getVelocity(), 1.0F);
         player.level().addFreshEntity(beam);
-        player.getCooldowns().addCooldown(stack, COOLDOWN);
+        player.getCooldowns().addCooldown(stack, xiaoshi2022.corpseorigin.skill.SkillBalance.ordinaryCooldown(server, COOLDOWN));
     }
 
     /** 剑意核心（大剑实体） */
     public static void releaseGreatSwordStatic(Player player, ItemStack stack, InteractionHand hand) {
         if (!(player instanceof net.minecraft.server.level.ServerPlayer server) || !xiaoshi2022.corpseorigin.growth.WeaponEligibility.allow(server,stack)) return;
         if (player.getCooldowns().isOnCooldown(stack)) return;
+        if (!xiaoshi2022.corpseorigin.skill.SkillResources.pay(server,
+                xiaoshi2022.corpseorigin.skill.SkillBalance.poetryCost(server, 5))) return;
 
         stack.hurtAndBreak(1, player,
                 hand == InteractionHand.MAIN_HAND

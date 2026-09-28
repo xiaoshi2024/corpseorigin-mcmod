@@ -263,7 +263,7 @@ public final class InfrasoundFieldHandler {
     /** 玩家施术算玩家击杀（保留掉落/经验归属），其他施术者算生物攻击 */
     private static void hurt(LivingEntity caster, ServerLevel level, LivingEntity target, float damage) {
         target.hurtServer(level, caster instanceof ServerPlayer player
-                ? level.damageSources().playerAttack(player)
+                ? xiaoshi2022.corpseorigin.skill.QiSkillDamageSource.wrap(level.damageSources().playerAttack(player))
                 : level.damageSources().mobAttack(caster), damage);
     }
 

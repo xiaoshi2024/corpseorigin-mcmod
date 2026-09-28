@@ -61,7 +61,7 @@ public class APSComboHandler {
         if (APSTerrainManager.isBusy(player)) return;
         if (hasRealm && player.tickCount % 20 == 0
                 && !xiaoshi2022.corpseorigin.skill.SkillResources.pay(player,
-                    new xiaoshi2022.corpseorigin.skill.SkillResourceRules.Cost(2, 0))) {
+                    xiaoshi2022.corpseorigin.skill.SkillBalance.poetryCost(player, 0))) {
             AncientPoetrySwordSkill.stop(player);
             return;
         }
@@ -128,8 +128,7 @@ public class APSComboHandler {
         int stage = state.getInt(AncientPoetrySwordSkill.STAGE_KEY).orElse(0);
         stage = (stage % 4) + 1;
         if (!xiaoshi2022.corpseorigin.skill.SkillResources.pay(player,
-                new xiaoshi2022.corpseorigin.skill.SkillResourceRules.Cost(
-                    xiaoshi2022.corpseorigin.skill.SkillResourceRules.poetryStage(stage), 0))) {
+                xiaoshi2022.corpseorigin.skill.SkillBalance.poetryCost(player, stage))) {
             AncientPoetrySwordSkill.stop(player);
             return;
         }

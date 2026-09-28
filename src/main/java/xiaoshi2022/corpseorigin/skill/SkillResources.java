@@ -24,7 +24,10 @@ public final class SkillResources {
     }
     public static Component description(ISkill skill) {
         var cost = skill.getResourceCost();
-        var text = Component.translatable("skill.corpseorigin.resource_cost", cost.inner(), cost.blood());
+        var text = Component.translatable(skill.hasFixedCooldown() && cost.inner() > 0
+                ? "skill.corpseorigin.resource_cost_scaled" : "skill.corpseorigin.resource_cost", cost.inner(), cost.blood());
+        text.append(Component.translatable(skill.hasFixedCooldown()
+                ? "skill.corpseorigin.cooldown_fixed" : "skill.corpseorigin.cooldown_growth"));
         if(cost.inner()>0) text.append(Component.translatable("skill.corpseorigin.requires_qi"));
         String extra=switch(skill.getId().getPath()) {
             case "ancient_poetry_sword" -> "poetry";

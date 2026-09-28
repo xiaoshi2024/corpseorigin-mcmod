@@ -95,12 +95,14 @@ public class CombinedSkinBuilder {
      * 同一个变体永远产出同一个色调（可缓存、可复用），不同变体各不同。
      * 变体 0 表示"不染色"（默认皮肤、兜底纹理走这条）。
      */
-    public static synchronized Identifier acquire(Identifier skinTexture, int variant) {
+    public static synchronized Identifier acquire(Identifier skinTexture, int variant) { return acquire(skinTexture,variant,false); }
+
+    public static synchronized Identifier acquire(Identifier skinTexture, int variant, boolean cracked) {
         if (skinTexture == null) {
             return getDefaultCombined();
         }
 
-        String cacheKey = cacheKey(skinTexture, variant);
+        String cacheKey = cacheKey(skinTexture, variant) + (cracked ? "#cracked" : "");
         CacheEntry entry = CACHE.get(cacheKey);
 
         if (entry != null) {
@@ -111,7 +113,7 @@ public class CombinedSkinBuilder {
 
         // 创建新纹理
         try {
-            Identifier combined = buildCombinedSkin(skinTexture, variant);
+            Identifier combined = buildCombinedSkin(skinTexture, variant, cracked);
             CACHE.put(cacheKey, new CacheEntry(combined));
             return combined;
         } catch (Exception e) {
@@ -130,10 +132,12 @@ public class CombinedSkinBuilder {
     }
 
     /** ✅ 释放组合纹理（带变体号，和 {@link #acquire(Identifier, int)} 配对使用） */
-    public static synchronized void release(Identifier skinTexture, int variant) {
+    public static synchronized void release(Identifier skinTexture, int variant) { release(skinTexture,variant,false); }
+
+    public static synchronized void release(Identifier skinTexture, int variant, boolean cracked) {
         if (skinTexture == null) return;
 
-        String cacheKey = cacheKey(skinTexture, variant);
+        String cacheKey = cacheKey(skinTexture, variant) + (cracked ? "#cracked" : "");
         CacheEntry entry = CACHE.get(cacheKey);
         if (entry != null) {
             entry.refCount = Math.max(0, entry.refCount - 1);
@@ -201,7 +205,9 @@ public class CombinedSkinBuilder {
     /**
      * 构建组合纹理：玩家皮肤（按变体上色）+ 骨骼叠加
      */
-    private static Identifier buildCombinedSkin(Identifier skinTexture, int variant) throws IOException {
+    private static Identifier buildCombinedSkin(Identifier skinTexture, int variant) throws IOException { return buildCombinedSkin(skinTexture,variant,false); }
+
+    private static Identifier buildCombinedSkin(Identifier skinTexture, int variant, boolean cracked) throws IOException {
         TextureManager textureManager = Minecraft.getInstance().getTextureManager();
         ResourceManager resourceManager = Minecraft.getInstance().getResourceManager();
 
@@ -221,7 +227,7 @@ public class CombinedSkinBuilder {
         applyVariantTint(combined, variant);
 
         // 2. 叠加尸化骨骼纹理
-        NativeImage skeletonImage = loadSkeletonTexture(resourceManager);
+        NativeImage skeletonImage = loadSkeletonTexture(resourceManager, cracked);
         if (skeletonImage != null) {
             overlaySkeletonTexture(combined, skeletonImage);
             skeletonImage.close();
@@ -229,7 +235,7 @@ public class CombinedSkinBuilder {
 
         // 3. 注册组合纹理（用确定性 hash，避免随机 UUID）
         String hash = Integer.toHexString(skinTexture.toString().hashCode())
-                + "_" + Integer.toHexString(variant);
+                + "_" + Integer.toHexString(variant) + (cracked ? "_cracked" : "");
         Identifier location = Identifier.fromNamespaceAndPath(
                 CorpseOrigin.MOD_ID,
                 "skins/zb_combined_" + hash
@@ -285,9 +291,9 @@ public class CombinedSkinBuilder {
         return null;
     }
 
-    private static NativeImage loadSkeletonTexture(ResourceManager resourceManager) {
+    private static NativeImage loadSkeletonTexture(ResourceManager resourceManager, boolean cracked) {
         try {
-            var resource = resourceManager.getResource(SKELETON_OVERLAY);
+            var resource = resourceManager.getResource(cracked ? CorpseOrigin.id("textures/entity/lower_level_zb_cracked.png") : SKELETON_OVERLAY);
             if (resource.isPresent()) {
                 try (var input = resource.get().open()) {
                     return NativeImage.read(input);

@@ -16,6 +16,18 @@ public final class EvolutionManager {
     private EvolutionManager() {
     }
 
+    private static double difficulty = 1;
+    private static boolean preserveLegacyProgress = true;
+    public static void preserveLegacyProgress(boolean enabled) { preserveLegacyProgress = enabled; }
+    public static boolean preservesLegacyProgress() { return preserveLegacyProgress; }
+    public static void configure(double multiplier) {
+        difficulty = Double.isFinite(multiplier) ? Math.clamp(multiplier, 1, 1000) : 3;
+    }
+    /** Preserve a legacy character's fractional tier progress without awarding spendable currency. */
+    public static int migrateLegacyPoints(int points) {
+        return (int)Math.min(Integer.MAX_VALUE, Math.ceil(Math.max(0, points) * difficulty));
+    }
+
     /**
      * 每级所需的累计进化点数阈值。
      * <p>
@@ -54,7 +66,7 @@ public final class EvolutionManager {
             return 1;
         }
         for (int level = MAX_LEVEL; level >= 1; level--) {
-            if (earnedPoints >= THRESHOLDS[level]) {
+            if (earnedPoints >= getThreshold(level)) {
                 return level;
             }
         }
@@ -66,7 +78,7 @@ public final class EvolutionManager {
         if (level < 1 || level > MAX_LEVEL) {
             return Integer.MAX_VALUE;
         }
-        return THRESHOLDS[level];
+        return (int)Math.ceil(THRESHOLDS[level] * difficulty);
     }
 
     /**
@@ -76,6 +88,6 @@ public final class EvolutionManager {
     public static int pointsToNextLevel(int earnedPoints) {
         int currentLevel = getLevel(earnedPoints);
         if (currentLevel >= MAX_LEVEL) return 0;
-        return THRESHOLDS[currentLevel + 1] - earnedPoints;
+        return getThreshold(currentLevel + 1) - earnedPoints;
     }
 }

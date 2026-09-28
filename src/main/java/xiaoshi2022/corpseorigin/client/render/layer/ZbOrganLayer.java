@@ -35,6 +35,9 @@ import java.util.Map;
 public final class ZbOrganLayer extends GeoRenderLayer<LowerLevelZbEntity, Void, LivingEntityRenderState> {
 
     private static final DataTicket<List> FRAMES = DataTicket.create("zb_organ_frames", List.class);
+    private static final OrganDefinition RIBS = new OrganDefinition("corpse_horror_ribs", "Exposed ribs", "cosmetic",
+            "corpseorigin:geckolib/models/entity/corpse_ribs.geo.json", "corpseorigin:textures/entity/corpse_ribs.png",
+            "corpseorigin:geckolib/animations/entity/corpse_ribs.animation.json", Map.of("idle", "idle"));
 
     private record Frame(OrganSlot slot, OrganRenderer renderer, LivingEntityRenderState state) {}
 
@@ -83,6 +86,15 @@ public final class ZbOrganLayer extends GeoRenderLayer<LowerLevelZbEntity, Void,
                     def.clips().getOrDefault(motion, def.clips().get("idle")));
             renderer.extractRenderState(entity, organState, partialTick);
             frames.add(new Frame(slot, renderer, organState));
+        }
+        if (xiaoshi2022.corpseorigin.growth.CorpseHorror.applies(entity)
+                && xiaoshi2022.corpseorigin.growth.CorpseHorror.config().exposedRibs
+                && slots.stream().noneMatch(OrganSlot::replacesBody)) {
+            var renderer = renderers.computeIfAbsent(RIBS.id(), k -> new OrganRenderer(context, RIBS, -1));
+            var state = new LivingEntityRenderState();
+            state.addGeckolibData(ZbLayerAnimationCache.CLIP, "idle");
+            renderer.extractRenderState(entity, state, partialTick);
+            frames.add(new Frame(new OrganSlot(RIBS.id(), "body", 0, 0, 0, 0, 0, 0, 1, false), renderer, state));
         }
         renderState.addGeckolibData(FRAMES, List.copyOf(frames));
     }
@@ -148,7 +160,7 @@ public final class ZbOrganLayer extends GeoRenderLayer<LowerLevelZbEntity, Void,
 
         @Override
         public Identifier getModelResource(GeoRenderState state) {
-            return Identifier.parse(def.model());
+            return Identifier.parse(xiaoshi2022.corpseorigin.growth.OrganResourceIds.model(def.model()));
         }
 
         @Override
@@ -158,7 +170,7 @@ public final class ZbOrganLayer extends GeoRenderLayer<LowerLevelZbEntity, Void,
 
         @Override
         public Identifier getAnimationResource(LowerLevelZbEntity animatable) {
-            return Identifier.parse(def.animation());
+            return Identifier.parse(xiaoshi2022.corpseorigin.growth.OrganResourceIds.animation(def.animation()));
         }
     }
 
@@ -177,7 +189,7 @@ public final class ZbOrganLayer extends GeoRenderLayer<LowerLevelZbEntity, Void,
 
         @Override
         public long getInstanceId(LowerLevelZbEntity animatable, LowerLevelZbEntity entity) {
-            return ZbLayerAnimationCache.organId(slot);
+            return slot < 0 ? ZbLayerAnimationCache.HORROR_ID : ZbLayerAnimationCache.organId(slot);
         }
 
         @Override

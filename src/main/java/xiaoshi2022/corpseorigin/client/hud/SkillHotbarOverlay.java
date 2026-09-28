@@ -67,7 +67,7 @@ public final class SkillHotbarOverlay {
                     statusW, hSlot, 3, HEIGHT * 3);
             if (skill != null && remaining > 0) {
                 int shadeWidthUnscaled = Math.min(WIDTH - 3, 3 + remaining * (WIDTH - 3)
-                        / Math.max(1, skill.getCooldownTicks()));
+                        / Math.max(1, ClientState.cooldownDurations.getOrDefault(skill.getId().getPath(), skill.getCooldownTicks())));
                 int shadeW = (int) ((shadeWidthUnscaled - 3) * s);
                 int shadeX = (int) (xSlot + 3 * s);
                 graphics.blit(RenderPipelines.GUI_TEXTURED, SLOT_COOLDOWN, shadeX, ySlot, 0, 0,

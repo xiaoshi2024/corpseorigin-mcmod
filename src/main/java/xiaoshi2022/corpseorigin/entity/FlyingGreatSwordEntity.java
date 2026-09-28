@@ -342,7 +342,7 @@ public class FlyingGreatSwordEntity extends Entity {
         if (!hits.isEmpty()) {
             ServerLevel sl = (ServerLevel) level();
             DamageSource src = owner != null
-                    ? owner.damageSources().playerAttack(owner)
+                    ? xiaoshi2022.corpseorigin.skill.QiSkillDamageSource.wrap(owner.damageSources().playerAttack(owner))
                     : damageSources().generic();
             for (LivingEntity t : hits) {
                 t.hurtServer(sl, src, DIRECT_DAMAGE);
@@ -493,6 +493,11 @@ public class FlyingGreatSwordEntity extends Entity {
             if (owner != null) owner.swing(InteractionHand.MAIN_HAND, true);
 
             Vec3 center = position();
+            if(owner instanceof net.minecraft.server.level.ServerPlayer serverOwner){
+                int tier=xiaoshi2022.corpseorigin.growth.RealmProgression.level(serverOwner);
+                xiaoshi2022.corpseorigin.skill.chapter.SwordImpact.send(sl,center,flyDir,tier,0,-1,owner.getId());
+                xiaoshi2022.corpseorigin.skill.chapter.SwordRift.start(serverOwner,center,flyDir,tier);
+            }
             AABB slashBox = new AABB(
                     center.x - SLASH_RADIUS, center.y - SLASH_RADIUS, center.z - SLASH_RADIUS,
                     center.x + SLASH_RADIUS, center.y + SLASH_RADIUS, center.z + SLASH_RADIUS);
@@ -502,7 +507,7 @@ public class FlyingGreatSwordEntity extends Entity {
                     e -> e.isAlive() && (ownerId == null || !e.getUUID().equals(ownerId)));
 
             DamageSource src = owner != null
-                    ? owner.damageSources().playerAttack(owner)
+                    ? xiaoshi2022.corpseorigin.skill.QiSkillDamageSource.wrap(owner.damageSources().playerAttack(owner))
                     : damageSources().generic();
 
             for (LivingEntity t : targets) {

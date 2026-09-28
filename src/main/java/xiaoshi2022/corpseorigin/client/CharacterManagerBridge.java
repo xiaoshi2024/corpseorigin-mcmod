@@ -15,5 +15,6 @@ final class CharacterManagerBridge {
         CharacterManager.getInstance().setClientCachedCharacter(characterId);
         // 角色变化时清空冷却显示
         ClientState.cooldownEnds.clear();
+        ClientState.cooldownDurations.clear();
     }
 }

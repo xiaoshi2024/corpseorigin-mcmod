@@ -224,7 +224,7 @@ public final class FiveElementsCombat {
                     if (!ChapterCombat.canHit(owner,target) || target.distanceToSqr(position)>radius*radius) continue;
                     Vec3 blastOrigin=position.subtract(velocity.normalize().scale(.15));
                     if (level.clip(new ClipContext(blastOrigin,target.getEyePosition(),ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,owner)).getType()!=HitResult.Type.MISS) continue;
-                    if (target.hurtServer(level,owner.damageSources().playerAttack(owner),(float)(8*multiplier))) target.igniteForSeconds(5);
+                    if (target.hurtServer(level,xiaoshi2022.corpseorigin.skill.QiSkillDamageSource.wrap(owner.damageSources().playerAttack(owner)),(float)(8*multiplier))) target.igniteForSeconds(5);
                 }
                 QiEffects.burst(level,position.x,position.y,position.z,0xd8552c,1,0);
                 return true;

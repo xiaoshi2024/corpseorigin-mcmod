@@ -197,6 +197,7 @@ public class CorpseOriginClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        RealmGrowthScreen.register();
         RawMeatTooltip.init();
         OrganClient.register();
         HeartRecoveryScreen.register();
@@ -210,6 +211,9 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         // 2. 实体渲染器
         EntityRendererRegistry.register(ModEntities.LOWER_LEVEL_ZB, LowerLevelZbRenderer::new);
+        EntityRendererRegistry.register(ModEntities.ZISHU_ROBOT, xiaoshi2022.corpseorigin.client.renderer.entity.ZishuRobotRenderer::new);
+        EntityRendererRegistry.register(ModEntities.ZISHU_ION_BALL, context -> new net.minecraft.client.renderer.entity.ThrownItemRenderer<>(context, 1.5f, true));
+        EntityRendererRegistry.register(ModEntities.CORPSE_MAGGOT, xiaoshi2022.corpseorigin.client.renderer.entity.CorpseMaggotRenderer::new);
         EntityRendererRegistry.register(ModEntities.BLOOD_WING_BEAM,
                 xiaoshi2022.corpseorigin.client.renderer.entity.BloodWingBeamRenderer::new);
         EntityRendererRegistry.register(ModEntities.AOTUMAN_ZB, AotumanZbRenderer::new);
@@ -280,6 +284,7 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         // ✅ 注册 HUD
         InfectionHudOverlay.register();
+        xiaoshi2022.corpseorigin.client.hud.ThermalHudOverlay.register();
         SkillHotbarOverlay.register();
 
         // 6. 网络接收
@@ -412,7 +417,7 @@ public class CorpseOriginClient implements ClientModInitializer {
                                 payload.earnedPoints(),
                                 payload.availablePoints(),
                                 payload.kills(),
-                                payload.learnedSkills())));
+                                payload.learnedSkills(), payload.level(), payload.pointsToNext())));
 
         // ✅ 接收技能冷却同步
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.CooldownSyncS2C.TYPE, (payload, context) ->
@@ -600,6 +605,7 @@ public class CorpseOriginClient implements ClientModInitializer {
             PoseStack poseStack = context.poseStack();
             SubmitNodeCollector collector = context.submitNodeCollector();
             xiaoshi2022.corpseorigin.client.render.QiAuraRenderer.render(poseStack,collector);
+            xiaoshi2022.corpseorigin.client.render.SwordImpactRenderer.render(poseStack,collector);
             BloodLotusLaserManager.getInstance().render(poseStack, collector);
             // ✅ 尸王雷电（紫色）
             ThunderFxManager.getInstance().render(poseStack, collector);
@@ -625,6 +631,8 @@ public class CorpseOriginClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(TianGangBeamPayload.TYPE, (payload, context) ->
                 context.client().execute(() -> xiaoshi2022.corpseorigin.client.render.laser.TianGangBeamState.accept(payload)));
 
+        xiaoshi2022.corpseorigin.client.render.SwordImpactRenderer.register();
+        ClientPlayNetworking.registerGlobalReceiver(xiaoshi2022.corpseorigin.network.SwordImpactPayload.TYPE,(payload,context)->context.client().execute(()->xiaoshi2022.corpseorigin.client.render.SwordImpactRenderer.accept(payload)));
         ClientPlayNetworking.registerGlobalReceiver(QiAuraPayload.TYPE,(payload,context)->context.client().execute(()->
                 xiaoshi2022.corpseorigin.client.render.QiAuraRenderer.accept(payload)));
         ClientPlayNetworking.registerGlobalReceiver(BloodLotusAuraPayload.TYPE, (payload, context) -> {
@@ -775,6 +783,11 @@ public class CorpseOriginClient implements ClientModInitializer {
         /** 尸兄变种：{@code 2} = 无外骨骼通用变种（不长尸眼骨骼） */
         public int getVariant() {
             return data.getInt("variant").orElse(0);
+        }
+
+        public boolean showsCorpseEye() {
+            return isCorpse && !isDisguised() && !data.getBooleanOr("evolved_eye_hidden",false)
+                    && xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.hasExoskeleton(getVariant());
         }
     }
 

@@ -706,7 +706,7 @@ public class CloneChamberRenderer
             return;
         }
 
-        if (corpse && this.exoskeletonModel != null) {
+        if (corpse && corpseData.showsCorpseEye() && this.exoskeletonModel != null) {
             this.exoskeletonModel.copyFromHead(this.cloneModel.head);
             this.exoskeletonModel.setupAnim(avatar);
             collector.order(0).submitModelPart(

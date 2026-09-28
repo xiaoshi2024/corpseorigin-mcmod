@@ -15,6 +15,9 @@ if (project.hasProperty('gourdTests')) {
 if (project.hasProperty('cloneTests')) {
     apply from: 'src/cloneTest/clone-tests.gradle'
 }
+if (project.hasProperty('realmTests')) {
+    apply from: 'src/realmTest/realm-tests.gradle'
+}
 
 repositories {
     maven {
@@ -105,12 +108,33 @@ tasks.register('beeWheelPhysicsTest', JavaExec) {
 
 tasks.named('check') { dependsOn beeWheelPhysicsTest }
 
+tasks.register('groundShockwaveTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.skill.chapter.GroundShockwaveTest'
+}
+tasks.named('check') { dependsOn groundShockwaveTest }
+
+tasks.register('realmRulesTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.growth.RealmRulesTest'
+}
+tasks.named('check') { dependsOn realmRulesTest }
+
 tasks.register('exoskeletonAnimationTest', JavaExec) {
     dependsOn physicsTestClasses
     classpath = sourceSets.physicsTest.runtimeClasspath
     mainClass = 'xiaoshi2022.corpseorigin.client.model.ExoskeletonAnimationTest'
 }
 tasks.named('check') { dependsOn exoskeletonAnimationTest }
+
+tasks.register('corpseAnimationTest', JavaExec) {
+    dependsOn physicsTestClasses
+    classpath = sourceSets.physicsTest.runtimeClasspath
+    mainClass = 'xiaoshi2022.corpseorigin.entity.CorpseAnimationTest'
+}
+tasks.named('check') { dependsOn corpseAnimationTest }
 
 tasks.register('qiDensityTest', JavaExec) {
     dependsOn physicsTestClasses

@@ -29,7 +29,8 @@ public class PlayerCharacterData extends SavedData {
             Codec.BOOL.optionalFieldOf("starter_book", false).forGetter(e -> e.starterBookGiven),
             // 左护法的青龙宠物被击杀后置 true：「唤龙」技能凭它判定"有一条可复活的青龙"
             Codec.BOOL.optionalFieldOf("guardian_lost", false).forGetter(e -> e.guardianLost),
-            CompoundTag.CODEC.optionalFieldOf("gourd_memory", new CompoundTag()).forGetter(e -> e.gourdMemory)
+            CompoundTag.CODEC.optionalFieldOf("gourd_memory", new CompoundTag()).forGetter(e -> e.gourdMemory),
+            CompoundTag.CODEC.optionalFieldOf("cultivation", new CompoundTag()).forGetter(e -> e.cultivation)
     ).apply(inst, PlayerEntry::new));
 
     private static final Codec<PlayerCharacterData> CODEC = RecordCodecBuilder.create(inst -> inst.group(
@@ -84,8 +85,18 @@ public class PlayerCharacterData extends SavedData {
     }
 
     public PlayerEntry getEntry(UUID uuid) {
-        return players.computeIfAbsent(uuid, k -> new PlayerEntry());
+        PlayerEntry entry = players.computeIfAbsent(uuid, k -> new PlayerEntry());
+        if (!entry.cultivation.getBooleanOr("realm_v1", false)) {
+            if (xiaoshi2022.corpseorigin.skill.EvolutionManager.preservesLegacyProgress())
+                entry.earnedPoints = xiaoshi2022.corpseorigin.skill.EvolutionManager.migrateLegacyPoints(entry.earnedPoints);
+            entry.cultivation.putBoolean("realm_v1", true);
+            setDirty();
+        }
+        return entry;
     }
+
+    public CompoundTag cultivation(UUID uuid) { return getEntry(uuid).cultivation.copy(); }
+    public void setCultivation(UUID uuid, CompoundTag tag) { getEntry(uuid).cultivation = tag.copy(); setDirty(); }
 
     // ==================== 数据条目 ====================
 
@@ -99,13 +110,14 @@ public class PlayerCharacterData extends SavedData {
         /** 左护法的青龙宠物是否已被击杀（可用「唤龙」消耗气血复活；复活 / 重铸后清掉） */
         public boolean guardianLost = false;
         private CompoundTag gourdMemory = new CompoundTag();
+        private CompoundTag cultivation = new CompoundTag();
 
         public PlayerEntry() {
         }
 
         private PlayerEntry(String characterId, List<String> learnedSkills,
                             int earnedPoints, int availablePoints, boolean starterBookGiven,
-                            boolean guardianLost, CompoundTag gourdMemory) {
+                            boolean guardianLost, CompoundTag gourdMemory, CompoundTag cultivation) {
             this.characterId = characterId;
             for (String skill : learnedSkills) {
                 this.learnedSkills.add(normalizeSkillId(skill));
@@ -115,6 +127,7 @@ public class PlayerCharacterData extends SavedData {
             this.starterBookGiven = starterBookGiven;
             this.guardianLost = guardianLost;
             this.gourdMemory = gourdMemory.copy();
+            this.cultivation = cultivation.copy();
         }
     }
 
@@ -196,13 +209,15 @@ public class PlayerCharacterData extends SavedData {
     }
 
     public void addEarnedPoints(UUID uuid, int amount) {
+        if (amount <= 0) return;
         PlayerEntry entry = getEntry(uuid);
-        entry.earnedPoints += amount;
-        entry.availablePoints += amount;
+        entry.earnedPoints = (int)Math.min(Integer.MAX_VALUE, (long)entry.earnedPoints + amount);
+        entry.availablePoints = (int)Math.min(Integer.MAX_VALUE, (long)entry.availablePoints + amount);
         setDirty();
     }
 
     public boolean spendPoints(UUID uuid, int amount) {
+        if (amount < 0) return false;
         PlayerEntry entry = getEntry(uuid);
         if (entry.availablePoints < amount) {
             return false;
@@ -235,6 +250,7 @@ public class PlayerCharacterData extends SavedData {
         // 漏掉的话换一次身就会"重置"，下次登录又白给一本
         tag.putBoolean("StarterBook", entry.starterBookGiven);
         tag.put("GourdMemory", entry.gourdMemory.copy());
+        tag.put("Cultivation", entry.cultivation.copy());
         return tag;
     }
 
@@ -262,6 +278,8 @@ public class PlayerCharacterData extends SavedData {
         //   下次登录就白给一本 —— 死亡自动夺舍克隆体正好走这条路。
         entry.starterBookGiven = entry.starterBookGiven || tag.getBooleanOr("StarterBook", false);
         entry.gourdMemory = tag.getCompound("GourdMemory").orElseGet(CompoundTag::new).copy();
+        entry.cultivation = tag.getCompound("Cultivation").orElseGet(CompoundTag::new).copy();
+        getEntry(uuid); // Migrate legacy shells once, in the same ledger as their points.
 
         setDirty();
     }

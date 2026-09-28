@@ -42,6 +42,8 @@ public class SkillTreeScreen extends Screen {
     protected void init() {
         skills = ClientCharacterCache.getCharacterSkills();
         scrollRow = Mth.clamp(scrollRow, 0, maxScrollRow());
+        addRenderableWidget(net.minecraft.client.gui.components.Button.builder(Component.translatable("realm.corpseorigin.open"),
+                b -> RealmGrowthScreen.open()).bounds(width-82,4,78,20).build());
     }
 
     // ==================== 布局 ====================
@@ -95,7 +97,7 @@ public class SkillTreeScreen extends Screen {
 
         int x = panelX();
         int w = panelWidth();
-        int level = EvolutionManager.getLevel(ClientState.earnedPoints);
+        int level = ClientState.evolutionLevel;
 
         for (int i = 0; i < skills.size(); i++) {
             int y = rowY(i);
@@ -176,7 +178,7 @@ public class SkillTreeScreen extends Screen {
             int mouseY = (int) event.y();
             int x = panelX();
             int w = panelWidth();
-            int level = EvolutionManager.getLevel(ClientState.earnedPoints);
+            int level = ClientState.evolutionLevel;
             for (int i = 0; i < skills.size(); i++) {
                 int y = rowY(i);
                 if (y < 0) {

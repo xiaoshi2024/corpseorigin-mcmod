@@ -16,24 +16,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * 进化成长 —— 进化等级越高，血越厚、攻越强、身越硬。
- * <p>
- * 设计要点（用户需求）：
- * <ul>
- *   <li><b>等级线性成长</b>：1 级无加成，{@link EvolutionManager#MAX_LEVEL} 级拿满该角色的成长上限，
- *       中间每级按 {@code (level-1)/(MAX_LEVEL-1)} 线性插值；</li>
- *   <li><b>每个角色上限不一样</b>：不同角色走不同的 {@link GrowthProfile}（坦克血甲高、刺客速攻高…）；</li>
- *   <li><b>平均上限差不多</b>：各原型的"总预算"控制在相近水平，只是把预算分配到不同属性上，
- *       不会出现某个角色全面碾压。</li>
- * </ul>
- *
- * <h3>实现</h3>
- * 加成用 5 个固定 id 的 {@link AttributeModifier}（{@code corpseorigin:evo_*}），
- * 与角色自带的基础面板修饰符（{@code longyou_base_*} / {@code zuohufa_*} 等）<b>完全解耦</b>：
- * 基础面板是"这个角色天生什么样"，进化加成是"他修为什么境界"。换角色 / 重登 / 重生时
- * 统一走一遍 {@link #reconcile} 即可原地替换，不会叠加也不会残留。
- * <p>
- * 后期想调数值：改 {@link GrowthProfile} 枚举；想改某角色走哪条成长路线：改 {@link #populateProfileMap()}。
+ * Server-authoritative realm attributes with role-specific health/attack biases.
+ * RealmRules supplies the nonlinear tier baseline; independent practice/purchased
+ * ranks add diminishing growth. The old linear profiles remain as the fallback
+ * when realm.enabled is false. Fixed modifier ids make reconciliation idempotent.
  */
 public final class EvolutionStats {
 
@@ -152,6 +138,7 @@ public final class EvolutionStats {
      * 调用时机：登录、重生、换角色后、获得进化点（可能升级）后、调试指令改点后。
      */
     public static void reconcile(ServerPlayer player) {
+        xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.syncEvolvedEye(player);
         String roleId = CharacterManager.getInstance().getPlayerCharacterId(player);
         GrowthProfile profile = profileOf(roleId);
 
@@ -160,11 +147,35 @@ public final class EvolutionStats {
         int level = EvolutionManager.getLevel(earned);
         double p = GrowthProfile.progress(level);
 
+        float oldMax = player.getMaxHealth();
+        if (xiaoshi2022.corpseorigin.growth.RealmProgression.config().enabled) {
+            double hp = xiaoshi2022.corpseorigin.growth.RealmProgression.healthBonus(player) * (.75 + profile.maxHealth / 160);
+            double attack = xiaoshi2022.corpseorigin.growth.RealmProgression.attackBonus(player) * (.75 + profile.maxAttack / 16);
+            applyModifier(player, Attributes.MAX_HEALTH, HEALTH_MODIFIER, hp);
+            applyModifier(player, Attributes.ATTACK_DAMAGE, ATTACK_MODIFIER, attack);
+            applyModifier(player, Attributes.ARMOR, ARMOR_MODIFIER, Math.min(30, (level-1)*2));
+            applyModifier(player, Attributes.MOVEMENT_SPEED, SPEED_MODIFIER,
+                    xiaoshi2022.corpseorigin.growth.RealmRules.speed(level,xiaoshi2022.corpseorigin.growth.RealmProgression.rank(player,"agility")));
+            applyModifier(player, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_MODIFIER, Math.min(1,(level-1)*.08));
+            applyModifier(player, Attributes.ARMOR_TOUGHNESS, CorpseOrigin.id("evo_toughness"), Math.min(20,(level-1)*1.2));
+            applyModifier(player, Attributes.ENTITY_INTERACTION_RANGE, CorpseOrigin.id("evo_reach"), Math.min(8,(level-1)*.3));
+            applyModifier(player, Attributes.BLOCK_BREAK_SPEED, CorpseOrigin.id("evo_mining"), Math.min(100,(level-1)*2));
+            applyModifier(player, Attributes.SAFE_FALL_DISTANCE, CorpseOrigin.id("evo_fall"), level>=10 ? 10000 : (level-1)*2);
+            if (player.isAlive() && player.getMaxHealth()>oldMax) player.heal(player.getMaxHealth()-oldMax);
+            if (player.getHealth()>player.getMaxHealth()) player.setHealth(player.getMaxHealth());
+            return;
+        }
+        applyModifier(player, Attributes.ARMOR_TOUGHNESS, CorpseOrigin.id("evo_toughness"), 0);
+        applyModifier(player, Attributes.ENTITY_INTERACTION_RANGE, CorpseOrigin.id("evo_reach"), 0);
+        applyModifier(player, Attributes.BLOCK_BREAK_SPEED, CorpseOrigin.id("evo_mining"), 0);
+        applyModifier(player, Attributes.SAFE_FALL_DISTANCE, CorpseOrigin.id("evo_fall"), 0);
+
         applyModifier(player, Attributes.MAX_HEALTH, HEALTH_MODIFIER, profile.maxHealth * p);
         applyModifier(player, Attributes.ARMOR, ARMOR_MODIFIER, profile.maxArmor * p);
         applyModifier(player, Attributes.ATTACK_DAMAGE, ATTACK_MODIFIER, profile.maxAttack * p);
         applyModifier(player, Attributes.MOVEMENT_SPEED, SPEED_MODIFIER, profile.maxSpeed * p);
         applyModifier(player, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_MODIFIER, profile.maxKnockback * p);
+        if (player.getHealth()>player.getMaxHealth()) player.setHealth(player.getMaxHealth());
     }
 
     /**
@@ -186,7 +197,7 @@ public final class EvolutionStats {
         }
 
         float gained = player.getMaxHealth() - maxHealthBefore;
-        if (gained > 0.0F && player.isAlive()) {
+        if (!xiaoshi2022.corpseorigin.growth.RealmProgression.config().enabled && gained > 0.0F && player.isAlive()) {
             player.setHealth(Math.min(player.getMaxHealth(), player.getHealth() + gained));
         }
         return true;
@@ -208,7 +219,7 @@ public final class EvolutionStats {
         AttributeModifier existing = instance.getModifier(id);
         if (existing != null
                 && existing.operation() == AttributeModifier.Operation.ADD_VALUE
-                && Math.abs(existing.amount() - amount) < 1.0E-4) {
+                && Math.abs(existing.amount() - amount) < 1.0E-12) {
             return;   // 数值没变，别白改
         }
         instance.addOrReplacePermanentModifier(

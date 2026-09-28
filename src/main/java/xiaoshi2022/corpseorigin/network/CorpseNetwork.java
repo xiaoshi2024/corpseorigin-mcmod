@@ -72,6 +72,7 @@ public final class CorpseNetwork {
         ServerPlayNetworking.registerGlobalReceiver(TianGangBladePosePayload.TYPE, (payload, context) ->
                 context.server().execute(() -> xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.acceptPose(context.player(), payload)));
         PayloadTypeRegistry.clientboundPlay().register(QiAuraPayload.TYPE, QiAuraPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(SwordImpactPayload.TYPE, SwordImpactPayload.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(NestRadarPayload.TYPE, NestRadarPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(NestRadarPayload.Action.TYPE, NestRadarPayload.Action.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(NestRadarPayload.Action.TYPE, (payload, context) ->
@@ -530,7 +531,7 @@ public final class CorpseNetwork {
         player.level().addFreshEntity(beam);
 
         // 冷却
-        player.getCooldowns().addCooldown(stack, JuQue.COOLDOWN);
+        player.getCooldowns().addCooldown(stack, xiaoshi2022.corpseorigin.skill.SkillBalance.ordinaryCooldown(player, JuQue.COOLDOWN));
     }
 
     public static void sendInfectionSync(ServerPlayer player) {
@@ -852,7 +853,9 @@ public final class CorpseNetwork {
         int available = data.getAvailablePoints(player.getUUID());
 
         ServerPlayNetworking.send(player,
-                new CorpsePayloads.EvolutionSyncS2C(earned, available, kills, bytes));
+                new CorpsePayloads.EvolutionSyncS2C(earned, available, kills, bytes,
+                        xiaoshi2022.corpseorigin.skill.EvolutionManager.getLevel(earned),
+                        xiaoshi2022.corpseorigin.skill.EvolutionManager.pointsToNextLevel(earned)));
     }
 
     /**

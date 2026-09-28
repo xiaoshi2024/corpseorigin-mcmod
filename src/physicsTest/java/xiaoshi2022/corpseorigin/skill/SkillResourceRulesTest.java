@@ -51,8 +51,9 @@ public final class SkillResourceRulesTest {
         for (String form : new String[]{"zhi","ji","li","yu","qi","hui","mie","wu","shen","nipo","pogang","tiangangpo"})
             check(known.contains("tiangang_" + form), "TianGang form audited: " + form);
         String manager = Files.readString(root.resolve("SkillManager.java"));
-        check(manager.indexOf("SkillResources.pay(player, skill.getResourceCost())")
-                < manager.indexOf("int ticks = skill.getCooldownTicks()"), "Payment gates cooldown");
+        int payment = manager.indexOf("SkillResources.pay(player, SkillBalance.cost(player, skill))");
+        int cooldown = manager.indexOf("int ticks = SkillBalance.cooldown(player, skill)");
+        check(payment >= 0 && cooldown > payment, "Payment gates effective cooldown");
         String resources = Files.readString(root.resolve("SkillResources.java"));
         check(resources.indexOf("cost.affordable") < resources.indexOf("InnerPowerManager.consume"), "Both balances checked before mana mutation");
         check(resources.indexOf("cost.affordable") < resources.indexOf("BloodReserve.spend"), "Both balances checked before blood mutation");

@@ -47,9 +47,10 @@ public final class InnerPowerManager {
      * 获取玩家内力上限。
      */
     public static int getMaxInnerPower(ServerPlayer player) {
-        return InnerPowerRules.capacity(
+        int base = InnerPowerRules.capacity(
                 CharacterManager.getInstance().getPlayerCharacter(player).getMaxInnerPower(),
                 FreeGrowth.innerPower(player), evolutionLevel(player));
+        return base <= 0 ? 0 : (int)Math.min(100000000L,(long)base + xiaoshi2022.corpseorigin.growth.RealmProgression.qiBonus(player));
     }
 
     private static int evolutionLevel(ServerPlayer player) {
@@ -155,7 +156,7 @@ public final class InnerPowerManager {
         if (player.tickCount % REGEN_INTERVAL != 0) {
             return;
         }
-        regen(player, 1);
+        regen(player, xiaoshi2022.corpseorigin.growth.RealmProgression.qiRegen(player));
     }
 
     /** 玩家断开连接时清理缓存 */

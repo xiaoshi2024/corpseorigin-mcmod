@@ -55,7 +55,8 @@ public final class EvolutionEventHandler {
     public static int awardPoints(ServerPlayer player, int requested) {
         PlayerCharacterData data = PlayerCharacterData.get(player);
         int earned = data.getEarnedPoints(player.getUUID());
-        int points = xiaoshi2022.corpseorigin.growth.GrowthRules.reward(earned, requested);
+        // Cumulative progress may be saturated; spent currency must still be earnable at the cap.
+        int points = xiaoshi2022.corpseorigin.growth.GrowthRules.reward(data.getAvailablePoints(player.getUUID()), requested);
         if (points <= 0) return 0;
         int before = EvolutionManager.getLevel(earned);
         data.addEarnedPoints(player.getUUID(), points);

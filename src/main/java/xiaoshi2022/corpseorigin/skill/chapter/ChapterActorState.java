@@ -24,6 +24,7 @@ public final class ChapterActorState {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             for (var player : server.getPlayerList().getPlayers()) {
                 reconcileCorpseState(player);
+                xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.syncEvolvedEye(player);
                 String role = CharacterManager.getInstance().getPlayerCharacterId(player);
                 if (!role.equals(player.getAttachedOrCreate(ROLE))) player.setAttached(ROLE,role);
                 if (!player.getAttachedOrCreate(DISGUISE).isEmpty() && (!"bianselong_zb".equals(role)

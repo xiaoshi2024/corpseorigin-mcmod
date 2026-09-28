@@ -116,6 +116,7 @@ public final class TianGangCombat {
                     if(age>=12 && !p.onGround()){p.setDeltaMovement(0,-1.8,0);p.hurtMarked=true;}
                     if(age<5 || !p.onGround())return false;
                     double radius=a.form==Form.HUI?8:12;
+                    GroundShockwave.spawn(p,p.position(),radius,a.form==Form.HUI?1.5:2.5);
                     SkillRework.area(p,radius,a.form==Form.HUI?45:70,1.8);
                     var center=p.blockPosition().below();int budget=128;
                     for(var pos:BlockPos.betweenClosed(center.offset(-(int)radius,-1,-(int)radius),center.offset((int)radius,0,(int)radius))){

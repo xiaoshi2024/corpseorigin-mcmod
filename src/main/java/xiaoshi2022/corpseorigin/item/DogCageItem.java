@@ -94,9 +94,11 @@ public class DogCageItem extends Item {
         ball.setPos(player.getEyePosition());
         ball.setDeltaMovement(direction.scale(0.8));
         if (!level.addFreshEntity(ball)) return InteractionResult.FAIL;
-        player.getCooldowns().addCooldown(stack, FIRE_COOLDOWN);
+        int cooldown = player instanceof net.minecraft.server.level.ServerPlayer sp
+                ? xiaoshi2022.corpseorigin.skill.SkillBalance.ordinaryCooldown(sp, FIRE_COOLDOWN) : FIRE_COOLDOWN;
+        player.getCooldowns().addCooldown(stack, cooldown);
         if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer)
-            xiaoshi2022.corpseorigin.network.CorpseNetwork.sendCooldownSync(serverPlayer, "ham_summon", FIRE_COOLDOWN);
+            xiaoshi2022.corpseorigin.network.CorpseNetwork.sendCooldownSync(serverPlayer, "ham_summon", cooldown);
         level.playSound(null, player.blockPosition(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 1, 1);
         QiEffects.burst(level, player.getX(), player.getEyeY(), player.getZ(), 0xff7a1a, 8, .1);
         return InteractionResult.SUCCESS;

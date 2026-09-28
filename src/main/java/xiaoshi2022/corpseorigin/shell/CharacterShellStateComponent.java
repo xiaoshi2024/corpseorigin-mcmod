@@ -40,7 +40,11 @@ public class CharacterShellStateComponent extends ShellStateComponent {
     public int getCloneInnerCapacity() { return Math.max(0, data.getIntOr("CloneInnerCapacity", 0)); }
 
     public int getEvolutionLevel() {
-        return xiaoshi2022.corpseorigin.skill.EvolutionManager.getLevel(data.getIntOr("Earned", 0));
+        int earned=data.getIntOr("Earned",0);
+        boolean current=data.getCompound("Cultivation").map(t->t.getBooleanOr("realm_v1",false)).orElse(false);
+        if(!current && xiaoshi2022.corpseorigin.skill.EvolutionManager.preservesLegacyProgress())
+            earned=xiaoshi2022.corpseorigin.skill.EvolutionManager.migrateLegacyPoints(earned);
+        return xiaoshi2022.corpseorigin.skill.EvolutionManager.getLevel(earned);
     }
 
     public boolean hasLearnedSkill(String path) {
@@ -179,6 +183,14 @@ public class CharacterShellStateComponent extends ShellStateComponent {
         tag.put("LearnedSkills", kept);
         tag.putInt("Earned", Math.round(tag.getIntOr("Earned", 0) * ratio));
         tag.putInt("Available", Math.round(tag.getIntOr("Available", 0) * ratio));
+        var cultivation=tag.getCompound("Cultivation").orElseGet(CompoundTag::new).copy();
+        for(String stat:xiaoshi2022.corpseorigin.growth.RealmProgression.STATS){
+            cultivation.putInt("rank_"+stat,Math.round(cultivation.getIntOr("rank_"+stat,0)*ratio));
+            cultivation.putLong("xp_"+stat,Math.round(cultivation.getLongOr("xp_"+stat,0)*(double)ratio));
+        }
+        for(String job:java.util.List.of("blood","qi","medicine"))
+            cultivation.putInt("job_"+job,Math.round(cultivation.getIntOr("job_"+job,0)*ratio));
+        tag.put("Cultivation",cultivation);
         this.data = tag;
     }
 }

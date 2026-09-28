@@ -1,0 +1,15 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_material": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {"items": [{"items": "minecraft:iron_block"}]}
+    },
+    "has_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {"recipe": "corpseorigin:ming_juque"}
+    }
+  },
+  "requirements": [["has_material", "has_recipe"]],
+  "rewards": {"recipes": ["corpseorigin:ming_juque"]}
+}

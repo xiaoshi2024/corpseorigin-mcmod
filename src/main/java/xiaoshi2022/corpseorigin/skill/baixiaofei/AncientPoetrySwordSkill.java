@@ -45,7 +45,7 @@ public class AncientPoetrySwordSkill implements ISkill {
 
     @Override
     public int getCooldownTicks() {
-        return 0;
+        return 1200;
     }
 
     /**

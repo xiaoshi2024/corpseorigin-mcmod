@@ -47,6 +47,8 @@ public final class APSGreatSwordInterceptor {
                 return InteractionResult.SUCCESS;
             }
 
+            if (!xiaoshi2022.corpseorigin.skill.SkillResources.pay(sp,
+                    xiaoshi2022.corpseorigin.skill.SkillBalance.poetryCost(sp, 5))) return InteractionResult.FAIL;
             ServerLevel sl = (ServerLevel) level;
 
             if (stack.isDamageableItem()) {

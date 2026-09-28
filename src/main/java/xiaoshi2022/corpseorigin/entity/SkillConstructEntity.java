@@ -102,7 +102,7 @@ public class SkillConstructEntity extends PathfinderMob implements GeoEntity {
                 if(tickCount%5==0)QiEffects.aura(this,"incarnation",0xb51236,specialTicks>0?5:3,12);
             }
             if(kind.equals("slaughter_incarnation") && specialTicks==0 && tickCount%20==0){
-                SkillRework.area(p,8,32,1);
+                SkillRework.area(p,8,32,1,true);
                 // Let the 2.4-second entrance finish before overlaying an attack.
                 if(tickCount>=60)triggerAnim("action","attack");
             }
@@ -116,7 +116,7 @@ public class SkillConstructEntity extends PathfinderMob implements GeoEntity {
         if(hit!=null){
             var target=(LivingEntity)hit.getEntity();
             float damage=kind.equals("blood_lotus_petal")?40:kind.equals("bee_wheel")?28:26;
-            if(target.hurtServer(level,p.damageSources().playerAttack(p),damage)){
+            if(target.hurtServer(level,kind.equals("blood_lotus_petal") ? xiaoshi2022.corpseorigin.skill.QiSkillDamageSource.wrap(p.damageSources().playerAttack(p)) : p.damageSources().playerAttack(p),damage)){
                 var v=getDeltaMovement().normalize();target.push(v.x,.3,v.z);target.hurtMarked=true;
             }
             discard();return;
@@ -190,7 +190,7 @@ public class SkillConstructEntity extends PathfinderMob implements GeoEntity {
                     t->ChapterCombat.canHit(player,t))){
                 Vec3 offset=target.getBoundingBox().getCenter().subtract(origin);
                 if(offset.lengthSqr()>144 || offset.normalize().dot(specialDirection)<.5 || !player.hasLineOfSight(target))continue;
-                if(target.hurtServer(level,player.damageSources().playerAttack(player),64)){
+                if(target.hurtServer(level,xiaoshi2022.corpseorigin.skill.QiSkillDamageSource.wrap(player.damageSources().playerAttack(player)),64)){
                     target.push(specialDirection.x*1.5,.4,specialDirection.z*1.5);target.hurtMarked=true;
                 }
             }

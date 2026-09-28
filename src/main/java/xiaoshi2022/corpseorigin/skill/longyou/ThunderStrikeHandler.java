@@ -113,7 +113,7 @@ public final class ThunderStrikeHandler {
         QiEffects.burst(level, point.x, point.y + 0.5, point.z, 0x7a5cff, 1, 0.0);
 
         // 伤害 + 击飞 + 麻痹
-        hurtArea(level, caster, point, EEL_SMASH_RADIUS + 2.0, EEL_DAMAGE, 1.8, EEL_STUN_TICKS);
+        hurtArea(level, caster, point, EEL_SMASH_RADIUS + 2.0, EEL_DAMAGE, 1.8, EEL_STUN_TICKS, false);
         // 击碎地形
         smash(level, point, EEL_SMASH_RADIUS, EEL_SMASH_DEPTH);
         return true;
@@ -256,7 +256,7 @@ public final class ThunderStrikeHandler {
                 new AABB(orb.position, orb.position).inflate(radius), e -> canBeHit(caster, e))) {
             Vec3 to = target.position().add(0.0, target.getBbHeight() * 0.5, 0.0);
             CorpseNetwork.broadcastThunderBolt(orb.level, to, orb.position, to, 5, 0.9F);
-            target.hurtServer(orb.level, orb.level.damageSources().playerAttack(caster), ORB_ZAP_DAMAGE);
+            target.hurtServer(orb.level, xiaoshi2022.corpseorigin.skill.QiSkillDamageSource.wrap(orb.level.damageSources().playerAttack(caster)), ORB_ZAP_DAMAGE);
             paralyze(target, 20);
 
             Vec3 pull = orb.position.subtract(to).normalize().scale(0.35);
@@ -289,7 +289,7 @@ public final class ThunderStrikeHandler {
         ServerPlayer caster = level.getServer() == null ? null
                 : level.getServer().getPlayerList().getPlayer(orb.caster);
         if (caster != null) {
-            hurtArea(level, caster, center, BLAST_RADIUS, BLAST_DAMAGE, 3.0, 100);
+            hurtArea(level, caster, center, BLAST_RADIUS, BLAST_DAMAGE, 3.0, 100, true);
         } else {
             // 施术者不在了也要把地形和怪炸掉（不然球白飞一趟）
             for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
@@ -318,10 +318,11 @@ public final class ThunderStrikeHandler {
 
     /** 范围伤害 + 击飞 + 麻痹 */
     private static void hurtArea(ServerLevel level, ServerPlayer caster, Vec3 center,
-                                 double radius, float damage, double knockback, int stunTicks) {
+                                 double radius, float damage, double knockback, int stunTicks, boolean qiSkill) {
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
                 new AABB(center, center).inflate(radius), e -> canBeHit(caster, e))) {
-            target.hurtServer(level, level.damageSources().playerAttack(caster), damage);
+            target.hurtServer(level, qiSkill ? xiaoshi2022.corpseorigin.skill.QiSkillDamageSource.wrap(level.damageSources().playerAttack(caster))
+                    : level.damageSources().playerAttack(caster), damage);
             paralyze(target, stunTicks);
 
             Vec3 push = target.position().subtract(center);

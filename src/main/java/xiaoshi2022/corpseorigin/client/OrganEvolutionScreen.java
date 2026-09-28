@@ -37,7 +37,7 @@ public final class OrganEvolutionScreen extends Screen {
         g.centeredText(font,title,width/2,10,0xffffffff);
         String[] lines={
             (index+1)+" / "+entries().size()+"  "+def.displayName().getString()+" · "+net.minecraft.client.resources.language.I18n.get(OrganEvolutionRules.stageName(stage)),
-            net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.071")+xiaoshi2022.corpseorigin.skill.EvolutionManager.getLevel(ClientState.earnedPoints)+net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.072")+ClientState.availablePoints+ (p.isCreative()?net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.073"):net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.074")),
+            net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.071")+ClientState.evolutionLevel+net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.072")+ClientState.availablePoints+ (p.isCreative()?net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.073"):net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.074")),
             (stage>=1?"✓ ":"□ ")+net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.075"),
             (stage>=2?"✓ ":"□ ")+net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.076"),
             (stage>=3?"✓ ":"□ ")+net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.077"),

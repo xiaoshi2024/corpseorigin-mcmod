@@ -86,8 +86,8 @@ public final class EvolutionPointsCommand {
         PlayerCharacterData data = PlayerCharacterData.get(target);
         UUID uuid = target.getUUID();
         int levelBefore = EvolutionManager.getLevel(data.getEarnedPoints(uuid));
-        int newEarned = Math.max(0, data.getEarnedPoints(uuid) + delta);
-        int newAvailable = Math.max(0, data.getAvailablePoints(uuid) + delta);
+        int newEarned = (int)Math.clamp((long)data.getEarnedPoints(uuid) + delta,0,Integer.MAX_VALUE);
+        int newAvailable = (int)Math.clamp((long)data.getAvailablePoints(uuid) + delta,0,Integer.MAX_VALUE);
         data.setPoints(uuid, newEarned, newAvailable);
         CorpseNetwork.sendEvolutionSync(target);
         refreshGrowth(target, levelBefore);
@@ -104,7 +104,7 @@ public final class EvolutionPointsCommand {
         UUID uuid = target.getUUID();
         int levelBefore = EvolutionManager.getLevel(data.getEarnedPoints(uuid));
         int oldEarned = data.getEarnedPoints(uuid);
-        int newAvailable = Math.max(0, data.getAvailablePoints(uuid) + (total - oldEarned));
+        int newAvailable = (int)Math.clamp((long)data.getAvailablePoints(uuid) + total - oldEarned,0,Integer.MAX_VALUE);
         data.setPoints(uuid, total, newAvailable);
         CorpseNetwork.sendEvolutionSync(target);
         refreshGrowth(target, levelBefore);

@@ -18,6 +18,7 @@ public final class ClientState {
     public static String characterId = "mortal";
     /** 累计进化点 */
     public static int earnedPoints = 0;
+    public static int evolutionLevel = 1, pointsToNextLevel = 0;
     /** HUD 是否显示 */
     public static boolean hudVisible = true;  // 默认显示
     /** 可用进化点 */
@@ -35,7 +36,11 @@ public final class ClientState {
     /** 技能冷却结束时间戳（毫秒） */
     public static final Map<String, Long> cooldownEnds = new HashMap<>();
 
-    public static void applyEvolution(int earned, int available, int kills, byte[] learnedBytes) {
+    public static final Map<String, Integer> cooldownDurations = new HashMap<>();
+
+    public static void applyEvolution(int earned, int available, int kills, byte[] learnedBytes, int level, int pointsToNext) {
+        evolutionLevel = Math.clamp(level,1,20);
+        pointsToNextLevel = Math.max(0,pointsToNext);
         ClientState.earnedPoints = earned;
         ClientState.availablePoints = available;
         ClientState.kills = kills;
@@ -58,16 +63,19 @@ public final class ClientState {
         long remaining = end - System.currentTimeMillis();
         if (remaining <= 0) {
             cooldownEnds.remove(skillPath);
+            cooldownDurations.remove(skillPath);
             return 0;
         }
-        return (int) (remaining / 50);
+        return (int) ((remaining + 49) / 50);
     }
 
     public static void applyCooldown(String skillPath, int ticks) {
         if (ticks > 0) {
+            cooldownDurations.put(skillPath, ticks);
             cooldownEnds.put(skillPath, System.currentTimeMillis() + ticks * 50L);
         } else {
             cooldownEnds.remove(skillPath);
+            cooldownDurations.remove(skillPath);
         }
     }
 }

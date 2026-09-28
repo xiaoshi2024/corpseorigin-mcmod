@@ -66,6 +66,7 @@ public final class SurvivalGrowth {
     public static void register() {
         OrganEnergy.register();
         ShenFlight.register();
+        ShenLanding.register();
         VampirePhysiology.register();
         ServerLivingEntityEvents.AFTER_DAMAGE.register((target, source, base, taken, blocked) -> {
             if (taken > 0 && source.getEntity() instanceof ServerPlayer player && source.getDirectEntity() == player
@@ -165,6 +166,7 @@ public final class SurvivalGrowth {
         }
     }
     public static void fleshConsumed(ServerPlayer player) {
+        RealmProgression.onFlesh(player);
         if(!CorpseConfig.get().growth.enabled || !eligible(player) || !FreeGrowth.isFree(player)
                 ||!PlayerCorpseComponent.isCorpse(player))return;
         var journal=player.getAttachedOrCreate(JOURNAL).copy();

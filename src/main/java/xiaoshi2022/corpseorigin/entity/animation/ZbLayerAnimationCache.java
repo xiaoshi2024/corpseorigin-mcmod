@@ -23,6 +23,7 @@ public final class ZbLayerAnimationCache extends InstancedAnimatableInstanceCach
 
     private static final long ORGAN_BASE = Long.MIN_VALUE + 64;
     private static final int ORGAN_SLOTS = 16;
+    public static final long HORROR_ID = Long.MIN_VALUE + 96;
 
     private final Map<Long, InstancedAnimatableInstanceCache> organs = new HashMap<>();
 
@@ -36,7 +37,7 @@ public final class ZbLayerAnimationCache extends InstancedAnimatableInstanceCach
 
     @Override
     public AnimatableManager<?> getManagerForId(long id) {
-        if (id >= ORGAN_BASE && id < ORGAN_BASE + ORGAN_SLOTS) {
+        if (id == HORROR_ID || id >= ORGAN_BASE && id < ORGAN_BASE + ORGAN_SLOTS) {
             return organs.computeIfAbsent(id,
                     k -> new InstancedAnimatableInstanceCache(this.animatable)).getManagerForId(id);
         }

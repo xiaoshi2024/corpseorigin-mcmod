@@ -21,7 +21,7 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
     private final int red, green, blue;
 
     public static final class State extends EntityRenderState {
-        float yaw, pitch, power, time, roll;
+        float yaw, pitch, power, time, roll, bladeHeight, bladeDepth;
     }
 
     protected CrescentBeamRenderer(EntityRendererProvider.Context context, int red, int green, int blue) {
@@ -34,11 +34,12 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
 
     @Override protected net.minecraft.world.phys.AABB getBoundingBoxForCulling(T entity) {
         // Include the entire rotated mist so large tips remain visible when the center is off-screen.
-        return super.getBoundingBoxForCulling(entity).inflate(1.4*JuQueBeamEntity.openingScale(entity.getPower()));
+        return super.getBoundingBoxForCulling(entity).inflate(entity.getBladeHeight()+entity.getBladeDepth());
     }
 
     @Override public void extractRenderState(T entity, State state, float partialTick) {
         super.extractRenderState(entity, state, partialTick);
+        state.bladeHeight=entity.getBladeHeight();state.bladeDepth=entity.getBladeDepth();
         state.power=entity.getPower();
         state.roll=entity.getSlashRoll();
         state.time=entity.tickCount+partialTick;
@@ -57,7 +58,7 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
         poses.mulPose(Axis.ZP.rotationDegrees(state.roll));
         poses.mulPose(Axis.YP.rotationDegrees(90));
         // Spread the two tips more than the blade depth: stronger qi opens wider rather than just inflating.
-        poses.scale(JuQueBeamEntity.bladeScale(state.power),JuQueBeamEntity.openingScale(state.power),1+2*state.power);
+        poses.scale(state.bladeDepth,state.bladeHeight/2.5f,1+2*state.power);
         collector.submitCustomGeometry(poses,RenderTypes.entityTranslucentEmissive(TEXTURE),(pose,out)-> {
             // Shape the same translucent mist used by QiAuraRenderer into a moving volume.
             // Multiple flowing sheets fade on every boundary; there is no opaque blade or silhouette image.
@@ -67,6 +68,21 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
                     float inner=band/8F, outer=(band+1)/8F;
                     vertex(out,pose,a,inner,layer,state.time); vertex(out,pose,b,inner,layer,state.time);
                     vertex(out,pose,b,outer,layer,state.time); vertex(out,pose,a,outer,layer,state.time);
+                }
+            }
+        });
+        // White-hot leading edge and two delayed spectral blades, with tapered ends.
+        collector.submitCustomGeometry(poses,RenderTypes.entityTranslucentEmissive(Identifier.fromNamespaceAndPath("corpseorigin","textures/effect/sword_stroke.png")),(pose,out)->{
+            for(int echo=0;echo<3;echo++)for(int i=0;i<SEGMENTS;i++){
+                float a=-1+2f*i/SEGMENTS,b=-1+2f*(i+1)/SEGMENTS;
+                for(int corner=0;corner<4;corner++){
+                    float h=(corner==1 || corner==2)?b:a;
+                    float side=corner>=2?1:-1;
+                    float taper=1-h*h;
+                    float x=crescentX(h,.91f)-echo*.12f+side*(echo==0?.015f:.035f)*taper;
+                    out.addVertex(pose.pose(),x,h*HEIGHT,-echo*.1f)
+                            .setColor(255,echo==0?255:210,echo==0?240:100,(int)((echo==0?225:65)*taper))
+                            .setUv((h+1)*.5f,side>0?1:0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(0xF000F0).setNormal(0,0,1);
                 }
             }
         });

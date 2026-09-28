@@ -48,6 +48,27 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     protected static final RawAnimation WALK_ANIM = RawAnimation.begin().thenLoop("walk");
     protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
     protected static final RawAnimation ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");
+    private static final RawAnimation GNAW_ANIM = RawAnimation.begin().thenLoop("gnaw");
+    private static final RawAnimation DEATH_ANIM = RawAnimation.begin().thenPlayAndHold("death_burst");
+    private static final EntityDataAccessor<Boolean> DATA_CORPSE_EYE =
+            SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.BOOLEAN);
+    public boolean hasCorpseEye(){return entityData.get(DATA_CORPSE_EYE);}
+    public void setCorpseEye(boolean visible){entityData.set(DATA_CORPSE_EYE,visible);}
+    private static final EntityDataAccessor<Boolean> DATA_CRACKED =
+            SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.BOOLEAN);
+    public boolean isCracked(){return entityData.get(DATA_CRACKED);}
+    public void setCracked(boolean cracked){entityData.set(DATA_CRACKED,cracked);}
+
+    private static final EntityDataAccessor<Integer> DATA_GRAPPLE_TARGET =
+            SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_HORROR_ACTIVE =
+            SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.BOOLEAN);
+    public boolean horrorWormsReleased;
+    private int lastMovingAnimationTick = Integer.MIN_VALUE;
+
+    public int getGrappleTarget() { return entityData.get(DATA_GRAPPLE_TARGET); }
+    public void setGrappleTarget(int id) { entityData.set(DATA_GRAPPLE_TARGET, id); }
+    public boolean isHorrorActive() { return entityData.get(DATA_HORROR_ACTIVE); }
 
     // ==================== 同步数据 ====================
     private static final EntityDataAccessor<String> DATA_PLAYER_NAME =
@@ -99,6 +120,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     public LowerLevelZbEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
         super(entityType, level);
         this.xpReward = 5;
+        if(!level.isClientSide())setCorpseEye(this.random.nextFloat()<.2f);
+        if(!level.isClientSide())setCracked(this.random.nextFloat()<.3f);
         this.setCanPickUpLoot(true);   // ✅ 开启捡东西
     }
 
@@ -130,18 +153,26 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         // 挂在身上的突变器官各用自己的渲染状态取 clip（本体管理器读不到 clip，CONTINUE 即什么都不播）
         controllers.add(new AnimationController<LowerLevelZbEntity>("custom_organs", 4, test -> {
             String clip = test.getData(xiaoshi2022.corpseorigin.entity.animation.ZbLayerAnimationCache.CLIP);
-            return clip == null ? PlayState.CONTINUE : test.setAndContinue(RawAnimation.begin().thenLoop(clip));
+            return clip == null ? PlayState.STOP : test.setAndContinue(RawAnimation.begin().thenLoop(clip));
         }));
     }
 
     private PlayState movementController(AnimationTest<LowerLevelZbEntity> test) {
-        if (test.isMoving()) {
+        // Accessory managers must not also animate the host's body clips.
+        if (test.getData(xiaoshi2022.corpseorigin.entity.animation.ZbLayerAnimationCache.CLIP) != null) return PlayState.STOP;
+        if (isDeadOrDying() && xiaoshi2022.corpseorigin.growth.CorpseHorror.applies(this)) return test.setAndContinue(DEATH_ANIM);
+        if (getGrappleTarget() >= 0) return test.setAndContinue(GNAW_ANIM);
+        // A short grace period avoids repeatedly restarting idle on tiny movement fluctuations.
+        if (test.isMoving()) lastMovingAnimationTick = tickCount;
+        if (lastMovingAnimationTick != Integer.MIN_VALUE && tickCount - lastMovingAnimationTick <= 3) {
             return test.setAndContinue(WALK_ANIM);
         }
         return test.setAndContinue(IDLE_ANIM);
     }
 
     private PlayState attackController(AnimationTest<LowerLevelZbEntity> test) {
+        if (test.getData(xiaoshi2022.corpseorigin.entity.animation.ZbLayerAnimationCache.CLIP) != null
+                || isDeadOrDying() || getGrappleTarget() >= 0) return PlayState.STOP;
         if (this.swinging) {
             return test.setAndContinue(ATTACK_ANIM);
         }
@@ -204,7 +235,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     // ==================== AI 目标 ====================
     @Override
     protected void registerGoals() {
-        this.goalSelector.addGoal(1, new FloatGoal(this));
+        this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(1, new xiaoshi2022.corpseorigin.entity.ai.CorpseGrappleGoal(this));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, true));
         this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 0.8D));
         this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 8.0F));
@@ -261,12 +293,16 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
+        builder.define(DATA_CORPSE_EYE, false);
+        builder.define(DATA_CRACKED, false);
         builder.define(DATA_PLAYER_NAME, "");
         builder.define(DATA_CUSTOM_ID, "");
         builder.define(DATA_SKIN_STATE, ZbSkinState.NOT_LOADED.getCode());
         builder.define(DATA_EVOLUTION_LEVEL, 1);
         builder.define(DATA_HUNGER, 100);  // ✅ 默认满饥饿
         builder.define(DATA_ORGAN_LOADOUT, "[]");
+        builder.define(DATA_GRAPPLE_TARGET, -1);
+        builder.define(DATA_HORROR_ACTIVE, false);
     }
 
     // ==================== 血肉能量 / 临界突破（仅服务端，走 NBT） ====================
@@ -449,6 +485,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         super.tick();
 
         if (!this.level().isClientSide()) {
+            entityData.set(DATA_HORROR_ACTIVE, xiaoshi2022.corpseorigin.growth.CorpseHorror.applies(this));
+            xiaoshi2022.corpseorigin.growth.CorpseHorror.tick(this);
             // ✅ 每 200 tick（10秒）降低 1 点饥饿值
             if (this.tickCount % 200 == 0) {
                 setHunger(getHunger() - 1);
@@ -519,6 +557,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     @Override
     protected void addAdditionalSaveData(ValueOutput output) {
         super.addAdditionalSaveData(output);
+        output.putBoolean("HasCorpseEye",hasCorpseEye());
+        output.putBoolean("CrackedAppearance",isCracked());
         output.putString("PlayerSkinName", this.entityData.get(DATA_PLAYER_NAME));
         output.putString("CustomId", this.getCustomId());
         output.putInt("SkinState", this.entityData.get(DATA_SKIN_STATE));
@@ -527,11 +567,15 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         output.putInt("FleshEnergy", this.fleshEnergy);
         output.putInt("BreakthroughFailures", this.breakthroughFailures);
         output.putString("OrganLoadout", this.getOrganLoadout());
+        output.putBoolean("HorrorWormsReleased", horrorWormsReleased);
     }
 
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
+        // Old saves get one stable UUID-based roll; new saves retain the explicit choice.
+        setCorpseEye(input.getBooleanOr("HasCorpseEye",Math.floorMod(getUUID().hashCode(),5)==0));
+        setCracked(input.getBooleanOr("CrackedAppearance",Math.floorMod(Long.hashCode(getUUID().getMostSignificantBits()),10)<3));
 
         Optional<String> skinNameOpt = input.getString("PlayerSkinName");
         skinNameOpt.ifPresent(name -> this.entityData.set(DATA_PLAYER_NAME, name));
@@ -548,5 +592,6 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         this.fleshEnergy = input.getIntOr("FleshEnergy", 0);
         this.breakthroughFailures = input.getIntOr("BreakthroughFailures", 0);
         this.setOrganLoadout(input.getStringOr("OrganLoadout", "[]"));
+        this.horrorWormsReleased = input.getBooleanOr("HorrorWormsReleased", false);
     }
 }

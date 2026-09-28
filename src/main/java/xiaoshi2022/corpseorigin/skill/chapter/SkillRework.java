@@ -39,10 +39,13 @@ public final class SkillRework {
         if(target!=null)SIPHONS.put(p.getUUID(),new Siphon(p,target));else ChapterCombat.emptyCast(p);
     }
     public static void area(ServerPlayer p, double radius, float damage, double push) {
+        area(p,radius,damage,push,false);
+    }
+    public static void area(ServerPlayer p, double radius, float damage, double push, boolean qiSkill) {
         var level=(ServerLevel)p.level();
         for(var t:level.getEntitiesOfClass(LivingEntity.class,p.getBoundingBox().inflate(radius))) {
             if(!ChapterCombat.canHit(p,t) || p.distanceToSqr(t)>radius*radius || !p.hasLineOfSight(t))continue;
-            if(t.hurtServer(level,p.damageSources().playerAttack(p),damage)) {
+            if(t.hurtServer(level,qiSkill ? xiaoshi2022.corpseorigin.skill.QiSkillDamageSource.wrap(p.damageSources().playerAttack(p)) : p.damageSources().playerAttack(p),damage)) {
                 Vec3 direction=t.position().subtract(p.position()).normalize().scale(push);
                 t.push(direction.x,.25,direction.z);t.hurtMarked=true;
             }

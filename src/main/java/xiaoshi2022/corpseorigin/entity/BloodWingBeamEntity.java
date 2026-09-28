@@ -42,6 +42,7 @@ public final class BloodWingBeamEntity extends JuQueBeamEntity {
                 && ChapterCombat.canHit(owner, target)) {
             float before = target.getHealth();
             if (target.hurtServer(level, damageSources().mobProjectile(this, owner), damageFor(owner,target))) {
+                xiaoshi2022.corpseorigin.skill.chapter.SwordImpact.send(level,target.getBoundingBox().getCenter(),getDeltaMovement(),getRealmTier(),0,target.getId(),owner.getId());
                 // 命中吸血对分身同样生效（生物 heal 是通用能力）
                 owner.heal(Math.min(4, Math.max(0, before - target.getHealth()) * .4f));
             }

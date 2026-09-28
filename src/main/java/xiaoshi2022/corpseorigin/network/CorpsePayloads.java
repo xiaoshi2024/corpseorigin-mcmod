@@ -310,7 +310,7 @@ public final class CorpsePayloads {
 
     // ==================== ✅ 进化/技能同步（S2C） ====================
 
-    public record EvolutionSyncS2C(int earnedPoints, int availablePoints, int kills, byte[] learnedSkills) implements CustomPacketPayload {
+    public record EvolutionSyncS2C(int earnedPoints, int availablePoints, int kills, byte[] learnedSkills, int level, int pointsToNext) implements CustomPacketPayload {
         public static final Type<EvolutionSyncS2C> TYPE = new Type<>(id("evolution_sync"));
 
         public static final StreamCodec<ByteBuf, EvolutionSyncS2C> CODEC = StreamCodec.composite(
@@ -322,6 +322,10 @@ public final class CorpsePayloads {
                 EvolutionSyncS2C::kills,
                 ByteBufCodecs.BYTE_ARRAY,
                 EvolutionSyncS2C::learnedSkills,
+                ByteBufCodecs.INT,
+                EvolutionSyncS2C::level,
+                ByteBufCodecs.INT,
+                EvolutionSyncS2C::pointsToNext,
                 EvolutionSyncS2C::new
         );
 

@@ -32,8 +32,10 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
         final Identifier skinTexture;      // ✅ 原始皮肤路径（用于变化检测）
         final Identifier combinedTexture;  // ✅ 组合纹理（用于渲染复用）
         final int variant;                 // ✅ 色调变体（由玩家 ID 派生）
+        final boolean cracked;
 
-        EntitySkinBinding(Identifier skinTexture, Identifier combinedTexture, int variant) {
+        EntitySkinBinding(Identifier skinTexture, Identifier combinedTexture, int variant, boolean cracked) {
+            this.cracked=cracked;
             this.skinTexture = skinTexture;
             this.combinedTexture = combinedTexture;
             this.variant = variant;
@@ -67,6 +69,9 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
     @Override
     public void extractRenderState(LowerLevelZbEntity entity, LivingEntityRenderState renderState, float partialTick) {
         super.extractRenderState(entity, renderState, partialTick);
+        renderState.addGeckolibData(RenderStateData.CORPSE_EYE,entity.hasCorpseEye());
+        renderState.addGeckolibData(RenderStateData.CRACKED,entity.isCracked());
+        if (xiaoshi2022.corpseorigin.growth.CorpseHorror.applies(entity)) renderState.deathTime = 0;
 
         int entityId = entity.getId();
         String playerName = entity.getPlayerSkinName();
@@ -90,7 +95,7 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
         // 2. 检查绑定
         EntitySkinBinding binding = ENTITY_BINDING.get(entityId);
 
-        if (binding != null && binding.skinTexture.equals(skinTexture) && binding.variant == variant) {
+        if (binding != null && binding.skinTexture.equals(skinTexture) && binding.variant == variant && binding.cracked==entity.isCracked()) {
             // ✅ 皮肤/色调都没变，直接复用组合纹理（绝不 acquire！）
             renderState.addGeckolibData(RenderStateData.CUSTOM_SKIN_TEXTURE, binding.combinedTexture);
             renderState.addGeckolibData(RenderStateData.SKIN_STATE, currentState);
@@ -99,13 +104,13 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
 
         // 3. 皮肤或色调变了（首次/切换），释放旧的
         if (binding != null) {
-            CombinedSkinBuilder.release(binding.skinTexture, binding.variant);
+            CombinedSkinBuilder.release(binding.skinTexture, binding.variant,binding.cracked);
             LOGGER.debug("🔄 实体 {} 皮肤变化: {} -> {}", entityId, binding.skinTexture, skinTexture);
         }
 
         // 4. 获取新组合纹理
-        Identifier combinedTexture = CombinedSkinBuilder.acquire(skinTexture, variant);
-        ENTITY_BINDING.put(entityId, new EntitySkinBinding(skinTexture, combinedTexture, variant));
+        Identifier combinedTexture = CombinedSkinBuilder.acquire(skinTexture, variant,entity.isCracked());
+        ENTITY_BINDING.put(entityId, new EntitySkinBinding(skinTexture, combinedTexture, variant,entity.isCracked()));
 
         // 5. 写入
         renderState.addGeckolibData(RenderStateData.CUSTOM_SKIN_TEXTURE, combinedTexture);
@@ -118,6 +123,15 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
      * 判据就是拿它的离线 UUID 算出应有的默认皮肤路径比一比 —— {@code ZbSkinLoader} 查不到时
      * 走的就是 {@code DefaultPlayerSkin.get(离线UUID)}，所以路径一致即为"没查到"。
      */
+    @Override
+    public void adjustModelBonesForRender(com.geckolib.renderer.base.RenderPassInfo<LivingEntityRenderState> info,
+                                         com.geckolib.renderer.base.BoneSnapshots snapshots) {
+        super.adjustModelBonesForRender(info,snapshots);
+        boolean hide=!Boolean.TRUE.equals(info.renderState().getGeckolibData(RenderStateData.CORPSE_EYE));
+        for(String name:new String[]{"shieye","group2","group7","group3","group4","group5","group6"})
+            snapshots.ifPresent(name,bone->bone.skipRender(hide));
+    }
+
     private static boolean corpseorigin$isResolvedSkin(String playerName, Identifier skinTexture) {
         if (playerName == null || playerName.isEmpty() || skinTexture == null) {
             return false;
@@ -149,14 +163,14 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
     public static void onEntityRemoved(int entityId) {
         EntitySkinBinding binding = ENTITY_BINDING.remove(entityId);
         if (binding != null) {
-            CombinedSkinBuilder.release(binding.skinTexture, binding.variant);
+            CombinedSkinBuilder.release(binding.skinTexture, binding.variant,binding.cracked);
             LOGGER.debug("🗑️ 实体 {} 已移除，释放皮肤纹理引用: {}", entityId, binding.skinTexture);
         }
     }
 
     public static void clearCache() {
         for (EntitySkinBinding binding : ENTITY_BINDING.values()) {
-            CombinedSkinBuilder.release(binding.skinTexture, binding.variant);
+            CombinedSkinBuilder.release(binding.skinTexture, binding.variant,binding.cracked);
         }
         ENTITY_BINDING.clear();
         CombinedSkinBuilder.clearCache();
@@ -168,7 +182,7 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
         Identifier customSkin = renderState.getGeckolibData(RenderStateData.CUSTOM_SKIN_TEXTURE);
         ZbSkinState skinState = renderState.getGeckolibData(RenderStateData.SKIN_STATE);
 
-        if (skinState == ZbSkinState.LOADED && customSkin != null) {
+        if (customSkin != null) {
             return customSkin;
         }
         return DefaultPlayerSkin.getDefaultTexture();

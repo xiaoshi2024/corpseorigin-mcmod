@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "ISI",
+    "CRC",
+    "ILI"
+  ],
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "S": "corpseorigin:zishu_thermal_scanner",
+    "C": "minecraft:copper_ingot",
+    "R": "minecraft:redstone_block",
+    "L": "minecraft:lightning_rod"
+  },
+  "result": {
+    "id": "corpseorigin:zishu_robot",
+    "count": 1
+  }
+}

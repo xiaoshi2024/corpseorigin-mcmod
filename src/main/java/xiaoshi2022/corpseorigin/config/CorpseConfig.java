@@ -45,7 +45,15 @@ public final class CorpseConfig {
     public Hud hud = new Hud();
     /** 技能热键栏自定义（位置/间距/缩放） */
     public SkillHud skillHud = new SkillHud();
+    public SwordVisuals swordVisuals = new SwordVisuals();
+    public static final class SwordVisuals {
+        public boolean hitStop = true, screenEffects = true;
+        public float cameraShake = 1, flashIntensity = .65f;
+        public int maxImpactEffects = 32;
+    }
     public xiaoshi2022.corpseorigin.growth.GrowthConfig growth = new xiaoshi2022.corpseorigin.growth.GrowthConfig();
+    public xiaoshi2022.corpseorigin.growth.RealmConfig realm = new xiaoshi2022.corpseorigin.growth.RealmConfig();
+    public xiaoshi2022.corpseorigin.growth.CorpseHorrorConfig corpseHorror = new xiaoshi2022.corpseorigin.growth.CorpseHorrorConfig();
     /** Server-side restrictions on both bound and universal character books. Restart to apply. */
     public CharacterBooks characterBooks = new CharacterBooks();
     public GourdInheritance gourdInheritance = new GourdInheritance();
@@ -369,6 +377,14 @@ public final class CorpseConfig {
      * Gson 反序列化时不一定走构造器，所以不能只靠字段初始值。
      */
     private void sanitize() {
+        if(swordVisuals==null)swordVisuals=new SwordVisuals();
+        swordVisuals.cameraShake=Float.isFinite(swordVisuals.cameraShake)?Math.clamp(swordVisuals.cameraShake,0,2):1;
+        swordVisuals.flashIntensity=Float.isFinite(swordVisuals.flashIntensity)?Math.clamp(swordVisuals.flashIntensity,0,1):.65f;
+        swordVisuals.maxImpactEffects=Math.clamp(swordVisuals.maxImpactEffects,4,64);
+        if (realm == null) realm = new xiaoshi2022.corpseorigin.growth.RealmConfig();
+        realm.sanitize();
+        if (corpseHorror == null) corpseHorror = new xiaoshi2022.corpseorigin.growth.CorpseHorrorConfig();
+        corpseHorror.sanitize();
         if (gourdInheritance == null) gourdInheritance = new GourdInheritance();
         if (characterBooks == null) characterBooks = new CharacterBooks();
         if (characterBooks.disabledCharacters == null) characterBooks.disabledCharacters = new ArrayList<>();

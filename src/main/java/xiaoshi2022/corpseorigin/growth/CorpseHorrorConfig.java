@@ -1,0 +1,17 @@
+package xiaoshi2022.corpseorigin.growth;
+public final class CorpseHorrorConfig {
+    public boolean enabled=true, exposedRibs=true, maggotsOnDeath=true, bloodEffects=true;
+    public int packRadius=20,packAllies=8,maxGrapplers=3,grappleTicks=60,grappleCooldownTicks=60;
+    public int maggotsPerCorpse=3,localMaggotCap=24,worldMaggotCap=128,maggotLifetimeTicks=1200;
+    public boolean maggotParasitism=true;
+    public int maggotsPerHost=2,maggotBurrowTicks=30,maggotInfectionTicks=200;
+    public void sanitize(){
+        packRadius=Math.clamp(packRadius,4,40);packAllies=Math.clamp(packAllies,1,16);
+        maxGrapplers=Math.clamp(maxGrapplers,1,4);grappleTicks=Math.clamp(grappleTicks,20,100);grappleCooldownTicks=Math.clamp(grappleCooldownTicks,20,400);
+        maggotsPerCorpse=Math.clamp(maggotsPerCorpse,0,6);localMaggotCap=Math.clamp(localMaggotCap,1,48);worldMaggotCap=Math.clamp(worldMaggotCap,8,256);
+        maggotLifetimeTicks=Math.clamp(maggotLifetimeTicks,200,6000);
+        maggotsPerHost=Math.clamp(maggotsPerHost,1,4);
+        maggotBurrowTicks=Math.clamp(maggotBurrowTicks,10,100);
+        maggotInfectionTicks=Math.clamp(maggotInfectionTicks,100,1200);
+    }
+}

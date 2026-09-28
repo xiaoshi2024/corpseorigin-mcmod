@@ -31,6 +31,11 @@ public class JuQueBeamEntity extends Projectile {
     private static final EntityDataAccessor<Float> SLASH_ROLL =
             SynchedEntityData.defineId(JuQueBeamEntity.class, EntityDataSerializers.FLOAT);
 
+    private static final EntityDataAccessor<Integer> REALM_TIER = SynchedEntityData.defineId(JuQueBeamEntity.class, EntityDataSerializers.INT);
+    private final java.util.Set<java.util.UUID> hitTargets=new java.util.HashSet<>();
+    public int getRealmTier(){return entityData.get(REALM_TIER);}
+    public float getBladeHeight(){return xiaoshi2022.corpseorigin.skill.chapter.SwordQiRules.height(getRealmTier());}
+    public float getBladeDepth(){return xiaoshi2022.corpseorigin.skill.chapter.SwordQiRules.depth(getRealmTier());}
     private double travelled;
     private int knockbackStrength = 1;
     private int ticksExisted = 0;
@@ -48,6 +53,7 @@ public class JuQueBeamEntity extends Projectile {
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(REALM_TIER,1);
         builder.define(DAMAGE, 4.0F);
         builder.define(LEVEL, 1);
         builder.define(POWER, 0F);
@@ -62,6 +68,7 @@ public class JuQueBeamEntity extends Projectile {
     @Override public void setOwner(Entity owner) {
         super.setOwner(owner);
         if (!level().isClientSide() && owner instanceof LivingEntity living) {
+            entityData.set(REALM_TIER,Math.clamp(combatLevel(living),1,20));
             entityData.set(POWER, powerFor(living));
             entityData.set(SLASH_ROLL,(random.nextBoolean()?1:-1)*(12+random.nextFloat()*33));
         }
@@ -127,20 +134,25 @@ public class JuQueBeamEntity extends Projectile {
         var rotation=new org.joml.Quaternionf().rotationY((float)Math.atan2(direction.x,direction.z))
                 .rotateX((float)-Math.asin(Math.clamp(direction.y,-1,1)))
                 .rotateZ((float)Math.toRadians(getSlashRoll())).rotateY((float)Math.PI/2);
-        float power=getPower(),width=bladeScale(power),height=openingScale(power);
-        var candidates=level().getEntities(this,getBoundingBox().expandTowards(motion).inflate(1.4*height),
+        float width=getBladeDepth(),height=getBladeHeight()/2.5f;
+        var tip=rotation.transform(new org.joml.Vector3f(0,1.25f*height,0));
+        var extent=new Vec3(Math.abs(tip.x)+width,Math.abs(tip.y)+width,Math.abs(tip.z)+width);
+        var candidates=level().getEntities(this,new net.minecraft.world.phys.AABB(start.subtract(extent),start.add(extent)).expandTowards(motion),
                 e->e instanceof LivingEntity&&canHitEntity(e));
+        int candidateBudget=128;
         // Sweep overlapping sections of the actual crescent, rather than a huge enclosing cube.
         // Motion sweeps prevent fast beams from jumping over targets between ticks.
         for(var target:candidates){
+            if(candidateBudget--<=0)break;
             var visible=level().clip(new net.minecraft.world.level.ClipContext(start,target.getBoundingBox().getCenter(),
                     net.minecraft.world.level.ClipContext.Block.COLLIDER,net.minecraft.world.level.ClipContext.Fluid.NONE,this));
             if(visible.getType()!=HitResult.Type.MISS)continue;
-            for(int section=0;section<=32;section++){
-                float h=-1+section/16F;
+            int sections=Math.clamp((int)getBladeHeight(),32,320);
+            for(int section=0;section<=sections;section++){
+                float h=-1+2f*section/sections;
                 var local=rotation.transform(new org.joml.Vector3f(crescentX(h,.5F)*width,h*1.25F*height,0));
                 var offset=new Vec3(local.x,local.y,local.z);
-                double radius=.55+(crescentX(h,1)-crescentX(h,0))*width*.5;
+                double radius=Math.max(.55,getBladeHeight()/sections*.55)+(crescentX(h,1)-crescentX(h,0))*width*.5;
                 var bounds=target.getBoundingBox().inflate(radius);
                 Vec3 from=start.add(offset),to=end.add(offset);
                 var hit=bounds.contains(from)?java.util.Optional.of(from):bounds.clip(from,to);
@@ -157,7 +169,7 @@ public class JuQueBeamEntity extends Projectile {
         return distance<visibleRange*visibleRange;
     }
 
-    public double getMaxRange() { return rangeFor(entityData.get(LEVEL),getPower()); }
+    public double getMaxRange() { return Math.max(rangeFor(entityData.get(LEVEL),getPower()),xiaoshi2022.corpseorigin.skill.chapter.SwordQiRules.range(getRealmTier())); }
 
     public JuQueBeamEntity setDamage(float amount) {
         this.getEntityData().set(DAMAGE, amount);
@@ -165,7 +177,7 @@ public class JuQueBeamEntity extends Projectile {
     }
 
     public float getVelocity() {
-        return 1.5F;
+        return 1.5F + Math.max(0,getRealmTier()-9)*.45f;
     }
 
     @Override
@@ -199,8 +211,9 @@ public class JuQueBeamEntity extends Projectile {
             HitResult hitResult = findQiHit(pos,motion);
             if (hitResult.getType() != HitResult.Type.MISS) {
                 this.onHit(hitResult);
-                this.discard();
-                return;
+                if(isRemoved())return;
+                if(hitResult.getType()==HitResult.Type.BLOCK || getRealmTier()<10){this.discard();return;}
+                if(hitTargets.size()>=64){this.discard();return;}
             }
         }
 
@@ -214,6 +227,7 @@ public class JuQueBeamEntity extends Projectile {
 
     @Override
     protected boolean canHitEntity(Entity entity) {
+        if(hitTargets.contains(entity.getUUID()))return false;
         Entity owner=getOwner();
         // Vanilla's leftOwner guard expires once the tiny projectile center leaves the caster.
         // The growing crescent can still overlap them, so exclude the caster for the entire flight.
@@ -236,7 +250,10 @@ public class JuQueBeamEntity extends Projectile {
                 float damage = damageFor(livingOwner,livingTarget);
                 DamageSource damageSource = this.damageSources().mobProjectile(this, livingOwner);
 
-                livingTarget.hurt(damageSource, damage);
+                boolean hit=livingTarget.hurtServer((net.minecraft.server.level.ServerLevel)level(),damageSource,damage);
+                hitTargets.add(livingTarget.getUUID());
+                if(hit)xiaoshi2022.corpseorigin.skill.chapter.SwordImpact.send((net.minecraft.server.level.ServerLevel)level(),
+                        livingTarget.getBoundingBox().getCenter(),getDeltaMovement(),getRealmTier(),0,livingTarget.getId(),owner.getId());
                 if (this.knockbackStrength > 0) {
                         Vec3 knockbackVec = this.getDeltaMovement().normalize()
                                 .scale(this.knockbackStrength * 0.6);
@@ -247,7 +264,7 @@ public class JuQueBeamEntity extends Projectile {
                             SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.4F, 0.5F);
 
             }
-            this.discard();
+            if(getRealmTier()<10)this.discard();
         }
     }
 
@@ -256,6 +273,10 @@ public class JuQueBeamEntity extends Projectile {
         super.onHitBlock(result);
 
         if (!this.level().isClientSide()) {
+            var server=(net.minecraft.server.level.ServerLevel)level();
+            boolean rift=getOwner() instanceof net.minecraft.server.level.ServerPlayer p
+                    && xiaoshi2022.corpseorigin.skill.chapter.SwordRift.start(p,result.getLocation(),getDeltaMovement(),getRealmTier());
+            if(!rift)xiaoshi2022.corpseorigin.skill.chapter.SwordImpact.send(server,result.getLocation(),getDeltaMovement(),getRealmTier(),0,-1,getOwner()==null?-1:getOwner().getId());
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
                     SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 0.3F, 1.0F);
             this.discard();
@@ -265,6 +286,7 @@ public class JuQueBeamEntity extends Projectile {
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
+        entityData.set(REALM_TIER,Math.clamp(input.getIntOr("RealmTier",1),1,20));
         this.setDamage(input.getFloatOr("Damage", 4.0F));
         this.setLevel(input.getIntOr("Level", 1));
         this.ticksExisted = input.getIntOr("TicksExisted", 0);
@@ -279,6 +301,7 @@ public class JuQueBeamEntity extends Projectile {
     @Override
     protected void addAdditionalSaveData(ValueOutput output) {
         super.addAdditionalSaveData(output);
+        output.putInt("RealmTier",getRealmTier());
         output.putFloat("Damage", this.getEntityData().get(DAMAGE));
         output.putInt("Level", this.getEntityData().get(LEVEL));
         output.putInt("TicksExisted", this.ticksExisted);

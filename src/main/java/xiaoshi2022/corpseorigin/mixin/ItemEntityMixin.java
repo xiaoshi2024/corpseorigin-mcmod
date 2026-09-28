@@ -27,6 +27,11 @@ public abstract class ItemEntityMixin {
     @Unique
     private boolean corpseorigin$wormChecked;
 
+    @Inject(method = "tick", at = @At("TAIL"))
+    private void corpseorigin$dryerWater(CallbackInfo ci) {
+        xiaoshi2022.corpseorigin.item.HairDryerItem.tickDropped((ItemEntity)(Object)this);
+    }
+
     @Inject(method = "tick", at = @At("HEAD"))
     private void corpseorigin$releaseWorm(CallbackInfo ci) {
         if (this.corpseorigin$wormChecked) {
