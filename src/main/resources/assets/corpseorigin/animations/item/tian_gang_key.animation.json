@@ -1,0 +1,75 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"idle": {
+			"animation_length": 0.1667,
+			"bones": {
+				"key": {
+					"scale": {
+						"vector": [1, 1, 1]
+					}
+				}
+			}
+		},
+		"fire": {
+			"animation_length": 2.2,
+			"bones": {
+				"key": {
+					"position": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"fire": {
+					"position": {
+						"0.0": {
+							"vector": [0, 0.3, 0]
+						},
+						"2.2": {
+							"vector": [0, 17.5, 0]
+						}
+					},
+					"scale": {
+						"0.0": {
+							"vector": [1, 1, 1]
+						},
+						"2.2": {
+							"vector": [1, 40, 1]
+						}
+					}
+				}
+			}
+		},
+		"charge": {
+			"animation_length": 1.2,
+			"bones": {
+				"fire": {
+					"position": {
+						"vector": [0, 17.5, 0]
+					},
+					"scale": {
+						"vector": [1, 40, 1]
+					}
+				}
+			}
+		},
+		"sustain": {
+			"loop": true,
+			"animation_length": 1,
+			"bones": {
+				"key": {
+					"position": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"fire": {
+					"position": {
+						"vector": [0, 17.5, 0]
+					},
+					"scale": {
+						"vector": [1, 40, 1]
+					}
+				}
+			}
+		}
+	}
+}

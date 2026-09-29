@@ -1,6 +1,5 @@
 {
   "credit": "Made with Blockbench",
-  "parent": "builtin/entity",
   "texture_size": [
     32,
     32
@@ -80,5 +79,8 @@
         0
       ]
     }
+  },
+  "textures": {
+    "particle": "corpseorigin:item/hair_dryer"
   }
 }

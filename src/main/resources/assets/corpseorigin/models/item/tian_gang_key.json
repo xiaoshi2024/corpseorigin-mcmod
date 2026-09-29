@@ -1,0 +1,133 @@
+{
+  "credit": "Made with Blockbench",
+  "parent": "builtin/entity",
+  "texture_size": [
+    64,
+    64
+  ],
+  "display": {
+    "thirdperson_righthand": {
+      "translation": [
+        0,
+        -8,
+        1.25
+      ],
+      "scale": [
+        0.76953125,
+        0.76953125,
+        0.76953125
+      ]
+    },
+    "thirdperson_lefthand": {
+      "translation": [
+        0,
+        -9.5,
+        1.5
+      ],
+      "scale": [
+        0.767578125,
+        0.767578125,
+        0.767578125
+      ]
+    },
+    "firstperson_righthand": {
+      "translation": [
+        0,
+        -2,
+        1.75
+      ],
+      "scale": [
+        0.34375,
+        0.34375,
+        0.34375
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        3.89,
+        -31.78,
+        7.38
+      ],
+      "translation": [
+        0,
+        -5,
+        0
+      ],
+      "scale": [
+        0.421875,
+        0.421875,
+        0.421875
+      ]
+    },
+    "ground": {
+      "rotation": [
+        6.68,
+        -2.04,
+        -33.66
+      ],
+      "scale": [
+        0.337890625,
+        0.337890625,
+        0.337890625
+      ]
+    },
+    "gui": {
+      "rotation": [
+        0,
+        0,
+        -40.5
+      ],
+      "translation": [
+        -4.75,
+        -4.25,
+        0
+      ],
+      "scale": [
+        0.294921875,
+        0.294921875,
+        0.294921875
+      ]
+    },
+    "head": {
+      "rotation": [
+        0,
+        0,
+        27
+      ],
+      "translation": [
+        4,
+        -9,
+        0
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        46.5
+      ],
+      "translation": [
+        6.25,
+        -5,
+        0
+      ],
+      "scale": [
+        0.37109375,
+        0.37109375,
+        0.37109375
+      ]
+    },
+    "on_shelf": {
+      "rotation": [
+        0,
+        0,
+        -2.5
+      ],
+      "scale": [
+        0.43359375,
+        0.43359375,
+        0.43359375
+      ]
+    }
+  }
+}

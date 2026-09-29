@@ -1,0 +1,80 @@
+{
+	"format_version": "1.21.11",
+	"credit": "Made with Blockbench",
+	"texture_size": [128, 128],
+	"textures": {
+		"1": "corpseorigin:block/clone_chamber",
+		"particle": "corpseorigin:block/clone_chamber"
+	},
+	"elements": [
+		{
+			"from": [8, 0.2, 0],
+			"to": [15, 15.2, 2],
+			"rotation": {"angle": 0, "axis": "y", "origin": [14, -15, 1]},
+			"faces": {
+				"north": {"uv": [4.25, 6.5, 5.125, 10.25], "texture": "#1"},
+				"east": {"uv": [4, 6.5, 4.25, 10.25], "texture": "#1"},
+				"south": {"uv": [5.375, 6.5, 6.25, 10.25], "texture": "#1"},
+				"west": {"uv": [5.125, 6.5, 5.375, 10.25], "texture": "#1"},
+				"up": {"uv": [5.125, 6.5, 4.25, 6.25], "texture": "#1"},
+				"down": {"uv": [6, 6.25, 5.125, 6.5], "texture": "#1"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"scale": [0.43164, 0.43164, 0.43164]
+		},
+		"thirdperson_lefthand": {
+			"scale": [0.42773, 0.42773, 0.42773]
+		},
+		"firstperson_righthand": {
+			"scale": [0.51758, 0.51758, 0.51758]
+		},
+		"firstperson_lefthand": {
+			"scale": [0.39453, 0.39453, 0.39453]
+		},
+		"ground": {
+			"translation": [0, 6.25, 0],
+			"scale": [0.52734, 0.52734, 0.52734]
+		},
+		"gui": {
+			"rotation": [-180, 48.75, -180],
+			"translation": [0, -1.75, 0],
+			"scale": [0.29297, 0.29297, 0.29297]
+		},
+		"fixed": {
+			"translation": [0, -3.75, 0],
+			"scale": [0.55078, 0.55078, 0.55078]
+		},
+		"on_shelf": {
+			"rotation": [-180, -6, -180],
+			"scale": [0.53516, 0.53516, 0.53516]
+		}
+	},
+	"groups": [
+		{
+			"name": "CloneChamber",
+			"origin": [8, 0, 8],
+			"scope": 0,
+			"color": 0,
+			"children": [
+				{
+					"name": "door",
+					"origin": [8, 0, 8],
+					"scope": 0,
+					"color": 0,
+					"children": [
+						{
+							"name": "r",
+							"origin": [15.5, 16, 1],
+							"scope": 0,
+							"color": 0,
+							"children": [0]
+						}
+					]
+				}
+			]
+		}
+	]
+}

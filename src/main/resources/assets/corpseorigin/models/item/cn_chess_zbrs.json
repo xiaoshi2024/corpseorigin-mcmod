@@ -1,0 +1,89 @@
+{
+	"format_version": "1.21.11",
+	"credit": "Made with Blockbench",
+	"texture_size": [128, 128],
+	"textures": {
+		"1": "corpseorigin:item/cn_chess_zbrs"
+	},
+	"elements": [
+		{
+			"name": "Head",
+			"from": [3, 4.5, 3.5],
+			"to": [11, 12.5, 11.5],
+			"rotation": {"angle": 0, "axis": "y", "origin": [0, -9.75, 9.5]},
+			"faces": {
+				"north": {"uv": [3, 3.75, 4, 4.75], "texture": "#1"},
+				"east": {"uv": [1, 3.875, 2, 4.875], "texture": "#1"},
+				"south": {"uv": [2, 3.875, 3, 4.875], "texture": "#1"},
+				"west": {"uv": [0, 4, 1, 5], "texture": "#1"},
+				"up": {"uv": [4, 0, 5, 1], "texture": "#1"},
+				"down": {"uv": [4, 1, 5, 2], "texture": "#1"}
+			}
+		},
+		{
+			"name": "Hat Layer",
+			"from": [2.5, -3.8, 3],
+			"to": [11.5, 13, 12],
+			"rotation": {"angle": 0, "axis": "y", "origin": [0, 18.25, 9.5]},
+			"faces": {
+				"north": {"uv": [0, 0, 1, 2], "texture": "#1"},
+				"east": {"uv": [1, 0, 2, 2], "texture": "#1"},
+				"south": {"uv": [0, 2, 1, 4], "texture": "#1"},
+				"west": {"uv": [2, 0, 3, 2], "texture": "#1"},
+				"up": {"uv": [4, 2, 5, 3], "texture": "#1"},
+				"down": {"uv": [4, 3, 5, 4], "texture": "#1"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"scale": [0.6543, 0.6543, 0.6543]
+		},
+		"thirdperson_lefthand": {
+			"scale": [0.61914, 0.61914, 0.61914]
+		},
+		"firstperson_righthand": {
+			"translation": [0, 3.75, 2.5],
+			"scale": [0.45898, 0.45898, 0.45898]
+		},
+		"firstperson_lefthand": {
+			"rotation": [-180, 66, 180],
+			"translation": [0, 3.75, 0],
+			"scale": [0.87305, 0.87305, 0.87305]
+		},
+		"ground": {
+			"translation": [0, 4.25, 0],
+			"scale": [0.67188, 0.67188, 0.67188]
+		},
+		"gui": {
+			"rotation": [180, -40, 180],
+			"translation": [0, 1, 0],
+			"scale": [0.72461, 0.72461, 0.72461]
+		},
+		"head": {
+			"translation": [-0.75, 0, 0],
+			"scale": [1.30859, 1.56836, 1.56836]
+		},
+		"on_shelf": {
+			"rotation": [-180, 12.75, -180]
+		}
+	},
+	"groups": [
+		{
+			"name": "zbr",
+			"origin": [8, 2.25, 14],
+			"scope": 0,
+			"color": 0,
+			"children": [
+				{
+					"name": "Head",
+					"origin": [0, 14.25, 9.5],
+					"rotation": [92.5, 0, 0],
+					"scope": 0,
+					"color": 0,
+					"children": [0, 1]
+				}
+			]
+		}
+	]
+}

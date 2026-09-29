@@ -1,12 +1,15 @@
 {
   "required": true,
-  "package": "com.phagens.corpseorigin.mixin",
-  "compatibilityLevel": "JAVA_21",
-  "mixins": [],
+  "package": "com.xiaoshi2022.corpseorigin.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "minVersion": "0.8",
+  "refmap": "corpseorigin.refmap.json",
+  "mixins": [
+  ],
+  "client": [
+
+  ],
   "injectors": {
     "defaultRequire": 1
-  },
-  "overwrites": {
-    "requireAnnotations": true
   }
 }

@@ -1,0 +1,121 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.vine_bind",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 3,
+				"visible_bounds_height": 2.5,
+				"visible_bounds_offset": [0, 0.75, 0]
+			},
+			"bones": [
+				{
+					"name": "root",
+					"pivot": [0, 0, 0]
+				},
+				{
+					"name": "vine_main",
+					"parent": "root",
+					"pivot": [0, 8, 0],
+					"cubes": [
+						{
+							"origin": [-2, 0, -1],
+							"size": [4, 16, 2],
+							"uv": {
+								"north": {"uv": [0, 0], "uv_size": [4, 16]},
+								"east": {"uv": [16, 0], "uv_size": [2, 16]},
+								"south": {"uv": [4, 0], "uv_size": [4, 16]},
+								"west": {"uv": [2, 16], "uv_size": [2, 16]},
+								"up": {"uv": [8, 18], "uv_size": [-4, -2]},
+								"down": {"uv": [27, 10], "uv_size": [-4, -2]}
+							}
+						}
+					]
+				},
+				{
+					"name": "vine_main2",
+					"parent": "vine_main",
+					"pivot": [2.45, 7.7, -0.225],
+					"cubes": [
+						{
+							"origin": [2, 7, -1],
+							"size": [6, 2, 2],
+							"uv": {
+								"north": {"uv": [21, 17], "uv_size": [6, 2]},
+								"east": {"uv": [12, 23], "uv_size": [2, 2]},
+								"south": {"uv": [18, 21], "uv_size": [6, 2]},
+								"west": {"uv": [23, 13], "uv_size": [2, 2]},
+								"up": {"uv": [27, 21], "uv_size": [-6, -2]},
+								"down": {"uv": [29, 2], "uv_size": [-6, -2]}
+							}
+						},
+						{
+							"origin": [5, 8.1, -1.7],
+							"size": [5, 3, 2.5],
+							"uv": {
+								"north": {"uv": [16, 16], "uv_size": [5, 3]},
+								"east": {"uv": [23, 2], "uv_size": [3, 3]},
+								"south": {"uv": [18, 0], "uv_size": [5, 3]},
+								"west": {"uv": [4, 23], "uv_size": [3, 3]},
+								"up": {"uv": [23, 6], "uv_size": [-5, -3]},
+								"down": {"uv": [9, 21], "uv_size": [-5, -3]}
+							}
+						}
+					]
+				},
+				{
+					"name": "vine_main3",
+					"parent": "vine_main",
+					"pivot": [-2.3, 10.65, 0.175],
+					"cubes": [
+						{
+							"origin": [-9, 10, -1],
+							"size": [7, 2, 2],
+							"uv": {
+								"north": {"uv": [14, 19], "uv_size": [7, 2]},
+								"east": {"uv": [14, 23], "uv_size": [2, 2]},
+								"south": {"uv": [4, 21], "uv_size": [7, 2]},
+								"west": {"uv": [16, 23], "uv_size": [2, 2]},
+								"up": {"uv": [18, 23], "uv_size": [-7, -2]},
+								"down": {"uv": [28, 17], "uv_size": [-7, -2]}
+							}
+						},
+						{
+							"origin": [-11, 8, -0.9],
+							"size": [5, 3, 2.5],
+							"uv": {
+								"north": {"uv": [18, 6], "uv_size": [5, 3]},
+								"east": {"uv": [23, 5], "uv_size": [3, 3]},
+								"south": {"uv": [9, 18], "uv_size": [5, 3]},
+								"west": {"uv": [7, 23], "uv_size": [3, 3]},
+								"up": {"uv": [23, 12], "uv_size": [-5, -3]},
+								"down": {"uv": [23, 15], "uv_size": [-5, -3]}
+							}
+						}
+					]
+				},
+				{
+					"name": "vine_tip",
+					"parent": "root",
+					"pivot": [0, 8, 0],
+					"cubes": [
+						{
+							"origin": [-1, 5.2, -1.4],
+							"size": [2, 17.8, 2.6],
+							"uv": {
+								"north": {"uv": [14, 0], "uv_size": [2, 18]},
+								"east": {"uv": [8, 0], "uv_size": [2.5, 18]},
+								"south": {"uv": [0, 16], "uv_size": [2, 18]},
+								"west": {"uv": [11, 0], "uv_size": [2.5, 18]},
+								"up": {"uv": [12, 25.5], "uv_size": [-2, -2.5]},
+								"down": {"uv": [25, 12.5], "uv_size": [-2, -2.5]}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

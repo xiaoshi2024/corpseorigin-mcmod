@@ -178,7 +178,7 @@
 					]
 				},
 				{
-					"name": "rightItem",
+					"name": "RightHandItem",
 					"parent": "shieye",
 					"pivot": [10.2, 29.4, 0.6]
 				},
@@ -196,8 +196,8 @@
 					"parent": "Waist",
 					"pivot": [-5, 22, 0],
 					"cubes": [
-						{"origin": [-8, 12, -2], "size": [4, 12, 4], "uv": [40, 16]},
-						{"origin": [-8, 12, -2], "size": [4, 12, 4], "inflate": 0.25, "uv": [40, 32]}
+						{"origin": [-7, 12, -2], "size": [3, 12, 4], "uv": [41, 16]},
+						{"origin": [-7, 12, -2], "size": [3, 12, 4], "inflate": 0.25, "uv": [41, 32]}
 					]
 				},
 				{
@@ -205,9 +205,14 @@
 					"parent": "Waist",
 					"pivot": [5, 22, 0],
 					"cubes": [
-						{"origin": [4, 12, -2], "size": [4, 12, 4], "uv": [32, 48]},
-						{"origin": [4, 12, -2], "size": [4, 12, 4], "inflate": 0.25, "uv": [48, 48]}
+						{"origin": [4, 12, -2], "size": [3, 12, 4], "uv": [32, 48]},
+						{"origin": [4, 12, -2], "size": [3, 12, 4], "inflate": 0.25, "uv": [48, 48]}
 					]
+				},
+				{
+					"name": "LeftHandItem",
+					"parent": "Left Arm",
+					"pivot": [5, 11, 0]
 				},
 				{
 					"name": "Right Leg",
