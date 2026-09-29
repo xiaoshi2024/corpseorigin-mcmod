@@ -20,6 +20,9 @@ public final class RuinLoot {
         public double chance=.15;
         public boolean skillBooksEnabled=true;
         public double skillBookChance=.025;
+        public boolean lostCitiesEnabled=true;
+        public double lostCitiesSupplyChance=.08;
+        public int lostCitiesDiscoveryPoints=30;
         public java.util.List<String> additionalTables=new java.util.ArrayList<>();
         public java.util.List<String> excludedTables=new java.util.ArrayList<>();
         public java.util.Map<String,Integer> weights=new java.util.LinkedHashMap<>(java.util.Map.ofEntries(
@@ -32,6 +35,8 @@ public final class RuinLoot {
         public void sanitize(){
             chance=Double.isFinite(chance)?Math.clamp(chance,0,1):.15;
             skillBookChance=Double.isFinite(skillBookChance)?Math.clamp(skillBookChance,0,1):.025;
+            lostCitiesSupplyChance=Double.isFinite(lostCitiesSupplyChance)?Math.clamp(lostCitiesSupplyChance,0,1):.08;
+            lostCitiesDiscoveryPoints=Math.clamp(lostCitiesDiscoveryPoints,0,10000);
             if(additionalTables==null)additionalTables=new java.util.ArrayList<>();
             if(excludedTables==null)excludedTables=new java.util.ArrayList<>();
             if(weights==null)weights=new Config().weights;
@@ -49,6 +54,8 @@ public final class RuinLoot {
     public static void initialize(){
         LootTableEvents.MODIFY.register((key,builder,source,registries)->{
             var cfg=CorpseConfig.get().ruinLoot;
+            if(cfg.enabled && cfg.lostCitiesEnabled && builder.build().getParamSet()==LootContextParamSets.CHEST)
+                addLostCitiesSupply(key.identifier(),builder,cfg);
             if(!accepts(key.identifier(),builder.build().getParamSet()==LootContextParamSets.CHEST,cfg))return;
             var pool=LootPool.lootPool().setRolls(ConstantValue.exactly(1))
                     .when(LootItemRandomChanceCondition.randomChance((float)cfg.chance));
@@ -74,5 +81,27 @@ public final class RuinLoot {
                 if(count>0)builder.withPool(books);
             }
         });
+    }
+
+    private static void addLostCitiesSupply(Identifier id, net.minecraft.world.level.storage.loot.LootTable.Builder builder, Config cfg) {
+        if (!id.getNamespace().equals("lostcities") || cfg.excludedTables.contains(id.toString())) return;
+        String path=id.getPath();
+        boolean rail=path.equals("chests/raildungeonchest");
+        if (!rail && !path.equals("chests/lostcitychest")) return;
+        var pool=LootPool.lootPool().setRolls(ConstantValue.exactly(1))
+                .when(LootItemRandomChanceCondition.randomChance((float)cfg.lostCitiesSupplyChance));
+        // Rail tunnels favor emergency supplies; city buildings hold rarer research stock.
+        add(pool,"corpseorigin:s_agent",rail?18:12);
+        add(pool,"corpseorigin:blue_s_agent",rail?8:16);
+        add(pool,"corpseorigin:kw89",rail?14:8);
+        add(pool,"corpseorigin:black_gold_heart",rail?0:1);
+        builder.withPool(pool);
+    }
+
+    private static void add(LootPool.Builder pool,String name,int weight) {
+        if(weight<=0)return;
+        Identifier id=Identifier.parse(name);
+        if(BuiltInRegistries.ITEM.containsKey(id))
+            pool.add(LootItem.lootTableItem(BuiltInRegistries.ITEM.getValue(id)).setWeight(weight));
     }
 }

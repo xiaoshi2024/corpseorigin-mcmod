@@ -88,6 +88,7 @@ public class CorpseOrigin implements ModInitializer {
 
 		// ✅ 7.5 自然生成（生成规则 + 进生物群系生成表）
 		ModSpawns.register();
+        xiaoshi2022.corpseorigin.event.CorpseWormSpawns.register();
 
 		// ✅ 7.6 地形生成（尸水泉）
 		ModWorldGen.register();

@@ -160,7 +160,7 @@ public final class EvolutionStats {
             applyModifier(player, Attributes.ARMOR_TOUGHNESS, CorpseOrigin.id("evo_toughness"), Math.min(20,(level-1)*1.2));
             applyModifier(player, Attributes.ENTITY_INTERACTION_RANGE, CorpseOrigin.id("evo_reach"), Math.min(8,(level-1)*.3));
             applyModifier(player, Attributes.BLOCK_BREAK_SPEED, CorpseOrigin.id("evo_mining"), Math.min(100,(level-1)*2));
-            applyModifier(player, Attributes.SAFE_FALL_DISTANCE, CorpseOrigin.id("evo_fall"), level>=10 ? 10000 : (level-1)*2);
+            applyModifier(player, Attributes.SAFE_FALL_DISTANCE, CorpseOrigin.id("evo_fall"), level>=9 ? 10000 : 0);
             if (player.isAlive() && player.getMaxHealth()>oldMax) player.heal(player.getMaxHealth()-oldMax);
             if (player.getHealth()>player.getMaxHealth()) player.setHealth(player.getMaxHealth());
             return;

@@ -6,6 +6,8 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.phys.Vec3;
+import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
+import xiaoshi2022.corpseorigin.skill.EvolutionManager;
 import xiaoshi2022.corpseorigin.skill.chapter.GroundShockwave;
 import xiaoshi2022.corpseorigin.skill.chapter.GroundShockwaveMath;
 
@@ -29,7 +31,9 @@ public final class ShenLanding {
     }
 
     private static void tick(ServerPlayer p) {
-        if (!ShenFlight.isAllowed(p) || p.isPassenger() || p.isInWater() || p.isInLava()
+        boolean wingFlight = OrganEnergy.ownsFlight(p) && p.getAbilities().flying;
+        boolean heavenly = EvolutionManager.getLevel(PlayerCharacterData.get(p).getEarnedPoints(p.getUUID())) >= 9;
+        if ((!ShenFlight.isAllowed(p) && !wingFlight) || p.isPassenger() || p.isInWater() || p.isInLava()
                 || p.onClimbable() || p.hasEffect(MobEffects.SLOW_FALLING) || p.isFallFlying()) {
             FALLS.remove(p.getUUID()); return;
         }
@@ -43,6 +47,9 @@ public final class ShenLanding {
         double descent = down < -.05 ? 0 : old.descent + Math.max(0, down);
         double speed = down < -.05 ? 0 : Math.max(old.speed, down);
         if (p.onGround()) {
+            if (wingFlight && !heavenly && descent > 3 && speed > .08) {
+                p.hurtServer(p.level(), p.damageSources().fall(), (float)Math.ceil(descent - 3));
+            }
             if (GroundShockwaveMath.shouldTrigger(descent, speed, cooldown)) {
                 GroundShockwave.spawn(p, now, Math.min(12, 4 + descent * .3), Math.min(3, 1 + descent / 20));
                 cooldown = 30;

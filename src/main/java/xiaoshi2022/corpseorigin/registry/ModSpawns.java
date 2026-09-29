@@ -16,6 +16,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
 import xiaoshi2022.corpseorigin.mixin.SpawnPlacementsInvoker;
+import xiaoshi2022.corpseorigin.growth.LostCitiesCompat;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -126,6 +127,14 @@ public final class ModSpawns {
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 (type, level, reason, pos, random) -> corpseorigin$damoSpawnRules(type, level, reason, pos, random));
         SpawnPlacementsInvoker.corpseorigin$register(
+                ModEntities.YU_DOCTOR, SpawnPlacementTypes.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                (type, level, reason, pos, random) -> level.getDifficulty() != Difficulty.PEACEFUL
+                        && Mob.checkMobSpawnRules(type, level, reason, pos, random)
+                        && (reason != EntitySpawnReason.NATURAL || !level.getEntitiesOfClass(
+                        xiaoshi2022.corpseorigin.entity.DamoEntity.class,
+                        new net.minecraft.world.phys.AABB(pos).inflate(48), Entity::isAlive).isEmpty()));
+        SpawnPlacementsInvoker.corpseorigin$register(
                 ModEntities.TIAN_DOCTOR,
                 SpawnPlacementTypes.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
@@ -197,6 +206,10 @@ public final class ModSpawns {
                 xiaoshi2022.corpseorigin.skill.longyou.CorpseNestDimension.KEY)) {
             return true;
         }
+        Boolean city = LostCitiesCompat.isCity(level.getLevel(), pos);
+        if (Boolean.TRUE.equals(city)) return true;
+        if (Boolean.FALSE.equals(city))
+            return random.nextFloat() < CorpseConfig.get().spawn.lostCitiesOutsideSpawnChance;
         return corpseorigin$nearBywater(level, pos) || random.nextFloat() < farFromLakeChance;
     }
 
@@ -264,6 +277,7 @@ public final class ModSpawns {
         BiomeModifications.addSpawn(OVERWORLD, MobCategory.CREATURE,
                 ModEntities.UNCLE, spawn.uncleWeight, 1, 1);
         BiomeModifications.addSpawn(OVERWORLD, MobCategory.CREATURE, ModEntities.DAMO, 3, 1, 1);
+        BiomeModifications.addSpawn(OVERWORLD, MobCategory.CREATURE, ModEntities.YU_DOCTOR, 1, 1, 1);
         BiomeModifications.addSpawn(OVERWORLD, MobCategory.CREATURE, ModEntities.TIAN_DOCTOR, 1, 1, 1);
 
         // 主世界：哈姆（有规则卡着"只在村庄附近"，权重再低也只在村里出）

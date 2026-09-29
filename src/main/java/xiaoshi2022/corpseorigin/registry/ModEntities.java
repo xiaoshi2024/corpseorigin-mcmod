@@ -139,8 +139,15 @@ public final class ModEntities {
             EntityType.Builder.<UncleEntity>of(UncleEntity::new, MobCategory.CREATURE)
                     .sized(0.6f, 1.8f)
     );
+
+    public static final EntityType<MultiHeadCorpseWormEntity> MULTI_HEAD_CORPSE_WORM = register(
+            "multi_head_corpse_worm",
+            EntityType.Builder.<MultiHeadCorpseWormEntity>of(MultiHeadCorpseWormEntity::new, MobCategory.MONSTER)
+                    .sized(2.4f, 2.8f).clientTrackingRange(32).updateInterval(1).notInPeaceful()
+    );
     public static final EntityType<TianDoctorEntity> TIAN_DOCTOR = register("tian_doctor", EntityType.Builder.<TianDoctorEntity>of(TianDoctorEntity::new, MobCategory.CREATURE).sized(.7f,1.8f).clientTrackingRange(12));
     public static final EntityType<DamoEntity> DAMO = register("damo", EntityType.Builder.<DamoEntity>of(DamoEntity::new, MobCategory.CREATURE).sized(.7f,1.35f).clientTrackingRange(12));
+    public static final EntityType<YuDoctorEntity> YU_DOCTOR = register("yu_doctor", EntityType.Builder.<YuDoctorEntity>of(YuDoctorEntity::new, MobCategory.CREATURE).sized(.7f,1.75f).clientTrackingRange(12));
 
     /** 初音尸兄 - 双马尾女性尸兄，投掷大葱、吸食血肉、腹部会膨胀 */
     public static final EntityType<MikuZbEntity> MIKU_ZB = register(

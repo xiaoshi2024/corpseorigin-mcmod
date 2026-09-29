@@ -37,6 +37,10 @@ public final class ModItems {
             .sword(ToolMaterial.DIAMOND,8,-2.4f).stacksTo(1).setId(itemKey("bee_wheel"))));
     public static final Item DAMO_SPAWN_EGG = register("damo_spawn_egg",
             new SpawnEggItem(spawnEggProperties("damo_spawn_egg", ModEntities.DAMO)));
+    public static final Item YU_DOCTOR_SPAWN_EGG = register("yu_doctor_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("yu_doctor_spawn_egg", ModEntities.YU_DOCTOR)));
+    public static final Item MULTI_HEAD_CORPSE_WORM_SPAWN_EGG = register("multi_head_corpse_worm_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("multi_head_corpse_worm_spawn_egg", ModEntities.MULTI_HEAD_CORPSE_WORM)));
     public static final Item TIAN_DOCTOR_SPAWN_EGG = register("tian_doctor_spawn_egg",
             new SpawnEggItem(spawnEggProperties("tian_doctor_spawn_egg", ModEntities.TIAN_DOCTOR)));
     public static final Item DR_MU_EYE = register("dr_mu_eye", new Item(new Item.Properties().setId(itemKey("dr_mu_eye"))));
@@ -78,6 +82,8 @@ public final class ModItems {
     /** 蓝色中和剂：下调黄色强化剂的副作用等级 */
     public static final Item BLUE_S_AGENT = register("blue_s_agent",
             new SagentItem(new Item.Properties().rarity(Rarity.RARE).setId(itemKey("blue_s_agent")), SagentItem.BLUE));
+    public static final Item CORPSE_ANTIDOTE = register("corpse_antidote",
+            new SagentItem(new Item.Properties().rarity(Rarity.EPIC).stacksTo(1).setId(itemKey("corpse_antidote")), SagentItem.CURE));
 
     /** KW89 口服强化药剂：没注射过黄色强化剂时给常规强化，注射过的喝了更强 */
     public static final Item KW89 = register("kw89",
@@ -310,6 +316,7 @@ public final class ModItems {
                 output.accept(GUIGUN_CLUB);
                 output.accept(S_AGENT);
                 output.accept(BLUE_S_AGENT);
+                output.accept(CORPSE_ANTIDOTE);
                 output.accept(NULL_S_AGENT);
                 output.accept(KW89);
                 output.accept(BEE_WHEEL);
@@ -344,6 +351,8 @@ public final class ModItems {
                 output.accept(MIKU_ZB_SPAWN_EGG);
                 output.accept(LOWER_LEVEL_ZB_SPAWN_EGG);
                 output.accept(DAMO_SPAWN_EGG);
+                output.accept(YU_DOCTOR_SPAWN_EGG);
+                output.accept(MULTI_HEAD_CORPSE_WORM_SPAWN_EGG);
                 output.accept(TIAN_DOCTOR_SPAWN_EGG);
                 output.accept(ZB_WORM_ITEM);
                 output.accept(HAIR_DRYER);

@@ -77,6 +77,12 @@ public final class CorpseConfig {
     }
 
     public static final class Spawn {
+        /** World day of the first scripted corpse worm encounter. Set to 0 to disable it. */
+        public int corpseWormFirstDay = 4;
+        /** Days after the first encounter before the next one. */
+        public int corpseWormBaseIntervalDays = 4;
+        /** Extra days added to each successive interval. */
+        public int corpseWormIntervalIncreaseDays = 1;
         public int lowerLevelZbWeight = 2;
         public int aotumanZbWeight = 2;
         public int mikuZbWeight = 2;
@@ -126,6 +132,8 @@ public final class CorpseConfig {
          * 默认 2.0 —— 上限附近最多、往下逐级减半；调到 1.1 接近均摊，调到 4 就几乎只剩上限那一级。
          */
         public float levelDecay = 2.0F;
+        /** Natural Corpse Brother spawn chance outside city chunks in a Lost Cities dimension. */
+        public float lostCitiesOutsideSpawnChance = 0.025F;
     }
 
     /** 名字来源 */
@@ -441,9 +449,13 @@ public final class CorpseConfig {
             names.consentedChance = 1;
         }
         spawn.nearBywaterChance = clamp(spawn.nearBywaterChance, 0.0F, 1.0F);
+        spawn.lostCitiesOutsideSpawnChance = clamp(spawn.lostCitiesOutsideSpawnChance, 0.0F, 1.0F);
         spawn.daysPerEvolutionLevel = Math.max(1, spawn.daysPerEvolutionLevel);
         spawn.maxEvolutionLevel = Math.clamp(spawn.maxEvolutionLevel, 1, 10);
         spawn.levelDecay = clamp(spawn.levelDecay, 1.1F, 10.0F);
+        spawn.corpseWormFirstDay = Math.max(0, spawn.corpseWormFirstDay);
+        spawn.corpseWormBaseIntervalDays = Math.max(1, spawn.corpseWormBaseIntervalDays);
+        spawn.corpseWormIntervalIncreaseDays = Math.max(0, spawn.corpseWormIntervalIncreaseDays);
         skin.tintStrength = Math.max(0.0F, skin.tintStrength);
         // 缩到 0 或负数会把模型压成一张纸、甚至翻面，给个下限；放太大也没意义（模型本来就有 5 格高）
         mutantBody.scale = clamp(mutantBody.scale, 0.05F, 4.0F);

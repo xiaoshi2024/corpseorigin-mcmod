@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntitySpawnReason;
 import xiaoshi2022.corpseorigin.entity.DamoEntity;
+import xiaoshi2022.corpseorigin.entity.YuDoctorEntity;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
@@ -34,6 +35,40 @@ public final class ConsciousnessInteractions {
         UseBlockCallback.EVENT.register((p, level, hand, hit) -> {
             var pos = hit.getBlockPos();
             var stack = p.getItemInHand(hand);
+            if (level.getBlockState(pos).is(Blocks.BEACON) && stack.is(Items.NETHER_STAR)) {
+                if (level.isClientSide()) return InteractionResult.SUCCESS;
+                if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) return InteractionResult.PASS;
+                if (!serverLevel.getEntitiesOfClass(YuDoctorEntity.class,
+                        new net.minecraft.world.phys.AABB(pos).inflate(128), YuDoctorEntity::isAlive).isEmpty()) {
+                    p.sendSystemMessage(Component.translatable("message.corpseorigin.yu_doctor.beacon_exists"));
+                    return InteractionResult.SUCCESS;
+                }
+                YuDoctorEntity doctor = ModEntities.YU_DOCTOR.create(serverLevel, EntitySpawnReason.TRIGGERED);
+                if (doctor == null) return InteractionResult.PASS;
+                BlockPos spawnPos = null;
+                for (int radius = 1; radius <= 3 && spawnPos == null; radius++) {
+                    for (int dx = -radius; dx <= radius && spawnPos == null; dx++) {
+                        for (int dz = -radius; dz <= radius; dz++) {
+                            BlockPos candidate = pos.offset(dx, 0, dz);
+                            if (serverLevel.getBlockState(candidate.below()).isFaceSturdy(serverLevel, candidate.below(), net.minecraft.core.Direction.UP)
+                                    && serverLevel.getBlockState(candidate).getCollisionShape(serverLevel, candidate).isEmpty()
+                                    && serverLevel.getBlockState(candidate.above()).getCollisionShape(serverLevel, candidate.above()).isEmpty()) {
+                                spawnPos = candidate;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (spawnPos == null) {
+                    p.sendSystemMessage(Component.translatable("message.corpseorigin.yu_doctor.no_space"));
+                    return InteractionResult.SUCCESS;
+                }
+                doctor.setPos(spawnPos.getX() + .5, spawnPos.getY(), spawnPos.getZ() + .5);
+                if (!serverLevel.addFreshEntity(doctor)) return InteractionResult.PASS;
+                if (!p.getAbilities().instabuild) stack.shrink(1);
+                p.sendSystemMessage(Component.translatable("message.corpseorigin.yu_doctor.summoned"));
+                return InteractionResult.SUCCESS;
+            }
             if (level.getBlockState(pos).is(Blocks.BEACON) && stack.is(Items.COOKED_CHICKEN)) {
                 if (level.isClientSide()) return InteractionResult.SUCCESS;
                 if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) return InteractionResult.PASS;

@@ -32,6 +32,9 @@ import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
+import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 import xiaoshi2022.corpseorigin.effect.SideEffect;
 import xiaoshi2022.corpseorigin.event.EvolutionEventHandler;
 import xiaoshi2022.corpseorigin.registry.ModDataAttachments;
@@ -58,6 +61,7 @@ public final class SagentItem extends Item implements GeoItem {
 
     public static final String YELLOW = "yellow";
     public static final String BLUE = "blue";
+    public static final String CURE = "cure";
     public static final String EMPTY = "null";
 
     /** 「press」（插入心脏）动作时长：40 tick = 2 秒，与动画文件长度一致 */
@@ -149,8 +153,16 @@ public final class SagentItem extends Item implements GeoItem {
                 ? "s_agent_press_right" : "s_agent_press_left", PRESS_TICKS);
 
         // 药效立刻结算，只有物品替换等动画播完
-        applyEnhancement(server);
-        applyLevelBoost(server);
+        if (CURE.equals(variant)) {
+            CharacterManager.getInstance().clearPlayerCharacter(server);
+            PlayerCorpseComponent corpse = PlayerCorpseComponent.get(server);
+            corpse.setCorpse(false);
+            corpse.setInfection(0);
+            CorpseNetwork.broadcastPlayerCorpseSync(server);
+        } else {
+            applyEnhancement(server);
+            applyLevelBoost(server);
+        }
         if (YELLOW.equals(variant)) {
             SideEffect.applySideEffect(server, 1);
             // 永久记录「注射过黄色强化剂」——口服剂 KW89 据此决定强化强度（死后保留）
@@ -232,6 +244,7 @@ public final class SagentItem extends Item implements GeoItem {
                 tooltip.accept(Component.translatable("tooltip.corpseorigin.s_agent.warning"));
             }
             case BLUE -> tooltip.accept(Component.translatable("tooltip.corpseorigin.blue_s_agent"));
+            case CURE -> tooltip.accept(Component.translatable("tooltip.corpseorigin.corpse_antidote"));
             default -> tooltip.accept(Component.translatable("tooltip.corpseorigin.null_s_agent"));
         }
     }

@@ -126,7 +126,10 @@ public final class SurvivalGrowth {
                             Math.clamp(CorpseConfig.get().growth.preyRequired, 1, 10000),
                             Math.clamp(CorpseConfig.get().growth.fleshPerOpportunity, 1, 10000)
                     ));
-                if (player.tickCount % 100 == 0) explore(player);
+                if (player.tickCount % 100 == 0) {
+                    explore(player);
+                    LostCitiesCompat.explore(player);
+                }
             }
         });
     }

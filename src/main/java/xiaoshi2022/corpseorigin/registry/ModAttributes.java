@@ -60,7 +60,9 @@ public final class ModAttributes {
         FabricDefaultAttributeRegistry.register(ModEntities.UNCLE, UncleEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.TIAN_DOCTOR, TianDoctorEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.DAMO, DamoEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.YU_DOCTOR, YuDoctorEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.ZB_WORM, ZbWormEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.MULTI_HEAD_CORPSE_WORM, MultiHeadCorpseWormEntity.createAttributes());
 
         // 初音尸兄
         FabricDefaultAttributeRegistry.register(ModEntities.MIKU_ZB, MikuZbEntity.createAttributes());
