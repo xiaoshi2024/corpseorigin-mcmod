@@ -1364,5 +1364,10 @@
   "realm.corpseorigin.hud.shield": "  护盾 %s",
   "realm.corpseorigin.hud.air": "  气 %s",
   "realm.corpseorigin.number.hundred_million": "%s亿",
-  "realm.corpseorigin.number.ten_thousand": "%s万"
+  "realm.corpseorigin.number.ten_thousand": "%s万",
+  "message.corpseorigin.roleplay_mode.on": "扮演模式已开启：模组生物不会自然生成。",
+  "message.corpseorigin.roleplay_mode.off": "扮演模式已关闭：模组生物恢复自然生成。",
+  "message.corpseorigin.organ.summoned": "已消耗 20 个尸兄肉块，召唤带有当前自定义器官的尸兄。",
+  "message.corpseorigin.organ.summon_need_flesh": "召唤此尸兄需要 %s 个尸兄肉块。",
+  "gui.corpseorigin.label.100": "召唤此尸兄"
 }

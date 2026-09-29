@@ -146,6 +146,9 @@ public final class ModEntities {
                     .sized(2.4f, 2.8f).clientTrackingRange(32).updateInterval(1).notInPeaceful()
     );
     public static final EntityType<TianDoctorEntity> TIAN_DOCTOR = register("tian_doctor", EntityType.Builder.<TianDoctorEntity>of(TianDoctorEntity::new, MobCategory.CREATURE).sized(.7f,1.8f).clientTrackingRange(12));
+    public static final EntityType<DoctorBeeRobotEntity> DOCTOR_BEE_ROBOT = register("doctor_bee_robot",
+            EntityType.Builder.<DoctorBeeRobotEntity>of(DoctorBeeRobotEntity::new, MobCategory.MISC)
+                    .sized(.3f, .3f).clientTrackingRange(12).updateInterval(1));
     public static final EntityType<DamoEntity> DAMO = register("damo", EntityType.Builder.<DamoEntity>of(DamoEntity::new, MobCategory.CREATURE).sized(.7f,1.35f).clientTrackingRange(12));
     public static final EntityType<YuDoctorEntity> YU_DOCTOR = register("yu_doctor", EntityType.Builder.<YuDoctorEntity>of(YuDoctorEntity::new, MobCategory.CREATURE).sized(.7f,1.75f).clientTrackingRange(12));
 

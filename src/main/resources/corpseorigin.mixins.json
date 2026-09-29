@@ -10,6 +10,7 @@
     "GourdCaptureMobMixin",
     "HeartFeignJumpMixin",
     "HeartFeignPoseMixin",
+    "IronGolemCorpseTargetMixin",
     "ItemConsumeMixin",
     "ItemCooldownsAccessor",
     "ItemEntityMixin",

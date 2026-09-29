@@ -26,7 +26,8 @@ public final class CorpseWormSpawns {
     public static void register() {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             ServerLevel level = server.overworld();
-            if (level.getGameTime() % 200 != 0 || level.getDifficulty() == Difficulty.PEACEFUL) return;
+            if (level.getGameTime() % 200 != 0 || level.getDifficulty() == Difficulty.PEACEFUL
+                    || RoleplayMode.isEnabled(server)) return;
             CorpseConfig.Spawn config = CorpseConfig.get().spawn;
             if (config.corpseWormFirstDay <= 0) return;
             List<ServerPlayer> players = level.players().stream()

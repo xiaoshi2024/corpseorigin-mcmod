@@ -183,6 +183,7 @@ public class CorpseOrigin implements ModInitializer {
 				(dispatcher, registryAccess, environment) -> {
 					CharacterCommands.register(dispatcher);
 				SummonZbCommand.register(dispatcher);
+				xiaoshi2022.corpseorigin.command.RoleplayModeCommand.register(dispatcher);
 				LimbCommand.register(dispatcher);
 				SkillCommand.register(dispatcher);
 				xiaoshi2022.corpseorigin.command.EvolutionPointsCommand.register(dispatcher);

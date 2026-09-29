@@ -15,6 +15,7 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.levelgen.Heightmap;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
+import xiaoshi2022.corpseorigin.event.RoleplayMode;
 import xiaoshi2022.corpseorigin.mixin.SpawnPlacementsInvoker;
 import xiaoshi2022.corpseorigin.growth.LostCitiesCompat;
 
@@ -105,14 +106,16 @@ public final class ModSpawns {
                 ModEntities.COCO_PENGUIN,
                 SpawnPlacementTypes.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                (type, level, reason, pos, random) -> level.getDifficulty() != Difficulty.PEACEFUL);
+                (type, level, reason, pos, random) -> !roleplayBlocksNaturalSpawn(level, reason)
+                        && level.getDifficulty() != Difficulty.PEACEFUL);
 
         // 大叔是"可遇 NPC"：白天也会在草地上溜达
         SpawnPlacementsInvoker.corpseorigin$register(
                 ModEntities.UNCLE,
                 SpawnPlacementTypes.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                Mob::checkMobSpawnRules);
+                (type, level, reason, pos, random) -> !roleplayBlocksNaturalSpawn(level, reason)
+                        && Mob.checkMobSpawnRules(type, level, reason, pos, random));
 
         // 哈姆是"村里的狗"：只在村庄旁边刷（判据抄原版猫，见 corpseorigin$hamSpawnRules）
         SpawnPlacementsInvoker.corpseorigin$register(
@@ -129,7 +132,8 @@ public final class ModSpawns {
         SpawnPlacementsInvoker.corpseorigin$register(
                 ModEntities.YU_DOCTOR, SpawnPlacementTypes.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                (type, level, reason, pos, random) -> level.getDifficulty() != Difficulty.PEACEFUL
+                (type, level, reason, pos, random) -> !roleplayBlocksNaturalSpawn(level, reason)
+                        && level.getDifficulty() != Difficulty.PEACEFUL
                         && Mob.checkMobSpawnRules(type, level, reason, pos, random)
                         && (reason != EntitySpawnReason.NATURAL || !level.getEntitiesOfClass(
                         xiaoshi2022.corpseorigin.entity.DamoEntity.class,
@@ -138,12 +142,14 @@ public final class ModSpawns {
                 ModEntities.TIAN_DOCTOR,
                 SpawnPlacementTypes.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                (type, level, reason, pos, random) -> level.getDifficulty() != Difficulty.PEACEFUL
+                (type, level, reason, pos, random) -> !roleplayBlocksNaturalSpawn(level, reason)
+                        && level.getDifficulty() != Difficulty.PEACEFUL
                         && Mob.checkMobSpawnRules(type, level, reason, pos, random));
     }
 
     private static boolean corpseorigin$damoSpawnRules(EntityType<? extends Mob> type, ServerLevelAccessor level,
                                                         EntitySpawnReason reason, BlockPos pos, RandomSource random) {
+        if (roleplayBlocksNaturalSpawn(level, reason)) return false;
         if (level.getDifficulty() == Difficulty.PEACEFUL || !Mob.checkMobSpawnRules(type, level, reason, pos, random)) return false;
         if (reason != EntitySpawnReason.NATURAL) return true;
         if (!level.getLevel().isCloseToVillage(pos, 2)) return false;
@@ -161,6 +167,7 @@ public final class ModSpawns {
      */
     private static boolean corpseorigin$hamSpawnRules(EntityType<? extends Mob> type, ServerLevelAccessor level,
                                                       EntitySpawnReason reason, BlockPos pos, RandomSource random) {
+        if (roleplayBlocksNaturalSpawn(level, reason)) return false;
         if (level.getDifficulty() == Difficulty.PEACEFUL) {
             return false;
         }
@@ -196,6 +203,7 @@ public final class ModSpawns {
      */
     private static boolean corpseorigin$zbSpawnRules(EntityType<? extends Mob> type, ServerLevelAccessor level,
                                                     EntitySpawnReason reason, BlockPos pos, RandomSource random) {
+        if (roleplayBlocksNaturalSpawn(level, reason)) return false;
         if (level.getDifficulty() == Difficulty.PEACEFUL) {
             return false;
         }
@@ -211,6 +219,10 @@ public final class ModSpawns {
         if (Boolean.FALSE.equals(city))
             return random.nextFloat() < CorpseConfig.get().spawn.lostCitiesOutsideSpawnChance;
         return corpseorigin$nearBywater(level, pos) || random.nextFloat() < farFromLakeChance;
+    }
+
+    private static boolean roleplayBlocksNaturalSpawn(ServerLevelAccessor level, EntitySpawnReason reason) {
+        return reason == EntitySpawnReason.NATURAL && RoleplayMode.isEnabled(level.getLevel().getServer());
     }
 
     /** 这个出生点附近有没有尸水（按区块缓存，见 {@link #LAKE_CACHE_TTL}） */

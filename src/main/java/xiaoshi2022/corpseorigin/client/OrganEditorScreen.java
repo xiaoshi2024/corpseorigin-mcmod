@@ -39,6 +39,9 @@ public final class OrganEditorScreen extends Screen {
         clearWidgets();values.clear();int x=editorX();
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.015"),4,4,90,()->{if(commit())minecraft.gui.setScreen(new OrganEvolutionScreen(this));});
         if(width<620)button(previewPage?net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.016"):net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.017"),width-90,4,85,()->{if(commit()){previewPage=!previewPage;init();}});
+        button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.100"),98,4,110,()->{
+            if (commit()) ClientPlayNetworking.send(new OrganEditorPayload.Summon());
+        });
         if(width>=620 || previewPage){
             int px=width>=620?Math.max(8,width/2-305):width/2-150;
             button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.018"),px,height-51,55,()->previewYaw-=30);

@@ -39,6 +39,7 @@ public class TianDoctorEntity extends PathfinderMob implements GeoEntity {
                     net.minecraft.network.syncher.EntityDataSerializers.BOOLEAN);
     private static final String EMPLOYER_TAG = "CorpseOriginEmployer";
     private int weaponCooldown;
+    private int robotCooldown;
     public TianDoctorEntity(EntityType<? extends PathfinderMob> type, Level level) { super(type, level); setPersistenceRequired(); }
     public static AttributeSupplier.Builder createAttributes() { return PathfinderMob.createMobAttributes().add(Attributes.MAX_HEALTH, 80).add(Attributes.MOVEMENT_SPEED, .28).add(Attributes.ATTACK_DAMAGE, 8).add(Attributes.FOLLOW_RANGE, 24); }
     @Override protected void registerGoals() { goalSelector.addGoal(3,new WaterAvoidingRandomStrollGoal(this,.7)); goalSelector.addGoal(4,new LookAtPlayerGoal(this,Player.class,10)); goalSelector.addGoal(5,new RandomLookAroundGoal(this)); }
@@ -80,6 +81,24 @@ public class TianDoctorEntity extends PathfinderMob implements GeoEntity {
     }
     @Override public void tick() {
         super.tick();
+        if (level() instanceof ServerLevel deploymentLevel && --robotCooldown <= 0) {
+            robotCooldown = 200;
+            boolean chamberNearby = net.minecraft.core.BlockPos.betweenClosedStream(
+                            blockPosition().offset(-6, -2, -6), blockPosition().offset(6, 2, 6))
+                    .anyMatch(pos -> deploymentLevel.getBlockState(pos).getBlock()
+                            instanceof xiaoshi2022.corpseorigin.block.CloneChamberBlock);
+            boolean wormNearby = !deploymentLevel.getEntitiesOfClass(MultiHeadCorpseWormEntity.class,
+                    getBoundingBox().inflate(32), LivingEntity::isAlive).isEmpty();
+            if ((chamberNearby || wormNearby) && deploymentLevel.getEntitiesOfClass(
+                    DoctorBeeRobotEntity.class, getBoundingBox().inflate(32), LivingEntity::isAlive).size() < 2) {
+                DoctorBeeRobotEntity robot = ModEntities.DOCTOR_BEE_ROBOT.create(deploymentLevel,
+                        net.minecraft.world.entity.EntitySpawnReason.TRIGGERED);
+                if (robot != null) {
+                    robot.setPos(getX(), getY() + 1.3, getZ());
+                    deploymentLevel.addFreshEntity(robot);
+                }
+            }
+        }
         if (!(level() instanceof ServerLevel serverLevel) || employer == null || --weaponCooldown > 0) return;
         Player player = serverLevel.getPlayerByUUID(employer);
         LivingEntity target = getTarget();

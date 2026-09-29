@@ -1364,5 +1364,10 @@
   "realm.corpseorigin.hud.shield": "  Shield %s",
   "realm.corpseorigin.hud.air": "  Air %s",
   "realm.corpseorigin.number.hundred_million": "%s ×100M",
-  "realm.corpseorigin.number.ten_thousand": "%s ×10K"
+  "realm.corpseorigin.number.ten_thousand": "%s ×10K",
+  "message.corpseorigin.roleplay_mode.on": "Roleplay mode enabled: mod creatures will not spawn naturally.",
+  "message.corpseorigin.roleplay_mode.off": "Roleplay mode disabled: natural mod creature spawning restored.",
+  "message.corpseorigin.organ.summoned": "Consumed 20 Corpse Flesh blocks and summoned a corpse brother with the current custom organs.",
+  "message.corpseorigin.organ.summon_need_flesh": "Summoning this corpse brother requires %s Corpse Flesh blocks.",
+  "gui.corpseorigin.label.100": "Summon Corpse Brother"
 }

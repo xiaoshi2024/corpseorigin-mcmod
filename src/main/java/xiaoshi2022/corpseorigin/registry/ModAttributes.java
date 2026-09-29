@@ -59,6 +59,7 @@ public final class ModAttributes {
         // 大叔 NPC / 尸兄虫
         FabricDefaultAttributeRegistry.register(ModEntities.UNCLE, UncleEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.TIAN_DOCTOR, TianDoctorEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.DOCTOR_BEE_ROBOT, DoctorBeeRobotEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.DAMO, DamoEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.YU_DOCTOR, YuDoctorEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.ZB_WORM, ZbWormEntity.createAttributes());

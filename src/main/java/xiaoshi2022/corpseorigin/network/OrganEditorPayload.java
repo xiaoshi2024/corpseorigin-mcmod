@@ -23,4 +23,10 @@ public record OrganEditorPayload(String json) implements CustomPacketPayload {
                 (p,b)->{b.writeBoolean(p.success);net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.encode(b,p.message);}, b->new Result(b.readBoolean(),net.minecraft.network.chat.ComponentSerialization.STREAM_CODEC.decode(b)));
         @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
     }
+
+    public record Summon() implements CustomPacketPayload {
+        public static final Type<Summon> TYPE = new Type<>(CorpseOrigin.id("organ_summon"));
+        public static final StreamCodec<RegistryFriendlyByteBuf, Summon> CODEC = StreamCodec.unit(new Summon());
+        @Override public Type<? extends CustomPacketPayload> type() { return TYPE; }
+    }
 }

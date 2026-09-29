@@ -5,6 +5,9 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.EntitySpawnReason;
+import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
+import xiaoshi2022.corpseorigin.registry.ModEntities;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.network.OrganEditorPayload;
 import xiaoshi2022.corpseorigin.util.LocalizedException;
@@ -14,6 +17,7 @@ public final class OrganNetwork {
     private OrganNetwork() {}
     public static void register() {
         PayloadTypeRegistry.serverboundPlay().register(OrganEditorPayload.TYPE, OrganEditorPayload.CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(OrganEditorPayload.Summon.TYPE, OrganEditorPayload.Summon.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(OrganEditorPayload.Catalog.TYPE, OrganEditorPayload.Catalog.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(OrganEditorPayload.Result.TYPE, OrganEditorPayload.Result.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(OrganEvolutionPayload.TYPE, OrganEvolutionPayload.CODEC);
@@ -73,5 +77,49 @@ throw new LocalizedException("message.corpseorigin.organ.locked",def.displayName
                 ServerPlayNetworking.send(player, new OrganEditorPayload.Result(false, Component.translatable("message.corpseorigin.organ.server_error")));
             }
         }));
+        ServerPlayNetworking.registerGlobalReceiver(OrganEditorPayload.Summon.TYPE, (packet, context) ->
+                context.server().execute(() -> {
+                    var player = context.player();
+                    if (!player.isAlive() || player.isSpectator()) return;
+                    if (!player.isCreative() && countFlesh(player) < 20) {
+                        player.sendSystemMessage(Component.translatable("message.corpseorigin.organ.summon_need_flesh", 20));
+                        return;
+                    }
+                    var level = (net.minecraft.server.level.ServerLevel) player.level();
+                    LowerLevelZbEntity zb = ModEntities.LOWER_LEVEL_ZB.create(level, EntitySpawnReason.TRIGGERED);
+                    if (zb == null) return;
+                    zb.setPlayerSkinName(player.getGameProfile().name());
+                    zb.setCustomId(player.getStringUUID());
+                    zb.setOrganLoadout(player.getAttachedOrCreate(SurvivalGrowth.BODY)
+                            .getStringOr(OrganLibrary.BODY_KEY, "[]"));
+                    zb.setPos(player.getX() + 2.0, player.getY(), player.getZ() + 2.0);
+                    zb.setYRot(player.getYRot());
+                    if (level.noCollision(zb) && level.addFreshEntity(zb)) {
+                        if (!player.isCreative()) consumeFlesh(player, 20);
+                        player.sendSystemMessage(Component.translatable("message.corpseorigin.organ.summoned"));
+                    }
+                }));
+    }
+
+    private static int countFlesh(net.minecraft.server.level.ServerPlayer player) {
+        int total = 0;
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            var stack = inventory.getItem(slot);
+            if (stack.is(xiaoshi2022.corpseorigin.registry.ModItems.ZBR_FLESH)) total += stack.getCount();
+        }
+        return total;
+    }
+
+    private static void consumeFlesh(net.minecraft.server.level.ServerPlayer player, int amount) {
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize() && amount > 0; slot++) {
+            var stack = inventory.getItem(slot);
+            if (!stack.is(xiaoshi2022.corpseorigin.registry.ModItems.ZBR_FLESH)) continue;
+            int consumed = Math.min(amount, stack.getCount());
+            stack.shrink(consumed);
+            amount -= consumed;
+        }
+        inventory.setChanged();
     }
 }

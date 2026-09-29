@@ -110,7 +110,9 @@ public class BeeWheelEntity extends SkillConstructEntity {
                 entity -> entity instanceof LivingEntity living && ZombieKin.isZombieKin(living)
                         && !ZombieKin.isZombieKing(living), start.distanceToSqr(wall.getLocation()));
         if (hit != null && hit.getEntity() instanceof LivingEntity target) {
-            target.hurtServer(level, doctor.damageSources().mobAttack(doctor), 28);
+            float damage = target instanceof MultiHeadCorpseWormEntity
+                    ? Math.max(28.0F, target.getHealth()) : 28.0F;
+            target.hurtServer(level, doctor.damageSources().mobAttack(doctor), damage);
             target.setDeltaMovement(target.getDeltaMovement().add(getDeltaMovement().normalize().scale(.25)));
             target.hurtMarked = true;
             discard();
