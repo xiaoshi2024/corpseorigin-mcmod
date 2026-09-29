@@ -1,0 +1,65 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"idle": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 0.125,
+			"bones": {
+				"petal": {
+					"scale": {
+						"vector": [0.95, 1.06, 1]
+					}
+				},
+				"petal2": {
+					"rotation": {
+						"vector": [3, 0, 6]
+					}
+				},
+				"petal3": {
+					"rotation": {
+						"vector": [3.6728, -2.0321, -4.6592]
+					}
+				},
+				"petal5": {
+					"rotation": {
+						"vector": [175, 10, -174]
+					},
+					"scale": {
+						"vector": [0.94, 1.05, 1]
+					}
+				},
+				"petal7": {
+					"rotation": {
+						"vector": [-186.6485, 130.1958, 181.7046]
+					}
+				},
+				"petal8": {
+					"scale": {
+						"vector": [0.99, 1.09, 1]
+					}
+				},
+				"petal10": {
+					"scale": {
+						"vector": [0.91, 1.01, 1]
+					}
+				},
+				"petal11": {
+					"rotation": {
+						"vector": [221.4959, -10.7068, -138.014]
+					},
+					"scale": {
+						"vector": [0.92, 1.1, 1]
+					}
+				},
+				"petalx": {
+					"position": {
+						"vector": [0.2, 0, 0]
+					},
+					"scale": {
+						"vector": [1.03, 1.4, 1.1]
+					}
+				}
+			}
+		}
+	}
+}

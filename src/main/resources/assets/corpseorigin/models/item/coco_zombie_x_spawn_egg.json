@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "corpseorigin:item/coco_zombie_x_spawn_egg"
+  }
+}
