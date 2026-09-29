@@ -10,6 +10,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
+import xiaoshi2022.corpseorigin.item.SkillBookItem;
 
 /** Adds one sparse pool; never replaces the structure's original loot. */
 public final class RuinLoot {
@@ -17,6 +18,8 @@ public final class RuinLoot {
     public static final class Config {
         public boolean enabled=true,moddedStructures=true;
         public double chance=.15;
+        public boolean skillBooksEnabled=true;
+        public double skillBookChance=.025;
         public java.util.List<String> additionalTables=new java.util.ArrayList<>();
         public java.util.List<String> excludedTables=new java.util.ArrayList<>();
         public java.util.Map<String,Integer> weights=new java.util.LinkedHashMap<>(java.util.Map.ofEntries(
@@ -28,6 +31,7 @@ public final class RuinLoot {
                 java.util.Map.entry("corpseorigin:tian_gang_key",1)));
         public void sanitize(){
             chance=Double.isFinite(chance)?Math.clamp(chance,0,1):.15;
+            skillBookChance=Double.isFinite(skillBookChance)?Math.clamp(skillBookChance,0,1):.025;
             if(additionalTables==null)additionalTables=new java.util.ArrayList<>();
             if(excludedTables==null)excludedTables=new java.util.ArrayList<>();
             if(weights==null)weights=new Config().weights;
@@ -57,6 +61,18 @@ public final class RuinLoot {
                 pool.add(LootItem.lootTableItem(item).setWeight(entry.getValue()));added++;
             }
             if(added>0)builder.withPool(pool);
+            if(cfg.skillBooksEnabled && cfg.skillBookChance>0) {
+                var books=LootPool.lootPool().setRolls(ConstantValue.exactly(1))
+                        .when(LootItemRandomChanceCondition.randomChance((float)cfg.skillBookChance));
+                int count=0;
+                for(var skill:FreeGrowth.skills()) {
+                    var book=SkillBookItem.books().get(skill.getId().getPath());
+                    if(book==null)continue;
+                    books.add(LootItem.lootTableItem(book).setWeight(SkillBookItem.weight(skill)));
+                    count++;
+                }
+                if(count>0)builder.withPool(books);
+            }
         });
     }
 }

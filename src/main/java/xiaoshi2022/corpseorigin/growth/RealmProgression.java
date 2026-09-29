@@ -40,7 +40,7 @@ public final class RealmProgression {
     public static final List<String> STATS = List.of("vitality", "power", "guard", "qi", "recovery", "agility");
     private static Component statName(String stat){return Component.translatable("realm.corpseorigin.stat."+stat);}
     private static final Map<UUID, BalanceRules.Window> OFFENSE = new HashMap<>(), DEFENSE = new HashMap<>();
-    private record Meditation(ServerPlayer player, Object level, Vec3 anchor, int ticks) {}
+    private record Meditation(ServerPlayer player, Object level, Vec3 anchor, int ticks, int elapsed) {}
     private static final Map<UUID, Meditation> MEDITATING = new HashMap<>();
     private static final Map<UUID, Meditation> MOTION = new HashMap<>();
     private static final List<TerrainBurst> TERRAIN = new ArrayList<>();
@@ -98,7 +98,7 @@ public final class RealmProgression {
             for (var p : server.getPlayerList().getPlayers()) {
                 tickMeditation(p);
                 if (p.tickCount % 20 != 0 || !p.isAlive()) continue;
-                var previous=MOTION.put(p.getUUID(),new Meditation(p,p.level(),p.position(),0));
+                var previous=MOTION.put(p.getUUID(),new Meditation(p,p.level(),p.position(),0,0));
                 if(previous!=null && previous.player==p && previous.level==p.level() && p.isSprinting() && p.onGround()
                         && !p.isPassenger() && !p.getAbilities().flying && !p.isFallFlying()
                         && p.position().distanceToSqr(previous.anchor)>=4 && p.position().distanceToSqr(previous.anchor)<=256)
@@ -190,17 +190,17 @@ public final class RealmProgression {
     public static int meditate(ServerPlayer p) {
         if (!eligible(p)) return 0;
         if (MEDITATING.remove(p.getUUID()) != null) { message(p,"meditation_stopped"); return 1; }
-        MEDITATING.put(p.getUUID(),new Meditation(p,p.level(),p.position(),-40));
+        MEDITATING.put(p.getUUID(),new Meditation(p,p.level(),p.position(),-40,0));
         message(p,"meditation_start",config().meditationTicks);
         return 1;
     }
     private static void tickMeditation(ServerPlayer p) {
         Meditation m=MEDITATING.get(p.getUUID()); if (m==null) return;
         if(m.ticks<0 && eligible(p) && m.player==p && m.level==p.level()) {
-            MEDITATING.put(p.getUUID(),new Meditation(p,p.level(),p.position(),m.ticks+1));return;
+            MEDITATING.put(p.getUUID(),new Meditation(p,p.level(),m.anchor,m.ticks+1,0));return;
         }
         if (!eligible(p) || m.player!=p || m.level!=p.level() || p.position().distanceToSqr(m.anchor)>.04
-                || !p.isShiftKeyDown() || !p.onGround() || p.isPassenger() || p.getFoodData().getFoodLevel()<=6) {
+                || !p.onGround() || p.isPassenger() || p.getFoodData().getFoodLevel()<=6) {
             MEDITATING.remove(p.getUUID()); message(p,"meditation_interrupted"); return;
         }
         int ticks=m.ticks+1;
@@ -209,7 +209,13 @@ public final class RealmProgression {
             practice(p,"qi",config().meditationXp); practice(p,"recovery",config().meditationXp);
             ticks=0; p.sendOverlayMessage(Component.translatable("realm.corpseorigin.meditation_gain",config().meditationXp));
         }
-        MEDITATING.put(p.getUUID(),new Meditation(p,p.level(),m.anchor,ticks));
+        int elapsed=m.elapsed+1;
+        if(elapsed>=1200) {
+            MEDITATING.remove(p.getUUID());
+            message(p,"meditation_complete");
+            return;
+        }
+        MEDITATING.put(p.getUUID(),new Meditation(p,p.level(),m.anchor,ticks,elapsed));
     }
     public static int refine(ServerPlayer p, String job) {
         if (!eligible(p) || !List.of("blood","qi","medicine").contains(job)) return 0;

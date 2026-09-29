@@ -106,12 +106,23 @@ public final class BodyTransplantHandler {
         float pitch = body.getXRot();
         state.setPos(body.blockPosition());
         state.setWorld(body.level().dimension().identifier());
+        dropOriginalInventory(player);
         body.discard();
         ServerShell.of(player).apply(state);
         // ShellState stores block coordinates; preserve the body's exact position and facing.
         player.teleportTo(destination.x, destination.y, destination.z);
         player.setYRot(yaw);
         player.setXRot(pitch);
+    }
+
+    private static void dropOriginalInventory(ServerPlayer player) {
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            var stack = inventory.getItem(slot);
+            if (stack.isEmpty()) continue;
+            inventory.setItem(slot, net.minecraft.world.item.ItemStack.EMPTY);
+            player.drop(stack, true, false);
+        }
     }
 
     /**

@@ -74,6 +74,11 @@ public class CorpseOrigin implements ModInitializer {
 				id("character_books"),
 				ModItems.CHARACTER_BOOK_TAB
 		);
+		Registry.register(
+				BuiltInRegistries.CREATIVE_MODE_TAB,
+				id("skill_books"),
+				ModItems.SKILL_BOOK_TAB
+		);
 
 		// ✅ 6. 实体
 		ModEntities.init();
@@ -89,6 +94,7 @@ public class CorpseOrigin implements ModInitializer {
 
 		// ✅ 8. 角色系统
 		CharacterManager.getInstance().registerDefaults();
+		xiaoshi2022.corpseorigin.item.SkillBookItem.registerAll();
 
 		// ✅ 注册 DataAttachment（必须在网络之前）
 		ModDataAttachments.init();

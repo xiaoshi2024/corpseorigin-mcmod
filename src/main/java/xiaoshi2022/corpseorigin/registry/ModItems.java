@@ -379,6 +379,17 @@ public final class ModItems {
             })
             .build();
 
+    public static final CreativeModeTab SKILL_BOOK_TAB = CreativeModeTab.builder(
+                    CreativeModeTab.Row.TOP, 8)
+            .title(Component.translatable("itemGroup.corpseorigin.skill_books"))
+            .icon(() -> SkillBookItem.allBooks().isEmpty()
+                    ? new ItemStack(Items.ENCHANTED_BOOK)
+                    : new ItemStack(SkillBookItem.allBooks().getFirst()))
+            .displayItems((parameters, output) -> {
+                for (SkillBookItem book : SkillBookItem.allBooks()) output.accept(book);
+            })
+            .build();
+
     private static Item register(String name, Item item) {
         return Registry.register(
                 BuiltInRegistries.ITEM,
