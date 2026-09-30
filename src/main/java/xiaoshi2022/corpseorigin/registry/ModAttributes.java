@@ -74,6 +74,12 @@ public final class ModAttributes {
                 ZuoFloodLongEntity.createAttributes()
         );
 
+        // 尸兄·尔多兽王（GEO BOSS：多阶段 + 流血 + 震地波 + 无喘息连击）
+        FabricDefaultAttributeRegistry.register(
+                ModEntities.ELDOR_KING_ZBR,
+                EldorKingZbrEntity.createAttributes()
+        );
+
         // TODO: 添加其他实体的属性注册
         // 例如：
         // FabricDefaultAttributeRegistry.register(ModEntities.LONGYOU, LongyouEntity.createAttributes());

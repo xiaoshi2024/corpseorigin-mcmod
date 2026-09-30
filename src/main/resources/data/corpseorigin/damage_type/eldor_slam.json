@@ -1,0 +1,8 @@
+{
+  "message_id": "eldor_slam",
+  "exhaustion": 0.0,
+  "knockback": "no",
+  "effects": "hurt",
+  "scaling": "never",
+  "is_bypass_shield": true
+}

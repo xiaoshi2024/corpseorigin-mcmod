@@ -93,6 +93,19 @@ public final class ModSpawns {
         CorpseOrigin.LOGGER.info("CorpseOrigin natural spawns registered");
     }
 
+    /**
+     * 跑 {@code /corpseconfig reload} 时调用：把启动时缓存下来的"远湖通过几率"再刷一次，
+     * 否则改完配置不重启服务器的话这个值一直是老的。
+     * <p>
+     * 自然生成权重（{@code registerBiomeSpawns}）和生成规则（{@code registerSpawnRules}）
+     * 在服务器启动时就注册死了没法热更，要改这两条只能重启 ——
+     * 但僵尸禁用开关走的是 {@link xiaoshi2022.corpseorigin.mixin.SpawnPlacementsMixin}，
+     * 那条路每 tick 都直接读 {@link CorpseConfig#get()}，所以<b>实时</b>生效。
+     */
+    public static void refreshAfterReload() {
+        farFromLakeChance = CorpseConfig.get().spawn.nearBywaterChance;
+    }
+
     /** ① 生成规则 */
     private static void registerSpawnRules() {
         for (EntityType<?> type : new EntityType[]{
@@ -139,12 +152,22 @@ public final class ModSpawns {
                         xiaoshi2022.corpseorigin.entity.DamoEntity.class,
                         new net.minecraft.world.phys.AABB(pos).inflate(48), Entity::isAlive).isEmpty()));
         SpawnPlacementsInvoker.corpseorigin$register(
-                ModEntities.TIAN_DOCTOR,
-                SpawnPlacementTypes.ON_GROUND,
+                ModEntities.TIAN_DOCTOR, SpawnPlacementTypes.ON_GROUND,
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 (type, level, reason, pos, random) -> !roleplayBlocksNaturalSpawn(level, reason)
                         && level.getDifficulty() != Difficulty.PEACEFUL
                         && Mob.checkMobSpawnRules(type, level, reason, pos, random));
+
+        // 尸兄·尔多兽王 BOSS：注册生成规则（让刷怪蛋 + 指令 + 刷怪笼照常能用），
+        // 但<b>刻意不进任何生物群系的生成表</b> —— 600 血 BOSS 野外自然刷=灾难。
+        // 想真召唤 BOSS 走 /summoneldor 指令 或剧情事件，别用自然生成。
+        // 规则用 corpseorigin$zbSpawnRules 那套尸兄专用规则（受 roleplay 拦截、和平模式拦），
+        // 走 SpawnEggItem 召唤时不走 NATURAL 分支，所以"湖边聚集"判定不触发。
+        SpawnPlacementsInvoker.corpseorigin$register(
+                ModEntities.ELDOR_KING_ZBR,
+                SpawnPlacementTypes.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                ModSpawns::corpseorigin$zbSpawnRules);
     }
 
     private static boolean corpseorigin$damoSpawnRules(EntityType<? extends Mob> type, ServerLevelAccessor level,

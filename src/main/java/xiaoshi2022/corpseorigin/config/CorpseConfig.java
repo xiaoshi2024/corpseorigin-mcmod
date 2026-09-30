@@ -58,6 +58,12 @@ public final class CorpseConfig {
     /** Server-side restrictions on both bound and universal character books. Restart to apply. */
     public CharacterBooks characterBooks = new CharacterBooks();
     public GourdInheritance gourdInheritance = new GourdInheritance();
+    /**
+     * 配置文件版本号：每次新增需要"老配置文件迁移"的字段时把它 +1。
+     * <p>
+     * 字段默认值是当前最新版本；老文件里没有这一项时 Gson 反序列化为 0，触发 sanitize 里的迁移分支。
+     */
+    public int configVersion = 1;
     public static final class GourdInheritance {
         public boolean enabled = true;
         public double passiveChance = .40, neutralChance = .30, hostileChance = .25;
@@ -77,16 +83,41 @@ public final class CorpseConfig {
     }
 
     public static final class Spawn {
+        /** 尸兄·尔多兽王事件型召唤参数（见 {@code EldorKingSpawns}）—— GUI 里可改 */
+        public EldorKing eldorKing = new EldorKing();
+
+        public static final class EldorKing {
+            /** 首次降临的世界日（第几天）。0 = 关闭事件召唤，只能靠指令/刷怪蛋。 */
+            public int firstDay = 8;
+            /** 两次降临之间的间隔天数。 */
+            public int intervalDays = 12;
+            /** 距目标玩家最近召唤距离（格）。 */
+            public int minRadius = 32;
+            /** 距目标玩家最远召唤距离（格）。 */
+            public int maxRadius = 48;
+            /** 该半径内已有存活的多尔兽王就跳过本次（防堆叠）。 */
+            public int nearbyBossCheck = 128;
+        }
+
         /** World day of the first scripted corpse worm encounter. Set to 0 to disable it. */
         public int corpseWormFirstDay = 4;
         /** Days after the first encounter before the next one. */
         public int corpseWormBaseIntervalDays = 4;
         /** Extra days added to each successive interval. */
         public int corpseWormIntervalIncreaseDays = 1;
-        public int lowerLevelZbWeight = 2;
-        public int aotumanZbWeight = 2;
-        public int mikuZbWeight = 2;
-        public int cocoZombieWeight = 2;
+        /**
+         * 是否实时禁用<b>原版</b>僵尸（含尸壳、村民僵尸）的自然生成。
+         * <p>
+         * 默认 false（原版僵尸照常刷）。改完之后跑 {@code /corpseconfig reload} 立刻生效，
+         * 或者用 {@code /corpseconfig zombies on|off} 直接开关（会自动写回文件）。
+         * <b>只拦 NATURAL 自然生成</b>：刷怪蛋、刷怪笼、{@code /summon} 不受影响。
+         */
+        public boolean disableVanillaZombieSpawns = false;
+        /** 尸兄三兄弟 + CoCo 尸兄的生成权重，默认与原版僵尸持平（100）—— 想更稀有就调小 */
+        public int lowerLevelZbWeight = 100;
+        public int aotumanZbWeight = 100;
+        public int mikuZbWeight = 100;
+        public int cocoZombieWeight = 100;
         /**
          * CoCo 尸兄·二阶段（合体形态）。<b>目前不参与自然生成</b> —— 它按设定是企鹅与大叔的合体产物，
          * 只应由合体流程产生（见 {@code ModSpawns}）。这个值保留着，方便你想改回去时直接用。
@@ -132,6 +163,20 @@ public final class CorpseConfig {
          * 默认 2.0 —— 上限附近最多、往下逐级减半；调到 1.1 接近均摊，调到 4 就几乎只剩上限那一级。
          */
         public float levelDecay = 2.0F;
+
+        // ---- 吸食进化（ZbEvolution）：尸兄自己吃血肉升级的那条线，GUI 第 2 页可改 ----
+        /** 每级进化所需的血肉能量（击杀所得：动物 1 / 村民 3 / 同类 4 / 玩家 5 点）。 */
+        public int zbEvolutionEnergyPerLevel = 10;
+        /**
+         * 正常进化的等级上限（1~9）：过了这条线就要靠"超脱临界"概率突破，
+         * 每次突破成功随机突变一个器官 —— 也就是"外骨骼"的来源。
+         */
+        public int zbEvolutionBreakthroughLevel = 5;
+        /** 临界突破基础成功率（0~1）。 */
+        public float zbEvolutionBreakthroughChance = 0.15F;
+        /** 每次突破失败后叠加的成功率（0~0.5），直到突破为止。 */
+        public float zbEvolutionBreakthroughBonus = 0.10F;
+
         /** Natural Corpse Brother spawn chance outside city chunks in a Lost Cities dimension. */
         public float lostCitiesOutsideSpawnChance = 0.025F;
     }
@@ -343,6 +388,31 @@ public final class CorpseConfig {
         return instance;
     }
 
+    /**
+     * 用编辑态对象整体替换当前实例并落盘（配置 GUI 用）。
+     * GUI 先用 {@link #snapshot()} 拿一份深拷贝当编辑态，确认保存时整体写回 —— 取消则直接丢弃，内存对象不脏。
+     */
+    public static void replace(CorpseConfig newConfig) {
+        instance = newConfig;
+        save();
+    }
+
+    /** 当前配置的深拷贝（GSON 走一圈），给配置 GUI 当编辑态。 */
+    public static CorpseConfig snapshot() {
+        return GSON.fromJson(GSON.toJson(get()), CorpseConfig.class);
+    }
+
+    /**
+     * 重新读盘载入配置（运行时修改 config/corpseorigin.json 后跑 {@code /corpseconfig reload} 触发）。
+     * <p>
+     * 不重启服务器就能让 {@code disableVanillaZombieSpawns}、刷怪权重等"实时"字段生效；
+     * 写坏了会兜底成默认值，不会把现有 instance 顶掉。
+     */
+    public static void reload() {
+        CorpseConfig fresh = load();
+        instance = fresh;
+    }
+
     /** 强制把当前配置写回文件（HUD 设置界面等运行时修改后调用） */
     public static void save() {
         if (instance == null) return;
@@ -404,6 +474,16 @@ public final class CorpseConfig {
         if (growth.teachings == null) growth.teachings = new ArrayList<>();
         if (spawn == null) {
             spawn = new Spawn();
+        }
+        // 配置文件迁移：老文件里尸兄权重默认 2（远低于"和原版僵尸持平"的 100），
+        // 老用户升级上来后只有把它们顶到新默认，才符合"尸兄生成权重和僵尸持平"的预期。
+        // 只动恰好等于 2 的字段 —— 用户如果手动改过（≠2）一律尊重。
+        if (configVersion < 1) {
+            if (spawn.lowerLevelZbWeight == 2) spawn.lowerLevelZbWeight = 100;
+            if (spawn.aotumanZbWeight == 2) spawn.aotumanZbWeight = 100;
+            if (spawn.mikuZbWeight == 2) spawn.mikuZbWeight = 100;
+            if (spawn.cocoZombieWeight == 2) spawn.cocoZombieWeight = 100;
+            configVersion = 1;
         }
         if (names == null) {
             names = new Names();

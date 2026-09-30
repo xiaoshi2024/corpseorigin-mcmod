@@ -205,6 +205,22 @@ public final class ModEntities {
                     .updateInterval(2)
     );
 
+    /**
+     * 尸兄·尔多兽王（{@code eldor_king_zbr}）—— 多尔兽王尸化后的 BOSS 形态。
+     * <p>
+     * 大体型（1.8 × 3.0）压迫感 + 二阶段红毛 + 獠牙撕咬（流血 + 禁食）+ 震地波（不可格挡 + 击退 + 禁足）
+     * + 无喘息连击。攻击状态机由 {@link xiaoshi2022.corpseorigin.skill.chapter.EldorKingZbrCombat} 推。
+     * 不进自然生成表（仅召唤 / 事件触发），故不挂刷怪蛋。
+     */
+    public static final EntityType<EldorKingZbrEntity> ELDOR_KING_ZBR = register(
+            "eldor_king_zbr",
+            EntityType.Builder.<EldorKingZbrEntity>of(EldorKingZbrEntity::new, MobCategory.MONSTER)
+                    .sized(3.8f, 4.5f)
+                    .clientTrackingRange(12)
+                    .updateInterval(2)
+                    .notInPeaceful()
+    );
+
     private static <T extends Entity> EntityType<T> register(String name, EntityType.Builder<T> builder) {
         Identifier id = CorpseOrigin.id(name);
         return Registry.register(

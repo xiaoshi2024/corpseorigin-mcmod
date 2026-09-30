@@ -64,6 +64,17 @@ public final class SkillManager {
                     .filter(s -> s.getId().getPath().equals(skillPath))
                     .findFirst().orElse(null);
         }
+        // ★ 技能书研读已不限制角色（2026-09-30）：凡人 / 尸兄 / 新章节角色都能读技能书学技能。
+        // 玩家级已学数据（hasLearned）是权威 —— 读过书的技能即使不在当前角色列表里也直接可用。
+        // 仅形态 / 身体改造类维持排除（与跨角色学习同一安全规则，见 SkillLearningRules.CROSS_ROLE_EXCLUDED）：
+        // 换身体 / 叠形态的招式跨到别的角色身上会和尸兄状态、形态系统互斥，暂无防护。
+        if (skill == null && PlayerCharacterData.get(player).hasLearned(player.getUUID(), skillPath)) {
+            skill = xiaoshi2022.corpseorigin.growth.FreeGrowth.skills().stream()
+                    .filter(s -> s.getId().getPath().equals(skillPath))
+                    .filter(s -> !xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.CROSS_ROLE_EXCLUDED
+                            .contains(s.getId().getPath()))
+                    .findFirst().orElse(null);
+        }
 // ★ 动态技能：少教主进入不死髅体后临时获得的躯体技能
         if (skill == null) {
             skill = xiaoshi2022.corpseorigin.skill.longyou.UndeadBodyState

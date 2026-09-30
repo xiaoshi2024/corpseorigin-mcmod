@@ -22,6 +22,12 @@ public final class ModEffects {
             new xiaoshi2022.corpseorigin.effect.SideEffect(MobEffectCategory.HARMFUL, 0xFFAA00)
     );
 
+    /** 尸兄撕咬流血：每 2 秒 1 颗心，期间无法进食（{@code BleedBlockFoodMixin}）—— 仿 Sans KR */
+    public static final Holder<MobEffect> BLEED = register(
+            "bleed",
+            new xiaoshi2022.corpseorigin.effect.BleedEffect(MobEffectCategory.HARMFUL, 0x8B0000)
+    );
+
     private static Holder<MobEffect> register(String name, MobEffect effect) {
         return Registry.registerForHolder(
                 BuiltInRegistries.MOB_EFFECT,

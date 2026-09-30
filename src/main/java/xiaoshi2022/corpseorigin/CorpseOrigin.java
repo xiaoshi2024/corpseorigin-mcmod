@@ -137,7 +137,9 @@ public class CorpseOrigin implements ModInitializer {
 		// ✅ 10. 事件
 		ByWaterEventHandler.register();
 		ServerEvents.register();
+        xiaoshi2022.corpseorigin.skill.chapter.EldorKingZbrCombat.register();
         xiaoshi2022.corpseorigin.skill.chapter.FiveElementsCombat.register();
+        xiaoshi2022.corpseorigin.event.EldorKingSpawns.register();
         xiaoshi2022.corpseorigin.skill.chapter.SkillRework.register();
         xiaoshi2022.corpseorigin.skill.chapter.GuigunCombat.register();
         xiaoshi2022.corpseorigin.skill.chapter.FlameSea.register();
@@ -183,7 +185,9 @@ public class CorpseOrigin implements ModInitializer {
 				(dispatcher, registryAccess, environment) -> {
 					CharacterCommands.register(dispatcher);
 				SummonZbCommand.register(dispatcher);
+				xiaoshi2022.corpseorigin.command.SummonEldorCommand.register(dispatcher);
 				xiaoshi2022.corpseorigin.command.RoleplayModeCommand.register(dispatcher);
+				xiaoshi2022.corpseorigin.command.CorpseConfigCommand.register(dispatcher);
 				LimbCommand.register(dispatcher);
 				SkillCommand.register(dispatcher);
 				xiaoshi2022.corpseorigin.command.EvolutionPointsCommand.register(dispatcher);

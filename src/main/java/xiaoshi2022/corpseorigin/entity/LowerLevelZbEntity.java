@@ -453,7 +453,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
             return;
         }
         setEvolutionLevel(evolutionLevel);
-        for (int i = 0; i < evolutionLevel - ZbEvolution.BREAKTHROUGH_LEVEL; i++) {
+        // 超出临界线的部分每级补一个突变器官（临界线跟随配置，见 ZbEvolution.breakthroughLevel）
+        for (int i = 0; i < evolutionLevel - ZbEvolution.breakthroughLevel(); i++) {
             if (!ZbOrganGrowth.tryMutateOrgan(this)) {
                 break;
             }

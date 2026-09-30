@@ -10,7 +10,6 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
-import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.skill.SkillManager;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState;
 
@@ -51,7 +50,9 @@ public final class ChameleonDisguisePayload {
             reply(p,"");
             return;
         }
-        if(!p.isAlive() || p.isSpectator() || !"bianselong_zb".equals(CharacterManager.getInstance().getPlayerCharacterId(p))){reply(p,"unavailable");return;}
+        // ★ 伪装不再限制变色龙角色（2026-09-30）：任何角色学了伪装技能书都能用，
+        // 学习与否由下面 hasLearned 检查兜底 —— 没学照旧 unavailable。
+        if(!p.isAlive() || p.isSpectator()){reply(p,"unavailable");return;}
         if(!xiaoshi2022.corpseorigin.character.PlayerCharacterData.get(p).hasLearned(p.getUUID(),"chameleon_disguise")
                 || SkillManager.snapshotRemaining(p).containsKey("chameleon_disguise")){reply(p,"unavailable");return;}
         if(PENDING.containsKey(p.getUUID())){reply(p,"busy");return;}

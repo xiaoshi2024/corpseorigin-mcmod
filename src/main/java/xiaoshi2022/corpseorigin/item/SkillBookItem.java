@@ -68,11 +68,7 @@ public final class SkillBookItem extends Item {
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
         if (level.isClientSide()) return InteractionResult.SUCCESS;
         if (!(player instanceof ServerPlayer serverPlayer)) return InteractionResult.PASS;
-        if (!"mortal".equals(xiaoshi2022.corpseorigin.character.CharacterManager.getInstance()
-                .getPlayerCharacterId(serverPlayer))) {
-            serverPlayer.sendOverlayMessage(Component.translatable("item.corpseorigin.skill_book.mortal_only"));
-            return InteractionResult.FAIL;
-        }
+        // ★ 技能书不再限制角色：凡人 / 尸兄 / 新章节角色都能研读（2026-09-30 需求变更）
         var data = PlayerCharacterData.get(serverPlayer);
         String path = skill.getId().getPath();
         if (data.hasLearned(serverPlayer.getUUID(), path)) {

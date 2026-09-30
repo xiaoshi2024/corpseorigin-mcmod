@@ -29,8 +29,11 @@ public final class ChapterActorState {
                 xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.syncEvolvedEye(player);
                 String role = CharacterManager.getInstance().getPlayerCharacterId(player);
                 if (!role.equals(player.getAttachedOrCreate(ROLE))) player.setAttached(ROLE,role);
-                if (!player.getAttachedOrCreate(DISGUISE).isEmpty() && (!"bianselong_zb".equals(role)
-                        || !player.isAlive() || player.level().getGameTime()>=player.getAttachedOrCreate(DISGUISE_UNTIL)))
+                // ★ 伪装不再按角色清（2026-09-30）：任何角色学过伪装技能都可以保持伪装，
+                // 这里只保留「死亡 / 到期」清理。角色本身拦截已移到技能学习/激活侧。
+                if (!player.getAttachedOrCreate(DISGUISE).isEmpty()
+                        && (!player.isAlive()
+                        || player.level().getGameTime() >= player.getAttachedOrCreate(DISGUISE_UNTIL)))
                     player.setAttached(DISGUISE,"");
             }
         });

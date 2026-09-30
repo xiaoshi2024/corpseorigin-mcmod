@@ -18,6 +18,7 @@
     "MobPeacefulMixin",
     "MobPickupMixin",
     "MobZombieKingRespectMixin",
+    "BleedBlockFoodMixin",
     "NestProjectileMixin",
     "PlayerDimensionsMixin",
     "ProjectileOnHitBlockMixin",
@@ -28,6 +29,7 @@
     "ServerPlayerGameModeMixin",
     "ServerPlayerShellMixin",
     "SpawnPlacementsInvoker",
+    "SpawnPlacementsMixin",
     "SwarmClimbMixin"
   ],
   "injectors": {

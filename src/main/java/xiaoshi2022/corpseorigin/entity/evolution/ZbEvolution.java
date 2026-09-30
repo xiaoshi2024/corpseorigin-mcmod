@@ -51,7 +51,20 @@ public final class ZbEvolution {
     }
 
     public static int thresholdForLevel(int level) {
-        return Math.max(1, level) * 10;
+        int perLevel = xiaoshi2022.corpseorigin.config.CorpseConfig.get().spawn.zbEvolutionEnergyPerLevel;
+        return Math.max(1, level) * Math.max(1, perLevel);
+    }
+
+    /**
+     * 正常进化的等级上限（可配置，默认 5）：过了它就得靠"超脱临界"概率突破。
+     * <p>
+     * {@link #BREAKTHROUGH_LEVEL} 常量保留作默认值；GUI / 配置文件里改
+     * {@code spawn.zbEvolutionBreakthroughLevel} 生效。下界钳到 1（低于 1 没意义）、
+     * 上界钳到 {@code MAX_LEVEL - 1}（顶满后没有突破的意义）。
+     */
+    public static int breakthroughLevel() {
+        int configured = xiaoshi2022.corpseorigin.config.CorpseConfig.get().spawn.zbEvolutionBreakthroughLevel;
+        return Math.max(1, Math.min(MAX_LEVEL - 1, configured));
     }
 
     /** 击杀回调：加能量，满足条件就连续进化（一次大餐理论上可能连升多级）。 */
@@ -74,15 +87,17 @@ public final class ZbEvolution {
             return false;
         }
 
-        if (current < BREAKTHROUGH_LEVEL) {
+        var config = xiaoshi2022.corpseorigin.config.CorpseConfig.get().spawn;
+        if (current < breakthroughLevel()) {
             // 正常进化
             self.setFleshEnergy(self.getFleshEnergy() - thresholdForLevel(current));
             evolve(self, level, false);
             return true;
         }
 
-        // 5 级临界：概率超脱
-        float chance = BREAKTHROUGH_CHANCE + BREAKTHROUGH_BONUS * self.getBreakthroughFailures();
+        // 临界线之上：概率超脱（基础率 + 每次失败叠加，均可在配置里改）
+        float chance = Math.max(0F, config.zbEvolutionBreakthroughChance)
+                + Math.max(0F, config.zbEvolutionBreakthroughBonus) * self.getBreakthroughFailures();
         if (self.getRandom().nextFloat() < chance) {
             self.setFleshEnergy(self.getFleshEnergy() - thresholdForLevel(current));
             self.setBreakthroughFailures(0);

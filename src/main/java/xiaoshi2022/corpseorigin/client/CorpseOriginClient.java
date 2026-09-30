@@ -259,6 +259,9 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.GUARDIAN_PART, GuardianPartRenderer::new);
         // 尸蛟龙（左护脱离"后放出来的宠BOSS
         EntityRendererRegistry.register(ModEntities.ZUO_FLOOD_LONG, ZuoFloodLongRenderer::new);
+        // 尸兄·尔多兽王（GEO BOSS，二阶段红毛贴图由 model 的 BERSERK_TICKET 切换）
+        EntityRendererRegistry.register(ModEntities.ELDOR_KING_ZBR,
+                xiaoshi2022.corpseorigin.client.renderer.entity.EldorKingZbrRenderer::new);
         // 黑色火线克隆仓方块实体渲染器
         BlockEntityRendererRegistry.register(
                 ModBlockEntities.CLONE_CHAMBER,

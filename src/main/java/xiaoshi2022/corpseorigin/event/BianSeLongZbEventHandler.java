@@ -6,7 +6,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
-import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState;
 
 /**
@@ -29,10 +28,7 @@ public final class BianSeLongZbEventHandler {
             if (blocked || damageTaken < REVEAL_THRESHOLD) {
                 return;
             }
-            // 必须是变色龙尸兄
-            if (!"bianselong_zb".equals(CharacterManager.getInstance().getPlayerCharacterId(player))) {
-                return;
-            }
+            // ★ 不再限制变色龙角色（2026-09-30）：任何角色伪装中受重击都会显形 —— 伪装通用机制
             // 必须正在伪装
             if (player.getAttachedOrCreate(ChapterActorState.DISGUISE).isEmpty()) {
                 return;

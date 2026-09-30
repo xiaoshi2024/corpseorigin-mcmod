@@ -43,8 +43,11 @@ public final class ClientCharacterCache {
                 result.add(skill);
             }
         }
-        // 固定角色靠「获取物」学到的外角色招式不在当前角色的技能表里，轮盘要单独补进来
-        for (ISkill skill : crossRoleSkills()) {
+        // 固定角色学到的外角色招式不在当前角色的技能表里，轮盘要单独补进来。
+        // ★ 口径与服务端 SkillManager 的释放兜底一致（2026-09-30）：技能书已不限角色，
+        // 所以这里是「FreeGrowth 全集排除形态 / 身体改造类」，而不是只有获取式来源的
+        // crossLearnable 白名单 —— 否则新章节角色读了凡人技能书，轮盘里不会出现。
+        for (ISkill skill : bookLearnableSkills()) {
             if (!skill.isActivatable() || !ClientState.hasLearned(skill.getId().getPath())) continue;
             boolean already = false;
             for (ISkill own : result) {
@@ -61,25 +64,26 @@ public final class ClientCharacterCache {
     }
 
     /**
-     * 全体角色里「跨角色可学」的技能（获取式，排除形态 / 身体改造类，见
-     * {@code SkillLearningRules.crossLearnable}）。
+     * 全体「技能书可研读」的技能（FreeGrowth 全集排除形态 / 身体改造类，见
+     * {@code SkillLearningRules.CROSS_ROLE_EXCLUDED}）。
      * <p>
      * 角色在模组初始化时一次性注册、之后不再变化，所以这张表只算一次；
      * 轮盘 HUD 每帧都会调 {@link #getActivatableSkills()}，不能每次都重建。
      */
-    private static List<ISkill> crossRoleSkills;
+    private static List<ISkill> bookLearnableSkills;
 
-    private static List<ISkill> crossRoleSkills() {
-        if (crossRoleSkills == null) {
+    private static List<ISkill> bookLearnableSkills() {
+        if (bookLearnableSkills == null) {
             List<ISkill> list = new ArrayList<>();
             for (ISkill skill : xiaoshi2022.corpseorigin.growth.FreeGrowth.skills()) {
-                if (xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.crossLearnable(skill)) {
+                if (!xiaoshi2022.corpseorigin.skill.unlock.SkillLearningRules.CROSS_ROLE_EXCLUDED
+                        .contains(skill.getId().getPath())) {
                     list.add(skill);
                 }
             }
-            crossRoleSkills = list;
+            bookLearnableSkills = list;
         }
-        return crossRoleSkills;
+        return bookLearnableSkills;
     }
 
     private static boolean hasBorrowedBody() {
