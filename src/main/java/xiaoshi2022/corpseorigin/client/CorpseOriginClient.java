@@ -262,6 +262,12 @@ public class CorpseOriginClient implements ClientModInitializer {
         // 尸兄·尔多兽王（GEO BOSS，二阶段红毛贴图由 model 的 BERSERK_TICKET 切换）
         EntityRendererRegistry.register(ModEntities.ELDOR_KING_ZBR,
                 xiaoshi2022.corpseorigin.client.renderer.entity.EldorKingZbrRenderer::new);
+        // 穆博士（GEO BOSS，二阶段金属贴图由 model 的 METAL_TICKET 切换）
+        EntityRendererRegistry.register(ModEntities.MU_DOCTOR,
+                xiaoshi2022.corpseorigin.client.renderer.entity.MuDoctorRenderer::new);
+        // 穆博士的药剂针头：复用已有药剂模型（GeoItem），用物品投射物渲染器直接画
+        EntityRendererRegistry.register(ModEntities.MU_NEEDLE,
+                context -> new net.minecraft.client.renderer.entity.ThrownItemRenderer<>(context, 1.2f, true));
         // 黑色火线克隆仓方块实体渲染器
         BlockEntityRendererRegistry.register(
                 ModBlockEntities.CLONE_CHAMBER,

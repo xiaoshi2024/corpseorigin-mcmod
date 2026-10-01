@@ -221,6 +221,32 @@ public final class ModEntities {
                     .notInPeaceful()
     );
 
+    /**
+     * 穆博士（{@code mu_doctor}）—— 使用 {@code mu_doctor} geo 资源的双阶段 BOSS。
+     * <p>
+     * 一阶段正常人形态（远程针头风筝消耗），血量降到 50% 自己扎针进化为二阶段金属形态
+     * （刀枪不入 + 抛投玩家，抛投后金属软化 3 秒是唯一输出窗口）。行为由
+     * {@link xiaoshi2022.corpseorigin.skill.chapter.MuDoctorCombat} 推。
+     * 与尔多兽王一样刻意不进自然生成表，只走刷怪蛋 / {@code /summon}。
+     */
+    public static final EntityType<MuDoctorEntity> MU_DOCTOR = register(
+            "mu_doctor",
+            EntityType.Builder.<MuDoctorEntity>of(MuDoctorEntity::new, MobCategory.MONSTER)
+                    .sized(0.7f, 1.9f)
+                    .clientTrackingRange(32)
+                    .updateInterval(2)
+                    .notInPeaceful()
+    );
+
+    /** 穆博士投掷的药剂针头（外观复用已有药剂模型，见 {@link MuNeedleEntity}） */
+    public static final EntityType<MuNeedleEntity> MU_NEEDLE = register(
+            "mu_needle",
+            EntityType.Builder.<MuNeedleEntity>of(MuNeedleEntity::new, MobCategory.MISC)
+                    .sized(0.25f, 0.25f)
+                    .clientTrackingRange(8)
+                    .updateInterval(2)
+    );
+
     private static <T extends Entity> EntityType<T> register(String name, EntityType.Builder<T> builder) {
         Identifier id = CorpseOrigin.id(name);
         return Registry.register(

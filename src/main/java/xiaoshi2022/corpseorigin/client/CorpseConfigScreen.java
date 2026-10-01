@@ -157,6 +157,8 @@ public class CorpseConfigScreen extends Screen {
         var spawn = c.spawn;
         var eldor = spawn.eldorKing;
         var ekDef = new CorpseConfig.Spawn.EldorKing();
+        var mu = spawn.muDoctor;
+        var muDef = new CorpseConfig.Spawn.MuDoctor();
         var spawnDef = new CorpseConfig.Spawn();
         var sv = c.swordVisuals;
         var svDef = new CorpseConfig.SwordVisuals();
@@ -184,6 +186,28 @@ public class CorpseConfigScreen extends Screen {
                         () -> eldor.nearbyBossCheck, v -> eldor.nearbyBossCheck = v,
                         () -> ekDef.nearbyBossCheck, 16, 256, () -> String.valueOf(eldor.nearbyBossCheck)));
         pages.add(new Page("gui.corpseorigin.config.page_eldor", eldorFields));
+
+        // ---- 第 1b 页：穆博士降临 ----
+        List<Field> muFields = List.of(
+                new IntF("gui.corpseorigin.config.f.mu_first_day",
+                        () -> mu.firstDay, v -> mu.firstDay = v,
+                        () -> muDef.firstDay, 0, 100,
+                        () -> mu.firstDay == 0
+                                ? net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.config.disabled")
+                                : String.valueOf(mu.firstDay)),
+                new IntF("gui.corpseorigin.config.f.mu_interval",
+                        () -> mu.intervalDays, v -> mu.intervalDays = v,
+                        () -> muDef.intervalDays, 1, 60, () -> String.valueOf(mu.intervalDays)),
+                new IntF("gui.corpseorigin.config.f.mu_min_radius",
+                        () -> mu.minRadius, v -> mu.minRadius = v,
+                        () -> muDef.minRadius, 8, 96, () -> String.valueOf(mu.minRadius)),
+                new IntF("gui.corpseorigin.config.f.mu_max_radius",
+                        () -> mu.maxRadius, v -> mu.maxRadius = v,
+                        () -> muDef.maxRadius, 16, 128, () -> String.valueOf(mu.maxRadius)),
+                new IntF("gui.corpseorigin.config.f.mu_nearby_check",
+                        () -> mu.nearbyBossCheck, v -> mu.nearbyBossCheck = v,
+                        () -> muDef.nearbyBossCheck, 16, 256, () -> String.valueOf(mu.nearbyBossCheck)));
+        pages.add(new Page("gui.corpseorigin.config.page_mu", muFields));
 
         // ---- 第 2 页：尸兄虫事件 + 尸兄进化 ----
         List<Field> wormFields = List.of(

@@ -86,6 +86,22 @@ public final class CorpseConfig {
         /** 尸兄·尔多兽王事件型召唤参数（见 {@code EldorKingSpawns}）—— GUI 里可改 */
         public EldorKing eldorKing = new EldorKing();
 
+        /** 穆博士事件型召唤参数（见 {@code MuDoctorSpawns}）—— GUI 里可改 */
+        public MuDoctor muDoctor = new MuDoctor();
+
+        public static final class MuDoctor {
+            /** 首次降临的世界日（第几天）。0 = 关闭事件召唤，只能靠指令/刷怪蛋。 */
+            public int firstDay = 14;
+            /** 两次降临之间的间隔天数。 */
+            public int intervalDays = 16;
+            /** 距目标玩家最近召唤距离（格）。 */
+            public int minRadius = 24;
+            /** 距目标玩家最远召唤距离（格）。 */
+            public int maxRadius = 40;
+            /** 该半径内已有存活的穆博士就跳过本次（防堆叠）。 */
+            public int nearbyBossCheck = 128;
+        }
+
         public static final class EldorKing {
             /** 首次降临的世界日（第几天）。0 = 关闭事件召唤，只能靠指令/刷怪蛋。 */
             public int firstDay = 8;
@@ -474,6 +490,11 @@ public final class CorpseConfig {
         if (growth.teachings == null) growth.teachings = new ArrayList<>();
         if (spawn == null) {
             spawn = new Spawn();
+        }
+        // 老配置文件里还没有 muDoctor 这一节：Gson 会反序列化成 null，
+        // 不补的话 MuDoctorSpawns 每 200 tick 读 cfg 时会 NPE。
+        if (spawn.muDoctor == null) {
+            spawn.muDoctor = new Spawn.MuDoctor();
         }
         // 配置文件迁移：老文件里尸兄权重默认 2（远低于"和原版僵尸持平"的 100），
         // 老用户升级上来后只有把它们顶到新默认，才符合"尸兄生成权重和僵尸持平"的预期。

@@ -1,0 +1,327 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"idle": {
+			"loop": true,
+			"animation_length": 2,
+			"bones": {
+				"Waist": {
+					"rotation": {
+						"vector": [0, "math.sin(query.anim_time * 45) * 2", 0]
+					},
+					"position": {
+						"0.0": {
+							"vector": [0, "math.sin(query.anim_time * 90) * 0.2", 0]
+						},
+						"0.625": {
+							"vector": [0, "-0.2+math.sin(query.anim_time * 90) * 0.2", 0]
+						}
+					}
+				},
+				"Head": {
+					"rotation": {
+						"vector": ["math.sin(query.anim_time * 90) * 2", "math.sin(query.anim_time * 45) * 4", 0]
+					}
+				},
+				"Body": {
+					"rotation": {
+						"vector": ["math.sin(query.anim_time * 90) * 1.5", 0, 0]
+					}
+				},
+				"Right Arm": {
+					"rotation": {
+						"vector": ["math.sin(query.anim_time * 90) * 3", 0, "math.sin(query.anim_time * 90 + 30) * 2"]
+					}
+				},
+				"Left Arm": {
+					"rotation": {
+						"vector": ["math.sin(query.anim_time * 90) * 3", 0, "-math.sin(query.anim_time * 90 + 30) * 2"]
+					}
+				},
+				"Right Leg": {
+					"rotation": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"Left Leg": {
+					"rotation": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"dr_mu_eye": {
+					"position": {
+						"vector": [0, 0, 0.8]
+					}
+				}
+			}
+		},
+		"think": {
+			"loop": true,
+			"animation_length": 3,
+			"bones": {
+				"Waist": {
+					"rotation": {
+						"vector": [0, "math.sin(query.anim_time * 30) * 3", 0]
+					},
+					"position": {
+						"vector": [0, "math.sin(query.anim_time * 60) * 0.15", 0]
+					}
+				},
+				"Head": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.6": {
+							"vector": [-8, 15, 0]
+						},
+						"1.2": {
+							"vector": [-5, -12, 0]
+						},
+						"1.8": {
+							"vector": [-8, 10, 0]
+						},
+						"2.4": {
+							"vector": [-3, -8, 0]
+						},
+						"3.0": {
+							"vector": [0, 0, 0]
+						}
+					}
+				},
+				"Body": {
+					"rotation": {
+						"vector": [2, 0, 0]
+					}
+				},
+				"Right Arm": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.8": {
+							"vector": [-15, 0, -8]
+						},
+						"1.6": {
+							"vector": [-10, 0, -5]
+						},
+						"2.4": {
+							"vector": [-15, 0, -8]
+						},
+						"3.0": {
+							"vector": [0, 0, 0]
+						}
+					}
+				},
+				"Left Arm": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.8": {
+							"vector": [-15, 0, 8]
+						},
+						"1.6": {
+							"vector": [-10, 0, 5]
+						},
+						"2.4": {
+							"vector": [-15, 0, 8]
+						},
+						"3.0": {
+							"vector": [0, 0, 0]
+						}
+					}
+				},
+				"Right Leg": {
+					"rotation": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"Left Leg": {
+					"rotation": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"dr_mu_eye": {
+					"position": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.7": {
+							"vector": [0, 0, 0.6]
+						}
+					}
+				}
+			}
+		},
+		"run": {
+			"loop": true,
+			"animation_length": 0.8,
+			"bones": {
+				"Waist": {
+					"rotation": {
+						"vector": [8, 0, 0]
+					},
+					"position": {
+						"vector": [0, "math.abs(math.sin(query.anim_time * 360)) * 0.6", 0]
+					}
+				},
+				"Head": {
+					"rotation": {
+						"vector": [-5, 0, 0]
+					}
+				},
+				"Body": {
+					"rotation": {
+						"vector": [4, 0, 0]
+					}
+				},
+				"Right Arm": {
+					"rotation": {
+						"vector": ["math.sin(query.anim_time * 360) * 60", 0, 0]
+					}
+				},
+				"Left Arm": {
+					"rotation": {
+						"vector": ["-math.sin(query.anim_time * 360) * 60", 0, 0]
+					}
+				},
+				"Right Leg": {
+					"rotation": {
+						"vector": ["-math.sin(query.anim_time * 360) * 50", 0, 0]
+					}
+				},
+				"Left Leg": {
+					"rotation": {
+						"vector": ["math.sin(query.anim_time * 360) * 50", 0, 0]
+					}
+				},
+				"dr_mu_eye": {
+					"position": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.75": {
+							"vector": [0, 0, 0.6]
+						}
+					}
+				}
+			}
+		},
+		"press": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 2.2083,
+			"bones": {
+				"bone2": {
+					"position": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.5": {
+							"vector": [0, -0.3, 0]
+						},
+						"0.9583": {
+							"vector": [0, -1.4, 0]
+						}
+					}
+				},
+				"bone3": {
+					"position": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.9583": {
+							"vector": [0, -0.4, 0]
+						},
+						"1.9583": {
+							"vector": [0, -0.9, 0]
+						}
+					},
+					"scale": {
+						"0.0": {
+							"vector": [1, 1, 1]
+						},
+						"0.5": {
+							"vector": [1, 0.9, 1]
+						},
+						"0.9583": {
+							"vector": [1, 0.68, 1]
+						},
+						"1.9583": {
+							"vector": [1, 0.19, 1]
+						}
+					}
+				},
+				"yaoji": {
+					"rotation": {
+						"vector": [90, 0, 0]
+					},
+					"position": {
+						"vector": [-2.5, -1.8, 1.9]
+					},
+					"scale": {
+						"vector": [1, 1.15, 1.225]
+					}
+				},
+				"Right Arm": {
+					"rotation": {
+						"vector": [-55.7681, -47.1353, -26.5063]
+					}
+				},
+				"Left Arm": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, 0, 0]
+						},
+						"0.125": {
+							"vector": [-34.8712, 8.0074, 6.3895]
+						}
+					}
+				},
+				"dr_mu_eye": {
+					"position": {
+						"0.0": {
+							"vector": [0, 0, 1]
+						},
+						"1.5833": {
+							"vector": [0, 0, 1]
+						},
+						"1.625": {
+							"vector": [0, 0, 0.6]
+						},
+						"2.0": {
+							"vector": [0, 0, -0.5]
+						}
+					}
+				}
+			}
+		},
+		"haseye": {
+			"loop": true,
+			"animation_length": 2,
+			"bones": {
+				"dr_mu_eye": {
+					"rotation": {
+						"0.0": {
+							"vector": [0, -6, 0]
+						},
+						"1.0": {
+							"vector": [0, 9, 0]
+						},
+						"2.0": {
+							"vector": [0, -6, 0]
+						}
+					},
+					"position": {
+						"0.5": {
+							"vector": [0, 0, -0.5]
+						},
+						"1.5": {
+							"vector": [0, 0, -0.5]
+						}
+					}
+				}
+			}
+		}
+	}
+}

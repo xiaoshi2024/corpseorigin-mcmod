@@ -46,6 +46,9 @@ public final class ModItems {
     /** 尸兄·尔多兽王刷怪蛋 —— 仅创造栏 / 指令 / 剧情给玩家用，BOSS 不自然刷 */
     public static final Item ELDOR_KING_ZBR_SPAWN_EGG = register("eldor_king_zbr_spawn_egg",
             new SpawnEggItem(spawnEggProperties("eldor_king_zbr_spawn_egg", ModEntities.ELDOR_KING_ZBR)));
+    /** 穆博士刷怪蛋（双阶段 BOSS，仅创造栏 / 指令召唤） */
+    public static final Item MU_DOCTOR_SPAWN_EGG = register("mu_doctor_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("mu_doctor_spawn_egg", ModEntities.MU_DOCTOR)));
     public static final Item DR_MU_EYE = register("dr_mu_eye", new Item(new Item.Properties().setId(itemKey("dr_mu_eye"))));
     public static final Item RED_METEOR_SWORD = register("red_meteor_sword",new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,3,-2.4f).setId(itemKey("red_meteor_sword"))));
     public static final Item PARCEL_BOMB = register("parcel_bomb",new Item(new Item.Properties().setId(itemKey("parcel_bomb"))));
@@ -358,6 +361,7 @@ public final class ModItems {
                 output.accept(MULTI_HEAD_CORPSE_WORM_SPAWN_EGG);
                 output.accept(TIAN_DOCTOR_SPAWN_EGG);
                 output.accept(ELDOR_KING_ZBR_SPAWN_EGG);
+                output.accept(MU_DOCTOR_SPAWN_EGG);
                 output.accept(ZB_WORM_ITEM);
                 output.accept(HAIR_DRYER);
                 output.accept(ZISHU_THERMAL_SCANNER);

@@ -138,8 +138,10 @@ public class CorpseOrigin implements ModInitializer {
 		ByWaterEventHandler.register();
 		ServerEvents.register();
         xiaoshi2022.corpseorigin.skill.chapter.EldorKingZbrCombat.register();
+        xiaoshi2022.corpseorigin.skill.chapter.MuDoctorCombat.register();
         xiaoshi2022.corpseorigin.skill.chapter.FiveElementsCombat.register();
         xiaoshi2022.corpseorigin.event.EldorKingSpawns.register();
+        xiaoshi2022.corpseorigin.event.MuDoctorSpawns.register();
         xiaoshi2022.corpseorigin.skill.chapter.SkillRework.register();
         xiaoshi2022.corpseorigin.skill.chapter.GuigunCombat.register();
         xiaoshi2022.corpseorigin.skill.chapter.FlameSea.register();

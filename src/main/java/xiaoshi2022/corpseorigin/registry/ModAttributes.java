@@ -80,6 +80,12 @@ public final class ModAttributes {
                 EldorKingZbrEntity.createAttributes()
         );
 
+        // 穆博士（双阶段 BOSS：一阶段远程风筝、二阶段金属抛投）
+        FabricDefaultAttributeRegistry.register(
+                ModEntities.MU_DOCTOR,
+                MuDoctorEntity.createAttributes()
+        );
+
         // TODO: 添加其他实体的属性注册
         // 例如：
         // FabricDefaultAttributeRegistry.register(ModEntities.LONGYOU, LongyouEntity.createAttributes());
