@@ -49,6 +49,20 @@ public final class ModItems {
     /** 穆博士刷怪蛋（双阶段 BOSS，仅创造栏 / 指令召唤） */
     public static final Item MU_DOCTOR_SPAWN_EGG = register("mu_doctor_spawn_egg",
             new SpawnEggItem(spawnEggProperties("mu_doctor_spawn_egg", ModEntities.MU_DOCTOR)));
+    /** 蚊子尸兄刷怪蛋（蚊群核心 BOSS，仅创造栏 / 指令召唤） */
+    public static final Item MOSQUITO_ZBR_SPAWN_EGG = register("mosquito_zbr_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("mosquito_zbr_spawn_egg", ModEntities.MOSQUITO_ZBR)));
+
+    /** 蚊香：放置型克制方块，散出烟雾削弱蚊群；配方见 {@code data/corpseorigin/recipe/mosquito_coil.json} */
+    public static final Item MOSQUITO_COIL = register("mosquito_coil",
+            new BlockItem(ModBlocks.MOSQUITO_COIL, new Item.Properties()
+                    .stacksTo(16).setId(itemKey("mosquito_coil"))));
+
+    /** 蚊子尸兄卵： debugging/建筑用，可放置；游戏内孵化为蚊群子实体 */
+    public static final Item MOSQUITO_ZBR_EGGS = register("mosquito_zbr_eggs",
+            new BlockItem(ModBlocks.MOSQUITO_ZBR_EGGS, new Item.Properties()
+                    .useBlockDescriptionPrefix()
+                    .setId(itemKey("mosquito_zbr_eggs"))));
     public static final Item DR_MU_EYE = register("dr_mu_eye", new Item(new Item.Properties().setId(itemKey("dr_mu_eye"))));
     public static final Item RED_METEOR_SWORD = register("red_meteor_sword",new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,3,-2.4f).setId(itemKey("red_meteor_sword"))));
     public static final Item PARCEL_BOMB = register("parcel_bomb",new Item(new Item.Properties().setId(itemKey("parcel_bomb"))));
@@ -362,6 +376,7 @@ public final class ModItems {
                 output.accept(TIAN_DOCTOR_SPAWN_EGG);
                 output.accept(ELDOR_KING_ZBR_SPAWN_EGG);
                 output.accept(MU_DOCTOR_SPAWN_EGG);
+                output.accept(MOSQUITO_ZBR_SPAWN_EGG);
                 output.accept(ZB_WORM_ITEM);
                 output.accept(HAIR_DRYER);
                 output.accept(ZISHU_THERMAL_SCANNER);
@@ -369,6 +384,8 @@ public final class ModItems {
                 output.accept(CHARACTER_MEMORY);
                 output.accept(LEEK);
                 output.accept(CN_CHESS_ZBRS);
+                output.accept(MOSQUITO_COIL);
+                output.accept(MOSQUITO_ZBR_EGGS);
             })
             .build();
 

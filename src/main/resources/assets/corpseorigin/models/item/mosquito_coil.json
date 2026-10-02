@@ -1,0 +1,8 @@
+{
+  "parent": "corpseorigin:block/mosquito_coil",
+  "display": {
+    "gui": { "rotation": [30, 225, 0], "translation": [0, 2, 0], "scale": [0.8, 0.8, 0.8] },
+    "ground": { "scale": [0.6, 0.6, 0.6] },
+    "fixed": { "scale": [1.2, 1.2, 1.2] }
+  }
+}

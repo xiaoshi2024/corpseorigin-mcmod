@@ -209,6 +209,30 @@ public class CorpseConfigScreen extends Screen {
                         () -> muDef.nearbyBossCheck, 16, 256, () -> String.valueOf(mu.nearbyBossCheck)));
         pages.add(new Page("gui.corpseorigin.config.page_mu", muFields));
 
+        // ---- 第 1c 页：蚊子尸兄降临 ----
+        var mosquito = spawn.mosquito;
+        var moDef = new CorpseConfig.Spawn.Mosquito();
+        List<Field> moFields = List.of(
+                new IntF("gui.corpseorigin.config.f.mosquito_first_day",
+                        () -> mosquito.firstDay, v -> mosquito.firstDay = v,
+                        () -> moDef.firstDay, 0, 100,
+                        () -> mosquito.firstDay == 0
+                                ? net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.config.disabled")
+                                : String.valueOf(mosquito.firstDay)),
+                new IntF("gui.corpseorigin.config.f.mosquito_interval",
+                        () -> mosquito.intervalDays, v -> mosquito.intervalDays = v,
+                        () -> moDef.intervalDays, 1, 60, () -> String.valueOf(mosquito.intervalDays)),
+                new IntF("gui.corpseorigin.config.f.mosquito_min_radius",
+                        () -> mosquito.minRadius, v -> mosquito.minRadius = v,
+                        () -> moDef.minRadius, 8, 96, () -> String.valueOf(mosquito.minRadius)),
+                new IntF("gui.corpseorigin.config.f.mosquito_max_radius",
+                        () -> mosquito.maxRadius, v -> mosquito.maxRadius = v,
+                        () -> moDef.maxRadius, 16, 128, () -> String.valueOf(mosquito.maxRadius)),
+                new IntF("gui.corpseorigin.config.f.mosquito_nearby_check",
+                        () -> mosquito.nearbyBossCheck, v -> mosquito.nearbyBossCheck = v,
+                        () -> moDef.nearbyBossCheck, 16, 256, () -> String.valueOf(mosquito.nearbyBossCheck)));
+        pages.add(new Page("gui.corpseorigin.config.page_mosquito", moFields));
+
         // ---- 第 2 页：尸兄虫事件 + 尸兄进化 ----
         List<Field> wormFields = List.of(
                 new IntF("gui.corpseorigin.config.f.worm_first_day",

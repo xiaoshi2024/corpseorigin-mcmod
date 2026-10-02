@@ -265,6 +265,11 @@ public class CorpseOriginClient implements ClientModInitializer {
         // 穆博士（GEO BOSS，二阶段金属贴图由 model 的 METAL_TICKET 切换）
         EntityRendererRegistry.register(ModEntities.MU_DOCTOR,
                 xiaoshi2022.corpseorigin.client.renderer.entity.MuDoctorRenderer::new);
+        // 蚊子尸兄（蚊群核心 GEO BOSS）+ 环绕蚊子子实体（共用 geo，缩放到 0.35）
+        EntityRendererRegistry.register(ModEntities.MOSQUITO_ZBR,
+                xiaoshi2022.corpseorigin.client.renderer.entity.MosquitoZbrRenderer::new);
+        EntityRendererRegistry.register(ModEntities.MOSQUITO_SWARM,
+                xiaoshi2022.corpseorigin.client.renderer.entity.MosquitoSwarmRenderer::new);
         // 穆博士的药剂针头：复用已有药剂模型（GeoItem），用物品投射物渲染器直接画
         EntityRendererRegistry.register(ModEntities.MU_NEEDLE,
                 context -> new net.minecraft.client.renderer.entity.ThrownItemRenderer<>(context, 1.2f, true));
@@ -279,6 +284,11 @@ public class CorpseOriginClient implements ClientModInitializer {
         BlockEntityRendererRegistry.register(
                 ModBlockEntities.CN_CHESS_ZBRS,
                 CNChessZbrsRenderer::new
+        );
+        // 蚊子尸兄卵（GeckoLib 动画方块实体：idle / wriggle / incubate）
+        BlockEntityRendererRegistry.register(
+                ModBlockEntities.MOSQUITO_ZBR_EGGS,
+                xiaoshi2022.corpseorigin.client.renderer.blockentity.MosquitoEggsRenderer::new
         );
 
         // 3. 模型层注

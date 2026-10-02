@@ -89,6 +89,22 @@ public final class CorpseConfig {
         /** 穆博士事件型召唤参数（见 {@code MuDoctorSpawns}）—— GUI 里可改 */
         public MuDoctor muDoctor = new MuDoctor();
 
+        /** 蚊子尸兄事件型召唤参数（见 {@code MosquitoZbrSpawns}）—— GUI 里可改 */
+        public Mosquito mosquito = new Mosquito();
+
+        public static final class Mosquito {
+            /** 首次现身的游戏日（第几天）。0 = 关闭事件召唤，只能靠指令/刷怪蛋。 */
+            public int firstDay = 18;
+            /** 两次现身之间的间隔天数。 */
+            public int intervalDays = 14;
+            /** 距目标玩家最近召唤距离（格）。 */
+            public int minRadius = 24;
+            /** 距目标玩家最远召唤距离（格）。 */
+            public int maxRadius = 40;
+            /** 该半径内已有存活的蚊子尸兄就跳过本次（防堆叠）。 */
+            public int nearbyBossCheck = 128;
+        }
+
         public static final class MuDoctor {
             /** 首次降临的世界日（第几天）。0 = 关闭事件召唤，只能靠指令/刷怪蛋。 */
             public int firstDay = 14;
@@ -495,6 +511,10 @@ public final class CorpseConfig {
         // 不补的话 MuDoctorSpawns 每 200 tick 读 cfg 时会 NPE。
         if (spawn.muDoctor == null) {
             spawn.muDoctor = new Spawn.MuDoctor();
+        }
+        // 同理：蚊子尸兄的事件召唤参数（老文件里没有这一节）
+        if (spawn.mosquito == null) {
+            spawn.mosquito = new Spawn.Mosquito();
         }
         // 配置文件迁移：老文件里尸兄权重默认 2（远低于"和原版僵尸持平"的 100），
         // 老用户升级上来后只有把它们顶到新默认，才符合"尸兄生成权重和僵尸持平"的预期。

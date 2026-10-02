@@ -52,6 +52,28 @@ public final class ModBlocks {
                     .setId(blockKey("cn_chess_zbrs")))
     );
 
+    /** 蚊子尸兄卵：蚊群战斗中产下，定时孵化出新蚊子；火焰 / 蚊香烟雾可清除 */
+    public static final Block MOSQUITO_ZBR_EGGS = register(
+            "mosquito_zbr_eggs",
+            new xiaoshi2022.corpseorigin.block.MosquitoEggsBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_LIGHT_GREEN)
+                    .strength(0.3F)
+                    .sound(net.minecraft.world.level.block.SoundType.SLIME_BLOCK)
+                    .noOcclusion()
+                    .setId(blockKey("mosquito_zbr_eggs")))
+    );
+
+    /** 蚊香：放置后散出持续烟雾，克制蚊子尸兄；限时燃尽，蚊子会加速烧毁它 */
+    public static final Block MOSQUITO_COIL = register(
+            "mosquito_coil",
+            new xiaoshi2022.corpseorigin.block.MosquitoCoilBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .strength(0.1F)
+                    .sound(net.minecraft.world.level.block.SoundType.GRAVEL)
+                    .noCollision()
+                    .setId(blockKey("mosquito_coil")))
+    );
+
     private static Block register(String name, Block block) {
         return Registry.register(BuiltInRegistries.BLOCK, CorpseOrigin.id(name), block);
     }

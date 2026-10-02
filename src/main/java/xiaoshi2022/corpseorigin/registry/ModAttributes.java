@@ -86,6 +86,16 @@ public final class ModAttributes {
                 MuDoctorEntity.createAttributes()
         );
 
+        // 蚊子尸兄（蚊群核心 BOSS）+ 蚊群子实体
+        FabricDefaultAttributeRegistry.register(
+                ModEntities.MOSQUITO_ZBR,
+                xiaoshi2022.corpseorigin.entity.MosquitoZbrEntity.createAttributes()
+        );
+        FabricDefaultAttributeRegistry.register(
+                ModEntities.MOSQUITO_SWARM,
+                xiaoshi2022.corpseorigin.entity.MosquitoSwarmEntity.createAttributes()
+        );
+
         // TODO: 添加其他实体的属性注册
         // 例如：
         // FabricDefaultAttributeRegistry.register(ModEntities.LONGYOU, LongyouEntity.createAttributes());

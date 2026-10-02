@@ -6,6 +6,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.block.entity.CNChessZbrsBlockEntity;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
+import xiaoshi2022.corpseorigin.block.entity.MosquitoEggsBlockEntity;
 import xiaoshi2022.corpseorigin.block.entity.ZBRFleshBlockEntity;
 
 import java.util.Set;
@@ -34,6 +35,14 @@ public final class ModBlockEntities {
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,
                     CorpseOrigin.id("cn_chess_zbrs"),
                     new BlockEntityType<>(CNChessZbrsBlockEntity::new, Set.of(ModBlocks.CN_CHESS_ZBRS))
+            );
+
+    /** 蚊子尸兄卵（GeckoLib 动画方块实体：idle / wriggle / incubate 按 age 分段） */
+    public static final BlockEntityType<MosquitoEggsBlockEntity> MOSQUITO_ZBR_EGGS =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    CorpseOrigin.id("mosquito_zbr_eggs"),
+                    new BlockEntityType<>(MosquitoEggsBlockEntity::new, Set.of(ModBlocks.MOSQUITO_ZBR_EGGS))
             );
 
     private ModBlockEntities() {

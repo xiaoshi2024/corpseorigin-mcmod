@@ -1,0 +1,12 @@
+{
+  "variants": {
+    "age=0": { "model": "corpseorigin:block/mosquito_coil" },
+    "age=1": { "model": "corpseorigin:block/mosquito_coil" },
+    "age=2": { "model": "corpseorigin:block/mosquito_coil", "y": 90 },
+    "age=3": { "model": "corpseorigin:block/mosquito_coil", "y": 90 },
+    "age=4": { "model": "corpseorigin:block/mosquito_coil", "y": 180 },
+    "age=5": { "model": "corpseorigin:block/mosquito_coil", "y": 180 },
+    "age=6": { "model": "corpseorigin:block/mosquito_coil", "y": 270 },
+    "age=7": { "model": "corpseorigin:block/mosquito_coil", "y": 270 }
+  }
+}

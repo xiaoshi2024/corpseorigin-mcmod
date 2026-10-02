@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "S": "minecraft:stick",
+    "E": "minecraft:spider_eye",
+    "B": "minecraft:blaze_powder"
+  },
+  "pattern": [
+    " B ",
+    "BEB",
+    " B "
+  ],
+  "result": {
+    "id": "corpseorigin:mosquito_coil",
+    "count": 2
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "age=0": { "model": "corpseorigin:block/mosquito_zbr_eggs" },
+    "age=1": { "model": "corpseorigin:block/mosquito_zbr_eggs", "y": 90 },
+    "age=2": { "model": "corpseorigin:block/mosquito_zbr_eggs", "y": 180 },
+    "age=3": { "model": "corpseorigin:block/mosquito_zbr_eggs", "y": 270 }
+  }
+}

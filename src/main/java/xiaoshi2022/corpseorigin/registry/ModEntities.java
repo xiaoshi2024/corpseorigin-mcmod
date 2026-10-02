@@ -247,6 +247,40 @@ public final class ModEntities {
                     .updateInterval(2)
     );
 
+    /**
+     * 蚊子尸兄（{@code mosquito_zbr}）—— 蚊群核心 BOSS，"一个 Boss，多个判定"的载体。
+     * <p>
+     * 本体极小（0.5 × 0.5）、飞行速度快、难以命中；血量独立，攻击判定全在环绕的
+     * 蚊群子实体（{@link MosquitoSwarmEntity}）上：低伤害 + 无视无敌帧的持续叮咬。
+     * 战斗中产卵（{@code mosquito_zbr_eggs}）补员，被蚊香烟雾克制。
+     * 与尔多兽王 / 穆博士一样不进自然生成表，走事件召唤（{@code MosquitoZbrSpawns}）/
+     * 刷怪蛋 / {@code /summon}。
+     */
+    public static final EntityType<MosquitoZbrEntity> MOSQUITO_ZBR = register(
+            "mosquito_zbr",
+            EntityType.Builder.<MosquitoZbrEntity>of(MosquitoZbrEntity::new, MobCategory.MONSTER)
+                    .sized(0.5f, 0.5f)
+                    .clientTrackingRange(32)
+                    .updateInterval(2)
+                    .notInPeaceful()
+    );
+
+    /**
+     * 蚊群子实体——环绕蚊子，真正的叮咬判定载体。
+     * <p>
+     * {@code noSummon}：不给刷怪蛋 / 指令；{@code noSave}：不写进存档
+     * （蚊群由核心按血量自动补员，丢了无所谓，野生蚊子有自己的生命周期）。
+     */
+    public static final EntityType<MosquitoSwarmEntity> MOSQUITO_SWARM = register(
+            "mosquito_swarm",
+            EntityType.Builder.<MosquitoSwarmEntity>of(MosquitoSwarmEntity::new, MobCategory.MISC)
+                    .sized(0.2f, 0.2f)
+                    .noSummon()
+                    .noSave()
+                    .clientTrackingRange(8)
+                    .updateInterval(2)
+    );
+
     private static <T extends Entity> EntityType<T> register(String name, EntityType.Builder<T> builder) {
         Identifier id = CorpseOrigin.id(name);
         return Registry.register(
