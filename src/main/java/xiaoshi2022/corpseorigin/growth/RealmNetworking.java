@@ -41,6 +41,7 @@ public final class RealmNetworking {
                 case "burst" -> RealmProgression.burst(p);
                 case "recharge" -> RealmProgression.recharge(p);
                 case "view" -> { }
+                case "refresh" -> { }   // 面板打开期间的实时轮询：只回数据，不重开屏
                 default -> { return; }
             }
             send(p,payload.action.equals("view"));

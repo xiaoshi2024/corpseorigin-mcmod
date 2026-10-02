@@ -27,6 +27,7 @@ public final class RealmGrowthScreen extends Screen {
 
     private final Screen parent;
     private int selected;
+    private int refresh;
     private final List<Button> purchases=new ArrayList<>();
 
     // 雷达几何（init 时定，绘制/命中共用）
@@ -68,6 +69,8 @@ public final class RealmGrowthScreen extends Screen {
         button("realm.corpseorigin.button.burst",x,252,142,()->{send("burst","",0);minecraft.gui.setScreen(null);});
     }
     @Override public void tick(){
+        // 实时相对：面板打开期间每秒拉一次最新养成数据，等级/历练/点数变化立即反映
+        if(++refresh>=20){refresh=0;send("refresh","",0);}
         String stat=RealmProgression.STATS.get(selected);
         int paid=state.getIntOr("rank_"+stat,0),total=state.getIntOr("total_"+stat,0);
         for(int i=0;i<purchases.size();i++){
@@ -134,7 +137,7 @@ public final class RealmGrowthScreen extends Screen {
             Component bonus=bonusText(i);
             int bonusW=font.width(bonus);
             String rankText=shortNum(state.getIntOr("total_"+stat,0)).getString()
-                    +"/"+shortNum(state.getIntOr("rank_limit",0)).getString();
+                    +"/"+shortNum(statTarget(Math.max(1,state.getIntOr("level",1)))).getString();
             rankText=font.plainSubstrByWidth(rankText,Math.max(10,x0+183-bonusW-6-(x0+56)));
             g.text(font,Component.literal(rankText),x0+56,y,0xFF999999,false);
             g.text(font,bonus,x0+183-bonusW,y,0xFF7FD4FF,false);
@@ -149,12 +152,14 @@ public final class RealmGrowthScreen extends Screen {
             default -> Component.literal(String.format(Locale.ROOT,"+%.1f%%",v*100));
         };
     }
-    /** 6A 评判标准：境界等级为主（满 20 级占 70%）+ 修炼强化为辅（满 5000 强占 30%）；练级立刻动，强化加分 */
+    /** 6A 评判标准（相对制）：该维强化 / 动态目标（每级 300 强，随等级水涨船高）占 75%，等级占 25%；
+     *  加点哪维哪维涨，六维轮廓立见差距，低等级也不会靠少量强化冲到 SSS */
     private double statRatio(int i){
-        int level=state.getIntOr("level",1),limit=state.getIntOr("rank_limit",0);
-        double rankRatio=limit>0?Math.min(1,state.getIntOr("total_"+RealmProgression.STATS.get(i),0)/5000.0):0;
-        return Math.min(1,level/20.0)*.7 + rankRatio*.3;
+        int level=Math.max(1,state.getIntOr("level",1)),limit=state.getIntOr("rank_limit",0);
+        double rankRatio=limit>0?Math.min(1,state.getIntOr("total_"+RealmProgression.STATS.get(i),0)/(double)statTarget(level)):0;
+        return rankRatio*.75 + Math.min(1,level/20.0)*.25;
     }
+    private static int statTarget(int level){ return Math.max(300, level*300); }
     private int grade(int i){
         return (int)Math.min(8,statRatio(i)*8.9999);
     }
