@@ -81,9 +81,11 @@ public final class EvolutionStats {
     // ==================== 角色 → 成长原型 映射 ====================
 
     private static final Map<String, GrowthProfile> PROFILE_MAP = new HashMap<>();
+    private static final Map<String, StatTune> TUNE_MAP = new HashMap<>();
 
     static {
         populateProfileMap();
+        TUNE_MAP.put("longyou", StatTune.CORPSE_KING); // 尸王：生命/杀伤/减伤/内力/再生/速度六维特调
     }
 
     /**
@@ -130,6 +132,39 @@ public final class EvolutionStats {
         return PROFILE_MAP.getOrDefault(characterId, GrowthProfile.BALANCED);
     }
 
+    // ==================== 角色特调：六维养成属性个性化倍率 ====================
+
+    /**
+     * 在成长原型之上，对养成系统六维（生命/杀伤/减伤/内力容力/再生/速度）
+     * 再乘的角色专属倍率；未列出的角色全部 1.0。
+     * 生命/杀伤/内力/速度直接放大加值；减伤/再生只放大 rank 修炼段
+     * （RealmRules.amplifyGrowth，等级门槛不动、永不越上限）。
+     */
+    public record StatTune(double health, double attack, double guard, double qi, double recovery, double speed) {
+        public static final StatTune NEUTRAL = new StatTune(1, 1, 1, 1, 1, 1);
+        /** 尸王（龙右）：六维全面上调 */
+        public static final StatTune CORPSE_KING = new StatTune(1.5, 1.5, 1.5, 1.5, 1.5, 1.5);
+    }
+
+    /** 某角色的六维特调倍率（未配置 = 全 1.0） */
+    public static StatTune tuneOf(String characterId) {
+        return TUNE_MAP.getOrDefault(characterId, StatTune.NEUTRAL);
+    }
+
+    /** 境界养成模式下生命加成的最终值（等级曲线 × 修炼 × 成长原型 × 角色特调）；reconcile 与 6A 面板共用。 */
+    public static double tunedHealth(ServerPlayer player) {
+        String roleId = CharacterManager.getInstance().getPlayerCharacterId(player);
+        return xiaoshi2022.corpseorigin.growth.RealmProgression.healthBonus(player)
+                * (.75 + profileOf(roleId).maxHealth / 160) * tuneOf(roleId).health();
+    }
+
+    /** 境界养成模式下攻击加成的最终值；reconcile 与 6A 面板共用。 */
+    public static double tunedAttack(ServerPlayer player) {
+        String roleId = CharacterManager.getInstance().getPlayerCharacterId(player);
+        return xiaoshi2022.corpseorigin.growth.RealmProgression.attackBonus(player)
+                * (.75 + profileOf(roleId).maxAttack / 16) * tuneOf(roleId).attack();
+    }
+
     // ==================== 核心：按当前角色 + 等级重算进化加成 ====================
 
     /**
@@ -149,13 +184,13 @@ public final class EvolutionStats {
 
         float oldMax = player.getMaxHealth();
         if (xiaoshi2022.corpseorigin.growth.RealmProgression.config().enabled) {
-            double hp = xiaoshi2022.corpseorigin.growth.RealmProgression.healthBonus(player) * (.75 + profile.maxHealth / 160);
-            double attack = xiaoshi2022.corpseorigin.growth.RealmProgression.attackBonus(player) * (.75 + profile.maxAttack / 16);
+            double hp = tunedHealth(player);
+            double attack = tunedAttack(player);
             applyModifier(player, Attributes.MAX_HEALTH, HEALTH_MODIFIER, hp);
             applyModifier(player, Attributes.ATTACK_DAMAGE, ATTACK_MODIFIER, attack);
             applyModifier(player, Attributes.ARMOR, ARMOR_MODIFIER, Math.min(30, (level-1)*2));
             var rc = xiaoshi2022.corpseorigin.growth.RealmProgression.config();
-            double spd = xiaoshi2022.corpseorigin.growth.RealmRules.speed(level, xiaoshi2022.corpseorigin.growth.RealmProgression.rank(player,"agility"), rc.speedBonusCap);
+            double spd = xiaoshi2022.corpseorigin.growth.RealmProgression.speedBonus(player);
             applyModifier(player, Attributes.MOVEMENT_SPEED, SPEED_MODIFIER, spd);
             // 身法同时加成飞行速度：飞行速度不走属性系统（原版无 FLYING_SPEED 属性），
             // 而在 Abilities.flyingSpeed（基础 0.05）里 —— 曲线两参数均可 GUI 实时调：

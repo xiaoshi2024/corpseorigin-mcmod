@@ -9,6 +9,9 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
+import xiaoshi2022.corpseorigin.skill.EvolutionManager;
+import xiaoshi2022.corpseorigin.skill.EvolutionStats;
+import xiaoshi2022.corpseorigin.skill.EvolutionTier;
 
 /** Panel requests never carry balances, prices, ranks, or configuration from the client. */
 public final class RealmNetworking {
@@ -50,7 +53,18 @@ public final class RealmNetworking {
         tag.putInt("base_cost",cfg.trainingCostBase); tag.putInt("step_cost",cfg.trainingCostStep);
         tag.putInt("rank_limit",cfg.maxTrainingRank); tag.putInt("xp_per_rank",cfg.practiceXpPerRank);
         tag.putInt("recharge_cost",cfg.rechargePointCost);
-        tag.putInt("level",RealmProgression.level(p)); tag.putBoolean("enabled",cfg.enabled);
+        int level=RealmProgression.level(p);
+        tag.putInt("level",level); tag.putBoolean("enabled",cfg.enabled);
+        // 6A 面板：境界名 / 累计 / 距下阶 + 六维最终加成（含成长原型与角色特调，服务端权威计算）
+        tag.putString("tier", EvolutionTier.formatFullName(level).getString());
+        int earned=data.getEarnedPoints(p.getUUID());
+        tag.putInt("earned",earned); tag.putInt("to_next",EvolutionManager.pointsToNextLevel(earned));
+        tag.putDouble("bonus_vitality", EvolutionStats.tunedHealth(p));
+        tag.putDouble("bonus_power", EvolutionStats.tunedAttack(p));
+        tag.putDouble("bonus_guard", RealmProgression.protection(p));
+        tag.putDouble("bonus_qi", RealmProgression.qiBonus(p));
+        tag.putDouble("bonus_recovery", RealmProgression.regeneration(p));
+        tag.putDouble("bonus_agility", RealmProgression.speedBonus(p));
         ServerPlayNetworking.send(p,new State(tag,open));
     }
 }

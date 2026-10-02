@@ -3,9 +3,9 @@ package xiaoshi2022.corpseorigin.client.renderer.entity;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import xiaoshi2022.corpseorigin.entity.BloodWingBeamEntity;
 
-/** Blood-red version of the same tapered crescent geometry. */
+/** Same tapered crescent geometry; color follows the caster's aura. */
 public final class BloodWingBeamRenderer extends CrescentBeamRenderer<BloodWingBeamEntity> {
     public BloodWingBeamRenderer(EntityRendererProvider.Context context) {
-        super(context,255,35,60);
+        super(context);
     }
 }

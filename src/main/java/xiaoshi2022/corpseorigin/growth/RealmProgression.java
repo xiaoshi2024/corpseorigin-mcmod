@@ -18,6 +18,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.CharacterPassives;
 import xiaoshi2022.corpseorigin.character.InnerPowerManager;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
@@ -106,8 +108,7 @@ public final class RealmProgression {
                 EvolutionStats.reconcile(p);
                 if (!eligible(p) || level(p) < 5 || p.getFoodData().getFoodLevel() <= 6) continue;
                 if (p.getHealth() < p.getMaxHealth()) {
-                    double ratio = RealmRules.regeneration(level(p),rank(p,"recovery"));
-                    p.heal((float)(p.getMaxHealth() * ratio));
+                    p.heal((float)(p.getMaxHealth() * regeneration(p)));
                     p.causeFoodExhaustion(.2f);
                 }
             }
@@ -129,8 +130,31 @@ public final class RealmProgression {
     public static double healthBonus(ServerPlayer p) { return RealmRules.trained(RealmRules.health(level(p)) * config().statMultiplier + 4,rank(p,"vitality")) - 4; }
     public static double attackBonus(ServerPlayer p) { return RealmRules.trained(RealmRules.attack(level(p)) * config().statMultiplier + 1,rank(p,"power")) - 1; }
     public static int qiBonus(ServerPlayer p) { return config().enabled ? (int)Math.min(100000000,
-            RealmRules.trained(RealmRules.qi(level(p)) * config().statMultiplier,rank(p,"qi"))) : 0; }
+            RealmRules.trained(RealmRules.qi(level(p)) * config().statMultiplier,rank(p,"qi"))
+                    * EvolutionStats.tuneOf(CharacterManager.getInstance().getPlayerCharacterId(p)).qi()) : 0; }
     public static int qiRegen(ServerPlayer p) { return config().enabled ? Math.max(1, qiBonus(p) / 1000 + rank(p,"recovery") / 20) : 1; }
+
+    /** 减伤比例（含角色特调：只放大 rank 修炼段）；伤害结算与状态栏显示共用，保证显示=实际。 */
+    public static double protection(ServerPlayer p) {
+        int lvl = level(p);
+        double prot = RealmRules.protection(lvl, rank(p,"guard"));
+        return RealmRules.amplifyGrowth(RealmRules.protectionBase(lvl), prot, .99,
+                EvolutionStats.tuneOf(CharacterManager.getInstance().getPlayerCharacterId(p)).guard());
+    }
+
+    /** 再生比例（含角色特调，每秒回复最大生命的该比例）；tick 与 6A 面板共用同一口径。 */
+    public static double regeneration(ServerPlayer p) {
+        int lvl = level(p);
+        return RealmRules.amplifyGrowth(RealmRules.regenerationBase(lvl),
+                RealmRules.regeneration(lvl, rank(p,"recovery")), .02,
+                EvolutionStats.tuneOf(CharacterManager.getInstance().getPlayerCharacterId(p)).recovery());
+    }
+
+    /** 身法移速加成（含角色特调，乘在 MOVEMENT_SPEED 上）；reconcile 与 6A 面板共用同一口径。 */
+    public static double speedBonus(ServerPlayer p) {
+        return RealmRules.speed(level(p), rank(p,"agility"), config().speedBonusCap)
+                * EvolutionStats.tuneOf(CharacterManager.getInstance().getPlayerCharacterId(p)).speed();
+    }
 
     /** Invoked once at LivingEntity.hurtServer entry, also covers fixed-damage skills/projectiles. */
     public static float adjustDamage(LivingEntity target, DamageSource source, float amount) {
@@ -141,7 +165,7 @@ public final class RealmProgression {
             amount = RealmRules.damage(amount, attackBonus(attacker), qiMultiplier);
         }
         if (target instanceof ServerPlayer player) {
-            amount *= (float)(1 - RealmRules.protection(level(player),rank(player,"guard")));
+            amount *= (float)(1 - protection(player));
         }
         return amount;
     }
@@ -155,6 +179,7 @@ public final class RealmProgression {
     }
     public static void onMeal(ServerPlayer p, ItemStack stack) {
         if (stack.is(ConventionalItemTags.RAW_MEAT_FOODS) || stack.is(ConventionalItemTags.RAW_FISH_FOODS)) practice(p,"vitality",1);
+        CharacterPassives.onMeal(p, stack);
     }
     public static void onFlesh(ServerPlayer p) { practice(p,"vitality",config().fleshPracticeXp); }
 
@@ -164,7 +189,7 @@ public final class RealmProgression {
         message(p,"status",EvolutionTier.formatFullName(level(p)),data.getEarnedPoints(p.getUUID()),
                 data.getAvailablePoints(p.getUUID()),EvolutionManager.pointsToNextLevel(data.getEarnedPoints(p.getUUID())));
         message(p,"attributes",Math.round(p.getHealth()),Math.round(p.getMaxHealth()),Math.round(p.getAttributeValue(Attributes.ATTACK_DAMAGE)),
-                String.format(Locale.ROOT,"%.1f",100*RealmRules.protection(level(p),rank(p,"guard"))),InnerPowerManager.getMaxInnerPower(p));
+                String.format(Locale.ROOT,"%.1f",100*protection(p)),InnerPowerManager.getMaxInnerPower(p));
         var tag=data.cultivation(p.getUUID());
         for (int i=0;i<STATS.size();i++) {
             String stat=STATS.get(i); int paid=tag.getIntOr("rank_"+stat,0);

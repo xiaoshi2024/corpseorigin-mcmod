@@ -10,8 +10,11 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
+import xiaoshi2022.corpseorigin.character.CharacterAuraColors;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
 import xiaoshi2022.corpseorigin.network.SwordImpactPayload;
 import xiaoshi2022.corpseorigin.skill.chapter.SwordQiRules;
@@ -31,6 +34,7 @@ public final class SwordImpactRenderer {
     private static long impulse,freezeUntil,lastImpulse;
     private static float strength;
     private static int target=-1,caster=-1;
+    private static int[] screenAura=CharacterAuraColors.rgb(CharacterAuraColors.DEFAULT),screenCore=CharacterAuraColors.bright(screenAura,1.5);
     private static long now(){return System.nanoTime()/1000000L;}
     private static void world(){
         var current=Minecraft.getInstance().level;
@@ -54,8 +58,15 @@ public final class SwordImpactRenderer {
         if(mc.player!=null && (mc.player.getId()==p.caster() || mc.player.getId()==p.target()))attenuation=Math.max(.55f,attenuation);
         if(p.kind()==2 || attenuation<=0 || t-lastImpulse<250)return;
         lastImpulse=impulse=t;strength=attenuation*(.35f+p.tier()*.045f);
+        screenAura=auraRGB(p.caster());screenCore=CharacterAuraColors.bright(screenAura,1.5);
         target=p.target();caster=p.caster();POSES.clear();MOTIONS.clear();
         freezeUntil=cfg.hitStop?t+Math.min(95,35+p.tier()*3):t;
+    }
+    /** 施法者角色气息色：非玩家/找不到实体时回落默认剑罡金 */
+    private static int[] auraRGB(int entityId){
+        if(world!=null && entityId>=0 && world.getEntity(entityId) instanceof Player pl)
+            return CharacterAuraColors.rgb(CharacterAuraColors.aura(CharacterManager.getInstance().getPlayerCharacterId(pl)));
+        return CharacterAuraColors.rgb(CharacterAuraColors.DEFAULT);
     }
     public static float shake(int axis){
         world();if(world==null || Minecraft.getInstance().gui.screen()!=null)return 0;
@@ -81,7 +92,8 @@ public final class SwordImpactRenderer {
             long age=now()-impulse;if(age<0 || age>420)return;
             int w=g.guiWidth(),h=g.guiHeight();
             float fade=(float)Math.pow(1-age/420.0,2)*strength;
-            if(age<90){int a=(int)(70*(1-age/90f)*strength*cfg.flashIntensity);g.fill(0,0,w,h,(Math.min(100,a)<<24)|0xfff4d5);}
+            if(age<90){int a=(int)(70*(1-age/90f)*strength*cfg.flashIntensity);
+                g.fill(0,0,w,h,(Math.min(100,a)<<24)|((screenAura[0]<<16)|(screenAura[1]<<8)|screenAura[2]));}
             // A warm compression vignette and split-color radial speed marks; never solid blackout.
             for(int i=0;i<7;i++){
                 int a=(int)(fade*(7-i)*3),edge=i*3;
@@ -92,7 +104,8 @@ public final class SwordImpactRenderer {
                 double a=i*Math.PI/8;int x=(int)(w*.5+Math.cos(a)*w*.49),y=(int)(h*.5+Math.sin(a)*h*.48);
                 for(int j=0;j<9;j++){
                     int xx=(int)(x-Math.cos(a)*j*3),yy=(int)(y-Math.sin(a)*j*3),alpha=(int)(fade*(9-j)*10);
-                    g.fill(xx,yy,xx+2,yy+2,(alpha<<24)|0xffdb89);g.fill(xx+2,yy,xx+3,yy+2,((alpha/2)<<24)|0x80dfff);
+                    g.fill(xx,yy,xx+2,yy+2,(alpha<<24)|((screenCore[0]<<16)|(screenCore[1]<<8)|screenCore[2]));
+                    g.fill(xx+2,yy,xx+3,yy+2,((alpha/2)<<24)|((screenAura[0]<<16)|(screenAura[1]<<8)|screenAura[2]));
                 }
             }
         });
@@ -110,6 +123,8 @@ public final class SwordImpactRenderer {
             if(entity!=null && entity.isAlive() && age<5)origin=entity.getBoundingBox().getCenter();
             final Vec3 center=origin;
             final Vec3 direction=p.direction().lengthSqr()<.001?new Vec3(0,0,1):p.direction().normalize();
+            final int[] aura=auraRGB(p.caster());                    // 角色气息主色
+            final int[] core=CharacterAuraColors.bright(aura,1.5);   // 提亮内芯
             collector.submitCustomGeometry(stack,RenderTypes.entityTranslucentEmissive(CorpseOrigin.id("textures/effect/sword_stroke.png")),(pose,out)->{
                 var random=new Random(p.seed());
                 int strokes=p.kind()==0?SwordQiRules.slashes(p.tier()):p.kind()==1?12:6;
@@ -126,8 +141,8 @@ public final class SwordImpactRenderer {
                         double t0=-1+s*.1,t1=t0+.1;
                         Vec3 a=offset.add(u.scale(t0*length)).add(v.scale((1-t0*t0)*length*.18));
                         Vec3 b=offset.add(u.scale(t1*length)).add(v.scale((1-t1*t1)*length*.18));
-                        ribbon(out,pose,a,b,v,length*.045*Math.sin((s+.5)/20*Math.PI),alpha,255,177,55);
-                        ribbon(out,pose,a,b,v,length*.009*Math.sin((s+.5)/20*Math.PI),alpha,255,255,230);
+                        ribbon(out,pose,a,b,v,length*.045*Math.sin((s+.5)/20*Math.PI),alpha,aura[0],aura[1],aura[2]);
+                        ribbon(out,pose,a,b,v,length*.009*Math.sin((s+.5)/20*Math.PI),alpha,core[0],core[1],core[2]);
                     }
                 }
                 // Shock rings expand after the slash, on two different planes.
@@ -138,14 +153,14 @@ public final class SwordImpactRenderer {
                         double a=i*Math.PI/32,b=(i+1)*Math.PI/32;
                         Vec3 one=ring==0?new Vec3(Math.cos(a)*radius,0,Math.sin(a)*radius):new Vec3(Math.cos(a)*radius,Math.sin(a)*radius,0);
                         Vec3 two=ring==0?new Vec3(Math.cos(b)*radius,0,Math.sin(b)*radius):new Vec3(Math.cos(b)*radius,Math.sin(b)*radius,0);
-                        ribbon(out,pose,center.add(one),center.add(two),one.normalize(),Math.max(.025,radius*.012),alpha*.6,140,218,255);
+                        ribbon(out,pose,center.add(one),center.add(two),one.normalize(),Math.max(.025,radius*.012),alpha*.6,aura[0],aura[1],aura[2]);
                     }
                 }
                 if(p.kind()==1 && age<24){
                     Vec3 along=new Vec3(direction.x,0,direction.z).normalize();
                     Vec3 end=center.add(along.scale(SwordQiRules.riftLength(p.tier())));
-                    ribbon(out,pose,center,end,new Vec3(0,1,0),SwordQiRules.height(p.tier())*.5,Math.max(0,1-age/24)*.32,255,185,75);
-                    ribbon(out,pose,center,end,new Vec3(0,1,0),1.5,Math.max(0,1-age/24)*.8,255,255,238);
+                    ribbon(out,pose,center,end,new Vec3(0,1,0),SwordQiRules.height(p.tier())*.5,Math.max(0,1-age/24)*.32,aura[0],aura[1],aura[2]);
+                    ribbon(out,pose,center,end,new Vec3(0,1,0),1.5,Math.max(0,1-age/24)*.8,core[0],core[1],core[2]);
                 }
             });
         }

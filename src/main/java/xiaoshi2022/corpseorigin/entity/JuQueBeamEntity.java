@@ -32,6 +32,8 @@ public class JuQueBeamEntity extends Projectile {
             SynchedEntityData.defineId(JuQueBeamEntity.class, EntityDataSerializers.FLOAT);
 
     private static final EntityDataAccessor<Integer> REALM_TIER = SynchedEntityData.defineId(JuQueBeamEntity.class, EntityDataSerializers.INT);
+    /** 施法者角色气息色（0xRRGGBB），渲染端据此给刀身/光束染色 */
+    private static final EntityDataAccessor<Integer> AURA = SynchedEntityData.defineId(JuQueBeamEntity.class, EntityDataSerializers.INT);
     private final java.util.Set<java.util.UUID> hitTargets=new java.util.HashSet<>();
     public int getRealmTier(){return entityData.get(REALM_TIER);}
     public float getBladeHeight(){return xiaoshi2022.corpseorigin.skill.chapter.SwordQiRules.height(getRealmTier());}
@@ -58,6 +60,7 @@ public class JuQueBeamEntity extends Projectile {
         builder.define(LEVEL, 1);
         builder.define(POWER, 0F);
         builder.define(SLASH_ROLL, -25F);
+        builder.define(AURA, xiaoshi2022.corpseorigin.character.CharacterAuraColors.DEFAULT);
     }
 
     public JuQueBeamEntity setLevel(int level) {
@@ -71,8 +74,23 @@ public class JuQueBeamEntity extends Projectile {
             entityData.set(REALM_TIER,Math.clamp(combatLevel(living),1,20));
             entityData.set(POWER, powerFor(living));
             entityData.set(SLASH_ROLL,(random.nextBoolean()?1:-1)*(12+random.nextFloat()*33));
+            entityData.set(AURA, auraOf(living));
         }
     }
+
+    /** 施法者角色气息色：玩家取角色表，傀儡取其形体角色，其余回落默认剑罡金 */
+    public static int auraOf(LivingEntity owner) {
+        if (owner instanceof net.minecraft.server.level.ServerPlayer player)
+            return xiaoshi2022.corpseorigin.character.CharacterAuraColors.aura(
+                    xiaoshi2022.corpseorigin.character.CharacterManager.getInstance().getPlayerCharacterId(player));
+        if (owner instanceof CloneAvatarEntity clone && clone.getBodyState()!=null) {
+            var character=clone.getBodyState().getComponent().as(xiaoshi2022.corpseorigin.shell.CharacterShellStateComponent.class);
+            if(character!=null) return xiaoshi2022.corpseorigin.character.CharacterAuraColors.aura(character.getCharacterId());
+        }
+        return xiaoshi2022.corpseorigin.character.CharacterAuraColors.DEFAULT;
+    }
+
+    public int getAura() { return entityData.get(AURA); }
 
     /** Snapshot the firing body's own progression and current attack, including equipment and buffs. */
     public static float powerFor(LivingEntity owner) {

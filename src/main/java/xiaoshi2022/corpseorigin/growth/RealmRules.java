@@ -42,8 +42,11 @@ public final class RealmRules {
         double extra = Math.max(0,attack) * Math.min(1, amount / 20.0);
         return (float)Math.min(ATTRIBUTE_CAP, Math.max(amount, extra) * Math.max(1, multiplier));
     }
+    public static double protectionBase(int level) {
+        return level >= 15 ? .90 : level >= 13 ? .80 : level >= 10 ? .65 : level >= 9 ? .45 : level >= 5 ? .20 : 0;
+    }
     public static double protection(int level, int rank) {
-        double base = level >= 15 ? .90 : level >= 13 ? .80 : level >= 10 ? .65 : level >= 9 ? .45 : level >= 5 ? .20 : 0;
+        double base = protectionBase(level);
         return .99 - (.99-base) / (1 + Math.clamp(rank,0,1000000) * .005);
     }
     /** @param cap 速度加值上限（GUI 可调 speedBonusCap） */
@@ -52,9 +55,17 @@ public final class RealmRules {
         double base=Math.min(.30,Math.max(0,level-1)*.010);
         return cap-(cap-base)/(1+Math.clamp(rank,0,1000000)*.005);
     }
+    public static double regenerationBase(int level) { return level<5 ? 0 : .0005*(Math.clamp(level,5,20)-4); }
     public static double regeneration(int level,int rank) {
         if(level<5)return 0;
-        double base=.0005*(Math.clamp(level,5,20)-4);
+        double base = regenerationBase(level);
         return .02-(.02-base)/(1+Math.clamp(rank,0,1000000)*.005);
+    }
+    /**
+     * 角色特调：只放大 rank 驱动的收敛段（base→cap）。
+     * 等级门槛 base 不动、rank 0 无白送、永不越 cap（减伤/再生共用，factor=1 时恒等）。
+     */
+    public static double amplifyGrowth(double baseValue, double value, double cap, double factor) {
+        return Math.min(cap, baseValue + (value - baseValue) * Math.max(1.0E-9, factor));
     }
 }

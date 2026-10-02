@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
+import xiaoshi2022.corpseorigin.character.CharacterAuraColors;
 import xiaoshi2022.corpseorigin.entity.JuQueBeamEntity;
 
 /** A swept crescent with a smoothly rounded leading ridge and long, tapered tips. */
@@ -18,15 +19,14 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
     private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("corpseorigin", "textures/effect/qi_mist.png");
     private static final int SEGMENTS = 48;
     private static final float HEIGHT = 1.25F, WIDTH = 1.2F;
-    private final int red, green, blue;
 
     public static final class State extends EntityRenderState {
         float yaw, pitch, power, time, roll, bladeHeight, bladeDepth;
+        int aura;
     }
 
-    protected CrescentBeamRenderer(EntityRendererProvider.Context context, int red, int green, int blue) {
+    protected CrescentBeamRenderer(EntityRendererProvider.Context context) {
         super(context);
-        this.red=red; this.green=green; this.blue=blue;
         this.shadowRadius=0;
     }
 
@@ -43,6 +43,7 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
         state.power=entity.getPower();
         state.roll=entity.getSlashRoll();
         state.time=entity.tickCount+partialTick;
+        state.aura=entity.getAura();          // 施法者角色气息色，随实体数据同步
         var direction=entity.getDeltaMovement();
         if(direction.lengthSqr()<1.0E-8) direction=entity.getLookAngle();
         direction=direction.normalize();
@@ -66,12 +67,13 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
                 float a=-1+2F*i/SEGMENTS, b=-1+2F*(i+1)/SEGMENTS;
                 for(int band=0;band<8;band++) {
                     float inner=band/8F, outer=(band+1)/8F;
-                    vertex(out,pose,a,inner,layer,state.time); vertex(out,pose,b,inner,layer,state.time);
-                    vertex(out,pose,b,outer,layer,state.time); vertex(out,pose,a,outer,layer,state.time);
+                    vertex(out,pose,a,inner,layer,state.time,state.aura); vertex(out,pose,b,inner,layer,state.time,state.aura);
+                    vertex(out,pose,b,outer,layer,state.time,state.aura); vertex(out,pose,a,outer,layer,state.time,state.aura);
                 }
             }
         });
-        // White-hot leading edge and two delayed spectral blades, with tapered ends.
+        // Role-tinted leading edge and two delayed spectral blades, with tapered ends.
+        int[] c=rgbOf(state.aura), core=CharacterAuraColors.bright(c,1.5);
         collector.submitCustomGeometry(poses,RenderTypes.entityTranslucentEmissive(Identifier.fromNamespaceAndPath("corpseorigin","textures/effect/sword_stroke.png")),(pose,out)->{
             for(int echo=0;echo<3;echo++)for(int i=0;i<SEGMENTS;i++){
                 float a=-1+2f*i/SEGMENTS,b=-1+2f*(i+1)/SEGMENTS;
@@ -80,8 +82,9 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
                     float side=corner>=2?1:-1;
                     float taper=1-h*h;
                     float x=crescentX(h,.91f)-echo*.12f+side*(echo==0?.015f:.035f)*taper;
+                    int[] col=echo==0?core:c;
                     out.addVertex(pose.pose(),x,h*HEIGHT,-echo*.1f)
-                            .setColor(255,echo==0?255:210,echo==0?240:100,(int)((echo==0?225:65)*taper))
+                            .setColor(col[0],col[1],col[2],(int)((echo==0?225:65)*taper))
                             .setUv((h+1)*.5f,side>0?1:0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(0xF000F0).setNormal(0,0,1);
                 }
             }
@@ -89,16 +92,21 @@ public class CrescentBeamRenderer<T extends JuQueBeamEntity> extends EntityRende
         poses.popPose();
     }
 
+    private static int[] rgbOf(int aura) {
+        return new int[]{(aura>>16)&255,(aura>>8)&255,aura&255};
+    }
+
     /** Round the central ridge while preserving the swept-back silhouette and sharp endpoints. */
     public static float crescentX(float height, float across) {
         return JuQueBeamEntity.crescentX(height,across);
     }
 
-    private void vertex(VertexConsumer out, PoseStack.Pose pose, float height, float across, int layer, float time) {
+    private void vertex(VertexConsumer out, PoseStack.Pose pose, float height, float across, int layer, float time, int aura) {
+        int[] c=rgbOf(aura);
         float core=Math.max(0,1-Math.abs(across-.8F)/.5F);
-        int r=(int)(red+(255-red)*core*.85F);
-        int g=(int)(green+(255-green)*core*.85F);
-        int b=(int)(blue+(255-blue)*core*.85F);
+        int r=(int)(c[0]+(255-c[0])*core*.85F);
+        int g=(int)(c[1]+(255-c[1])*core*.85F);
+        int b=(int)(c[2]+(255-c[2])*core*.85F);
         float taper=1-height*height;
         float flow=(float)Math.sin(height*12+across*8-time*.65F+layer*1.7F);
         float envelope=(float)Math.pow(Math.sin(Math.PI*across),.7)* (float)Math.pow(taper,.3);

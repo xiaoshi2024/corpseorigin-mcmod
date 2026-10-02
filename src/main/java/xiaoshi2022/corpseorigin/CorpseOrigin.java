@@ -33,6 +33,7 @@ public class CorpseOrigin implements ModInitializer {
 		// ✅ 0. 配置文件（config/corpseorigin.json）—— 不存在就生成一份默认的，
 		//    后面刷怪权重、名字名单、皮肤染色强度都从它读，所以必须最先加载
 		xiaoshi2022.corpseorigin.config.CorpseConfig.get();
+        xiaoshi2022.corpseorigin.character.CharacterPassives.initialize();
         xiaoshi2022.corpseorigin.growth.RealmProgression.initialize();
         xiaoshi2022.corpseorigin.growth.ThermalSurvey.initialize();
         xiaoshi2022.corpseorigin.growth.RuinLoot.initialize();
