@@ -154,8 +154,17 @@ public final class EvolutionStats {
             applyModifier(player, Attributes.MAX_HEALTH, HEALTH_MODIFIER, hp);
             applyModifier(player, Attributes.ATTACK_DAMAGE, ATTACK_MODIFIER, attack);
             applyModifier(player, Attributes.ARMOR, ARMOR_MODIFIER, Math.min(30, (level-1)*2));
-            applyModifier(player, Attributes.MOVEMENT_SPEED, SPEED_MODIFIER,
-                    xiaoshi2022.corpseorigin.growth.RealmRules.speed(level,xiaoshi2022.corpseorigin.growth.RealmProgression.rank(player,"agility")));
+            var rc = xiaoshi2022.corpseorigin.growth.RealmProgression.config();
+            double spd = xiaoshi2022.corpseorigin.growth.RealmRules.speed(level, xiaoshi2022.corpseorigin.growth.RealmProgression.rank(player,"agility"), rc.speedBonusCap);
+            applyModifier(player, Attributes.MOVEMENT_SPEED, SPEED_MODIFIER, spd);
+            // 身法同时加成飞行速度：飞行速度不走属性系统（原版无 FLYING_SPEED 属性），
+            // 而在 Abilities.flyingSpeed（基础 0.05）里 —— 曲线两参数均可 GUI 实时调：
+            // speedBonusCap 控地面加值上限，flightSensitivity 越小飞行对身法越敏感（神上 EX 可"飞出大气层"）
+            float flySpeed = (float) (.05 * (1 + spd / rc.flightSensitivity));
+            if (player.getAbilities().getFlyingSpeed() != flySpeed) {
+                player.getAbilities().setFlyingSpeed(flySpeed);
+                player.onUpdateAbilities();
+            }
             applyModifier(player, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_MODIFIER, Math.min(1,(level-1)*.08));
             applyModifier(player, Attributes.ARMOR_TOUGHNESS, CorpseOrigin.id("evo_toughness"), Math.min(20,(level-1)*1.2));
             applyModifier(player, Attributes.ENTITY_INTERACTION_RANGE, CorpseOrigin.id("evo_reach"), Math.min(8,(level-1)*.3));
@@ -175,6 +184,11 @@ public final class EvolutionStats {
         applyModifier(player, Attributes.ATTACK_DAMAGE, ATTACK_MODIFIER, profile.maxAttack * p);
         applyModifier(player, Attributes.MOVEMENT_SPEED, SPEED_MODIFIER, profile.maxSpeed * p);
         applyModifier(player, Attributes.KNOCKBACK_RESISTANCE, KNOCKBACK_MODIFIER, profile.maxKnockback * p);
+        // 养成系统关闭时把飞行速度复位回原版默认（0.05），防止残留身法加成
+        if (player.getAbilities().getFlyingSpeed() != 0.05F) {
+            player.getAbilities().setFlyingSpeed(0.05F);
+            player.onUpdateAbilities();
+        }
         if (player.getHealth()>player.getMaxHealth()) player.setHealth(player.getMaxHealth());
     }
 

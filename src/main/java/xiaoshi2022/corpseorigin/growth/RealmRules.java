@@ -46,9 +46,11 @@ public final class RealmRules {
         double base = level >= 15 ? .90 : level >= 13 ? .80 : level >= 10 ? .65 : level >= 9 ? .45 : level >= 5 ? .20 : 0;
         return .99 - (.99-base) / (1 + Math.clamp(rank,0,1000000) * .005);
     }
-    public static double speed(int level,int rank) {
-        double base=Math.min(.12,Math.max(0,level-1)*.004);
-        return .15-(.15-base)/(1+Math.clamp(rank,0,1000000)*.005);
+    /** @param cap 速度加值上限（GUI 可调 speedBonusCap） */
+    public static double speed(int level,int rank,double cap) {
+        // 放大版：等级基础每级 +1%（上限 +30%），rank 收敛至上限 cap（MOVEMENT_SPEED 0.1 基础）
+        double base=Math.min(.30,Math.max(0,level-1)*.010);
+        return cap-(cap-base)/(1+Math.clamp(rank,0,1000000)*.005);
     }
     public static double regeneration(int level,int rank) {
         if(level<5)return 0;

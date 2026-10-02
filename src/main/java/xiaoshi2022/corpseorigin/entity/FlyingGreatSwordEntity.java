@@ -496,7 +496,10 @@ public class FlyingGreatSwordEntity extends Entity {
             if(owner instanceof net.minecraft.server.level.ServerPlayer serverOwner){
                 int tier=xiaoshi2022.corpseorigin.growth.RealmProgression.level(serverOwner);
                 xiaoshi2022.corpseorigin.skill.chapter.SwordImpact.send(sl,center,flyDir,tier,0,-1,owner.getId());
-                xiaoshi2022.corpseorigin.skill.chapter.SwordRift.start(serverOwner,center,flyDir,tier);
+                // 剑气按玩家自己的视线方向劈（不用 flyDir：大剑自瞄追踪目标时会把剑气带偏）；
+                // yaw 用头部旋转 yHeadRot，避免身体 yaw 同步滞后把剑气带向身后
+                xiaoshi2022.corpseorigin.skill.chapter.SwordRift.start(serverOwner,center,
+                        serverOwner.calculateViewVector(serverOwner.getXRot(),serverOwner.getYHeadRot()),tier);
             }
             AABB slashBox = new AABB(
                     center.x - SLASH_RADIUS, center.y - SLASH_RADIUS, center.z - SLASH_RADIUS,

@@ -14,12 +14,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.BossEvent;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -71,10 +69,10 @@ public class MosquitoZbrEntity extends PathfinderMob implements GeoEntity {
 
     // ==================== 数值 ====================
 
-    /** 满血时环绕蚊子数量上限 */
-    public static final int MAX_SWARM = 16;
+    /** 满血时环绕蚊子数量上限（聚团够密，接近原著的蚊群球） */
+    public static final int MAX_SWARM = 28;
     /** 濒死时保底的蚊子数量 */
-    public static final int MIN_SWARM = 3;
+    public static final int MIN_SWARM = 6;
     /** 补员节奏：每几 tick 至多补一只（防止一帧内刷出一团） */
     public static final int SWARM_REPLENISH_INTERVAL = 8;
     /** 产卵间隔（tick）：约 8 秒一枚 */
@@ -94,7 +92,6 @@ public class MosquitoZbrEntity extends PathfinderMob implements GeoEntity {
     private static final RawAnimation SUCK_ANIM = RawAnimation.begin().thenLoop("suck");
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
-    private ServerBossEvent bossEvent;
 
     public MosquitoZbrEntity(EntityType<? extends PathfinderMob> type, Level level) {
         super(type, level);
@@ -161,7 +158,28 @@ public class MosquitoZbrEntity extends PathfinderMob implements GeoEntity {
         // 目标选择照常走 Goal；移动与攻击在 tick 里手推（飞行、环绕、产卵）
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true, false));
+        // 蚊群不挑食：村民等生物也在菜单上（原著里蚊群围城见活物就叮）
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.animal.Animal.class, true, false));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, net.minecraft.world.entity.npc.villager.Villager.class, true, false));
         this.goalSelector.addGoal(3, new RandomLookAroundGoal(this));
+    }
+
+    // ==================== 音效 ====================
+
+    /** 环境音：蚊群核心的翅膀嗡嗡声 */
+    @Override
+    public net.minecraft.sounds.SoundEvent getAmbientSound() {
+        return xiaoshi2022.corpseorigin.registry.ModSounds.MOSQUITO_BUZZING;
+    }
+
+    @Override
+    public float getSoundVolume() {
+        return 0.6F;
+    }
+
+    @Override
+    public int getAmbientSoundInterval() {
+        return 40;
     }
 
     // ==================== 服务端主循环 ====================
@@ -173,16 +191,6 @@ public class MosquitoZbrEntity extends PathfinderMob implements GeoEntity {
             return;
         }
         ServerLevel level = (ServerLevel) this.level();
-
-        // BOSS 血条
-        if (this.bossEvent == null) {
-            this.bossEvent = new ServerBossEvent(this.getUUID(),
-                    Component.translatable("boss.corpseorigin.mosquito_zbr"),
-                    BossEvent.BossBarColor.GREEN, BossEvent.BossBarOverlay.PROGRESS);
-            this.bossEvent.setProgress(1.0F);
-        }
-        this.bossEvent.setProgress(Math.max(0F, Math.min(1F,
-                this.getHealth() / this.getMaxHealth())));
 
         // 每 10 tick 做一次"重活"：蚊群清点/补员、烟雾判定、产卵
         if (this.tickCount % 10 == 0) {
@@ -210,17 +218,19 @@ public class MosquitoZbrEntity extends PathfinderMob implements GeoEntity {
             swarm.remove(m);
         }
 
-        // 数量公式：随血量线性下降（满血 16 → 濒死 3）
+        // 数量公式：随血量线性下降（满血 28 → 濒死 6）
         float hpRatio = Math.max(0F, this.getHealth() / this.getMaxHealth());
         int target = Math.max(MIN_SWARM, (int) Math.ceil(MAX_SWARM * hpRatio));
         if (swarm.size() > target) {
-            for (int i = swarm.size() - 1; i >= target; i--) {
-                MosquitoSwarmEntity m = swarm.get(i);
+            // 超编（卵批量孵化 / 刚受伤降了目标数）：平滑收敛，每个补员周期至多消散 1 只 ——
+            // 否则"一卵爆 5 只"会被瞬间裁掉，玩家完全感受不到蚊子越打越多
+            if (this.tickCount % (SWARM_REPLENISH_INTERVAL * 10) == 0) {
+                MosquitoSwarmEntity m = swarm.get(swarm.size() - 1);
                 level.sendParticles(ParticleTypes.POOF,
                         m.getX(), m.getY() + 0.1D, m.getZ(), 2, 0.1D, 0.1D, 0.1D, 0.01D);
                 m.discard();
+                swarm.remove(swarm.size() - 1);
             }
-            swarm.subList(target, swarm.size()).clear();
         } else if (swarm.size() < target && this.tickCount % (SWARM_REPLENISH_INTERVAL * 10) == 0) {
             spawnSwarmOne(level);
         }
@@ -348,47 +358,16 @@ public class MosquitoZbrEntity extends PathfinderMob implements GeoEntity {
         }
     }
 
-    // ==================== BOSS 血条 ====================
-
-    @Override
-    public void startSeenByPlayer(ServerPlayer player) {
-        super.startSeenByPlayer(player);
-        if (this.bossEvent != null) {
-            this.bossEvent.addPlayer(player);
-        }
-    }
-
-    @Override
-    public void stopSeenByPlayer(ServerPlayer player) {
-        super.stopSeenByPlayer(player);
-        if (this.bossEvent != null) {
-            this.bossEvent.removePlayer(player);
-        }
-    }
-
     // ==================== 生命周期 ====================
 
-    /** 死亡：血条清掉，蚊群陪葬 */
+    /** 死亡：蚊群陪葬（精英怪定位，无 BOSS 血条） */
     @Override
     public void die(DamageSource source) {
         super.die(source);
-        if (this.bossEvent != null) {
-            this.bossEvent.removeAllPlayers();
-            this.bossEvent = null;
-        }
         if (!this.level().isClientSide()) {
             for (MosquitoSwarmEntity m : listSwarm((ServerLevel) this.level())) {
                 m.discard();
             }
-        }
-    }
-
-    @Override
-    public void remove(Entity.RemovalReason reason) {
-        super.remove(reason);
-        if (this.bossEvent != null) {
-            this.bossEvent.removeAllPlayers();
-            this.bossEvent = null;
         }
     }
 

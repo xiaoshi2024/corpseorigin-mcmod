@@ -164,6 +164,10 @@ public class CorpseConfigScreen extends Screen {
         var svDef = new CorpseConfig.SwordVisuals();
         var gi = c.gourdInheritance;
         var giDef = new CorpseConfig.GourdInheritance();
+        var realm = c.realm;
+        var realmDef = new xiaoshi2022.corpseorigin.growth.RealmConfig();
+        var growth = c.growth;
+        var growthDef = new xiaoshi2022.corpseorigin.growth.GrowthConfig();
 
         // ---- 第 1 页：尔多兽王降临 ----
         List<Field> eldorFields = List.of(
@@ -319,7 +323,11 @@ public class CorpseConfigScreen extends Screen {
                         () -> (double) svDef.flashIntensity, 0F, 1F, () -> fmtFloat(sv.flashIntensity)),
                 new IntF("gui.corpseorigin.config.f.max_impact_effects",
                         () -> sv.maxImpactEffects, v -> sv.maxImpactEffects = v,
-                        () -> svDef.maxImpactEffects, 0, 128, () -> String.valueOf(sv.maxImpactEffects)))));
+                        () -> svDef.maxImpactEffects, 0, 128, () -> String.valueOf(sv.maxImpactEffects)),
+                // 吸血鬼 K 的阳光防晒总闸（原 /vampire_sunlight 命令的同一开关，实时读 growth 节）
+                new BoolF("gui.corpseorigin.config.f.vampire_sunlight_damage",
+                        () -> growth.vampireSunlightDamage, v -> growth.vampireSunlightDamage = v,
+                        () -> growthDef.vampireSunlightDamage))));
 
         // ---- 第 5 页：葫芦继承 ----
         pages.add(new Page("gui.corpseorigin.config.page_gourd", List.of(
@@ -343,6 +351,66 @@ public class CorpseConfigScreen extends Screen {
                 new FloatF("gui.corpseorigin.config.f.gourd_auto_mult",
                         () -> gi.automaticMultiplier, v -> gi.automaticMultiplier = (float) v,
                         () -> giDef.automaticMultiplier, 0F, 1F, () -> fmtPct(gi.automaticMultiplier)))));
+
+        // ---- 第 6 页：剑气与崩星威压（地形破坏防毁图开关）----
+        pages.add(new Page("gui.corpseorigin.config.page_burst", List.of(
+                // 神级剑气开槽的总闸（SwordRift 发动与执行都检查）
+                new BoolF("gui.corpseorigin.config.f.sword_terrain_destruction",
+                        () -> realm.swordTerrainDestruction, v -> realm.swordTerrainDestruction = v,
+                        () -> realmDef.swordTerrainDestruction),
+                // 同时劈山：同一时间允许存在的剑气道数上限
+                new IntF("gui.corpseorigin.config.f.sword_rift_concurrent",
+                        () -> realm.swordRiftConcurrent, v -> realm.swordRiftConcurrent = v,
+                        () -> realmDef.swordRiftConcurrent, 1, 8, () -> String.valueOf(realm.swordRiftConcurrent)),
+                // 崩星威压（神上 EX）的地形破坏
+                new BoolF("gui.corpseorigin.config.f.burst_breaks_terrain",
+                        () -> realm.burstBreaksTerrain, v -> realm.burstBreaksTerrain = v,
+                        () -> realmDef.burstBreaksTerrain),
+                new IntF("gui.corpseorigin.config.f.burst_qi_cost",
+                        () -> realm.burstQiCost, v -> realm.burstQiCost = v,
+                        () -> realmDef.burstQiCost, 100, 100000, () -> String.valueOf(realm.burstQiCost)),
+                new IntF("gui.corpseorigin.config.f.burst_cooldown",
+                        () -> realm.burstCooldownTicks, v -> realm.burstCooldownTicks = v,
+                        () -> realmDef.burstCooldownTicks, 20, 72000, () -> String.valueOf(realm.burstCooldownTicks)),
+                new FloatF("gui.corpseorigin.config.f.burst_radius",
+                        () -> realm.burstRadius, v -> realm.burstRadius = v,
+                        () -> realmDef.burstRadius, 8F, 128F, () -> fmtFloat(realm.burstRadius)))));
+
+        // ---- 第 7 页：境界与难度（全局难度/属性倍率实时调整）----
+        pages.add(new Page("gui.corpseorigin.config.page_realm", List.of(
+                // 境界养成系统总闸（关闭后战斗表现/剑气/崩星一并停用）
+                new BoolF("gui.corpseorigin.config.f.realm_enabled",
+                        () -> realm.enabled, v -> realm.enabled = v, () -> realmDef.enabled),
+                // 敌人强度难度倍率
+                new FloatF("gui.corpseorigin.config.f.difficulty_multiplier",
+                        () -> realm.difficultyMultiplier, v -> realm.difficultyMultiplier = v,
+                        () -> realmDef.difficultyMultiplier, 1F, 20F, () -> fmtFloat(realm.difficultyMultiplier)),
+                // 玩家属性成长倍率
+                new FloatF("gui.corpseorigin.config.f.stat_multiplier",
+                        () -> realm.statMultiplier, v -> realm.statMultiplier = v,
+                        () -> realmDef.statMultiplier, .1F, 5F, () -> fmtFloat(realm.statMultiplier)),
+                // 内力技能伤害缩放
+                new FloatF("gui.corpseorigin.config.f.qi_skill_damage_scaling",
+                        () -> realm.qiSkillDamageScaling, v -> realm.qiSkillDamageScaling = v,
+                        () -> realmDef.qiSkillDamageScaling, 0F, 5F, () -> fmtFloat(realm.qiSkillDamageScaling)),
+                // 冷却缩减：每级 +X%，上限 Y%
+                new FloatF("gui.corpseorigin.config.f.cooldown_reduction_per_level",
+                        () -> realm.cooldownReductionPerLevel, v -> realm.cooldownReductionPerLevel = v,
+                        () -> realmDef.cooldownReductionPerLevel, 0F, .2F, () -> fmtPct(realm.cooldownReductionPerLevel)),
+                new FloatF("gui.corpseorigin.config.f.max_cooldown_reduction",
+                        () -> realm.maxCooldownReduction, v -> realm.maxCooldownReduction = v,
+                        () -> realmDef.maxCooldownReduction, 0F, .95F, () -> fmtPct(realm.maxCooldownReduction)),
+                // 充能（点数换血/内力/血库）价格
+                new IntF("gui.corpseorigin.config.f.recharge_point_cost",
+                        () -> realm.rechargePointCost, v -> realm.rechargePointCost = v,
+                        () -> realmDef.rechargePointCost, 1, 10000, () -> String.valueOf(realm.rechargePointCost)),
+                // 身法速度曲线：地面加值上限 + 飞行灵敏度
+                new FloatF("gui.corpseorigin.config.f.speed_bonus_cap",
+                        () -> realm.speedBonusCap, v -> realm.speedBonusCap = v,
+                        () -> realmDef.speedBonusCap, .05F, 1F, () -> fmtFloat(realm.speedBonusCap)),
+                new FloatF("gui.corpseorigin.config.f.flight_sensitivity",
+                        () -> realm.flightSensitivity, v -> realm.flightSensitivity = v,
+                        () -> realmDef.flightSensitivity, 1F, 20F, () -> fmtFloat(realm.flightSensitivity)))));
 
         pageIndex = Math.min(pageIndex, pages.size() - 1);
     }

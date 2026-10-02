@@ -89,6 +89,11 @@ public final class EvolutionEventHandler {
      * 根据击杀者和目标计算进化点
      */
     private static int calcPoints(ServerPlayer player, LivingEntity target, ICharacter character) {
+        // 蚊子尸兄特判：子蚊子是廉价杂兵（一场战斗几十只，按普通标准给点会严重超模），
+        // 打爆不涨点；蚊群核心是真正的 Boss，一次性给固定奖励
+        if (target instanceof xiaoshi2022.corpseorigin.entity.MosquitoSwarmEntity) return 0;
+        if (target instanceof xiaoshi2022.corpseorigin.entity.MosquitoZbrEntity) return 20;
+
         boolean isCorpsePlayer = PlayerCorpseComponent.isCorpse(player);
 
         // ===== 尸兄角色：吃同类少给，吃人类多给 =====

@@ -116,12 +116,16 @@ public class MosquitoEggsBlock extends Block implements EntityBlock {
                         MosquitoZbrEntity::isAlive)
                 .stream().findFirst().orElse(null);
 
-        int count = 1 + level.getRandom().nextInt(2);
+        // 一卵爆 3~5 只（原著里卵一破就是一小团蚊子）
+        int count = 3 + level.getRandom().nextInt(3);
         for (int i = 0; i < count; i++) {
             MosquitoSwarmEntity mosquito = ModEntities.MOSQUITO_SWARM.create(
                     level, net.minecraft.world.entity.EntitySpawnReason.EVENT);
             if (mosquito == null) continue;
-            mosquito.setPos(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D);
+            double ox = (level.getRandom().nextDouble() - 0.5D) * 0.6D;
+            double oz = (level.getRandom().nextDouble() - 0.5D) * 0.6D;
+            mosquito.setPos(pos.getX() + 0.5D + ox, pos.getY(), pos.getZ() + 0.5D + oz);
+            mosquito.setYRot(level.getRandom().nextFloat() * 360.0F);
             if (core != null) {
                 mosquito.setSwarmOwner(core.getUUID());
             }

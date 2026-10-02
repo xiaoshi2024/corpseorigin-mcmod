@@ -21,6 +21,10 @@ public final class ModSounds {
     public static final SoundEvent INJECTION = register("injection");
     public static final SoundEvent THERMAL_SCAN = register("thermal_scan");
     public static final SoundEvent ZISHU_ION = register("zishu_ion");
+    /** 蚊群翅膀嗡嗡声（蚊子尸兄环境音） */
+    public static final SoundEvent MOSQUITO_BUZZING = register("mosquito_buzzing");
+    /** 蚊子叮咬声 */
+    public static final SoundEvent MOSQUITO_DING = register("mosquito_ding");
 
     private ModSounds() {
     }

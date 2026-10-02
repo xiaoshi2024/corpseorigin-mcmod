@@ -22,6 +22,10 @@ public final class RealmConfig {
     public double burstRadius = 64;
     public boolean burstBreaksTerrain = false;
     public int terrainBlocksPerTick = 128, terrainTotalBlocks = 4096;
+    /** 身法速度加值上限（MOVEMENT_SPEED 0.1 基础上的加值；0.35 = 最高 4.5 倍地面速度） */
+    public double speedBonusCap = .35;
+    /** 飞行速度灵敏度：flySpeed = 0.05 * (1 + 速度加值/该值)；越小飞行对身法越敏感 */
+    public double flightSensitivity = 5;
 
     public void sanitize() {
         swordRiftBlocksPerTick=Math.clamp(swordRiftBlocksPerTick,16,8192);
@@ -57,6 +61,8 @@ public final class RealmConfig {
         burstRadius = finite(burstRadius, 8, 128, 64);
         terrainBlocksPerTick = Math.clamp(terrainBlocksPerTick, 1, 512);
         terrainTotalBlocks = Math.clamp(terrainTotalBlocks, 0, 32768);
+        speedBonusCap = finite(speedBonusCap, .05, 2, .35);
+        flightSensitivity = finite(flightSensitivity, 1, 50, 5);
     }
     private static double finite(double v, double min, double max, double fallback) {
         return Double.isFinite(v) ? Math.clamp(v, min, max) : fallback;
