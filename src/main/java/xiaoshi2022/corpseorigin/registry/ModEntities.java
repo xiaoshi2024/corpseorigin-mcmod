@@ -266,6 +266,37 @@ public final class ModEntities {
     );
 
     /**
+     * 青蛙奇葩尸兄（{@code frog_zbr_mc}）——精英怪。
+     * <p>
+     * 原著：巨大的青蛙尸兄，头顶骑着控制它的小尸兄。舌头攻击把人肘飞、主动捕食蚊子尸兄、
+     * 被远程武器射中头部会把骑手大脑打出来（进入无脑狂暴）。
+     * 不进自然生成表：刷怪蛋 / {@code /summon}。
+     */
+    public static final EntityType<FrogZbrMcEntity> FROG_ZBR_MC = register(
+            "frog_zbr_mc",
+            EntityType.Builder.<FrogZbrMcEntity>of(FrogZbrMcEntity::new, MobCategory.MONSTER)
+                    .sized(1.9f, 2.4f)
+                    .clientTrackingRange(10)
+                    .updateInterval(2)
+                    .notInPeaceful()
+    );
+
+    /**
+     * 壁虎奇葩尸兄（{@code gecko_zbr}）——精英怪，原型"金色壁虎"。
+     * <p>
+     * 原著：头上顶着两颗人脸脑袋的巨型壁虎，伤害大头由尾巴承担、可断尾再生，弱点是火。
+     * 不进自然生成表：刷怪蛋 / {@code /summon}。
+     */
+    public static final EntityType<GeckoZbrEntity> GECKO_ZBR = register(
+            "gecko_zbr",
+            EntityType.Builder.<GeckoZbrEntity>of(GeckoZbrEntity::new, MobCategory.MONSTER)
+                    .sized(1.6f, 1.5f)
+                    .clientTrackingRange(10)
+                    .updateInterval(2)
+                    .notInPeaceful()
+    );
+
+    /**
      * 蚊群子实体——环绕蚊子，真正的叮咬判定载体。
      * <p>
      * {@code noSummon}：不给刷怪蛋 / 指令；{@code noSave}：不写进存档

@@ -52,6 +52,12 @@ public final class ModItems {
     /** 蚊子尸兄刷怪蛋（蚊群核心 BOSS，仅创造栏 / 指令召唤） */
     public static final Item MOSQUITO_ZBR_SPAWN_EGG = register("mosquito_zbr_spawn_egg",
             new SpawnEggItem(spawnEggProperties("mosquito_zbr_spawn_egg", ModEntities.MOSQUITO_ZBR)));
+    /** 青蛙奇葩尸兄刷怪蛋（精英怪，仅创造栏 / 指令召唤） */
+    public static final Item FROG_ZBR_MC_SPAWN_EGG = register("frog_zbr_mc_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("frog_zbr_mc_spawn_egg", ModEntities.FROG_ZBR_MC)));
+    /** 壁虎奇葩尸兄刷怪蛋（精英怪，仅创造栏 / 指令召唤） */
+    public static final Item GECKO_ZBR_SPAWN_EGG = register("gecko_zbr_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("gecko_zbr_spawn_egg", ModEntities.GECKO_ZBR)));
 
     /** 蚊香：放置型克制方块，散出烟雾削弱蚊群；配方见 {@code data/corpseorigin/recipe/mosquito_coil.json} */
     public static final Item MOSQUITO_COIL = register("mosquito_coil",
@@ -377,6 +383,8 @@ public final class ModItems {
                 output.accept(ELDOR_KING_ZBR_SPAWN_EGG);
                 output.accept(MU_DOCTOR_SPAWN_EGG);
                 output.accept(MOSQUITO_ZBR_SPAWN_EGG);
+                output.accept(FROG_ZBR_MC_SPAWN_EGG);
+                output.accept(GECKO_ZBR_SPAWN_EGG);
                 output.accept(ZB_WORM_ITEM);
                 output.accept(HAIR_DRYER);
                 output.accept(ZISHU_THERMAL_SCANNER);

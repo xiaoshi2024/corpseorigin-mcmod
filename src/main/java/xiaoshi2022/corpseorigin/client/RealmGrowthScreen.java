@@ -17,8 +17,9 @@ import java.util.Locale;
 
 /**
  * 6A 六维雷达面板：单屏同览六维养成（生命/杀伤/减伤/内力/再生/速度）。
- * 左侧六边形蛛网图按 F~A 六档评级绘制轮廓，右侧列出 rank 与最终加成；
- * 点击雷达顶点或右侧行选中属性，下方按钮对该属性加点。所有数值由服务端权威下发。
+ * 左侧六边形蛛网图按细分评级（F10→F1→E10→…→S1 共 90 小级）绘制轮廓，
+ * 右侧列出评级与最终加成；点击雷达顶点或右侧行选中属性，下方按钮对该属性加点。
+ * 所有数值由服务端权威下发。
  */
 public final class RealmGrowthScreen extends Screen {
     private static CompoundTag state=new CompoundTag();
@@ -113,13 +114,13 @@ public final class RealmGrowthScreen extends Screen {
         for(int i=0;i<6;i++) line(g,cx,cy,cx+COS[i]*radius,cy+SIN[i]*radius,0xFF22303C);
         fillConvex(g,vx,vy,0x5AFFD77F);              // 当前养成轮廓（半透明金）
         strokePoly(g,vx,vy,0xFFFFD77F);
-        for(int i=0;i<6;i++){                        // 数据点 + 顶点标签（名 + 评级）
+        for(int i=0;i<6;i++){                        // 数据点 + 顶点标签（名 + 细分评级）
             int px=(int)Math.round(vx[i]),py=(int)Math.round(vy[i]);
             g.fill(px-1,py-1,px+1,py+1,0xFFFFFFFF);
             int lx=(int)Math.round(cx+COS[i]*(radius+13)),ly=(int)Math.round(cy+SIN[i]*(radius+13))-4;
-            int grade=enabled?grade(i):0;
+            int code=enabled?subGrade(i):0;
             g.centeredText(font,Component.translatable("realm.corpseorigin.stat_short."+RealmProgression.STATS.get(i))
-                    .append(" "+GRADES[grade]),lx,ly,i==selected?0xFFFFD77F:GRADE_COLORS[grade]);
+                    .append(" "+gradeLabel(code)),lx,ly,i==selected?0xFFFFD77F:gradeColor(code));
         }
         if(!enabled) g.centeredText(font,Component.translatable("realm.corpseorigin.panel6a.disabled"),cx,cy-4,0xFFFF5757);
     }
@@ -130,9 +131,9 @@ public final class RealmGrowthScreen extends Screen {
             int y=58+i*16; String stat=RealmProgression.STATS.get(i);
             boolean hover=mx>=x0-3&&mx<=x0+183&&my>=y-3&&my<=y+11;
             if(hover||i==selected) g.fill(x0-3,y-3,x0+183,y+11,i==selected?0x33FFD77F:0x22FFFFFF);
-            int grade=enabled?grade(i):0;
+            int code=enabled?subGrade(i):0;
             g.text(font,Component.translatable("realm.corpseorigin.stat_short."+stat),x0,y,i==selected?0xFFFFD77F:0xFFE0E0E0,false);
-            g.text(font,Component.literal(GRADES[grade]),x0+30,y,GRADE_COLORS[grade],false);
+            g.text(font,Component.literal(gradeLabel(code)),x0+30,y,gradeColor(code),false);
             // 强化列按剩余空间截断，防止高等级长数值与右侧加成列重叠
             Component bonus=bonusText(i);
             int bonusW=font.width(bonus);
@@ -152,16 +153,27 @@ public final class RealmGrowthScreen extends Screen {
             default -> Component.literal(String.format(Locale.ROOT,"+%.1f%%",v*100));
         };
     }
-    /** 6A 评判标准（相对制）：该维强化 / 动态目标（每级 300 强，随等级水涨船高）占 75%，等级占 25%；
-     *  加点哪维哪维涨，六维轮廓立见差距，低等级也不会靠少量强化冲到 SSS */
+    /** 6A 评判标准（固定目标制）：该维强化 / 2500 占 85%，等级只占 15%。
+     *  升级不再抬高目标——专精哪维哪维永久领先，六维轮廓差距不会被练级抹平 */
     private double statRatio(int i){
         int level=Math.max(1,state.getIntOr("level",1)),limit=state.getIntOr("rank_limit",0);
         double rankRatio=limit>0?Math.min(1,state.getIntOr("total_"+RealmProgression.STATS.get(i),0)/(double)statTarget(level)):0;
-        return rankRatio*.75 + Math.min(1,level/20.0)*.25;
+        return rankRatio*.85 + Math.min(1,level/20.0)*.15;
     }
-    private static int statTarget(int level){ return Math.max(300, level*300); }
-    private int grade(int i){
-        return (int)Math.min(8,statRatio(i)*8.9999);
+    private static int statTarget(int level){ return 2500; }
+    /** 细分评级：0~89（9 大档 × 10 小级）—— F10→F1→E10→…→S1 依次递进，每升一小级 = 总进度 +1/90 */
+    private int subGrade(int i){
+        double r=Math.min(0.99999,statRatio(i))*9;   // 0~9
+        int g=(int)Math.min(8,r);                    // 大档 F..SSS
+        int sub=(int)Math.min(9,(r-g)*10);           // 大档内小级 0~9
+        return g*10+sub;
+    }
+    /** 小级编码 → 显示文本：sub=0 → "F10"（刚进档），sub=9 → "F1"（临进下一档） */
+    private static String gradeLabel(int code){
+        return GRADES[code/10]+(10-code%10);
+    }
+    private static int gradeColor(int code){
+        return GRADE_COLORS[code/10];
     }
     /** 大数缩写：兆 / 亿 / 万 / 原值（避免高等级长数值撑爆面板列） */
     private static Component shortNum(double v){

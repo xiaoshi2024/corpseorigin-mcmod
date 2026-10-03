@@ -14,7 +14,9 @@ public final class RealmConfig {
     public int minimumSkillCooldownTicks = 5, poetryCooldownTicks = 1200;
     public double ultimateQiFraction = .05, poetryActivationFraction = .08;
     public double poetryStageFraction = .02, poetryUpkeepFraction = .01, poetrySwordFraction = .03;
-    public int trainingCostBase = 10, trainingCostStep = 2, maxTrainingRank = 100000;
+    /** 强化消耗：单次 = base + step×已强化次数（买 n 次为等差数列求和）。
+     *  默认 4/1：面板 ×100 按钮 0 强化时共 5350 点（旧 10/2 为 10900，约半价） */
+    public int trainingCostBase = 4, trainingCostStep = 1, maxTrainingRank = 100000;
     public int rechargePointCost = 50;
     public int practiceXpPerRank = 100, combatXpPerSecond = 4, fleshPracticeXp = 8;
     public int meditationTicks = 200, meditationXp = 4;

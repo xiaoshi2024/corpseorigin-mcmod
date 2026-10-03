@@ -75,10 +75,10 @@ public class MosquitoZbrEntity extends PathfinderMob implements GeoEntity {
     public static final int MIN_SWARM = 6;
     /** 补员节奏：每几 tick 至多补一只（防止一帧内刷出一团） */
     public static final int SWARM_REPLENISH_INTERVAL = 8;
-    /** 产卵间隔（tick）：约 8 秒一枚 */
-    public static final int EGG_INTERVAL = 160;
+    /** 产卵间隔（tick）：约 15 秒一枚 */
+    public static final int EGG_INTERVAL = 300;
     /** 战场附近卵的数量上限（超过就不再产，防止把地图铺满） */
-    public static final int MAX_EGGS_NEARBY = 6;
+    public static final int MAX_EGGS_NEARBY = 3;
 
     // ==================== 同步数据 ====================
 

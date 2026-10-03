@@ -25,7 +25,7 @@ import java.util.UUID;
  * 角色被动光环 —— 特殊属性列表（原版效果 + 属性修饰符，每秒续期）：
  * <ul>
  *   <li>白小飞：村庄英雄（炎黄特能的群众基础）</li>
- *   <li>黑小飞：伤害抗性 I（尸化耐受高）+ 不祥之兆（尸化气场，进村招袭击）</li>
+ *   <li>黑小飞：伤害抗性 I（尸化耐受高）+ 不祥之兆（仅被感染度 100% 尸化后，尸化气场进村招袭击）</li>
  *   <li>龙右：光照 &lt; 8 时力量 II（黑暗王者）+ 8 格尸潮威压（敌对缓速）</li>
  *   <li>开胃奶：击退抗性 + 爆炸击退抗性（菊花盾稳如泰山）</li>
  *   <li>木犀：护甲韧性 + 挖掘加速（土系重甲）</li>
@@ -72,7 +72,10 @@ public final class CharacterPassives {
             case "baixiaofei" -> buff(p, MobEffects.HERO_OF_THE_VILLAGE, 0, 60);
             case "heixiaofei" -> {
                 buff(p, MobEffects.RESISTANCE, 0, 60);
-                buff(p, MobEffects.BAD_OMEN, 0, 60);
+                // 不祥之兆：仅当被感染度 100%（彻底尸化）才生效——生前是体面人，尸化后气场招袭击
+                if (xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.get(p).getInfection() >= 100)
+                    buff(p, MobEffects.BAD_OMEN, 0, 60);
+                else p.removeEffect(MobEffects.BAD_OMEN);
             }
             case "longyou" -> {
                 if (p.level().getMaxLocalRawBrightness(p.blockPosition()) < 8)

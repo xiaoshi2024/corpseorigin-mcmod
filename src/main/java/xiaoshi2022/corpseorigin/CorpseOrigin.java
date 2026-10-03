@@ -144,6 +144,8 @@ public class CorpseOrigin implements ModInitializer {
         xiaoshi2022.corpseorigin.event.EldorKingSpawns.register();
         xiaoshi2022.corpseorigin.event.MuDoctorSpawns.register();
         xiaoshi2022.corpseorigin.event.MosquitoZbrSpawns.register();
+        xiaoshi2022.corpseorigin.event.FrogZbrMcSpawns.register();
+        xiaoshi2022.corpseorigin.event.GeckoZbrSpawns.register();
         xiaoshi2022.corpseorigin.skill.chapter.SkillRework.register();
         xiaoshi2022.corpseorigin.skill.chapter.GuigunCombat.register();
         xiaoshi2022.corpseorigin.skill.chapter.FlameSea.register();

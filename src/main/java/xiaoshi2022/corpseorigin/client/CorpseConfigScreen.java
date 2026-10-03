@@ -237,6 +237,54 @@ public class CorpseConfigScreen extends Screen {
                         () -> moDef.nearbyBossCheck, 16, 256, () -> String.valueOf(mosquito.nearbyBossCheck)));
         pages.add(new Page("gui.corpseorigin.config.page_mosquito", moFields));
 
+        // ---- 第 1d 页：青蛙奇葩尸兄降临 ----
+        var frog = spawn.frogZbrMc;
+        var frogDef = new CorpseConfig.Spawn.FrogZbrMc();
+        List<Field> frogFields = List.of(
+                new IntF("gui.corpseorigin.config.f.frog_first_day",
+                        () -> frog.firstDay, v -> frog.firstDay = v,
+                        () -> frogDef.firstDay, 0, 100,
+                        () -> frog.firstDay == 0
+                                ? net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.config.disabled")
+                                : String.valueOf(frog.firstDay)),
+                new IntF("gui.corpseorigin.config.f.frog_interval",
+                        () -> frog.intervalDays, v -> frog.intervalDays = v,
+                        () -> frogDef.intervalDays, 1, 60, () -> String.valueOf(frog.intervalDays)),
+                new IntF("gui.corpseorigin.config.f.frog_min_radius",
+                        () -> frog.minRadius, v -> frog.minRadius = v,
+                        () -> frogDef.minRadius, 8, 96, () -> String.valueOf(frog.minRadius)),
+                new IntF("gui.corpseorigin.config.f.frog_max_radius",
+                        () -> frog.maxRadius, v -> frog.maxRadius = v,
+                        () -> frogDef.maxRadius, 16, 128, () -> String.valueOf(frog.maxRadius)),
+                new IntF("gui.corpseorigin.config.f.frog_nearby_check",
+                        () -> frog.nearbyBossCheck, v -> frog.nearbyBossCheck = v,
+                        () -> frogDef.nearbyBossCheck, 16, 256, () -> String.valueOf(frog.nearbyBossCheck)));
+        pages.add(new Page("gui.corpseorigin.config.page_frog", frogFields));
+
+        // ---- 第 1e 页：壁虎奇葩尸兄降临 ----
+        var gecko = spawn.geckoZbr;
+        var geckoDef = new CorpseConfig.Spawn.GeckoZbr();
+        List<Field> geckoFields = List.of(
+                new IntF("gui.corpseorigin.config.f.gecko_first_day",
+                        () -> gecko.firstDay, v -> gecko.firstDay = v,
+                        () -> geckoDef.firstDay, 0, 100,
+                        () -> gecko.firstDay == 0
+                                ? net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.config.disabled")
+                                : String.valueOf(gecko.firstDay)),
+                new IntF("gui.corpseorigin.config.f.gecko_interval",
+                        () -> gecko.intervalDays, v -> gecko.intervalDays = v,
+                        () -> geckoDef.intervalDays, 1, 60, () -> String.valueOf(gecko.intervalDays)),
+                new IntF("gui.corpseorigin.config.f.gecko_min_radius",
+                        () -> gecko.minRadius, v -> gecko.minRadius = v,
+                        () -> geckoDef.minRadius, 8, 96, () -> String.valueOf(gecko.minRadius)),
+                new IntF("gui.corpseorigin.config.f.gecko_max_radius",
+                        () -> gecko.maxRadius, v -> gecko.maxRadius = v,
+                        () -> geckoDef.maxRadius, 16, 128, () -> String.valueOf(gecko.maxRadius)),
+                new IntF("gui.corpseorigin.config.f.gecko_nearby_check",
+                        () -> gecko.nearbyBossCheck, v -> gecko.nearbyBossCheck = v,
+                        () -> geckoDef.nearbyBossCheck, 16, 256, () -> String.valueOf(gecko.nearbyBossCheck)));
+        pages.add(new Page("gui.corpseorigin.config.page_gecko", geckoFields));
+
         // ---- 第 2 页：尸兄虫事件 + 尸兄进化 ----
         List<Field> wormFields = List.of(
                 new IntF("gui.corpseorigin.config.f.worm_first_day",

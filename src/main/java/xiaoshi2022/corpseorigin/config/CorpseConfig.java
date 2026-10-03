@@ -92,6 +92,12 @@ public final class CorpseConfig {
         /** 蚊子尸兄事件型召唤参数（见 {@code MosquitoZbrSpawns}）—— GUI 里可改 */
         public Mosquito mosquito = new Mosquito();
 
+        /** 青蛙奇葩尸兄事件型召唤参数（见 {@code FrogZbrMcSpawns}）—— GUI 里可改 */
+        public FrogZbrMc frogZbrMc = new FrogZbrMc();
+
+        /** 壁虎奇葩尸兄事件型召唤参数（见 {@code GeckoZbrSpawns}）—— GUI 里可改 */
+        public GeckoZbr geckoZbr = new GeckoZbr();
+
         public static final class Mosquito {
             /** 首次现身的游戏日（第几天）。0 = 关闭事件召唤，只能靠指令/刷怪蛋。 */
             public int firstDay = 18;
@@ -102,6 +108,32 @@ public final class CorpseConfig {
             /** 距目标玩家最远召唤距离（格）。 */
             public int maxRadius = 40;
             /** 该半径内已有存活的蚊子尸兄就跳过本次（防堆叠）。 */
+            public int nearbyBossCheck = 128;
+        }
+
+        public static final class FrogZbrMc {
+            /** 首次现身的游戏日（第几天）。0 = 关闭事件召唤，只能靠指令/刷怪蛋。 */
+            public int firstDay = 10;
+            /** 两次现身之间的间隔天数。 */
+            public int intervalDays = 18;
+            /** 距目标玩家最近召唤距离（格）。 */
+            public int minRadius = 24;
+            /** 距目标玩家最远召唤距离（格）。 */
+            public int maxRadius = 40;
+            /** 该半径内已有存活的青蛙奇葩尸兄就跳过本次（防堆叠）。 */
+            public int nearbyBossCheck = 128;
+        }
+
+        public static final class GeckoZbr {
+            /** 首次现身的游戏日（第几天）。0 = 关闭事件召唤，只能靠指令/刷怪蛋。 */
+            public int firstDay = 12;
+            /** 两次现身之间的间隔天数。 */
+            public int intervalDays = 20;
+            /** 距目标玩家最近召唤距离（格）。 */
+            public int minRadius = 24;
+            /** 距目标玩家最远召唤距离（格）。 */
+            public int maxRadius = 40;
+            /** 该半径内已有存活的壁虎奇葩尸兄就跳过本次（防堆叠）。 */
             public int nearbyBossCheck = 128;
         }
 
@@ -515,6 +547,14 @@ public final class CorpseConfig {
         // 同理：蚊子尸兄的事件召唤参数（老文件里没有这一节）
         if (spawn.mosquito == null) {
             spawn.mosquito = new Spawn.Mosquito();
+        }
+        // 同理：青蛙奇葩尸兄的事件召唤参数（老文件里没有这一节）
+        if (spawn.frogZbrMc == null) {
+            spawn.frogZbrMc = new Spawn.FrogZbrMc();
+        }
+        // 同理：壁虎奇葩尸兄的事件召唤参数（老文件里没有这一节）
+        if (spawn.geckoZbr == null) {
+            spawn.geckoZbr = new Spawn.GeckoZbr();
         }
         // 配置文件迁移：老文件里尸兄权重默认 2（远低于"和原版僵尸持平"的 100），
         // 老用户升级上来后只有把它们顶到新默认，才符合"尸兄生成权重和僵尸持平"的预期。

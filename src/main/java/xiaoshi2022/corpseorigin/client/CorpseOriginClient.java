@@ -270,6 +270,11 @@ public class CorpseOriginClient implements ClientModInitializer {
                 xiaoshi2022.corpseorigin.client.renderer.entity.MosquitoZbrRenderer::new);
         EntityRendererRegistry.register(ModEntities.MOSQUITO_SWARM,
                 xiaoshi2022.corpseorigin.client.renderer.entity.MosquitoSwarmRenderer::new);
+        // 青蛙奇葩尸兄 / 壁虎奇葩尸兄（精英怪）
+        EntityRendererRegistry.register(ModEntities.FROG_ZBR_MC,
+                xiaoshi2022.corpseorigin.client.renderer.entity.FrogZbrMcRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GECKO_ZBR,
+                xiaoshi2022.corpseorigin.client.renderer.entity.GeckoZbrRenderer::new);
         // 穆博士的药剂针头：复用已有药剂模型（GeoItem），用物品投射物渲染器直接画
         EntityRendererRegistry.register(ModEntities.MU_NEEDLE,
                 context -> new net.minecraft.client.renderer.entity.ThrownItemRenderer<>(context, 1.2f, true));

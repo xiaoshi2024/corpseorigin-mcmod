@@ -96,6 +96,16 @@ public final class ModAttributes {
                 xiaoshi2022.corpseorigin.entity.MosquitoSwarmEntity.createAttributes()
         );
 
+        // 青蛙奇葩尸兄 / 壁虎奇葩尸兄（精英怪）
+        FabricDefaultAttributeRegistry.register(
+                ModEntities.FROG_ZBR_MC,
+                xiaoshi2022.corpseorigin.entity.FrogZbrMcEntity.createAttributes()
+        );
+        FabricDefaultAttributeRegistry.register(
+                ModEntities.GECKO_ZBR,
+                xiaoshi2022.corpseorigin.entity.GeckoZbrEntity.createAttributes()
+        );
+
         // TODO: 添加其他实体的属性注册
         // 例如：
         // FabricDefaultAttributeRegistry.register(ModEntities.LONGYOU, LongyouEntity.createAttributes());
