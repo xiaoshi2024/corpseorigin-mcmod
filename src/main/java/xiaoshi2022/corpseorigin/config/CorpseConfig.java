@@ -98,6 +98,22 @@ public final class CorpseConfig {
         /** 壁虎奇葩尸兄事件型召唤参数（见 {@code GeckoZbrSpawns}）—— GUI 里可改 */
         public GeckoZbr geckoZbr = new GeckoZbr();
 
+        /** 世界威胁等级：尸兄强度随服务器在线玩家最高境界缩放（见 {@code WorldThreatManager}）—— GUI 里可改 */
+        public WorldThreat worldThreat = new WorldThreat();
+
+        public static final class WorldThreat {
+            /** 总闸。关闭后尸兄强度固定为面板基础值，不随玩家境界变化。 */
+            public boolean enabled = true;
+            /** 世界威胁每 1 级（玩家最高境界每升 1 级）给尸兄增加的最大生命比例（乘基础值）。0.08 = +8%/级。 */
+            public float hpPerLevel = 0.08F;
+            /** 每 1 级威胁增加的攻击伤害比例（乘基础值）。 */
+            public float damagePerLevel = 0.08F;
+            /** 每 1 级威胁增加的护甲点数（绝对值）。 */
+            public float armorPerLevel = 0.15F;
+            /** 计入威胁的等级上限（1~20）：神上 20 级 ×0.08 = +152% 生命，超出部分不再加成。 */
+            public int maxLevelsCounted = 20;
+        }
+
         public static final class Mosquito {
             /** 首次现身的游戏日（第几天）。0 = 关闭事件召唤，只能靠指令/刷怪蛋。 */
             public int firstDay = 18;
@@ -556,6 +572,14 @@ public final class CorpseConfig {
         if (spawn.geckoZbr == null) {
             spawn.geckoZbr = new Spawn.GeckoZbr();
         }
+        // 同理：世界威胁等级参数（老文件里没有这一节）
+        if (spawn.worldThreat == null) {
+            spawn.worldThreat = new Spawn.WorldThreat();
+        }
+        spawn.worldThreat.hpPerLevel = clamp(spawn.worldThreat.hpPerLevel, 0F, 0.5F);
+        spawn.worldThreat.damagePerLevel = clamp(spawn.worldThreat.damagePerLevel, 0F, 0.5F);
+        spawn.worldThreat.armorPerLevel = clamp(spawn.worldThreat.armorPerLevel, 0F, 3F);
+        spawn.worldThreat.maxLevelsCounted = (int)clamp(spawn.worldThreat.maxLevelsCounted, 1, 20);
         // 配置文件迁移：老文件里尸兄权重默认 2（远低于"和原版僵尸持平"的 100），
         // 老用户升级上来后只有把它们顶到新默认，才符合"尸兄生成权重和僵尸持平"的预期。
         // 只动恰好等于 2 的字段 —— 用户如果手动改过（≠2）一律尊重。

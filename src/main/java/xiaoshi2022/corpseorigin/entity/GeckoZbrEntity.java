@@ -66,7 +66,7 @@ import xiaoshi2022.corpseorigin.registry.ModEntities;
  * </ul>
  * 动画全部用上：idle / crawl / attack / tongue_attack / no_tail / not_tail / grow。
  */
-public class GeckoZbrEntity extends PathfinderMob implements GeoEntity {
+public class GeckoZbrEntity extends PathfinderMob implements GeoEntity, RealmRated {
 
     // ==================== 数值 ====================
 
@@ -131,6 +131,15 @@ public class GeckoZbrEntity extends PathfinderMob implements GeoEntity {
     // ==================== 属性 ====================
 
     /** 180 血的金色大壁虎：皮糙肉厚跑得快，弱点只有火。 */
+    /** 精英怪评级：地3（境界表绝对等级 7，再生+尾池比青蛙硬一档），Jade 准星联动显示 */
+    private static final int REALM_LEVEL = 7;
+
+    /** Jade 准星联动：显示"境界：地3" */
+    @Override
+    public int corpseRealmLevel() {
+        return REALM_LEVEL;
+    }
+
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 180.0D)

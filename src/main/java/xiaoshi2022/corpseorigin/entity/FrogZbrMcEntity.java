@@ -63,7 +63,7 @@ import java.util.List;
  * 动画全部用上：idle / walk / attack（近战撕咬）/ tongue_attack / cast（吐液）/
  * hurt / death / was_shot_brains（大脑射出）/ not_brains（无脑状态）。
  */
-public class FrogZbrMcEntity extends PathfinderMob implements GeoEntity {
+public class FrogZbrMcEntity extends PathfinderMob implements GeoEntity, RealmRated {
 
     // ==================== 数值 ====================
 
@@ -127,6 +127,15 @@ public class FrogZbrMcEntity extends PathfinderMob implements GeoEntity {
     // ==================== 属性 ====================
 
     /** 140 血的重甲大青蛙：皮糙肉厚、顶抗击退，怕的是被放风筝和火焰。 */
+    /** 精英怪评级：地2（境界表绝对等级 6），Jade 准星联动显示 */
+    private static final int REALM_LEVEL = 6;
+
+    /** Jade 准星联动：显示"境界：地2" */
+    @Override
+    public int corpseRealmLevel() {
+        return REALM_LEVEL;
+    }
+
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 140.0D)

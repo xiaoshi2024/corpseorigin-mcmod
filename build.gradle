@@ -23,6 +23,11 @@ repositories {
         name = "Terraformers"
         url = "https://maven.terraformersmc.com/"
     }
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+        content { includeGroup "maven.modrinth" }
+    }
 }
 
 fabricApi {
@@ -46,6 +51,10 @@ dependencies {
 
     // ModMenu — optional; provides the "Settings" button in the mods list HUD.
     compileOnly "curse.maven:modmenu-308702:8854488"
+
+    // Jade (WAILA) — optional; 准星联动显示玩家/NPC/精英怪的境界等级，见 compat/jade。
+    // compileOnly 仅参与编译，不进打包与运行时；玩家装了 Jade 才生效。
+    compileOnly "maven.modrinth:jade:26.2.11+fabric"
 }
 
 processResources {

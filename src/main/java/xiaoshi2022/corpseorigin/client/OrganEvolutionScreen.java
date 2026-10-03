@@ -14,6 +14,9 @@ import xiaoshi2022.corpseorigin.growth.OrganEvolutionRules;
 public final class OrganEvolutionScreen extends Screen {
     private final Screen parent;
     private int index;
+    /** 天梯搜索框：输入实时跳到第一个名称/ID 含关键词的器官，免去一个个翻页 */
+    private net.minecraft.client.gui.components.EditBox search;
+    private String searchText = "";
     public OrganEvolutionScreen(Screen parent){super(Component.translatable("message.corpseorigin.organ_evolution_screen.text_01"));this.parent=parent;}
     private java.util.List<OrganDefinition> entries(){return OrganEvolution.entries(OrganClient.catalog);}
     private void button(String name,int x,int y,int w,Runnable action){addRenderableWidget(Button.builder(Component.literal(name),b->action.run()).bounds(x,y,w,20).build());}
@@ -22,11 +25,33 @@ public final class OrganEvolutionScreen extends Screen {
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.064"),x,28,95,()->{index=Math.floorMod(index-1,entries().size());});
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.065"),x+100,28,95,()->{index=(index+1)%entries().size();});
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.016"),x+200,28,100,this::onClose);
+        // 搜索框（宽屏才放得下）：实时过滤 —— 名称或 ID 命中即跳转
+        if(width>=600){
+            search=new net.minecraft.client.gui.components.EditBox(font,x+305,28,145,20,
+                    Component.translatable("gui.corpseorigin.organ_search_hint"));
+            search.setMaxLength(24);
+            search.setValue(searchText);
+            search.setHint(Component.translatable("gui.corpseorigin.organ_search_hint"));
+            search.setResponder(s->{searchText=s;applySearch();});
+            addRenderableWidget(search);
+        }
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.066"),x,160,300,()->send("advance"));
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.067"),x,185,145,()->send("vitality"));
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.068"),x+155,185,145,()->send("efficiency"));
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.069"),x,210,145,()->send("power"));
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.070"),x+155,210,145,()->send("sustain"));
+    }
+    private void applySearch(){
+        String k=searchText.trim().toLowerCase(java.util.Locale.ROOT);
+        if(k.isEmpty())return;
+        var es=entries();
+        for(int i=0;i<es.size();i++){
+            var d=es.get(i);
+            if(d.displayName().getString().toLowerCase(java.util.Locale.ROOT).contains(k)
+                    ||String.valueOf(d.id()).toLowerCase(java.util.Locale.ROOT).contains(k)){
+                index=i;return;
+            }
+        }
     }
     private void send(String action){
         if(OrganClient.pending)return;

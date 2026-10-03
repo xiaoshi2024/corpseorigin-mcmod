@@ -35,6 +35,32 @@ public final class OrganEditorScreen extends Screen {
         if(p!=null)try{slots.addAll(OrganLibrary.parseSlots(p.getAttachedOrCreate(SurvivalGrowth.BODY).getStringOr(OrganLibrary.BODY_KEY,"[]")));}catch(Exception ignored){}
     }
     private void button(String text,int x,int y,int w,Runnable action){addRenderableWidget(Button.builder(Component.literal(text),b->action.run()).bounds(x,y,w,20).build());}
+    /** 同 {@link #button}，但返回按钮引用，便于事后 setMessage 刷新文案 */
+    private Button buttonR(String text,int x,int y,int w,Runnable action){var b=Button.builder(Component.literal(text),btn->action.run()).bounds(x,y,w,20).build();addRenderableWidget(b);return b;}
+    /** 器官搜索框：输入实时选中（装配）第一个名称/ID 含关键词的器官，免去一个个循环翻找 */
+    private EditBox organSearch;
+    private String organSearchText="";
+    private Button organBtn;
+    /** 实时搜索：命中即把该器官装配到当前选中槽位（与"选择器官"按钮同语义），并刷新按钮文案 */
+    private void applyOrganSearch(){
+        String k=organSearchText.trim().toLowerCase(java.util.Locale.ROOT);
+        if(k.isEmpty())return;
+        var cat=OrganClient.catalog;
+        for(int i=0;i<cat.size();i++){
+            var o=cat.get(i);
+            if(o.displayName().getString().toLowerCase(java.util.Locale.ROOT).contains(k)
+                    ||String.valueOf(o.id()).toLowerCase(java.util.Locale.ROOT).contains(k)){
+                if(organIndex!=i){
+                    if(!commit())return;   // 数值框内容非法则不装配
+                    organIndex=i;
+                    replaceChoice();       // 装配到当前选中槽位（保留原坐标偏移）
+                }
+                if(organBtn!=null)organBtn.setMessage(Component.literal(
+                        net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.031")+o.displayName().getString()));
+                return;
+            }
+        }
+    }
     @Override protected void init(){
         clearWidgets();values.clear();int x=editorX();
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.015"),4,4,90,()->{if(commit())minecraft.gui.setScreen(new OrganEvolutionScreen(this));});
@@ -63,7 +89,14 @@ public final class OrganEditorScreen extends Screen {
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.028"),x+75,28,70,()->{if(commit()){selected=Math.min(slots.size()-1,selected+1);init();}});
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.029"),x+150,28,70,()->{if(slots.size()<8&&commit()){slots.add(new OrganSlot(OrganClient.catalog.get(0).id(),"body",0,0,0,0,0,0,1,false));selected=slots.size()-1;init();}});
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.030"),x+225,28,70,()->{if(!slots.isEmpty())slots.remove(selected);init();});
-        button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.031")+OrganClient.catalog.get(organIndex).displayName().getString(),x,53,295,()->{if(commit()){organIndex=(organIndex+1)%OrganClient.catalog.size();replaceChoice();init();}});
+        organBtn=buttonR(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.031")+OrganClient.catalog.get(organIndex).displayName().getString(),x,53,200,()->{if(commit()){organIndex=(organIndex+1)%OrganClient.catalog.size();replaceChoice();init();}});
+        // 搜索框：输入实时选中器官，避免循环按钮一个个翻
+        organSearch=new EditBox(font,x+205,53,90,20,Component.translatable("gui.corpseorigin.organ_search_hint"));
+        organSearch.setMaxLength(24);
+        organSearch.setValue(organSearchText);
+        organSearch.setHint(Component.translatable("gui.corpseorigin.organ_search_hint"));
+        organSearch.setResponder(s->{organSearchText=s;applyOrganSearch();});
+        addRenderableWidget(organSearch);
         String[] joints={net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.032"),net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.033"),net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.034"),net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.035"),net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.036"),net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.037"),net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.038")};
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.039")+joints[Math.max(0,jointIndex)],x,78,195,()->{if(commit()){jointIndex=(jointIndex+1)%joints.length;replaceChoice();init();}});
         button(net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.040")+(mirror?net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.041"):net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.label.042")),x+200,78,95,()->{if(commit()){mirror=!mirror;replaceChoice();init();}});

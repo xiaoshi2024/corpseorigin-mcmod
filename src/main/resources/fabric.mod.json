@@ -26,6 +26,9 @@
 		],
 		"modmenu": [
 			"xiaoshi2022.corpseorigin.client.CorpseOriginModMenu"
+		],
+		"waila": [
+			"xiaoshi2022.corpseorigin.compat.jade.CorpseWailaPlugin"
 		]
 	},
 	"mixins": [
@@ -39,6 +42,7 @@
 		"fabric-api": "*"
 	},
 	"suggests": {
-		"snakesalive": "*"
+		"snakesalive": "*",
+		"jade": "*"
 	}
 }

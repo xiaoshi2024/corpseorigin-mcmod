@@ -6,7 +6,9 @@ public final class RealmConfig {
     public boolean swordTerrainDestruction = true;
     public int swordRiftBlocksPerTick = 1024, swordRiftScansPerTick = 8192, swordRiftMillisPerTick = 4;
     public int swordRiftMaxBlocks = 4000000, swordRiftMaxLength = 1024, swordRiftConcurrent = 2, swordRiftCooldownTicks = 100;
-    public double difficultyMultiplier = 3;
+    /** 敌人难度倍率（缩放进化点数需求）：默认 27.2 倍 → 到神上（封顶 2300 基础点）≈ 20 万点；
+     *  40 倍（GUI 上限）≈ 100 万点，见 EvolutionManager.difficultyFactor 的指数爬升曲线 */
+    public double difficultyMultiplier = 27.2;
     public boolean preserveExistingProgress = true;
     public double statMultiplier = 1;
     public double qiSkillDamageScaling = 1;

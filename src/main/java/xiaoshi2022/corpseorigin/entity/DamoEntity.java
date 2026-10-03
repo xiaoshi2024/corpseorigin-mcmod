@@ -22,6 +22,7 @@ import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import xiaoshi2022.corpseorigin.growth.FreeGrowth;
 import xiaoshi2022.corpseorigin.growth.RealmRules;
@@ -29,18 +30,18 @@ import xiaoshi2022.corpseorigin.growth.RealmRules;
 /**
  * Small Frog Damo, a peaceful one-time qi teacher.
  * <p>
- * 虽是和平 NPC（不主动攻击、喂食即传授气感后消失），但设定上他是<b>地级4 强者</b>，
- * 不该被玩家一拳挥死。身板直接对齐境界表 {@link RealmRules}：地级4 = 境界 8，
- * 故生命取 {@link RealmRules#health(int) health(8)} = 800，护甲取
- * {@link RealmRules#protection(int, int) protection(8, 0)} = 20% 减伤（约等于 5 点护甲）。
- * 这样地级3（境界 7）的攻击大约要 8 下才能打死他，既不会被一击秒杀，也不至于无解。
+ * 虽是和平 NPC（不主动攻击、喂食即传授气感后消失），但设定上他是<b>地级4 强者</b>（低级巅峰），
+ * 不该被玩家乱棍打死。身板对齐境界表 {@link RealmRules}：地级4 = 境界 8 ——
+ * 生命 {@code health(8)} = 800；受击按地级4 境界减伤 20%（{@code protection(8,0)}）；
+ * 护甲 12 / 韧性 8 / 击退抗性 0.8，低境界玩家的普通近战几乎无法撼动他，
+ * 只有境界压制（地级以上攻击）或火攻/药水等绕过护甲的手段才能有效伤害。
  */
-public class DamoEntity extends PathfinderMob implements GeoEntity {
+public class DamoEntity extends PathfinderMob implements GeoEntity, RealmRated {
 
     /** 地级4 在境界表中的等级（人1-4=1-4、地1-4=5-8） */
     private static final int EARTH_TIER_4_LEVEL = 8;
-    /** 地级4 的"护体"减伤（{@link RealmRules#protection(int, int)} = 20%）折算成的护甲点数 */
-    private static final double EARTH_TIER_4_ARMOR = 5.0D;
+    /** 地级4 境界减伤：{@code protection(8,0)} = 20%（护体罡气） */
+    private static final float EARTH_TIER_4_DAMAGE_REDUCTION = 0.20F;
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
 
@@ -49,12 +50,26 @@ public class DamoEntity extends PathfinderMob implements GeoEntity {
         setPersistenceRequired();
     }
 
+    /** Jade 准星联动：显示"境界：地4" */
+    @Override
+    public int corpseRealmLevel() {
+        return EARTH_TIER_4_LEVEL;
+    }
+
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, RealmRules.health(EARTH_TIER_4_LEVEL))
                 .add(Attributes.MOVEMENT_SPEED, .22)
                 .add(Attributes.FOLLOW_RANGE, 16)
-                .add(Attributes.ARMOR, EARTH_TIER_4_ARMOR);
+                .add(Attributes.ARMOR, 12)
+                .add(Attributes.ARMOR_TOUGHNESS, 8)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.8D);
+    }
+
+    /** 地级4 护体：所有伤害先打 80% 折扣再进原版结算（与玩家境界减伤同源数值） */
+    @Override
+    public boolean hurtServer(ServerLevel level, net.minecraft.world.damagesource.DamageSource source, float amount) {
+        return super.hurtServer(level, source, amount * (1F - EARTH_TIER_4_DAMAGE_REDUCTION));
     }
 
     @Override

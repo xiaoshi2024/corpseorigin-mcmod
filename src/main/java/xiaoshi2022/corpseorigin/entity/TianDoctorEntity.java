@@ -30,8 +30,14 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.registry.ModEntities;
 
-/** 天·博士：可交易、可雇佣的黑色火线特派 NPC。 */
-public class TianDoctorEntity extends PathfinderMob implements GeoEntity {
+/** 天·博士：可交易、可雇佣的黑色火线特派 NPC。
+ * <p>
+ * 设定为<b>天级</b>强者（境界表等级 9），身板对齐 {@link xiaoshi2022.corpseorigin.growth.RealmRules}：
+ * 生命 {@code health(9)} = 4000；受击时按天级境界减伤 45%
+ * （{@code protection(9,0)} 的折算）+ 护甲 10 / 韧性 10 / 击退免疫，
+ * 低境界玩家无法用木棍/石剑之类把他"乱棍打死"。
+ */
+public class TianDoctorEntity extends PathfinderMob implements GeoEntity, RealmRated {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private java.util.UUID employer;
     private static final net.minecraft.network.syncher.EntityDataAccessor<Boolean> HIRED =
@@ -40,8 +46,33 @@ public class TianDoctorEntity extends PathfinderMob implements GeoEntity {
     private static final String EMPLOYER_TAG = "CorpseOriginEmployer";
     private int weaponCooldown;
     private int robotCooldown;
+    /** 天级 = 境界表等级 9（人1-4=1-4、地1-4=5-8、天=9） */
+    private static final int SKY_TIER_LEVEL = 9;
+    /** 天级境界减伤：{@code protection(9,0)} = 45%（护体罡气） */
+    private static final float SKY_TIER_DAMAGE_REDUCTION = 0.45F;
     public TianDoctorEntity(EntityType<? extends PathfinderMob> type, Level level) { super(type, level); setPersistenceRequired(); }
-    public static AttributeSupplier.Builder createAttributes() { return PathfinderMob.createMobAttributes().add(Attributes.MAX_HEALTH, 80).add(Attributes.MOVEMENT_SPEED, .28).add(Attributes.ATTACK_DAMAGE, 8).add(Attributes.FOLLOW_RANGE, 24); }
+    /** Jade 准星联动：显示"境界：天" */
+    @Override
+    public int corpseRealmLevel() {
+        return SKY_TIER_LEVEL;
+    }
+
+    public static AttributeSupplier.Builder createAttributes() {
+        return PathfinderMob.createMobAttributes()
+                .add(Attributes.MAX_HEALTH, xiaoshi2022.corpseorigin.growth.RealmRules.health(SKY_TIER_LEVEL))
+                .add(Attributes.MOVEMENT_SPEED, .28)
+                .add(Attributes.ATTACK_DAMAGE, 8)
+                .add(Attributes.FOLLOW_RANGE, 24)
+                .add(Attributes.ARMOR, 10)
+                .add(Attributes.ARMOR_TOUGHNESS, 10)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 1.0D);
+    }
+
+    /** 天级护体：所有伤害先打 45% 折扣再进原版结算（与玩家境界减伤同源数值） */
+    @Override
+    public boolean hurtServer(ServerLevel level, net.minecraft.world.damagesource.DamageSource source, float amount) {
+        return super.hurtServer(level, source, amount * (1F - SKY_TIER_DAMAGE_REDUCTION));
+    }
     @Override protected void registerGoals() { goalSelector.addGoal(3,new WaterAvoidingRandomStrollGoal(this,.7)); goalSelector.addGoal(4,new LookAtPlayerGoal(this,Player.class,10)); goalSelector.addGoal(5,new RandomLookAroundGoal(this)); }
     @Override protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);

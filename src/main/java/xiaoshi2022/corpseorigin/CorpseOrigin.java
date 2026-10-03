@@ -34,6 +34,7 @@ public class CorpseOrigin implements ModInitializer {
 		//    后面刷怪权重、名字名单、皮肤染色强度都从它读，所以必须最先加载
 		xiaoshi2022.corpseorigin.config.CorpseConfig.get();
         xiaoshi2022.corpseorigin.character.CharacterPassives.initialize();
+        xiaoshi2022.corpseorigin.event.WorldThreatManager.initialize();
         xiaoshi2022.corpseorigin.growth.RealmProgression.initialize();
         xiaoshi2022.corpseorigin.growth.ThermalSurvey.initialize();
         xiaoshi2022.corpseorigin.growth.RuinLoot.initialize();

@@ -65,7 +65,7 @@ import java.util.UUID;
  * 动画用 {@code mosquito_zbr} geo 资源（idle / fly / suck / look）：
  * 移动播 fly、悬停播 idle、贴近目标"吸血"播 suck。
  */
-public class MosquitoZbrEntity extends PathfinderMob implements GeoEntity {
+public class MosquitoZbrEntity extends PathfinderMob implements GeoEntity, RealmRated {
 
     // ==================== 数值 ====================
 
@@ -106,6 +106,15 @@ public class MosquitoZbrEntity extends PathfinderMob implements GeoEntity {
      * 160 血、0.34 飞行速度（人跑步约 0.28，追不上也难以瞄准）、视力 48 格。
      * 本体攻击力没意义——伤害全在蚊子叮咬上。
      */
+    /** 精英怪评级：地3（境界表绝对等级 7），Jade 准星联动显示 */
+    private static final int REALM_LEVEL = 7;
+
+    /** Jade 准星联动：显示"境界：地3" */
+    @Override
+    public int corpseRealmLevel() {
+        return REALM_LEVEL;
+    }
+
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 160.0D)

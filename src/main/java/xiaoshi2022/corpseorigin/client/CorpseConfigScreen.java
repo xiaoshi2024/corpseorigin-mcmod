@@ -285,6 +285,30 @@ public class CorpseConfigScreen extends Screen {
                         () -> geckoDef.nearbyBossCheck, 16, 256, () -> String.valueOf(gecko.nearbyBossCheck)));
         pages.add(new Page("gui.corpseorigin.config.page_gecko", geckoFields));
 
+        // ---- 第 7 页：世界威胁等级（尸兄强度随玩家最高境界缩放，见 WorldThreatManager）----
+        var threat = spawn.worldThreat;
+        var threatDef = new CorpseConfig.Spawn.WorldThreat();
+        List<Field> threatFields = List.of(
+                new BoolF("gui.corpseorigin.config.f.threat_enabled",
+                        () -> threat.enabled, v -> threat.enabled = v,
+                        () -> threatDef.enabled),
+                new FloatF("gui.corpseorigin.config.f.threat_hp",
+                        () -> threat.hpPerLevel, v -> threat.hpPerLevel = (float) v,
+                        () -> threatDef.hpPerLevel, 0F, 0.5F,
+                        () -> String.format("+%.0f%%/级", threat.hpPerLevel * 100)),
+                new FloatF("gui.corpseorigin.config.f.threat_damage",
+                        () -> threat.damagePerLevel, v -> threat.damagePerLevel = (float) v,
+                        () -> threatDef.damagePerLevel, 0F, 0.5F,
+                        () -> String.format("+%.0f%%/级", threat.damagePerLevel * 100)),
+                new FloatF("gui.corpseorigin.config.f.threat_armor",
+                        () -> threat.armorPerLevel, v -> threat.armorPerLevel = (float) v,
+                        () -> threatDef.armorPerLevel, 0F, 3F,
+                        () -> String.format("+%.2f/级", threat.armorPerLevel)),
+                new IntF("gui.corpseorigin.config.f.threat_max_levels",
+                        () -> threat.maxLevelsCounted, v -> threat.maxLevelsCounted = v,
+                        () -> threatDef.maxLevelsCounted, 1, 20, () -> String.valueOf(threat.maxLevelsCounted)));
+        pages.add(new Page("gui.corpseorigin.config.page_threat", threatFields));
+
         // ---- 第 2 页：尸兄虫事件 + 尸兄进化 ----
         List<Field> wormFields = List.of(
                 new IntF("gui.corpseorigin.config.f.worm_first_day",
@@ -432,7 +456,7 @@ public class CorpseConfigScreen extends Screen {
                 // 敌人强度难度倍率
                 new FloatF("gui.corpseorigin.config.f.difficulty_multiplier",
                         () -> realm.difficultyMultiplier, v -> realm.difficultyMultiplier = v,
-                        () -> realmDef.difficultyMultiplier, 1F, 20F, () -> fmtFloat(realm.difficultyMultiplier)),
+                        () -> realmDef.difficultyMultiplier, 1F, 40F, () -> fmtFloat(realm.difficultyMultiplier)),
                 // 玩家属性成长倍率
                 new FloatF("gui.corpseorigin.config.f.stat_multiplier",
                         () -> realm.statMultiplier, v -> realm.statMultiplier = v,

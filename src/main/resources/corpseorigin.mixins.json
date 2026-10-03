@@ -30,7 +30,8 @@
     "ServerPlayerShellMixin",
     "SpawnPlacementsInvoker",
     "SpawnPlacementsMixin",
-    "SwarmClimbMixin"
+    "SwarmClimbMixin",
+    "WorldThreatMixin"
   ],
   "injectors": {
     "defaultRequire": 1
