@@ -68,7 +68,7 @@ import java.util.UUID;
  *   <li>完全意识转移：玩家死亡或主动使用存储仓时，把 bodyState apply 到 ServerPlayer。</li>
  * </ul>
  */
-public class CloneAvatarEntity extends PathfinderMob implements TransferredBody {
+public class CloneAvatarEntity extends PathfinderMob implements TransferredBody, RealmRated {
     private boolean abandonedBody;
     public void setAbandonedBody(boolean value) { abandonedBody = value; }
     public boolean isAbandonedBody() { return abandonedBody; }
@@ -102,6 +102,10 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
     /** 同步：这具分身是不是已晋升的 BOSS（客户端可据此做表现，血条本身走 BossEvent） */
     private static final EntityDataAccessor<Boolean> DATA_BOSS =
             SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.BOOLEAN);
+
+    /** 同步：这具身体的境界等级（1~20），Jade/WAILA 准星联动显示"境界"行用 */
+    private static final EntityDataAccessor<Integer> DATA_REALM_LEVEL =
+            SynchedEntityData.defineId(CloneAvatarEntity.class, EntityDataSerializers.INT);
 
     /** 同步：这具身体穿的盔甲（头/胸/腿/脚），客户端渲染要用 */
     private static final EntityDataAccessor<ItemStack> DATA_HEAD_EQUIPMENT =
@@ -224,6 +228,7 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         builder.define(DATA_PROGRESS, 0.0F);
         builder.define(DATA_CORPSE_CLONE, false);
         builder.define(DATA_BOSS, false);
+        builder.define(DATA_REALM_LEVEL, 0);
         builder.define(DATA_HEAD_EQUIPMENT, net.minecraft.world.item.ItemStack.EMPTY);
         builder.define(DATA_CHEST_EQUIPMENT, net.minecraft.world.item.ItemStack.EMPTY);
         builder.define(DATA_LEGS_EQUIPMENT, net.minecraft.world.item.ItemStack.EMPTY);
@@ -286,6 +291,17 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         return this.entityData.get(DATA_PROGRESS);
     }
 
+    /**
+     * Jade（WAILA）准星联动：这具身体的境界等级。
+     * <p>
+     * 数值由服务端在 {@link #syncBodyCorpseData} 时从身体快照的进化点推算并同步，
+     * 客户端直接读同步字段即可，无需重新解析 NBT。返回 0 表示未评定（Jade 不显示境界行）。
+     */
+    @Override
+    public int corpseRealmLevel() {
+        return this.entityData.get(DATA_REALM_LEVEL);
+    }
+
     // ==================== 身体快照 ====================
 
     @Nullable
@@ -313,6 +329,10 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody 
         if (this.level().isClientSide() || this.bodyState == null) {
             return;
         }
+        // ★ 境界等级：取自身体快照里的角色数据（进化点 → 境界），同步给客户端供 Jade 显示
+        CharacterShellStateComponent character = this.bodyState.getComponent().as(CharacterShellStateComponent.class);
+        this.entityData.set(DATA_REALM_LEVEL, character == null ? 0 : Math.clamp(character.getEvolutionLevel(), 0, 20));
+
         net.minecraft.nbt.CompoundTag tag =
                 xiaoshi2022.corpseorigin.shell.ShellState.corpseTagOf(this.bodyState.getComponent());
         // 尸水培育出来的克隆体是尸兄：行为也按低阶尸兄走
