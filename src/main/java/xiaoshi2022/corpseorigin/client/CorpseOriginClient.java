@@ -458,6 +458,15 @@ public class CorpseOriginClient implements ClientModInitializer {
                 context.client().execute(() ->
                         ClientState.infection = payload.infection()));
 
+        // 接收其他玩家境界广播（Jade 准星显示用）
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.PlayerRealmSyncS2C.TYPE, (payload, context) ->
+                context.client().execute(() -> {
+                    if (payload.level() > 0)
+                        ClientState.otherPlayerRealms.put(java.util.UUID.fromString(payload.playerUuid()), payload.level());
+                    else
+                        ClientState.otherPlayerRealms.remove(java.util.UUID.fromString(payload.playerUuid()));
+                }));
+
         // 接收内力同步
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.InnerPowerSyncS2C.TYPE, (payload, context) ->
                 context.client().execute(() -> {

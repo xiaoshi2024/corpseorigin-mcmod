@@ -214,6 +214,29 @@ public final class CorpsePayloads {
     }
 
     /**
+     * 玩家境界广播（S2C）：把某个玩家当前的境界等级告诉客户端，
+     * 用于 Jade（WAILA）准星显示<b>其他玩家</b>的境界（自己的境界客户端本地已有）。
+     * <p>
+     * 服务器侧在玩家进服与境界变化（每 5 秒比对）时全服广播。
+     */
+    public record PlayerRealmSyncS2C(String playerUuid, int level) implements CustomPacketPayload {
+        public static final Type<PlayerRealmSyncS2C> TYPE = new Type<>(id("player_realm_sync"));
+
+        public static final StreamCodec<ByteBuf, PlayerRealmSyncS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.STRING_UTF8,
+                PlayerRealmSyncS2C::playerUuid,
+                ByteBufCodecs.INT,
+                PlayerRealmSyncS2C::level,
+                (uuidStr, level) -> new PlayerRealmSyncS2C(uuidStr, level)
+        );
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
+    /**
      * 克隆身体的"角色外观"同步（S2C，按身体 UUID 索引）。
      * <p>
      * 尸兄 NBT（外骨骼/红眼/皮肤）走 {@link PlayerCorpseSyncS2C}；本包负责"角色相关的附加骨骼"：

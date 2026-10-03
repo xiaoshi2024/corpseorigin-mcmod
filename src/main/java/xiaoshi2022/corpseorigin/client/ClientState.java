@@ -35,8 +35,10 @@ public final class ClientState {
     public static final Set<String> learnedSkills = new HashSet<>();
     /** 技能冷却结束时间戳（毫秒） */
     public static final Map<String, Long> cooldownEnds = new HashMap<>();
-
     public static final Map<String, Integer> cooldownDurations = new HashMap<>();
+
+    /** 其他玩家的境界等级（服务器经 {@code PlayerRealmSyncS2C} 广播，Jade 准星显示用）；键为玩家 UUID */
+    public static final java.util.Map<java.util.UUID, Integer> otherPlayerRealms = new java.util.concurrent.ConcurrentHashMap<>();
 
     public static void applyEvolution(int earned, int available, int kills, byte[] learnedBytes, int level, int pointsToNext) {
         evolutionLevel = Math.clamp(level,1,20);

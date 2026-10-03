@@ -103,6 +103,43 @@ public final class CorpseNetwork {
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.CloneBodySyncS2C.TYPE, CorpsePayloads.CloneBodySyncS2C.CODEC);
         // Flashback 快照回放专用通道（仅录制端快照注入时会出现）
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.ReplayPlayerBodyS2C.TYPE, CorpsePayloads.ReplayPlayerBodyS2C.CODEC);
+        // 玩家境界广播（Jade 准星显示其他玩家境界）
+        PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.PlayerRealmSyncS2C.TYPE, CorpsePayloads.PlayerRealmSyncS2C.CODEC);
+
+        // ==================== 玩家境界广播 ====================
+        // 每个玩家进服时与境界变化时（每 5 秒比对），把他的境界等级广播给全服；
+        // 客户端缓存进 ClientState.otherPlayerRealms，Jade 准星指着其他玩家时显示。
+        Map<UUID, Integer> lastBroadcastRealm = new HashMap<>();
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> server.execute(() -> {
+            ServerPlayer joined = handler.player;
+            int level = xiaoshi2022.corpseorigin.skill.EvolutionManager.getLevel(
+                    PlayerCharacterData.get(joined).getEarnedPoints(joined.getUUID()));
+            if (level <= 0) return;
+            for (ServerPlayer other : server.getPlayerList().getPlayers())
+                ServerPlayNetworking.send(other, new CorpsePayloads.PlayerRealmSyncS2C(joined.getUUID().toString(), level));
+            for (ServerPlayer other : server.getPlayerList().getPlayers()) { // 已在线玩家的境界告诉新人
+                if (other.getUUID().equals(joined.getUUID())) continue;
+                Integer known = lastBroadcastRealm.get(other.getUUID());
+                int ol = known != null ? known : xiaoshi2022.corpseorigin.skill.EvolutionManager.getLevel(
+                        PlayerCharacterData.get(other).getEarnedPoints(other.getUUID()));
+                if (ol > 0) ServerPlayNetworking.send(joined, new CorpsePayloads.PlayerRealmSyncS2C(other.getUUID().toString(), ol));
+            }
+            lastBroadcastRealm.put(joined.getUUID(), level);
+        }));
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> lastBroadcastRealm.remove(handler.player.getUUID()));
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            if (server.getTickCount() % 100 != 0) return;
+            for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+                int level = xiaoshi2022.corpseorigin.skill.EvolutionManager.getLevel(
+                        PlayerCharacterData.get(p).getEarnedPoints(p.getUUID()));
+                Integer last = lastBroadcastRealm.get(p.getUUID());
+                if (level > 0 && !Integer.valueOf(level).equals(last)) {
+                    lastBroadcastRealm.put(p.getUUID(), level);
+                    for (ServerPlayer other : server.getPlayerList().getPlayers())
+                        ServerPlayNetworking.send(other, new CorpsePayloads.PlayerRealmSyncS2C(p.getUUID().toString(), level));
+                }
+            }
+        });
 
         // ✅ 技能系统：激活（C2S）+ 进化/冷却同步（S2C）
         PayloadTypeRegistry.serverboundPlay().register(CorpsePayloads.ActivateSkillC2S.TYPE, CorpsePayloads.ActivateSkillC2S.CODEC);

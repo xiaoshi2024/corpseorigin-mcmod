@@ -27,7 +27,7 @@
 		"modmenu": [
 			"xiaoshi2022.corpseorigin.client.CorpseOriginModMenu"
 		],
-		"waila": [
+		"jade": [
 			"xiaoshi2022.corpseorigin.compat.jade.CorpseWailaPlugin"
 		]
 	},
