@@ -25,6 +25,8 @@ public final class ModSounds {
     public static final SoundEvent MOSQUITO_BUZZING = register("mosquito_buzzing");
     /** 蚊子叮咬声 */
     public static final SoundEvent MOSQUITO_DING = register("mosquito_ding");
+    /** 乌鸦尸兄的"呱——"叫声（只在飞行中或打盹闭眼窗口发出） */
+    public static final SoundEvent CAW = register("caw");
 
     private ModSounds() {
     }

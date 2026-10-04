@@ -200,6 +200,14 @@ public class CorpseOriginClient implements ClientModInitializer {
         RawMeatTooltip.init();
         OrganClient.register();
         HeartRecoveryScreen.register();
+
+        // 自定义粒子工厂（黑色羽毛：乌鸦尸兄掉羽毛视觉效果）
+        net.fabricmc.fabric.api.client.particle.v1.ParticleProviderRegistry.getInstance()
+                .register(xiaoshi2022.corpseorigin.registry.ModParticles.BLACK_FEATHER,
+                        sprites -> (type, level, x, y, z, vx, vy, vz, random) ->
+                                new xiaoshi2022.corpseorigin.client.particle.BlackFeatherParticle(
+                                        level, x, y, z, vx, vy, vz, sprites, random));
+
         // 1. 按键绑定
         CorpseKeyBindings.register();
         ClientPlayNetworking.registerGlobalReceiver(NestRadarPayload.TYPE, (payload, context) ->
@@ -275,6 +283,9 @@ public class CorpseOriginClient implements ClientModInitializer {
                 xiaoshi2022.corpseorigin.client.renderer.entity.FrogZbrMcRenderer::new);
         EntityRendererRegistry.register(ModEntities.GECKO_ZBR,
                 xiaoshi2022.corpseorigin.client.renderer.entity.GeckoZbrRenderer::new);
+        // 乌鸦尸兄（中立型，饿了才猎食）
+        EntityRendererRegistry.register(ModEntities.RAVEN_ZBR,
+                xiaoshi2022.corpseorigin.client.renderer.entity.RavenZbrRenderer::new);
         // 穆博士的药剂针头：复用已有药剂模型（GeoItem），用物品投射物渲染器直接画
         EntityRendererRegistry.register(ModEntities.MU_NEEDLE,
                 context -> new net.minecraft.client.renderer.entity.ThrownItemRenderer<>(context, 1.2f, true));

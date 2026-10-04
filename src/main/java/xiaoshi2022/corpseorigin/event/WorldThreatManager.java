@@ -49,6 +49,7 @@ public final class WorldThreatManager {
             ModEntities.CORPSE_MAGGOT, ModEntities.RED_FIRE_ANT, ModEntities.BULLET_ANT,
             ModEntities.MULTI_HEAD_CORPSE_WORM, ModEntities.COCO_ZOMBIE, ModEntities.COCO_ZOMBIE_X,
             ModEntities.FROG_ZBR_MC, ModEntities.GECKO_ZBR, ModEntities.MOSQUITO_ZBR,
+            ModEntities.RAVEN_ZBR,
             ModEntities.VAMPIRE_BAT, ModEntities.CORPSE_FISH_EGG);
 
     /** 上次广播过的威胁等级；-1 = 本 tick 周期还没算过（服务器刚启动，静默设定不广播） */

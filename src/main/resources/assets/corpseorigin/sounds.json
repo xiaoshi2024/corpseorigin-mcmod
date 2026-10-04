@@ -11,5 +11,6 @@
   "thermal_scan":{"subtitle":"subtitles.corpseorigin.thermal_scan","sounds":["corpseorigin:thermal_scan"]},
   "zishu_ion":{"subtitle":"subtitles.corpseorigin.zishu_ion","sounds":["corpseorigin:zishu_ion"]},
   "mosquito_buzzing":{"subtitle":"subtitles.corpseorigin.mosquito_buzzing","sounds":["corpseorigin:mosquito_buzzing"]},
-  "mosquito_ding":{"subtitle":"subtitles.corpseorigin.mosquito_ding","sounds":["corpseorigin:mosquito_ding"]}
+  "mosquito_ding":{"subtitle":"subtitles.corpseorigin.mosquito_ding","sounds":["corpseorigin:mosquito_ding"]},
+  "caw":{"subtitle":"subtitles.corpseorigin.caw","sounds":["corpseorigin:caw"]}
 }

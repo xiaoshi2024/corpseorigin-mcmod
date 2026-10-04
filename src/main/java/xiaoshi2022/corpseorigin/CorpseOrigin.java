@@ -45,6 +45,9 @@ public class CorpseOrigin implements ModInitializer {
 		// ✅ 自定义音效（尸兄"吃~~"等）
 		ModSounds.init();
 
+		// ✅ 自定义粒子类型（黑色羽毛等）
+		xiaoshi2022.corpseorigin.registry.ModParticles.init();
+
 		// ✅ 成就触发器：必须在数据包加载前注册，否则进度 JSON 会因为"未知的触发器"加载失败
 		xiaoshi2022.corpseorigin.advancement.CorpseAdvancements.init();
 

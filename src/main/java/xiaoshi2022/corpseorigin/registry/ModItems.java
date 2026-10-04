@@ -58,6 +58,9 @@ public final class ModItems {
     /** 壁虎奇葩尸兄刷怪蛋（精英怪，仅创造栏 / 指令召唤） */
     public static final Item GECKO_ZBR_SPAWN_EGG = register("gecko_zbr_spawn_egg",
             new SpawnEggItem(spawnEggProperties("gecko_zbr_spawn_egg", ModEntities.GECKO_ZBR)));
+    /** 乌鸦尸兄刷怪蛋（中立型，仅创造栏 / 指令召唤） */
+    public static final Item RAVEN_ZBR_SPAWN_EGG = register("raven_zbr_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("raven_zbr_spawn_egg", ModEntities.RAVEN_ZBR)));
 
     /** 蚊香：放置型克制方块，散出烟雾削弱蚊群；配方见 {@code data/corpseorigin/recipe/mosquito_coil.json} */
     public static final Item MOSQUITO_COIL = register("mosquito_coil",
@@ -385,6 +388,7 @@ public final class ModItems {
                 output.accept(MOSQUITO_ZBR_SPAWN_EGG);
                 output.accept(FROG_ZBR_MC_SPAWN_EGG);
                 output.accept(GECKO_ZBR_SPAWN_EGG);
+                output.accept(RAVEN_ZBR_SPAWN_EGG);
                 output.accept(ZB_WORM_ITEM);
                 output.accept(HAIR_DRYER);
                 output.accept(ZISHU_THERMAL_SCANNER);

@@ -80,6 +80,9 @@ public final class ModSpawns {
     /** 雪原/冰刺那一类群系（企鹅的家） */
     private static final Predicate<BiomeSelectionContext> SNOWY =
             context -> context.hasTag(BiomeTags.SPAWNS_SNOW_FOXES);
+    /** 森林系群系（橡木/桦木/黑森林/繁花森林等，乌鸦的家） */
+    private static final Predicate<BiomeSelectionContext> FOREST =
+            context -> context.hasTag(BiomeTags.IS_FOREST);
 
     private ModSpawns() {
     }
@@ -121,6 +124,15 @@ public final class ModSpawns {
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 (type, level, reason, pos, random) -> !roleplayBlocksNaturalSpawn(level, reason)
                         && level.getDifficulty() != Difficulty.PEACEFUL);
+
+        // 乌鸦尸兄（中立动物类）：落地生成即可，不查光照； roleplay / 和平照拦
+        SpawnPlacementsInvoker.corpseorigin$register(
+                ModEntities.RAVEN_ZBR,
+                SpawnPlacementTypes.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                (type, level, reason, pos, random) -> !roleplayBlocksNaturalSpawn(level, reason)
+                        && level.getDifficulty() != Difficulty.PEACEFUL
+                        && Mob.checkMobSpawnRules(type, level, reason, pos, random));
 
         // 大叔是"可遇 NPC"：白天也会在草地上溜达
         SpawnPlacementsInvoker.corpseorigin$register(
@@ -307,6 +319,10 @@ public final class ModSpawns {
         // 雪原：CoCo 企鹅（尸兄线的起点）
         BiomeModifications.addSpawn(SNOWY, MobCategory.CREATURE,
                 ModEntities.COCO_PENGUIN, spawn.cocoPenguinWeight, 2, 3);
+
+        // 森林系群系：乌鸦尸兄（中立，白天成小群出没；权重低密度，1~2 只一群）
+        BiomeModifications.addSpawn(FOREST, MobCategory.CREATURE,
+                ModEntities.RAVEN_ZBR, 8, 1, 2);
 
         // 主世界：大叔（打他会吐尸兄虫）
         BiomeModifications.addSpawn(OVERWORLD, MobCategory.CREATURE,

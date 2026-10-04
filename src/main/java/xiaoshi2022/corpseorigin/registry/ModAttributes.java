@@ -106,6 +106,12 @@ public final class ModAttributes {
                 xiaoshi2022.corpseorigin.entity.GeckoZbrEntity.createAttributes()
         );
 
+        // 乌鸦尸兄（中立型，饿了才猎食玩家/村民）
+        FabricDefaultAttributeRegistry.register(
+                ModEntities.RAVEN_ZBR,
+                xiaoshi2022.corpseorigin.entity.RavenZbrEntity.createAttributes()
+        );
+
         // TODO: 添加其他实体的属性注册
         // 例如：
         // FabricDefaultAttributeRegistry.register(ModEntities.LONGYOU, LongyouEntity.createAttributes());

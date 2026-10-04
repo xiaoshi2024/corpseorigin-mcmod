@@ -297,6 +297,21 @@ public final class ModEntities {
     );
 
     /**
+     * 乌鸦尸兄（{@code raven_zbr}）——中立型尸兄。
+     * <p>
+     * 平时踱步/打盹/偶尔飞行，<b>只有饿了才攻击玩家和村民</b>，吃饱恢复中立。
+     * caw 叫声只在飞行中或打盹闭眼窗口发出（地上睁眼绝不叫）。
+     * 不进自然生成表：刷怪蛋 / {@code /summon}。
+     */
+    public static final EntityType<RavenZbrEntity> RAVEN_ZBR = register(
+            "raven_zbr",
+            EntityType.Builder.<RavenZbrEntity>of(RavenZbrEntity::new, MobCategory.CREATURE)
+                    .sized(0.7f, 0.9f)
+                    .clientTrackingRange(10)
+                    .updateInterval(2)
+    );
+
+    /**
      * 蚊群子实体——环绕蚊子，真正的叮咬判定载体。
      * <p>
      * {@code noSummon}：不给刷怪蛋 / 指令；{@code noSave}：不写进存档
