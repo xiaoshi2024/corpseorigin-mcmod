@@ -53,6 +53,8 @@ public final class ZbNameGenerator {
 
     /** 配置里的大名单，筛过一遍后的结果（null = 还没筛） */
     private static List<String> customNames;
+    /** 上次筛名单时的原始列表引用——配置 GUI 实时改名单后引用会变，借此让缓存失效 */
+    private static List<String> cachedSource;
 
     private ZbNameGenerator() {
     }
@@ -87,11 +89,12 @@ public final class ZbNameGenerator {
      * 只在服务端刷怪时才会被调到，客户端不会走这条路。
      */
     private static synchronized List<String> customNames() {
-        if (customNames != null) {
-            return customNames;
+        List<String> source = CorpseConfig.get().names.ids;
+        if (customNames != null && source == cachedSource) {
+            return customNames;   // 名单没变（引用相同），走缓存
         }
         Set<String> unique = new LinkedHashSet<>();
-        for (String raw : CorpseConfig.get().names.ids) {
+        for (String raw : source) {
             if (raw == null) {
                 continue;
             }
@@ -101,6 +104,7 @@ public final class ZbNameGenerator {
             }
         }
         customNames = List.copyOf(unique);
+        cachedSource = source;
         if (!customNames.isEmpty()) {
             CorpseOrigin.LOGGER.info("尸兄 ID 名单：{} 个（来自配置文件 names.ids）", customNames.size());
         }

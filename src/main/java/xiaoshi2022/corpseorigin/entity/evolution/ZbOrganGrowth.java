@@ -51,6 +51,31 @@ public final class ZbOrganGrowth {
     }
 
     /**
+     * 导演指定装配：给尸兄长出指定器官（/zborgans 指令用），不经过随机突变。
+     *
+     * @param organId 器官池里的器官 id（内置/自定义目录/资源包，示例内容除外）
+     * @param joint   关节；null = 随机挑一个
+     * @return false = 器官不存在、槽位已满或全身替换槽冲突
+     */
+    public static boolean grantOrgan(LowerLevelZbEntity self, String organId, String joint) {
+        if (allowedDefinitions().stream().noneMatch(d -> d.id().equals(organId))) return false;
+        List<OrganSlot> slots = parseLoadout(self);
+        if (slots.size() >= OrganLibrary.MAX_SLOTS) return false;
+        boolean hasFullBody = slots.stream().anyMatch(OrganSlot::replacesBody);
+        if ("full_body".equals(joint) && hasFullBody) return false;
+        slots.add(randomSlot(self, organId, joint != null ? joint : randomJoint(self, !hasFullBody)));
+        self.setOrganLoadout(OrganLibrary.JSON.toJson(slots.toArray(new OrganSlot[0])));
+        return true;
+    }
+
+    /** 清掉这只尸兄身上的全部器官（渲染层同步消失），返回清掉的数量。 */
+    public static int clearOrgans(LowerLevelZbEntity self) {
+        int count = parseLoadout(self).size();
+        if (count > 0) self.setOrganLoadout("[]");
+        return count;
+    }
+
+    /**
      * 随机挑一个关节。
      *
      * @param allowFullBody 已经有一个全身替换器官时给 {@code false} ——

@@ -7,6 +7,7 @@ import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.block.entity.CNChessZbrsBlockEntity;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
 import xiaoshi2022.corpseorigin.block.entity.MosquitoEggsBlockEntity;
+import xiaoshi2022.corpseorigin.block.entity.QiXingGuanBlockEntity;
 import xiaoshi2022.corpseorigin.block.entity.ZBRFleshBlockEntity;
 
 import java.util.Set;
@@ -43,6 +44,14 @@ public final class ModBlockEntities {
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,
                     CorpseOrigin.id("mosquito_zbr_eggs"),
                     new BlockEntityType<>(MosquitoEggsBlockEntity::new, Set.of(ModBlocks.MOSQUITO_ZBR_EGGS))
+            );
+
+    /** 七星棺（GeckoLib 动画方块实体：idle / open） */
+    public static final BlockEntityType<QiXingGuanBlockEntity> QI_XING_GUAN =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    CorpseOrigin.id("qi_xing_guan"),
+                    new BlockEntityType<>(QiXingGuanBlockEntity::new, Set.of(ModBlocks.QI_XING_GUAN))
             );
 
     private ModBlockEntities() {

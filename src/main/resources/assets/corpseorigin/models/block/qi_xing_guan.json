@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "corpseorigin:block/qi_xing_guan",
+    "particle": "corpseorigin:block/qi_xing_guan"
+  }
+}

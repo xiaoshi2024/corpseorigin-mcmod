@@ -32,6 +32,12 @@ public abstract class ItemEntityMixin {
         xiaoshi2022.corpseorigin.item.HairDryerItem.tickDropped((ItemEntity)(Object)this);
     }
 
+    /** 七星棺掉落物入水 → 自动放置为方块并触发沉棺事件（替代 1.21.1 的 NeoForge ItemTossEvent） */
+    @Inject(method = "tick", at = @At("TAIL"))
+    private void corpseorigin$qiXingGuanWater(CallbackInfo ci) {
+        xiaoshi2022.corpseorigin.block.QiXingGuanBlock.tickDropped((ItemEntity)(Object)this);
+    }
+
     @Inject(method = "tick", at = @At("HEAD"))
     private void corpseorigin$releaseWorm(CallbackInfo ci) {
         if (this.corpseorigin$wormChecked) {

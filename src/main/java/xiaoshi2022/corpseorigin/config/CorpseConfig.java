@@ -58,6 +58,8 @@ public final class CorpseConfig {
     /** Server-side restrictions on both bound and universal character books. Restart to apply. */
     public CharacterBooks characterBooks = new CharacterBooks();
     public GourdInheritance gourdInheritance = new GourdInheritance();
+    /** 七星棺：沉棺事件 / 尸水污染 / 自动开馆参数 */
+    public QiXingGuan qiXingGuan = new QiXingGuan();
     /**
      * 配置文件版本号：每次新增需要"老配置文件迁移"的字段时把它 +1。
      * <p>
@@ -71,6 +73,17 @@ public final class CorpseConfig {
     }
     public static final class CharacterBooks {
         public List<String> disabledCharacters = new ArrayList<>();
+    }
+
+    /** 七星棺参数（沉棺事件 / 自动开馆） */
+    public static final class QiXingGuan {
+        /**
+         * 落水后多少秒自动开馆（贴合原著"运输途中掉河里，没人喂怪也能开"）。
+         * 0 = 禁用自动开馆，只能靠"周围 ≥3 只尸兄"或指令触发。
+         */
+        public int autoOpenSeconds = 300;
+        /** 沉棺事件把周边多少格半径内的水源染成尸水。 */
+        public int infectRadius = 8;
     }
 
     /** 自然生成的权重与"尸水泉聚集"参数。权重参照原版僵尸 = 100 */
@@ -101,15 +114,18 @@ public final class CorpseConfig {
         /** 世界威胁等级：尸兄强度随服务器在线玩家最高境界缩放（见 {@code WorldThreatManager}）—— GUI 里可改 */
         public WorldThreat worldThreat = new WorldThreat();
 
+        /** 漫展尸兄事件型召唤参数（见 {@code ManzhanSpawns}）—— GUI 里可改 */
+        public Manzhan manzhan = new Manzhan();
+
         public static final class WorldThreat {
             /** 总闸。关闭后尸兄强度固定为面板基础值，不随玩家境界变化。 */
             public boolean enabled = true;
-            /** 世界威胁每 1 级（玩家最高境界每升 1 级）给尸兄增加的最大生命比例（乘基础值）。0.08 = +8%/级。 */
-            public float hpPerLevel = 0.08F;
+            /** 世界威胁每 1 级（玩家最高境界每升 1 级）给尸兄增加的最大生命比例（乘基础值）。0.15 = +15%/级。 */
+            public float hpPerLevel = 0.15F;
             /** 每 1 级威胁增加的攻击伤害比例（乘基础值）。 */
-            public float damagePerLevel = 0.08F;
+            public float damagePerLevel = 0.12F;
             /** 每 1 级威胁增加的护甲点数（绝对值）。 */
-            public float armorPerLevel = 0.15F;
+            public float armorPerLevel = 0.3F;
             /** 计入威胁的等级上限（1~20）：神上 20 级 ×0.08 = +152% 生命，超出部分不再加成。 */
             public int maxLevelsCounted = 20;
         }
@@ -177,6 +193,26 @@ public final class CorpseConfig {
             public int maxRadius = 48;
             /** 该半径内已有存活的多尔兽王就跳过本次（防堆叠）。 */
             public int nearbyBossCheck = 128;
+        }
+
+        /** 漫展尸兄事件召唤参数（见 {@code ManzhanSpawns}）—— GUI 里可改 */
+        public static final class Manzhan {
+            /** 皮肤文件夹名：{@code config/corpseorigin/skins/<folder>/*.png}，文件名 = 皮肤名。 */
+            public String folder = "manzhan";
+            /** 事件总闸。false = 事件召唤关闭（/summonmanzhan 指令不受影响）。 */
+            public boolean enabled = true;
+            /** 首次现身的游戏日（第几天）。0 = 关闭事件召唤，只能靠指令。 */
+            public int firstDay = 3;
+            /** 两次现身之间的间隔天数。 */
+            public int intervalDays = 15;
+            /** 每次事件召唤的数量。 */
+            public int count = 16;
+            /** 距目标玩家的最小散布半径（格）。 */
+            public int minRadius = 16;
+            /** 距目标玩家的最大散布半径（格）。 */
+            public int maxRadius = 32;
+            /** 附近多少格内已有"漫展皮肤"尸兄就跳过本次事件（防堆叠）。 */
+            public int nearbyCheck = 128;
         }
 
         /** World day of the first scripted corpse worm encounter. Set to 0 to disable it. */
@@ -547,6 +583,10 @@ public final class CorpseConfig {
         if(ruinLoot==null)ruinLoot=new xiaoshi2022.corpseorigin.growth.RuinLoot.Config();
         ruinLoot.sanitize();
         if (gourdInheritance == null) gourdInheritance = new GourdInheritance();
+        // 七星棺：老配置文件里没有这一节
+        if (qiXingGuan == null) qiXingGuan = new QiXingGuan();
+        qiXingGuan.autoOpenSeconds = (int) clamp(qiXingGuan.autoOpenSeconds, 0, 86400);
+        qiXingGuan.infectRadius = (int) clamp(qiXingGuan.infectRadius, 1, 32);
         if (characterBooks == null) characterBooks = new CharacterBooks();
         if (characterBooks.disabledCharacters == null) characterBooks.disabledCharacters = new ArrayList<>();
         if (growth == null) growth = new xiaoshi2022.corpseorigin.growth.GrowthConfig();
@@ -576,6 +616,18 @@ public final class CorpseConfig {
         if (spawn.worldThreat == null) {
             spawn.worldThreat = new Spawn.WorldThreat();
         }
+        // 同理：漫展尸兄事件召唤参数（老文件里没有这一节）
+        if (spawn.manzhan == null) {
+            spawn.manzhan = new Spawn.Manzhan();
+        }
+        spawn.manzhan.folder = orDefault(spawn.manzhan.folder, "manzhan");
+        spawn.manzhan.firstDay = (int) clamp(spawn.manzhan.firstDay, 0, 3650);
+        spawn.manzhan.intervalDays = (int) clamp(spawn.manzhan.intervalDays, 1, 365);
+        spawn.manzhan.count = (int) clamp(spawn.manzhan.count, 1, 128);
+        spawn.manzhan.minRadius = (int) clamp(spawn.manzhan.minRadius, 8, 96);
+        spawn.manzhan.maxRadius = Math.max(spawn.manzhan.minRadius,
+                (int) clamp(spawn.manzhan.maxRadius, 16, 128));
+        spawn.manzhan.nearbyCheck = (int) clamp(spawn.manzhan.nearbyCheck, 16, 256);
         spawn.worldThreat.hpPerLevel = clamp(spawn.worldThreat.hpPerLevel, 0F, 0.5F);
         spawn.worldThreat.damagePerLevel = clamp(spawn.worldThreat.damagePerLevel, 0F, 0.5F);
         spawn.worldThreat.armorPerLevel = clamp(spawn.worldThreat.armorPerLevel, 0F, 3F);

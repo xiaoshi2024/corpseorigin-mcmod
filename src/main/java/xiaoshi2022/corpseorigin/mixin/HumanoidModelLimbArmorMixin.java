@@ -3,6 +3,8 @@ package xiaoshi2022.corpseorigin.mixin;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.world.item.ItemStack;
+import com.geckolib.animatable.GeoItem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,6 +30,14 @@ public abstract class HumanoidModelLimbArmorMixin {
     @Unique
     private int corpseorigin$hiddenMask;
 
+    /**
+     * FA+Player/EMF renders these outer skin parts independently. Geo armor
+     * already contains its own sleeves, jacket and pants, so leaving the
+     * vanilla outer parts enabled makes the two meshes intersect.
+     */
+    @Unique
+    private boolean corpseorigin$geoOuterLayersHidden;
+
     @Inject(
             method = "setupAnim(Lnet/minecraft/client/renderer/entity/state/HumanoidRenderState;)V",
             at = @At("TAIL")
@@ -39,7 +49,18 @@ public abstract class HumanoidModelLimbArmorMixin {
         HumanoidModel<?> self = (HumanoidModel<?>) (Object) this;
         // PlayerModel has its own per-frame reset and skin-layer-aware mask.
         // Restoring its hat here would override skin settings after regrowth.
-        if (self instanceof net.minecraft.client.model.player.PlayerModel) return;
+        if (self instanceof net.minecraft.client.model.player.PlayerModel playerModel) {
+            boolean geoArmor = corpseorigin$hasGeoArmor(state);
+            if (geoArmor != this.corpseorigin$geoOuterLayersHidden) {
+                playerModel.jacket.visible = !geoArmor;
+                playerModel.leftSleeve.visible = !geoArmor;
+                playerModel.rightSleeve.visible = !geoArmor;
+                playerModel.leftPants.visible = !geoArmor;
+                playerModel.rightPants.visible = !geoArmor;
+                this.corpseorigin$geoOuterLayersHidden = geoArmor;
+            }
+            return;
+        }
         Integer mask = avatar.getGeckolibData(LimbRenderData.LIMB_MASK);
         int severedMask = mask == null ? 0 : (mask & LimbSlots.MASK_ALL);
         var level=net.minecraft.client.Minecraft.getInstance().level;
@@ -60,6 +81,19 @@ public abstract class HumanoidModelLimbArmorMixin {
                     ? this.corpseorigin$hiddenMask | bit
                     : this.corpseorigin$hiddenMask & ~bit;
         }
+    }
+
+    @Unique
+    private boolean corpseorigin$hasGeoArmor(HumanoidRenderState state) {
+        return corpseorigin$isGeo(state.headEquipment)
+                || corpseorigin$isGeo(state.chestEquipment)
+                || corpseorigin$isGeo(state.legsEquipment)
+                || corpseorigin$isGeo(state.feetEquipment);
+    }
+
+    @Unique
+    private boolean corpseorigin$isGeo(ItemStack stack) {
+        return !stack.isEmpty() && stack.getItem() instanceof GeoItem;
     }
 
     /** 部位下标（见 {@link LimbSlots}）→ 原版模型上对应的部件 */

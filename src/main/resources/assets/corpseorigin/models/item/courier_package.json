@@ -1,0 +1,29 @@
+{
+  "textures": {
+    "all": "corpseorigin:item/parcel_bomb",
+    "particle": "corpseorigin:item/parcel_bomb"
+  },
+  "elements": [
+    {
+      "from": [4, 4, 4],
+      "to": [12, 12, 12],
+      "faces": {
+        "north": {"texture": "#all", "uv": [0, 0, 16, 16]},
+        "south": {"texture": "#all", "uv": [0, 0, 16, 16]},
+        "east": {"texture": "#all", "uv": [0, 0, 16, 16]},
+        "west": {"texture": "#all", "uv": [0, 0, 16, 16]},
+        "up": {"texture": "#all", "uv": [0, 0, 16, 16]},
+        "down": {"texture": "#all", "uv": [0, 0, 16, 16]}
+      }
+    }
+  ],
+  "display": {
+    "thirdperson_righthand": {"rotation": [0, 0, 0], "translation": [0, 2, 0], "scale": [0.5, 0.5, 0.5]},
+    "thirdperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, 2, 0], "scale": [0.5, 0.5, 0.5]},
+    "firstperson_righthand": {"rotation": [0, -10, 0], "scale": [0.5, 0.5, 0.5]},
+    "firstperson_lefthand": {"rotation": [0, 10, 0], "scale": [0.5, 0.5, 0.5]},
+    "ground": {"scale": [0.4, 0.4, 0.4]},
+    "gui": {"rotation": [30, 45, 0], "scale": [0.8, 0.8, 0.8]},
+    "fixed": {"scale": [0.6, 0.6, 0.6]}
+  }
+}

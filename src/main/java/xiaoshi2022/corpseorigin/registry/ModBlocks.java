@@ -74,6 +74,16 @@ public final class ModBlocks {
                     .setId(blockKey("mosquito_coil")))
     );
 
+    /** 七星棺：封印龙右的千年古棺，落水触发沉棺事件并污染周边水源（GeckoLib 渲染） */
+    public static final Block QI_XING_GUAN = register(
+            "qi_xing_guan",
+            new xiaoshi2022.corpseorigin.block.QiXingGuanBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.OBSIDIAN)
+                    .strength(3.0F, 1200.0F)
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .noOcclusion()
+                    .setId(blockKey("qi_xing_guan")))
+    );
+
     private static Block register(String name, Block block) {
         return Registry.register(BuiltInRegistries.BLOCK, CorpseOrigin.id(name), block);
     }

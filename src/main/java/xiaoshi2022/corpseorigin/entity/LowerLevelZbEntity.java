@@ -139,11 +139,29 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
 
     public static AttributeSupplier.Builder createAttributes() {
         return PathfinderMob.createMobAttributes()
-                .add(Attributes.MAX_HEALTH, 20.0D)
-                .add(Attributes.MOVEMENT_SPEED, 0.25D)
-                .add(Attributes.ATTACK_DAMAGE, 3.0D)
-                .add(Attributes.FOLLOW_RANGE, 32.0D)
-                .add(Attributes.ARMOR, 2.0D);
+                .add(Attributes.MAX_HEALTH, 30.0D)
+                .add(Attributes.MOVEMENT_SPEED, 0.33D)
+                .add(Attributes.ATTACK_DAMAGE, 5.0D)
+                .add(Attributes.FOLLOW_RANGE, 40.0D)
+                .add(Attributes.ARMOR, 4.0D);
+    }
+
+    // ==================== 爬墙 ====================
+
+    /** 原著尸兄会爬墙：撞到墙就算攀爬状态（蜘蛛式），墙上不受滑落摩擦。 */
+    @Override
+    public boolean onClimbable() {
+        return this.horizontalCollision || super.onClimbable();
+    }
+
+    /** 爬墙升力：寻路中撞墙时提供向上速度，把墙当楼梯爬。 */
+    @Override
+    public void travel(net.minecraft.world.phys.Vec3 travelVector) {
+        if (!this.level().isClientSide() && this.horizontalCollision
+                && (this.getTarget() != null || this.getNavigation().isInProgress())) {
+            this.setDeltaMovement(this.getDeltaMovement().x, 0.18D, this.getDeltaMovement().z);
+        }
+        super.travel(travelVector);
     }
 
     // ==================== GeoEntity 接口实现 ====================
@@ -238,14 +256,18 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(1, new xiaoshi2022.corpseorigin.entity.ai.CorpseGrappleGoal(this));
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, true));
-        this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 0.8D));
-        this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 8.0F));
-        this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
+        // 生前执念：追吹风机等生前爱物（压过一切移动 AI，注意力转移的喜剧演出）
+        this.goalSelector.addGoal(1, new xiaoshi2022.corpseorigin.entity.evolution.ZbFavoriteItemGoal(this));
+        this.goalSelector.addGoal(2, new xiaoshi2022.corpseorigin.entity.ai.CorpseGrappleGoal(this));
+        // 带翅膀的尸兄：目标在高处/远处时起飞空战，优先级压过地面近战步走
+        this.goalSelector.addGoal(3, new xiaoshi2022.corpseorigin.entity.evolution.ZbWingFlightGoal(this));
+        this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.2D, true));
+        this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.8D));
+        this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
+        this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
 
-        // ✅ 优先级0：被攻击后立刻反击（最高优先级）
-        this.targetSelector.addGoal(0, new HurtByTargetGoal(this));
+        // ✅ 优先级0：被攻击后立刻反击，并呼叫周围尸兄一起上（尸潮联动）
+        this.targetSelector.addGoal(0, new HurtByTargetGoal(this).setAlertOthers());
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this,
                 net.minecraft.world.entity.npc.villager.AbstractVillager.class,10,true,false,
                 (target, level)->ZombieKin.canAttack(this,target)&&!this.isAlliedTo(target)));
@@ -253,17 +275,17 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
                 UncleEntity.class,12,true,false,
                 (target, level)->ZombieKin.canAttack(this,target)&&!this.isAlliedTo(target)));
 
-        // ✅ 优先级1：攻击非尸族玩家（永远）
+        // ✅ 优先级1：攻击非尸族玩家（永远）——但手持生前执念物品的除外（吹风机杀邻居名场面）
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<Player>(
                 this,
                 Player.class,
                 10,
                 true,
                 false,
-                (target, level) -> ZombieKin.isNotZombieKin(target)
+                (target, level) -> ZombieKin.isNotZombieKin(target) && !this.isDistractedBy(target)
         ));
 
-        // ✅ 优先级2：饥饿时攻击尸族玩家（同类相食）
+        // ✅ 优先级2：饥饿时攻击尸族玩家（同类相食）——手持执念物品的同样豁免
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<Player>(
                 this,
                 Player.class,
@@ -271,6 +293,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
                 true,
                 false,
                 (target, level) -> {
+                    if (this.isDistractedBy(target)) return false;
                     if (!this.isHungry()) return false;
                     if (!ZombieKin.isZombieKin(target)) return false;
                     return target != this;
@@ -370,16 +393,16 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     protected void updateAttributesForEvolution() {
         int level = getEvolutionLevel();
         if (this.getAttribute(Attributes.MAX_HEALTH) != null) {
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20.0 + level * 5.0);
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(30.0 + level * 8.0);
         }
         if (this.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
-            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(3.0 + level * 1.5);
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(5.0 + level * 2.5);
         }
         if (this.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
-            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25 + level * 0.03);
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.33 + level * 0.02);
         }
         if (this.getAttribute(Attributes.ARMOR) != null) {
-            this.getAttribute(Attributes.ARMOR).setBaseValue(2.0 + level * 1.0);
+            this.getAttribute(Attributes.ARMOR).setBaseValue(4.0 + level * 1.5);
         }
         this.setHealth(this.getMaxHealth());
     }
@@ -565,6 +588,30 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         return super.causeFallDamage(distance, multiplier, source);
     }
 
+    // ==================== 生前执念（转移注意力的喜剧演出） ====================
+
+    /** 生前执念物品 id 列表，逗号分隔（如 "corpseorigin:hair_dryer"）；空 = 无执念。 */
+    private String favoriteItems = "";
+
+    public String favoriteItems() { return favoriteItems; }
+
+    /** @param ids 物品注册表 id（要带命名空间），逗号分隔；null/空 = 清除执念 */
+    public void setFavoriteItems(String ids) { this.favoriteItems = ids == null ? "" : ids.trim(); }
+
+    public boolean hasFavoriteItems() { return !favoriteItems.isEmpty(); }
+
+    /** 持有任意执念物品（通常为手持）的生物：尸兄会放下敌意凑过去盯着看。 */
+    public boolean isDistractedBy(net.minecraft.world.entity.LivingEntity entity) {
+        if (!hasFavoriteItems() || entity == null) return false;
+        var stack = entity.getMainHandItem();
+        if (stack.isEmpty()) return false;
+        String held = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+        for (String id : favoriteItems.split(",")) {
+            if (held.equals(id.trim())) return true;
+        }
+        return false;
+    }
+
     // ==================== NBT ====================
 
     @Override
@@ -572,6 +619,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         super.addAdditionalSaveData(output);
         output.putBoolean("HasCorpseEye",hasCorpseEye());
         output.putBoolean("CrackedAppearance",isCracked());
+        if (hasFavoriteItems()) output.putString("FavoriteItems", favoriteItems);
         output.putString("PlayerSkinName", this.entityData.get(DATA_PLAYER_NAME));
         output.putString("CustomId", this.getCustomId());
         output.putInt("SkinState", this.entityData.get(DATA_SKIN_STATE));
@@ -588,6 +636,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         super.readAdditionalSaveData(input);
         // Old saves get one stable UUID-based roll; new saves retain the explicit choice.
         setCorpseEye(input.getBooleanOr("HasCorpseEye",Math.floorMod(getUUID().hashCode(),5)==0));
+        setFavoriteItems(input.getStringOr("FavoriteItems", ""));
         setCracked(input.getBooleanOr("CrackedAppearance",Math.floorMod(Long.hashCode(getUUID().getMostSignificantBits()),10)<3));
 
         Optional<String> skinNameOpt = input.getString("PlayerSkinName");

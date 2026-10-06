@@ -21,8 +21,25 @@ public final class CorpseInfection {
             if (!blocked && taken > 0 && source.getDirectEntity() == source.getEntity()
                     && source.getEntity() instanceof Mob attacker && ZombieKin.isZombieKin(attacker)) {
                 tryInfectVillager(attacker, target);
+                tryInfectPlayer(attacker, target);
             }
         });
+    }
+
+    /**
+     * 尸族直接攻击命中玩家：按 {@code playerBiteInfectionChance} 概率上 QIANS（60~300 秒后尸化，
+     * 感染度涨满自动转尸兄角色——下游复用 {@link BYeffect} 现成链路）。牛奶可清效果自救。
+     * 蛆虫的寄生感染（必感）走 {@code CorpseMaggotEntity.tickAttachment} 自己的路径，这里是普攻兜底。
+     */
+    public static void tryInfectPlayer(Mob attacker, LivingEntity target) {
+        if (!(target instanceof net.minecraft.server.level.ServerPlayer player) || !target.isAlive()
+                || player.isCreative() || !BYeffect.canInfect(player)
+                || !(target.level() instanceof ServerLevel level)) return;
+        if (attacker.getRandom().nextDouble() < CorpseHorror.config().playerBiteInfectionChance) {
+            BYeffect.applyInfection(player, level, attacker.getUUID());
+            player.sendSystemMessage(net.minecraft.network.chat.Component.translatable(
+                    "message.corpseorigin.player_bitten"));
+        }
     }
 
     public static void tryInfectVillager(Mob attacker, LivingEntity target) {

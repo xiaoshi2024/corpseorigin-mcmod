@@ -74,7 +74,9 @@ public final class ModItems {
                     .setId(itemKey("mosquito_zbr_eggs"))));
     public static final Item DR_MU_EYE = register("dr_mu_eye", new Item(new Item.Properties().setId(itemKey("dr_mu_eye"))));
     public static final Item RED_METEOR_SWORD = register("red_meteor_sword",new Item(new Item.Properties().sword(ToolMaterial.DIAMOND,3,-2.4f).setId(itemKey("red_meteor_sword"))));
-    public static final Item PARCEL_BOMB = register("parcel_bomb",new Item(new Item.Properties().setId(itemKey("parcel_bomb"))));
+    public static final Item PARCEL_BOMB = register("parcel_bomb",new xiaoshi2022.corpseorigin.item.ParcelBombItem(new Item.Properties().stacksTo(16).setId(itemKey("parcel_bomb"))));
+    public static final Item COURIER_PACKAGE = register("courier_package",
+            new xiaoshi2022.corpseorigin.item.CourierPackageItem(new Item.Properties().stacksTo(1).durability(3).setId(itemKey("courier_package"))));
     public static final Item BILLIARD_EIGHT = register("billiard_eight",new BilliardEightItem(new Item.Properties().setId(itemKey("billiard_eight"))));
     public static final Item BLOOD_WING_BLADE = register("blood_wing_blade",
             new xiaoshi2022.corpseorigin.item.weapon.BloodWingBladeItem(new Item.Properties().sword(ToolMaterial.DIAMOND,22f,-2.4f)
@@ -84,6 +86,13 @@ public final class ModItems {
             "cn_chess_zbrs",
             new BlockItem(ModBlocks.CN_CHESS_ZBRS, new Item.Properties()
                     .setId(itemKey("cn_chess_zbrs")))
+    );
+
+    /** 七星棺：掉进水里会自动沉棺（ItemEntityMixin 钩子），触发尸水污染事件 */
+    public static final Item QI_XING_GUAN = register(
+            "qi_xing_guan",
+            new BlockItem(ModBlocks.QI_XING_GUAN, new Item.Properties()
+                    .setId(itemKey("qi_xing_guan")))
     );
 
     /** 鬼棍·人类的三节棍：五六米长的三段棍身，GeoItem 三维模型 */
@@ -336,6 +345,7 @@ public final class ModItems {
             .title(Component.translatable("itemGroup.corpseorigin.main"))
             .icon(() -> new ItemStack(BYWATER_BOTTLE))
             .displayItems((parameters, output) -> {
+                output.accept(QI_XING_GUAN);
                 output.accept(BYWATER_BUCKET);
                 output.accept(BYWATER_BOTTLE);
                 output.accept(MING_JUQUE);
@@ -352,6 +362,7 @@ public final class ModItems {
                 output.accept(BLACK_GOLD_HEART);
                 output.accept(RED_METEOR_SWORD);
                 output.accept(PARCEL_BOMB);
+                output.accept(COURIER_PACKAGE);
                 output.accept(BILLIARD_EIGHT);
                 output.accept(BLOOD_LOTUS_LAMP);
                 output.accept(TIAN_GANG_KEY);

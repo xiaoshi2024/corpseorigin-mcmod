@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["PPP"],
+  "key": {
+    "P": "minecraft:paper"
+  },
+  "result": {"id": "corpseorigin:courier_package", "count": 1}
+}

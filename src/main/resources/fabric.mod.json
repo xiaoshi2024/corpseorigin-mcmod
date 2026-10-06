@@ -43,6 +43,7 @@
 	},
 	"suggests": {
 		"snakesalive": "*",
-		"jade": "*"
+		"jade": "*",
+		"create": "*"
 	}
 }

@@ -21,6 +21,17 @@ public class ZbSkinLoader {
             return;
         }
 
+        // ✅ 本地皮肤优先（config/corpseorigin/skins/<folder>/<名>.png）：
+        //    命中就不查 Mojang、不做染色，直接用制作者放好的最终效果（漫展尸兄用）
+        Identifier local = LocalSkinStore.getTexture(username);
+        if (local != null) {
+            entity.setSkinTexture(local);
+            entity.setSkinState(ZbSkinState.LOADED);
+            ZbSkinCache.put(username, local);
+            LOGGER.debug("📁 使用本地皮肤: {} -> {}", username, local);
+            return;
+        }
+
         // ✅ 缓存命中
         Identifier cached = ZbSkinCache.get(username);
         if (cached != null) {

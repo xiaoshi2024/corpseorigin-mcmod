@@ -27,6 +27,7 @@ import net.minecraft.world.entity.ai.goal.RandomSwimmingGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.animal.fish.AbstractFish;
 import net.minecraft.world.entity.player.Player;
+import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
@@ -95,7 +96,23 @@ public class ZbrFishEntity extends AbstractFish implements GeoEntity, ZombieKin 
     @Override protected SoundEvent getFlopSound() { return SoundEvents.COD_FLOP; }
     @Override public ItemStack getBucketItemStack() { return ItemStack.EMPTY; }
     // A hostile fish cannot be deleted by an empty vanilla bucket result.
-    @Override protected InteractionResult mobInteract(Player player, InteractionHand hand) { return InteractionResult.PASS; }
+    // 尸兄玩家右键吸食：生吃河里的尸兄鱼回饥饿回血（龙右原著桥段）
+    @Override protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        if (PlayerCorpseComponent.isCorpse(player) && hand == InteractionHand.MAIN_HAND) {
+            if (!player.level().isClientSide()) {
+                player.getFoodData().eat(6, 0.6F);
+                player.heal(4.0F);
+                playSound(SoundEvents.GENERIC_EAT.value(), 0.8F, 0.9F);
+                if (player.level() instanceof ServerLevel serverLevel) {
+                    serverLevel.sendParticles(ParticleTypes.HEART,
+                            getX(), getY() + 0.5, getZ(), 5, 0.5, 0.5, 0.5, 0.01);
+                }
+                discard();
+            }
+            return player.level().isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
+        }
+        return InteractionResult.PASS;
+    }
     @Override public boolean canBeAffected(MobEffectInstance effect) {
         return !effect.is(MobEffects.POISON) && !effect.is(xiaoshi2022.corpseorigin.registry.ModEffects.QIANS)
                 && super.canBeAffected(effect);

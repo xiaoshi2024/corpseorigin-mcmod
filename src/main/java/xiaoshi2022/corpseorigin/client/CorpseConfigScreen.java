@@ -136,6 +136,68 @@ public class CorpseConfigScreen extends Screen {
         }
     }
 
+    /** 动作按钮：点击执行一次性操作（如打开皮肤文件夹），没有"重置"概念 */
+    private static final class ActionF extends Field {
+        final Supplier<String> buttonText;
+        final Runnable action;
+        ActionF(String key, Supplier<String> buttonText, Runnable action) {
+            super(key, () -> { });
+            this.buttonText = buttonText; this.action = action;
+        }
+        @Override AbstractWidget widget(int x, int y) {
+            return Button.builder(Component.translatable(buttonText.get()), b -> action.run())
+                    .bounds(x, y, SLIDER_W, ROW_H).build();
+        }
+    }
+
+    /** 文本输入框：输入后按回车提交（清空复位），没有"重置"概念 */
+    private static final class TextF extends Field {
+        final Supplier<String> hint;
+        final java.util.function.Consumer<String> onSubmit;
+        TextF(String key, Supplier<String> hint, java.util.function.Consumer<String> onSubmit) {
+            super(key, () -> { });
+            this.hint = hint; this.onSubmit = onSubmit;
+        }
+        @Override AbstractWidget widget(int x, int y) {
+            net.minecraft.client.gui.components.EditBox box =
+                    new net.minecraft.client.gui.components.EditBox(
+                            net.minecraft.client.Minecraft.getInstance().font, x, y, SLIDER_W, ROW_H,
+                            Component.translatable(labelKey)) {
+                        @Override
+                        public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+                            if (event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER
+                                    || event.key() == org.lwjgl.glfw.GLFW.GLFW_KEY_KP_ENTER) {
+                                String value = getValue().trim();
+                                if (!value.isEmpty()) {
+                                    onSubmit.accept(value);
+                                    setValue("");
+                                    setHint(Component.translatable(hint.get()));
+                                }
+                                return true;
+                            }
+                            return super.keyPressed(event);
+                        }
+                    };
+            box.setMaxLength(16);
+            box.setHint(Component.translatable(hint.get()));
+            return box;
+        }
+    }
+
+    /** 只读信息行：展示动态内容（如当前名单概要），点击无效果 */
+    private static final class InfoF extends Field {
+        final Supplier<String> text;
+        InfoF(String key, Supplier<String> text) {
+            super(key, () -> { });
+            this.text = text;
+        }
+        @Override AbstractWidget widget(int x, int y) {
+            return Button.builder(Component.literal(text.get()), b -> { })
+                    .bounds(x, y, SLIDER_W, ROW_H)
+                    .build();
+        }
+    }
+
     private static AbstractWidget slider(int x, int y, int min, int max, int initial,
                                          IntConsumer setter, Supplier<String> display) {
         return new AbstractSliderButton(x, y, SLIDER_W, ROW_H,
@@ -168,6 +230,8 @@ public class CorpseConfigScreen extends Screen {
         var realmDef = new xiaoshi2022.corpseorigin.growth.RealmConfig();
         var growth = c.growth;
         var growthDef = new xiaoshi2022.corpseorigin.growth.GrowthConfig();
+        var horror = c.corpseHorror;
+        var horrorDef = new xiaoshi2022.corpseorigin.growth.CorpseHorrorConfig();
 
         // ---- 第 1 页：尔多兽王降临 ----
         List<Field> eldorFields = List.of(
@@ -285,6 +349,96 @@ public class CorpseConfigScreen extends Screen {
                         () -> geckoDef.nearbyBossCheck, 16, 256, () -> String.valueOf(gecko.nearbyBossCheck)));
         pages.add(new Page("gui.corpseorigin.config.page_gecko", geckoFields));
 
+        // ---- 第 1f 页：漫展尸兄降临（本地皮肤尸群事件）----
+        var manzhan = spawn.manzhan;
+        var manzhanDef = new CorpseConfig.Spawn.Manzhan();
+        List<Field> manzhanFields = List.of(
+                new BoolF("gui.corpseorigin.config.f.manzhan_enabled",
+                        () -> manzhan.enabled, v -> manzhan.enabled = v,
+                        () -> manzhanDef.enabled),
+                new IntF("gui.corpseorigin.config.f.manzhan_first_day",
+                        () -> manzhan.firstDay, v -> manzhan.firstDay = v,
+                        () -> manzhanDef.firstDay, 0, 100,
+                        () -> manzhan.firstDay == 0
+                                ? net.minecraft.client.resources.language.I18n.get("gui.corpseorigin.config.disabled")
+                                : String.valueOf(manzhan.firstDay)),
+                new IntF("gui.corpseorigin.config.f.manzhan_interval",
+                        () -> manzhan.intervalDays, v -> manzhan.intervalDays = v,
+                        () -> manzhanDef.intervalDays, 1, 60, () -> String.valueOf(manzhan.intervalDays)),
+                new IntF("gui.corpseorigin.config.f.manzhan_count",
+                        () -> manzhan.count, v -> manzhan.count = v,
+                        () -> manzhanDef.count, 1, 64, () -> String.valueOf(manzhan.count)),
+                new IntF("gui.corpseorigin.config.f.manzhan_min_radius",
+                        () -> manzhan.minRadius, v -> manzhan.minRadius = v,
+                        () -> manzhanDef.minRadius, 8, 96, () -> String.valueOf(manzhan.minRadius)),
+                new IntF("gui.corpseorigin.config.f.manzhan_max_radius",
+                        () -> manzhan.maxRadius, v -> manzhan.maxRadius = v,
+                        () -> manzhanDef.maxRadius, 16, 128, () -> String.valueOf(manzhan.maxRadius)),
+                new IntF("gui.corpseorigin.config.f.manzhan_nearby_check",
+                        () -> manzhan.nearbyCheck, v -> manzhan.nearbyCheck = v,
+                        () -> manzhanDef.nearbyCheck, 16, 256, () -> String.valueOf(manzhan.nearbyCheck)),
+                new ActionF("gui.corpseorigin.config.f.manzhan_open_folder",
+                        () -> "gui.corpseorigin.config.f.manzhan_open_folder_btn",
+                        () -> {
+                            try {
+                                // 不存在就建目录（文件名=皮肤名的 PNG 放这里），再用系统文件管理器打开
+                                java.nio.file.Path dir = xiaoshi2022.corpseorigin.skin.LocalSkinNames.folder();
+                                java.nio.file.Files.createDirectories(dir);
+                                net.minecraft.util.Util.getPlatform().openPath(dir.toAbsolutePath());
+                            } catch (Exception e) {
+                                xiaoshi2022.corpseorigin.CorpseOrigin.LOGGER.warn("打开本地皮肤文件夹失败", e);
+                            }
+                        }));
+        pages.add(new Page("gui.corpseorigin.config.page_manzhan", manzhanFields));
+
+        // ---- 第 1g 页：尸兄玩家皮肤池（/summonzb 随机皮肤名单，实时增删）----
+        var names = c.names;
+        List<Field> skinPoolFields = List.of(
+                new InfoF("gui.corpseorigin.config.f.skinpool_current", () -> {
+                    var n = names;
+                    int total = n.consentedIds.size() + n.ids.size();
+                    if (total == 0) {
+                        return net.minecraft.client.resources.language.I18n.get(
+                                "gui.corpseorigin.config.f.skinpool_empty");
+                    }
+                    var show = new ArrayList<String>(n.consentedIds);
+                    show.addAll(n.ids);
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < Math.min(4, show.size()); i++) {
+                        if (i > 0) sb.append(", ");
+                        sb.append(show.get(i));
+                    }
+                    if (show.size() > 4) sb.append("…");
+                    return total + ": " + sb;
+                }),
+                new TextF("gui.corpseorigin.config.f.skinpool_add",
+                        () -> "gui.corpseorigin.config.f.skinpool_add_hint",
+                        v -> {
+                            // 合法 MC 用户名才收（3~16 位英文/数字/下划线），去重
+                            if (v.matches("[A-Za-z0-9_]{3,16}") && !names.ids.contains(v)) {
+                                var list = new ArrayList<>(names.ids);
+                                list.add(v);
+                                names.ids = List.copyOf(list);
+                            }
+                            net.minecraft.client.Minecraft.getInstance().execute(this::rebuildWidgets);
+                        }),
+                new TextF("gui.corpseorigin.config.f.skinpool_remove",
+                        () -> "gui.corpseorigin.config.f.skinpool_remove_hint",
+                        v -> {
+                            if (names.ids.contains(v)) {
+                                var list = new ArrayList<>(names.ids);
+                                list.remove(v);
+                                names.ids = List.copyOf(list);
+                            }
+                            if (names.consentedIds.contains(v)) {
+                                var list2 = new ArrayList<>(names.consentedIds);
+                                list2.remove(v);
+                                names.consentedIds = List.copyOf(list2);
+                            }
+                            net.minecraft.client.Minecraft.getInstance().execute(this::rebuildWidgets);
+                        }));
+        pages.add(new Page("gui.corpseorigin.config.page_skinpool", skinPoolFields));
+
         // ---- 第 7 页：世界威胁等级（尸兄强度随玩家最高境界缩放，见 WorldThreatManager）----
         var threat = spawn.worldThreat;
         var threatDef = new CorpseConfig.Spawn.WorldThreat();
@@ -356,7 +510,24 @@ public class CorpseConfigScreen extends Screen {
                 new FloatF("gui.corpseorigin.config.f.zb_evo_breakthrough_bonus",
                         () -> spawn.zbEvolutionBreakthroughBonus, v -> spawn.zbEvolutionBreakthroughBonus = (float) v,
                         () -> (double) spawnDef.zbEvolutionBreakthroughBonus, 0F, 0.5F,
-                        () -> fmtPct(spawn.zbEvolutionBreakthroughBonus)));
+                        () -> fmtPct(spawn.zbEvolutionBreakthroughBonus)),
+                // ---- 感染系统：被咬/寄生后的尸化概率（CorpseHorrorConfig）----
+                new FloatF("gui.corpseorigin.config.f.infect_player_bite",
+                        () -> horror.playerBiteInfectionChance, v -> horror.playerBiteInfectionChance = v,
+                        () -> horrorDef.playerBiteInfectionChance, 0F, 1F,
+                        () -> fmtPct(horror.playerBiteInfectionChance)),
+                new FloatF("gui.corpseorigin.config.f.infect_villager_bite",
+                        () -> horror.villagerInfectionChance, v -> horror.villagerInfectionChance = v,
+                        () -> horrorDef.villagerInfectionChance, 0F, 1F,
+                        () -> fmtPct(horror.villagerInfectionChance)),
+                new FloatF("gui.corpseorigin.config.f.infect_fish_water",
+                        () -> horror.fishWaterInfectionChance, v -> horror.fishWaterInfectionChance = v,
+                        () -> horrorDef.fishWaterInfectionChance, 0F, 1F,
+                        () -> fmtPct(horror.fishWaterInfectionChance)),
+                new IntF("gui.corpseorigin.config.f.infect_maggot_ticks",
+                        () -> horror.maggotInfectionTicks, v -> horror.maggotInfectionTicks = v,
+                        () -> horrorDef.maggotInfectionTicks, 100, 1200,
+                        () -> String.valueOf(horror.maggotInfectionTicks)));
         pages.add(new Page("gui.corpseorigin.config.page_worm", wormFields));
 
         // ---- 第 3 页：尸兄生成权重 ----

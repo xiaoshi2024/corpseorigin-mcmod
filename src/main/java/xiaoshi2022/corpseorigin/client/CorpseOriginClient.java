@@ -306,6 +306,11 @@ public class CorpseOriginClient implements ClientModInitializer {
                 ModBlockEntities.MOSQUITO_ZBR_EGGS,
                 xiaoshi2022.corpseorigin.client.renderer.blockentity.MosquitoEggsRenderer::new
         );
+        // 七星棺（GeckoLib 动画方块实体：idle / open 开棺）
+        BlockEntityRendererRegistry.register(
+                ModBlockEntities.QI_XING_GUAN,
+                xiaoshi2022.corpseorigin.client.renderer.blockentity.QiXingGuanRenderer::new
+        );
 
         // 3. 模型层注
         ModModelLayers.register();

@@ -143,7 +143,7 @@ public final class ModEntities {
     public static final EntityType<MultiHeadCorpseWormEntity> MULTI_HEAD_CORPSE_WORM = register(
             "multi_head_corpse_worm",
             EntityType.Builder.<MultiHeadCorpseWormEntity>of(MultiHeadCorpseWormEntity::new, MobCategory.MONSTER)
-                    .sized(2.4f, 2.8f).clientTrackingRange(32).updateInterval(1).notInPeaceful()
+                    .sized(2.4f, 3.6f).clientTrackingRange(32).updateInterval(1).notInPeaceful()
     );
     public static final EntityType<TianDoctorEntity> TIAN_DOCTOR = register("tian_doctor", EntityType.Builder.<TianDoctorEntity>of(TianDoctorEntity::new, MobCategory.CREATURE).sized(.7f,1.8f).clientTrackingRange(12));
     public static final EntityType<DoctorBeeRobotEntity> DOCTOR_BEE_ROBOT = register("doctor_bee_robot",
