@@ -150,16 +150,24 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
 
     // ==================== 爬墙 ====================
 
-    /** 原著尸兄会爬墙：撞到墙就算攀爬状态（蜘蛛式），墙上不受滑落摩擦。 */
+    /** 敲门/开门中（ZbDoorGoal 激活）：暂停爬墙，贴门站着砸门而不是顺着门往上爬。 */
+    private boolean doorInteracting;
+
+    public boolean isDoorInteracting() { return doorInteracting; }
+
+    public void setDoorInteracting(boolean v) { this.doorInteracting = v; }
+
+    /** 原著尸兄会爬墙：撞到墙就算攀爬状态（蜘蛛式），墙上不受滑落摩擦。敲门期间不爬。 */
     @Override
     public boolean onClimbable() {
+        if (doorInteracting) return super.onClimbable();
         return this.horizontalCollision || super.onClimbable();
     }
 
-    /** 爬墙升力：寻路中撞墙时提供向上速度，把墙当楼梯爬。 */
+    /** 爬墙升力：寻路中撞墙时提供向上速度，把墙当楼梯爬。敲门期间不给升力。 */
     @Override
     public void travel(net.minecraft.world.phys.Vec3 travelVector) {
-        if (!this.level().isClientSide() && this.horizontalCollision
+        if (!this.level().isClientSide() && !doorInteracting && this.horizontalCollision
                 && (this.getTarget() != null || this.getNavigation().isInProgress())) {
             this.setDeltaMovement(this.getDeltaMovement().x, 0.18D, this.getDeltaMovement().z);
         }

@@ -60,6 +60,7 @@ public class ZbDoorGoal extends DoorInteractGoal {
         openMode = isHighTier();
         breakTime = 0;
         lastBreakProgress = -1;
+        zb.setDoorInteracting(true); // 交互期间暂停爬墙，否则贴门撞门判定会被爬墙系统顶飞
         if (openMode) setOpen(true);
     }
 
@@ -68,6 +69,7 @@ public class ZbDoorGoal extends DoorInteractGoal {
         if (!openMode) {
             zb.level().destroyBlockProgress(zb.getId(), doorPos, -1); // 清掉裂纹进度
         }
+        zb.setDoorInteracting(false);
     }
 
     @Override
