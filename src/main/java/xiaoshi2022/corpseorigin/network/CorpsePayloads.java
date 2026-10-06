@@ -281,8 +281,15 @@ public final class CorpsePayloads {
      * Flashback 的快照（初始加载 / seek）只重建原版实体数据，不含 Fabric 附件；而进化器官装配方案、
      * 器官阶段、wings/gills、葫芦状态全部存在这个附件里。录制端把快照时刻的附件 NBT 经此通道补发，
      * 回放客户端按 UUID 找到重建出的玩家实体后直接回填。正常服务端不会发送此通道。
+     * <p>
+     * 2026-10-06 扩展：同时携带伪装渲染链路依赖的同步附件——{@code chapter_role}（角色）、
+     * {@code gourd_mortal_disguise}（葫芦传凡人伪装开关）、{@code chameleon_skin} /
+     * {@code chameleon_profile}（变色龙伪装目标皮肤/档案）。
+     * 否则回放端 {@code GourdInheritance.disguised()} 恒 false，所有渲染层都走"未伪装"分支。
      */
-    public record ReplayPlayerBodyS2C(UUID playerUuid, CompoundTag body) implements CustomPacketPayload {
+    public record ReplayPlayerBodyS2C(UUID playerUuid, CompoundTag body, String role, boolean disguised,
+                                      String chameleonSkin, com.mojang.authlib.GameProfile chameleonProfile)
+            implements CustomPacketPayload {
         public static final Type<ReplayPlayerBodyS2C> TYPE = new Type<>(id("replay_player_body"));
 
         public static final StreamCodec<ByteBuf, ReplayPlayerBodyS2C> CODEC = StreamCodec.composite(
@@ -290,7 +297,17 @@ public final class CorpsePayloads {
                 p -> p.playerUuid().toString(),
                 ByteBufCodecs.COMPOUND_TAG,
                 ReplayPlayerBodyS2C::body,
-                (uuidStr, body) -> new ReplayPlayerBodyS2C(UUID.fromString(uuidStr), body)
+                ByteBufCodecs.STRING_UTF8,
+                p -> p.role() == null ? "" : p.role(),
+                ByteBufCodecs.BOOL,
+                ReplayPlayerBodyS2C::disguised,
+                ByteBufCodecs.STRING_UTF8,
+                p -> p.chameleonSkin() == null ? "" : p.chameleonSkin(),
+                ByteBufCodecs.GAME_PROFILE.apply(ByteBufCodecs::optional),
+                p -> java.util.Optional.ofNullable(p.chameleonProfile()),
+                (uuidStr, body, role, disguised, chameleonSkin, chameleonProfile) ->
+                        new ReplayPlayerBodyS2C(UUID.fromString(uuidStr), body, role, disguised,
+                                chameleonSkin, chameleonProfile.orElse(null))
         );
 
         @Override

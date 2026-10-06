@@ -84,9 +84,13 @@ public class CorpseOriginClient implements ClientModInitializer {
 
     /**
      * Flashback 回放专用：快照附件包到达时玩家实体可能还没重建完
-     * 先按 UUID 暂存 evolution_parts 附件 NBT，每 tick 重试回填
+     * 先按 UUID 暂存 evolution_parts 附件 NBT 与伪装附件，每 tick 重试回填
      */
-    public static final Map<UUID, net.minecraft.nbt.CompoundTag> pendingReplayBodies = new ConcurrentHashMap<>();
+    public record ReplayPlayerState(net.minecraft.nbt.CompoundTag body, String role, boolean disguised,
+                                    String chameleonSkin, com.mojang.authlib.GameProfile chameleonProfile) {
+    }
+
+    public static final Map<UUID, ReplayPlayerState> pendingReplayBodies = new ConcurrentHashMap<>();
 
     /** 临时红眼状态：UUID 剩余 tick */
     public static final Map<UUID, Integer> tempRedEyeTicks = new ConcurrentHashMap<>();
@@ -452,9 +456,11 @@ public class CorpseOriginClient implements ClientModInitializer {
                         new ClientCloneBody(payload.characterId(), payload.evolutionParts(),
                                 payload.infant(), payload.bearArms()))));
 
-        // Flashback 回放：快照补发的 evolution_parts 附件，按 UUID 回填到重建出的玩家实
+        // Flashback 回放：快照补发的 evolution_parts 附件与伪装附件，按 UUID 回填到重建出的玩家实体
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.ReplayPlayerBodyS2C.TYPE, (payload, context) ->
-                context.client().execute(() -> applyReplayBody(payload.playerUuid(), payload.body())));
+                context.client().execute(() -> applyReplayBody(payload.playerUuid(),
+                        new ReplayPlayerState(payload.body(), payload.role(), payload.disguised(),
+                                payload.chameleonSkin(), payload.chameleonProfile()))));
 
         // 接收进化/已学技能同
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.EvolutionSyncS2C.TYPE, (payload, context) ->
@@ -618,7 +624,7 @@ public class CorpseOriginClient implements ClientModInitializer {
                 pendingReplayBodies.entrySet().removeIf(e -> {
                     Player player = client.level.getPlayerByUUID(e.getKey());
                     if (player == null) return false;
-                    player.setAttached(xiaoshi2022.corpseorigin.growth.SurvivalGrowth.BODY, e.getValue());
+                    applyReplayAttachments(player, e.getValue());
                     return true;
                 });
             }
@@ -786,22 +792,36 @@ public class CorpseOriginClient implements ClientModInitializer {
     // ==================== 客户端数据类 ====================
 
     /**
-     * Flashback 回放：把快照携带evolution_parts 附件 NBT 回填给指UUID 的玩家
+     * Flashback 回放：把快照携带的 evolution_parts 附件 NBT 与伪装附件回填给指定 UUID 的玩家
      * <p>
      * 快照的自定义包在 viewer sendLevelInfo 阶段统一送达，绝大多数玩家实体重建已完成
      * 万一还没见到实体（本地玩家的创建包顺序不同），先放进 {@link #pendingReplayBodies}
      * 由客户端 tick 继续尝试
      */
-    public static void applyReplayBody(UUID uuid, net.minecraft.nbt.CompoundTag body) {
-        if (uuid == null || body == null) return;
+    public static void applyReplayBody(UUID uuid, ReplayPlayerState state) {
+        if (uuid == null || state == null) return;
         Minecraft client = Minecraft.getInstance();
         Player player = client.level == null ? null : client.level.getPlayerByUUID(uuid);
         if (player != null) {
-            player.setAttached(xiaoshi2022.corpseorigin.growth.SurvivalGrowth.BODY, body);
+            applyReplayAttachments(player, state);
             pendingReplayBodies.remove(uuid);
         } else {
-            pendingReplayBodies.put(uuid, body);
+            pendingReplayBodies.put(uuid, state);
         }
+    }
+
+    /** 把快照携带的 BODY / 角色 / 伪装附件回填到玩家实体（伪装渲染读的就是这几个附件） */
+    private static void applyReplayAttachments(Player player, ReplayPlayerState s) {
+        if (s.body() != null && !s.body().isEmpty())
+            player.setAttached(xiaoshi2022.corpseorigin.growth.SurvivalGrowth.BODY, s.body());
+        if (s.role() != null && !s.role().isEmpty())
+            player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE, s.role());
+        if (s.disguised())
+            player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.DISGUISED, true);
+        if (s.chameleonSkin() != null && !s.chameleonSkin().isEmpty())
+            player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE, s.chameleonSkin());
+        if (s.chameleonProfile() != null)
+            player.setAttached(xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE_PROFILE, s.chameleonProfile());
     }
 
     private static void registerFluidTextures() {

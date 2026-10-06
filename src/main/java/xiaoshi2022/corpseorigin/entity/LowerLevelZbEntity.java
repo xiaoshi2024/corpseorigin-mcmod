@@ -125,6 +125,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         if(!level.isClientSide())setCorpseEye(this.random.nextFloat()<.2f);
         if(!level.isClientSide())setCracked(this.random.nextFloat()<.3f);
         this.setCanPickUpLoot(true);   // ✅ 开启捡东西
+        // 允许寻路穿过关闭的木门：低阶要凑上去敲门、高阶要开门进出（见 ZbDoorGoal）
+        this.getNavigation().setCanOpenDoors(true);
     }
 
     public LowerLevelZbEntity(EntityType<? extends PathfinderMob> entityType, Level level, Player player) {
@@ -261,7 +263,11 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         this.goalSelector.addGoal(2, new xiaoshi2022.corpseorigin.entity.ai.CorpseGrappleGoal(this));
         // 带翅膀的尸兄：目标在高处/远处时起飞空战，优先级压过地面近战步走
         this.goalSelector.addGoal(3, new xiaoshi2022.corpseorigin.entity.evolution.ZbWingFlightGoal(this));
+        // 高阶饿了又没活物可打时：啃同类尸体回饥饿+涨血肉能量（复用进化/突破链路）
+        this.goalSelector.addGoal(3, new xiaoshi2022.corpseorigin.entity.ai.ZbCorpseFeedingGoal(this));
         this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.2D, true));
+        // 敲门/开门：低阶像原版僵尸一样砸木门，高阶（超脱临界后）直接拉开门走进去
+        this.goalSelector.addGoal(4, new xiaoshi2022.corpseorigin.entity.ai.ZbDoorGoal(this));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.8D));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
@@ -511,6 +517,34 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         this.entityData.set(DATA_SKIN_STATE, state.getCode());
     }
 
+    // ==================== 尸体阶段（死亡后留场，供高阶同类啃食进化） ====================
+    private boolean corpse;
+    private int corpseBites;
+
+    public boolean isCorpse() { return corpse; }
+
+    /** 死亡动画结束后转为留场尸体（由 CorpseHorror.deathTick 调用）：返回 false = 不留尸（按原逻辑移除）。 */
+    public boolean tryEnterCorpse() {
+        if (this.isRemoved() || corpse) return false;
+        corpse = true;
+        corpseBites = 2 + this.getEvolutionLevel() / 3; // 等级越高的尸体肉越多（2~5 口）
+        this.getNavigation().stop();
+        this.setTarget(null);
+        return true;
+    }
+
+    /** 高阶同类啃一口：返回是否啃到了；啃空后化烟消散。 */
+    public boolean consumeBite() {
+        if (!corpse || corpseBites <= 0) return false;
+        corpseBites--;
+        if (corpseBites <= 0 && this.level() instanceof net.minecraft.server.level.ServerLevel level) {
+            level.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE,
+                    this.getX(), this.getY() + 0.5, this.getZ(), 10, 0.3, 0.3, 0.3, 0.02);
+            this.discard(); // 啃空：化烟消散
+        }
+        return true;
+    }
+
     // ==================== Tick ====================
 
     @Override
@@ -521,22 +555,24 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
             entityData.set(DATA_HORROR_ACTIVE, xiaoshi2022.corpseorigin.growth.CorpseHorror.applies(this));
             entityData.set(DATA_RIBS_VISIBLE, xiaoshi2022.corpseorigin.growth.CorpseHorror.ribsVisible(this));
             xiaoshi2022.corpseorigin.growth.CorpseHorror.tick(this);
-            // ✅ 每 200 tick（10秒）降低 1 点饥饿值
-            if (this.tickCount % 200 == 0) {
-                setHunger(getHunger() - 1);
-            }
+            if (!isCorpse()) {
+                // ✅ 每 200 tick（10秒）降低 1 点饥饿值
+                if (this.tickCount % 200 == 0) {
+                    setHunger(getHunger() - 1);
+                }
 
-            // 突变器官效果（解剖属性 / 夜视 / 翅膀缓落）
-            xiaoshi2022.corpseorigin.entity.evolution.ZbOrganEffects.tick(this);
+                // 突变器官效果（解剖属性 / 夜视 / 翅膀缓落）
+                xiaoshi2022.corpseorigin.entity.evolution.ZbOrganEffects.tick(this);
 
-            // ✅ 极度饥饿时显示粒子效果
-            if (this.isStarving() && this.tickCount % 20 == 0) {
-                if (this.level() instanceof ServerLevel serverLevel) {
-                    QiEffects.burst(
-                            serverLevel,
-                            this.getX(), this.getY() + 1.5, this.getZ(),
-                            0xc0182a, 1, 0
-                    );
+                // ✅ 极度饥饿时显示粒子效果
+                if (this.isStarving() && this.tickCount % 20 == 0) {
+                    if (this.level() instanceof ServerLevel serverLevel) {
+                        QiEffects.burst(
+                                serverLevel,
+                                this.getX(), this.getY() + 1.5, this.getZ(),
+                                0xc0182a, 1, 0
+                        );
+                    }
                 }
             }
         }
@@ -546,6 +582,18 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
                 this.playSound(xiaoshi2022.corpseorigin.registry.ModSounds.CORPSE_BREATH,.28f,.72f+this.random.nextFloat()*.12f);
             tickClient();
         }
+    }
+
+    /** 尸体阶段完全停摆：不索敌、不寻路、不捡拾、不转头 */
+    @Override
+    public void aiStep() {
+        if (isCorpse()) return;
+        super.aiStep();
+    }
+
+    @Override
+    public boolean isImmobile() {
+        return isCorpse() || super.isImmobile();
     }
 
     @Environment(EnvType.CLIENT)

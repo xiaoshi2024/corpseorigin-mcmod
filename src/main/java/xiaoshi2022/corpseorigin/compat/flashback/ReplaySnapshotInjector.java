@@ -64,9 +64,19 @@ public final class ReplaySnapshotInjector {
                 }
                 if (entity instanceof Player player) {
                     CompoundTag body = player.getAttachedOrCreate(SurvivalGrowth.BODY);
-                    if (!body.isEmpty()) {
-                        out.accept(new ClientboundCustomPayloadPacket(
-                                new CorpsePayloads.ReplayPlayerBodyS2C(player.getUUID(), body.copy())));
+                    // 伪装渲染链路依赖的同步附件（GourdInheritance.disguised / ChameleonHeadLayer 都读它们）
+                    String role = player.getAttachedOrCreate(
+                            xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE);
+                    boolean disguised = player.getAttachedOrCreate(
+                            xiaoshi2022.corpseorigin.skill.chapter.GourdInheritance.DISGUISED);
+                    String chameleonSkin = player.getAttachedOrCreate(
+                            xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE);
+                    var chameleonProfile = player.getAttached(
+                            xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.DISGUISE_PROFILE);
+                    if (!body.isEmpty() || !role.isEmpty() || disguised || !chameleonSkin.isEmpty()
+                            || chameleonProfile != null) {
+                        out.accept(new ClientboundCustomPayloadPacket(new CorpsePayloads.ReplayPlayerBodyS2C(
+                                player.getUUID(), body.copy(), role, disguised, chameleonSkin, chameleonProfile)));
                     }
                 }
             }

@@ -47,6 +47,9 @@ public final class CorpseHorror {
         if(config().bloodEffects)level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK,Blocks.REDSTONE_BLOCK.defaultBlockState()),
                 at.x,at.y,at.z,Math.min(24,count),.2,.15,.2,.08);
     }
+    /** 尸体风化消散时间（tick）：死亡后留场约 4 分钟，被高阶同类啃空则提前消散。 */
+    public static final int CORPSE_DESPAWN_TICKS = 4800;
+
     /** Called instead of vanilla's short death removal; vanilla die() still owns loot/XP. */
     public static void deathTick(LowerLevelZbEntity z){
         z.deathTime++;z.setGrappleTarget(-1);
@@ -66,6 +69,16 @@ public final class CorpseHorror {
                 }
             }
         }
-        if(z.deathTime>=48)z.remove(Entity.RemovalReason.KILLED);
+        // 尸体阶段：不再走 48t 移除，只等被啃空（consumeBite 内 discard）或风化消散
+        if(z.isCorpse()){
+            if(z.deathTime>=CORPSE_DESPAWN_TICKS){
+                level.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE,
+                        z.getX(),z.getY()+.5,z.getZ(),10,.3,.3,.3,.02);
+                z.remove(Entity.RemovalReason.DISCARDED);
+            }
+            return;
+        }
+        // 死亡动画播完：转为留场尸体（供高阶同类啃食进化）；转尸失败才按原逻辑移除
+        if(z.deathTime>=48 && !z.tryEnterCorpse())z.remove(Entity.RemovalReason.KILLED);
     }
 }
