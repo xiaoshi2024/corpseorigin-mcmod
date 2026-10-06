@@ -90,6 +90,8 @@ public final class ModSpawns {
     public static void register() {
         CorpseConfig.Spawn config = CorpseConfig.get().spawn;
         farFromLakeChance = config.nearBywaterChance;
+        // GUI 保存（CorpseConfig.replace）时刷新启动快照缓存，做到能实时实时的全部实时
+        CorpseConfig.onReplaceCallback = ModSpawns::refreshAfterReload;
 
         registerSpawnRules();
         registerBiomeSpawns(config);
@@ -302,17 +304,25 @@ public final class ModSpawns {
         return false;
     }
 
-    /** ② 进生成表（权重来自配置） */
+    /** ② 进生成表（权重来自配置）。注意：BiomeModifications 只在游戏启动时注册一次，运行时改权重需重启生效。 */
     private static void registerBiomeSpawns(CorpseConfig.Spawn spawn) {
-        // 主世界夜晚：尸兄三兄弟 + 初音（合体形态权重极低）
-        BiomeModifications.addSpawn(OVERWORLD, MobCategory.MONSTER,
-                ModEntities.LOWER_LEVEL_ZB, spawn.lowerLevelZbWeight, 1, 2);
-        BiomeModifications.addSpawn(OVERWORLD, MobCategory.MONSTER,
-                ModEntities.AOTUMAN_ZB, spawn.aotumanZbWeight, 1, 1);
-        BiomeModifications.addSpawn(OVERWORLD, MobCategory.MONSTER,
-                ModEntities.MIKU_ZB, spawn.mikuZbWeight, 1, 1);
-        BiomeModifications.addSpawn(OVERWORLD, MobCategory.MONSTER,
-                ModEntities.COCO_ZOMBIE, spawn.cocoZombieWeight, 1, 1);
+        // 主世界夜晚：尸兄三兄弟 + 初音（合体形态权重极低）；权重 0 = 从生成表摘除
+        if (spawn.lowerLevelZbWeight > 0) {
+            BiomeModifications.addSpawn(OVERWORLD, MobCategory.MONSTER,
+                    ModEntities.LOWER_LEVEL_ZB, spawn.lowerLevelZbWeight, 1, 2);
+        }
+        if (spawn.aotumanZbWeight > 0) {
+            BiomeModifications.addSpawn(OVERWORLD, MobCategory.MONSTER,
+                    ModEntities.AOTUMAN_ZB, spawn.aotumanZbWeight, 1, 1);
+        }
+        if (spawn.mikuZbWeight > 0) {
+            BiomeModifications.addSpawn(OVERWORLD, MobCategory.MONSTER,
+                    ModEntities.MIKU_ZB, spawn.mikuZbWeight, 1, 1);
+        }
+        if (spawn.cocoZombieWeight > 0) {
+            BiomeModifications.addSpawn(OVERWORLD, MobCategory.MONSTER,
+                    ModEntities.COCO_ZOMBIE, spawn.cocoZombieWeight, 1, 1);
+        }
         // CoCo 尸兄·二阶段（合体形态）刻意不进生成表：它按设定是企鹅与大叔的合体产物，
         // 只应由合体流程产生（生成规则仍保留，刷怪蛋 / 指令 / 合体照常能用）。
 

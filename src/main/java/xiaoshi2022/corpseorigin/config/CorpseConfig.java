@@ -504,13 +504,18 @@ public final class CorpseConfig {
         return instance;
     }
 
+    /** 配置整体替换后的回调：供启动时快照了配置值的模块刷新缓存（如 ModSpawns 的远湖几率）。 */
+    public static Runnable onReplaceCallback = null;
+
     /**
      * 用编辑态对象整体替换当前实例并落盘（配置 GUI 用）。
      * GUI 先用 {@link #snapshot()} 拿一份深拷贝当编辑态，确认保存时整体写回 —— 取消则直接丢弃，内存对象不脏。
+     * 写回后触发 {@link #onReplaceCallback}，保证"启动时快照"的配置项（生成规则等）保存即刷新。
      */
     public static void replace(CorpseConfig newConfig) {
         instance = newConfig;
         save();
+        if (onReplaceCallback != null) onReplaceCallback.run();
     }
 
     /** 当前配置的深拷贝（GSON 走一圈），给配置 GUI 当编辑态。 */
