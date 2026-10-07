@@ -1,11 +1,12 @@
 package xiaoshi2022.corpseorigin.entity.evolution;
 
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
+import xiaoshi2022.corpseorigin.entity.FavoriteItemHolder;
 
 import java.util.EnumSet;
 
@@ -16,16 +17,19 @@ import java.util.EnumSet;
  * <p>
  * 注意力转移机制：手持执念物品的玩家已在 {@code registerGoals} 的目标选择器里豁免敌意，
  * 所以这个 Goal 一旦激活，尸兄既不攻击也不游荡，一路尾随——直到物品消失或玩家收手。
+ * <p>
+ * 泛型：任何 {@code PathfinderMob} 实现 {@link FavoriteItemHolder} 都能挂这个 Goal
+ * （低阶尸兄、多首蜈蚣尸兄等）。
  */
-public final class ZbFavoriteItemGoal extends Goal {
+public final class ZbFavoriteItemGoal<T extends PathfinderMob & FavoriteItemHolder> extends Goal {
     private static final double SEARCH_RANGE = 16.0;
 
-    private final LowerLevelZbEntity zb;
+    private final T zb;
     private LivingEntity targetHolder;   // 手持执念物品的玩家
     private ItemEntity targetDrop;       // 执念物品掉落物
     private int stareTicks;              // 凑近后发呆/发声的计时
 
-    public ZbFavoriteItemGoal(LowerLevelZbEntity zb) {
+    public ZbFavoriteItemGoal(T zb) {
         this.zb = zb;
         setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
     }

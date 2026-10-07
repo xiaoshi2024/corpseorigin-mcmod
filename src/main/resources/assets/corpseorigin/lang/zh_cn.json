@@ -1574,7 +1574,7 @@
   "message.corpseorigin.roleplay_mode.off": "扮演模式已关闭：模组生物恢复自然生成。",
   "commands.corpseorigin.config.reloaded": "已从 config/corpseorigin.json 重新载入配置。",
   "commands.corpseorigin.config.zombies.enabled": "原版僵尸自然生成：开启",
-  "commands.corpseorigin.config.zombies.disabled": "原版僵尸自然生成：禁用（仅 NATURAL 来源被拦，刷怪笼/蛋/summon 不受影响）",
+  "commands.corpseorigin.config.zombies.disabled": "原版僵尸生成：禁用（自然生成 + 刷怪笼均被拦，刷怪蛋/summon 不受影响）",
   "message.corpseorigin.organ.summoned": "已消耗 20 个尸兄肉块，召唤带有当前自定义器官的尸兄。",
   "message.corpseorigin.organ.summon_need_flesh": "召唤此尸兄需要 %s 个尸兄肉块。",
   "gui.corpseorigin.label.100": "召唤此尸兄"

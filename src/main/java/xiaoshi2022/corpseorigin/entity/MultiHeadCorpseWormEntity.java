@@ -25,8 +25,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.npc.villager.AbstractVillager;
 import net.minecraft.world.level.Level;
 
+import xiaoshi2022.corpseorigin.entity.evolution.ZbFavoriteItemGoal;
+
 /** Large corpse centipede that grows a face for every consumed living target. */
-public class MultiHeadCorpseWormEntity extends PathfinderMob implements GeoEntity, ZombieKin {
+public class MultiHeadCorpseWormEntity extends PathfinderMob implements GeoEntity, ZombieKin, FavoriteItemHolder {
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private static final EntityDataAccessor<String> FACE_SKINS = SynchedEntityData.defineId(MultiHeadCorpseWormEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> BURIED = SynchedEntityData.defineId(MultiHeadCorpseWormEntity.class, EntityDataSerializers.BOOLEAN);
@@ -51,14 +53,17 @@ public class MultiHeadCorpseWormEntity extends PathfinderMob implements GeoEntit
             .add(Attributes.KNOCKBACK_RESISTANCE, .9); }
     @Override public boolean isHungry() { return true; }
     private boolean isPrey(LivingEntity entity) {
+        if (entity instanceof Player player && isDistractedBy(player)) return false; // 手持执念物品：放下敌意（名场面）
         return entity != this && entity.isAlive() && !ZombieKin.isZombieKing(entity)
                 && (entity instanceof Player || entity instanceof AbstractVillager || ZombieKin.isZombieKin(entity));
     }
     @Override protected void registerGoals() {
         goalSelector.addGoal(0, new FloatGoal(this));
-        goalSelector.addGoal(1, new MeleeAttackGoal(this, 1.15, true));
-        goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, .8));
-        goalSelector.addGoal(3, new RandomLookAroundGoal(this));
+        // 生前执念：追掉落物/盯手持玩家（/zbfavorite 设置），压过游荡和四处张望
+        goalSelector.addGoal(1, new ZbFavoriteItemGoal<>(this));
+        goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.15, true));
+        goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, .8));
+        goalSelector.addGoal(4, new RandomLookAroundGoal(this));
         targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, LivingEntity.class, 10, true, false,
                 (target, level) -> isPrey(target)
                         && (target.hurtTime > 0 || target.getHealth() < target.getMaxHealth())));
@@ -164,11 +169,34 @@ public class MultiHeadCorpseWormEntity extends PathfinderMob implements GeoEntit
     }
     public int getFaces() { return getFaceSkins().length; }
     public boolean isBurrowing() { return entityData.get(BURIED); }
+    // ==================== 生前执念（/zbfavorite，见 FavoriteItemHolder） ====================
+
+    /** 生前执念物品 id 列表，逗号分隔（如 "corpseorigin:hair_dryer"）；空 = 无执念。 */
+    private String favoriteItems = "";
+
+    @Override public String favoriteItems() { return favoriteItems; }
+
+    @Override public void setFavoriteItems(String ids) { this.favoriteItems = ids == null ? "" : ids.trim(); }
+
+    @Override public boolean hasFavoriteItems() { return !favoriteItems.isEmpty(); }
+
+    @Override public boolean isDistractedBy(LivingEntity entity) {
+        if (!hasFavoriteItems() || entity == null) return false;
+        var stack = entity.getMainHandItem();
+        if (stack.isEmpty()) return false;
+        String held = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+        for (String id : favoriteItems.split(",")) {
+            if (held.equals(id.trim())) return true;
+        }
+        return false;
+    }
+
     @Override protected void addAdditionalSaveData(ValueOutput tag) {
         super.addAdditionalSaveData(tag);
         tag.putString("FaceSkins", entityData.get(FACE_SKINS));
         tag.putBoolean("Buried", isBurrowing());
         tag.putDouble("SurfaceY", surfaceY);
+        if (hasFavoriteItems()) tag.putString("FavoriteItems", favoriteItems);
     }
     @Override protected void readAdditionalSaveData(ValueInput tag) {
         super.readAdditionalSaveData(tag);
@@ -177,6 +205,7 @@ public class MultiHeadCorpseWormEntity extends PathfinderMob implements GeoEntit
         entityData.set(BURIED, false);
         noPhysics = false;
         setNoGravity(false);
+        setFavoriteItems(tag.getStringOr("FavoriteItems", ""));
     }
     @Override public AnimatableInstanceCache getAnimatableInstanceCache() { return cache; }
 }

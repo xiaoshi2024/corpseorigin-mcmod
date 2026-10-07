@@ -13,7 +13,7 @@ import xiaoshi2022.corpseorigin.registry.ModSpawns;
  * {@code /corpseconfig}：实时操作 {@code config/corpseorigin.json}。
  * <ul>
  *   <li>{@code /corpseconfig reload} —— 改完配置文件后跑这条，下个生成判定就生效，不用重启服务器。</li>
- *   <li>{@code /corpseconfig zombies on|off} —— 直接开关原版僵尸自然生成（同时写回文件）。</li>
+ *   <li>{@code /corpseconfig zombies on|off} —— 直接开关原版僵尸生成（自然生成 + 刷怪笼，同时写回文件）。</li>
  *   <li>{@code /corpseconfig} —— 报告当前状态。</li>
  * </ul>
  * 权限 2 级（GAMEMASTERS）。
@@ -50,7 +50,7 @@ public final class CorpseConfigCommand {
     }
 
     /**
-     * @param disable {@code true}=禁用原版僵尸自然生成；{@code false}=放行
+     * @param disable {@code true}=禁用原版僵尸生成（自然生成 + 刷怪笼）；{@code false}=放行
      */
     private static int setZombies(CommandSourceStack source, boolean disable) {
         CorpseConfig.get().spawn.disableVanillaZombieSpawns = disable;

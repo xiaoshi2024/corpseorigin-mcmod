@@ -41,7 +41,7 @@ import java.util.Optional;
 
 // 删除: import xiaoshi2022.corpseorigin.client.renderer.state.ZbEntityRenderState;
 
-public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, ZombieKin {
+public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, ZombieKin, xiaoshi2022.corpseorigin.entity.FavoriteItemHolder {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -175,32 +175,6 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
                 .add(Attributes.ARMOR, 4.0D);
     }
 
-    // ==================== 爬墙 ====================
-
-    /** 敲门/开门中（ZbDoorGoal 激活）：暂停爬墙，贴门站着砸门而不是顺着门往上爬。 */
-    private boolean doorInteracting;
-
-    public boolean isDoorInteracting() { return doorInteracting; }
-
-    public void setDoorInteracting(boolean v) { this.doorInteracting = v; }
-
-    /** 原著尸兄会爬墙：撞到墙就算攀爬状态（蜘蛛式），墙上不受滑落摩擦。敲门期间不爬。 */
-    @Override
-    public boolean onClimbable() {
-        if (doorInteracting) return super.onClimbable();
-        return this.horizontalCollision || super.onClimbable();
-    }
-
-    /** 爬墙升力：寻路中撞墙时提供向上速度，把墙当楼梯爬。敲门期间不给升力。 */
-    @Override
-    public void travel(net.minecraft.world.phys.Vec3 travelVector) {
-        if (!this.level().isClientSide() && !doorInteracting && this.horizontalCollision
-                && (this.getTarget() != null || this.getNavigation().isInProgress())) {
-            this.setDeltaMovement(this.getDeltaMovement().x, 0.18D, this.getDeltaMovement().z);
-        }
-        super.travel(travelVector);
-    }
-
     // ==================== GeoEntity 接口实现 ====================
 
     @Override
@@ -298,7 +272,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         // 生前执念：追吹风机等生前爱物（压过一切移动 AI，注意力转移的喜剧演出）
-        this.goalSelector.addGoal(1, new xiaoshi2022.corpseorigin.entity.evolution.ZbFavoriteItemGoal(this));
+        this.goalSelector.addGoal(1, new xiaoshi2022.corpseorigin.entity.evolution.ZbFavoriteItemGoal<>(this));
         this.goalSelector.addGoal(2, new xiaoshi2022.corpseorigin.entity.ai.CorpseGrappleGoal(this));
         // 带翅膀的尸兄：目标在高处/远处时起飞空战，优先级压过地面近战步走
         this.goalSelector.addGoal(3, new xiaoshi2022.corpseorigin.entity.evolution.ZbWingFlightGoal(this));

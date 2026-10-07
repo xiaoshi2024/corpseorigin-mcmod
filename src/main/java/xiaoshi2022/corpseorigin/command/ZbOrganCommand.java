@@ -6,6 +6,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import xiaoshi2022.corpseorigin.entity.FavoriteItemHolder;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 import xiaoshi2022.corpseorigin.entity.evolution.ZbOrganGrowth;
 
@@ -139,7 +140,7 @@ public final class ZbOrganCommand {
         }
         int count = 0;
         for (var e : targets) {
-            if (e instanceof LowerLevelZbEntity zb) { zb.setFavoriteItems(items); count++; }
+            if (e instanceof FavoriteItemHolder zb) { zb.setFavoriteItems(items); count++; }
         }
         final int n = count;
         source.sendSuccess(() -> Component.translatable("message.corpseorigin.zbfavorite.set", n, items.trim()), true);
@@ -150,7 +151,7 @@ public final class ZbOrganCommand {
                                      java.util.Collection<? extends net.minecraft.world.entity.Entity> targets) {
         int count = 0;
         for (var e : targets) {
-            if (e instanceof LowerLevelZbEntity zb) { zb.setFavoriteItems(null); count++; }
+            if (e instanceof FavoriteItemHolder zb) { zb.setFavoriteItems(null); count++; }
         }
         final int n = count;
         source.sendSuccess(() -> Component.translatable("message.corpseorigin.zbfavorite.cleared", n), true);

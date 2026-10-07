@@ -1574,7 +1574,7 @@
   "message.corpseorigin.roleplay_mode.off": "Roleplay mode disabled: natural mod creature spawning restored.",
   "commands.corpseorigin.config.reloaded": "Reloaded config from config/corpseorigin.json.",
   "commands.corpseorigin.config.zombies.enabled": "Vanilla zombie natural spawning: enabled",
-  "commands.corpseorigin.config.zombies.disabled": "Vanilla zombie natural spawning: disabled (only NATURAL sources are blocked; spawners/eggs/summon are unaffected)",
+  "commands.corpseorigin.config.zombies.disabled": "Vanilla zombie spawning: disabled (natural + spawner sources are blocked; eggs/summon are unaffected)",
   "message.corpseorigin.organ.summoned": "Consumed 20 Corpse Flesh blocks and summoned a corpse brother with the current custom organs.",
   "message.corpseorigin.organ.summon_need_flesh": "Summoning this corpse brother requires %s Corpse Flesh blocks.",
   "gui.corpseorigin.label.100": "Summon Corpse Brother"

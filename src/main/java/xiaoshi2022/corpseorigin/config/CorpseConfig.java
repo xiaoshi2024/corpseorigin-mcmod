@@ -222,11 +222,11 @@ public final class CorpseConfig {
         /** Extra days added to each successive interval. */
         public int corpseWormIntervalIncreaseDays = 1;
         /**
-         * 是否实时禁用<b>原版</b>僵尸（含尸壳、村民僵尸）的自然生成。
+         * 是否实时禁用<b>原版</b>僵尸（含尸壳、村民僵尸）的生成（自然生成 + 刷怪笼/试炼刷怪笼）。
          * <p>
          * 默认 false（原版僵尸照常刷）。改完之后跑 {@code /corpseconfig reload} 立刻生效，
          * 或者用 {@code /corpseconfig zombies on|off} 直接开关（会自动写回文件）。
-         * <b>只拦 NATURAL 自然生成</b>：刷怪蛋、刷怪笼、{@code /summon} 不受影响。
+         * <b>刷怪蛋、{@code /summon} 不受影响</b>（玩家手动放的不拦）。
          */
         public boolean disableVanillaZombieSpawns = false;
         /** 尸兄三兄弟 + CoCo 尸兄的生成权重，默认与原版僵尸持平（100）—— 想更稀有就调小 */
