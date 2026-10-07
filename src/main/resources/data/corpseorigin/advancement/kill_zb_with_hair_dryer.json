@@ -1,0 +1,28 @@
+{
+  "parent": "corpseorigin:get_hair_dryer",
+  "display": {
+    "icon": {
+      "id": "corpseorigin:hair_dryer"
+    },
+    "title": {
+      "translate": "advancements.corpseorigin.kill_zb_with_hair_dryer.title"
+    },
+    "description": {
+      "translate": "advancements.corpseorigin.kill_zb_with_hair_dryer.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "kill_zb_with_hair_dryer": {
+      "trigger": "corpseorigin:kill_zb_with_hair_dryer"
+    }
+  },
+  "requirements": [
+    ["kill_zb_with_hair_dryer"]
+  ],
+  "rewards": {
+    "experience": 10
+  }
+}

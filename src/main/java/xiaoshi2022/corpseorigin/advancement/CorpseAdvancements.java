@@ -16,6 +16,7 @@ import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.LongYou;
 import xiaoshi2022.corpseorigin.entity.CloneAvatarEntity;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
+import xiaoshi2022.corpseorigin.item.HairDryerItem;
 
 import java.util.List;
 import java.util.Optional;
@@ -75,6 +76,8 @@ public final class CorpseAdvancements {
     public static final SimpleTrigger BECOME_CORPSE = register("become_corpse");
     public static final SimpleTrigger CANNIBALISM_DISCOVERY = register("cannibalism_discovery");
     public static final SimpleTrigger MEET_CORPSE_KING = register("meet_corpse_king");
+    /** 用吹风机干掉一只尸兄 —— 解锁成就"高级吹风机"（描述：尸兄被砍头不会立刻死亡） */
+    public static final SimpleTrigger KILL_ZB_WITH_HAIR_DRYER = register("kill_zb_with_hair_dryer");
 
     private static SimpleTrigger register(String name) {
         return Registry.register(BuiltInRegistries.TRIGGER_TYPES, CorpseOrigin.id(name), new SimpleTrigger());
@@ -113,6 +116,20 @@ public final class CorpseAdvancements {
             for (ServerPlayer witness : level.getEntitiesOfClass(ServerPlayer.class,
                     entity.getBoundingBox().inflate(CANNIBALISM_RANGE))) {
                 CANNIBALISM_DISCOVERY.trigger(witness);
+            }
+        });
+
+        // 吹风机击杀：玩家手持吹风机（普通/高级）砸死一只尸兄 → 解锁"尸兄被砍头不会立刻死亡"
+        ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
+            if (!ZombieKin.isZombieKin(entity)) {
+                return;
+            }
+            if (!(source.getEntity() instanceof ServerPlayer player)) {
+                return;
+            }
+            if (player.getMainHandItem().getItem() instanceof HairDryerItem
+                    || player.getOffhandItem().getItem() instanceof HairDryerItem) {
+                KILL_ZB_WITH_HAIR_DRYER.trigger(player);
             }
         });
     }

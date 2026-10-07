@@ -36,10 +36,11 @@ public final class HairDryerItem extends Item implements GeoItem {
     private static final net.minecraft.world.level.ExplosionDamageCalculator SHORT_CIRCUIT_DAMAGE = new net.minecraft.world.level.ExplosionDamageCalculator(){
         @Override public float getEntityDamageAmount(net.minecraft.world.level.Explosion explosion,Entity target,float exposure){
             float normal=super.getEntityDamageAmount(explosion,target,exposure);
-            // A close, unobstructed electrical blast kills a normal 25 HP corpse,
-            // while cover, armor and stronger evolved enemies still matter.
+            // A close, unobstructed electrical blast kills a normal 25 HP corpse
+            // (70 = still lethal on mid-level threat scaling), while cover,
+            // armor and stronger evolved enemies still matter.
             return target instanceof LivingEntity && target.distanceToSqr(explosion.center())<=9
-                    ?Math.max(normal,40*Math.clamp(exposure,0,1)):normal;
+                    ?Math.max(normal,70*Math.clamp(exposure,0,1)):normal;
         }
     };
     private final AnimatableInstanceCache cache=GeckoLibUtil.createInstanceCache(this);

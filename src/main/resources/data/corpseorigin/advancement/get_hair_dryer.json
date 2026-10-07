@@ -1,0 +1,35 @@
+{
+  "parent": "corpseorigin:root",
+  "display": {
+    "icon": {
+      "id": "corpseorigin:hair_dryer"
+    },
+    "title": {
+      "translate": "advancements.corpseorigin.get_hair_dryer.title"
+    },
+    "description": {
+      "translate": "advancements.corpseorigin.get_hair_dryer.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "get_hair_dryer": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "corpseorigin:hair_dryer"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    ["get_hair_dryer"]
+  ],
+  "rewards": {
+    "experience": 10
+  }
+}

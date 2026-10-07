@@ -71,7 +71,10 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
         super.extractRenderState(entity, renderState, partialTick);
         renderState.addGeckolibData(RenderStateData.CORPSE_EYE,entity.hasCorpseEye());
         renderState.addGeckolibData(RenderStateData.CRACKED,entity.isCracked());
+        renderState.addGeckolibData(RenderStateData.HEADLESS, entity.isHeadless());
         if (xiaoshi2022.corpseorigin.growth.CorpseHorror.applies(entity)) renderState.deathTime = 0;
+        if (entity.isCorpse()) renderState.hasRedOverlay = false;
+        if (entity.isFeigning()) renderState.deathTime = 12;
 
         int entityId = entity.getId();
         String playerName = entity.getPlayerSkinName();
@@ -127,6 +130,8 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
     public void adjustModelBonesForRender(com.geckolib.renderer.base.RenderPassInfo<LivingEntityRenderState> info,
                                          com.geckolib.renderer.base.BoneSnapshots snapshots) {
         super.adjustModelBonesForRender(info,snapshots);
+        if (Boolean.TRUE.equals(info.renderState().getGeckolibData(RenderStateData.HEADLESS)))
+            snapshots.ifPresent("Head", bone -> bone.skipRender(true).skipChildrenRender(true));
         boolean hide=!Boolean.TRUE.equals(info.renderState().getGeckolibData(RenderStateData.CORPSE_EYE));
         for(String name:new String[]{"shieye","group2","group7","group3","group4","group5","group6"})
             snapshots.ifPresent(name,bone->bone.skipRender(hide));

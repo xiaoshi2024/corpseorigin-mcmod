@@ -9,6 +9,7 @@ import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 public final class RenderStateData {
     public static final DataTicket<Boolean> CORPSE_EYE = DataTicket.create("corpse_eye",Boolean.class);
     public static final DataTicket<Boolean> CRACKED = DataTicket.create("corpse_cracked",Boolean.class);
+    public static final DataTicket<Boolean> HEADLESS = DataTicket.create("corpse_headless", Boolean.class);
     public static final DataTicket<Identifier> CUSTOM_SKIN_TEXTURE =
             DataTicket.create("custom_skin_texture", new TypeToken<Identifier>() {});
     public static final DataTicket<ZbSkinState> SKIN_STATE =

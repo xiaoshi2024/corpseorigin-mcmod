@@ -58,6 +58,9 @@ public final class ModEntities {
                     .clientTrackingRange(8)
                     .notInPeaceful()
     );
+    public static final EntityType<SeveredZbHeadEntity> SEVERED_ZB_HEAD = register("severed_zb_head",
+            EntityType.Builder.<SeveredZbHeadEntity>of(SeveredZbHeadEntity::new, MobCategory.MISC)
+                    .sized(0.5f, 0.5f).noSummon().clientTrackingRange(8).updateInterval(1));
 
     /**
      * 凹凸曼尸兄 —— 低阶尸兄的"原皮"版本：贴图直接用 {@code textures/entity/aotuman.png}

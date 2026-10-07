@@ -27,7 +27,9 @@ import java.util.function.Supplier;
 public final class ModItems {
     public static final Item ZISHU_THERMAL_SCANNER=register("zishu_thermal_scanner",new ThermalScannerItem(new Item.Properties().stacksTo(1).setId(itemKey("zishu_thermal_scanner"))));
     public static final Item ZISHU_ROBOT=register("zishu_robot",new ZishuRobotItem(new Item.Properties().stacksTo(1).setId(itemKey("zishu_robot"))));
-    public static final Item HAIR_DRYER = register("hair_dryer", new HairDryerItem(new Item.Properties().durability(90).setId(itemKey("hair_dryer"))));
+    /** 普通吹风机：4 点近战攻击（剧本第 2 幕的"砸击/电击"临时武器，砸死尸兄解锁成就"高级吹风机"） */
+    public static final Item HAIR_DRYER = register("hair_dryer", new HairDryerItem(new Item.Properties()
+            .sword(ToolMaterial.WOOD, 4f, -2.4f).durability(90).setId(itemKey("hair_dryer"))));
     public static final Item TIAN_GANG_KEY = register("tian_gang_key",
             new xiaoshi2022.corpseorigin.item.weapon.TianGangKeyItem(new Item.Properties()
                     .stacksTo(1).rarity(Rarity.EPIC).setId(itemKey("tian_gang_key"))));

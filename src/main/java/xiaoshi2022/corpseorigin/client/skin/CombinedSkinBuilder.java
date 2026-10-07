@@ -233,6 +233,10 @@ public class CombinedSkinBuilder {
             skeletonImage.close();
         }
 
+        // 2.5 血管贴图：掉落头模型三根 vein cube 共用 UV[16,16]，该区域原本是玩家
+        //     皮肤的帽子层 —— 必须重画成暗红血管肉丝，否则血管渲染成皮肤色
+        paintVeinTexture(combined);
+
         // 3. 注册组合纹理（用确定性 hash，避免随机 UUID）
         String hash = Integer.toHexString(skinTexture.toString().hashCode())
                 + "_" + Integer.toHexString(variant) + (cracked ? "_cracked" : "");
@@ -251,6 +255,25 @@ public class CombinedSkinBuilder {
 
         textureManager.register(location, texture);
         return location;
+    }
+
+    /**
+     * 掉落头实体（severed_zb_head.geo.json）脖子下的三根血管 cube（vein_left/right/back）
+     * 共用 UV[16,16] 的 4×5 像素区域（1×4×1 box UV）—— 该区域在玩家皮肤里是帽子层，
+     * 不重画的话血管会渲染成皮肤色。这里画出暗红肉质底 + 亮红血丝 + 焦黑血痂的肉丝纹理。
+     */
+    private static void paintVeinTexture(NativeImage combined) {
+        for (int x = 16; x < 20; x++) {
+            for (int y = 16; y < 21; y++) {
+                int shade = (x * 7 + y * 13 + (x ^ y)) % 5; // 确定性伪随机，避免每次合成纹理不同
+                int abgr = switch (shade) {
+                    case 0 -> 0xFF3A0A04; // 焦黑血痂
+                    case 1, 2 -> 0xFF6B0F08; // 暗红肉质
+                    default -> 0xFFB01A10; // 亮红血丝
+                };
+                combined.setPixel(x, y, abgr);
+            }
+        }
     }
 
     private static NativeImage loadSkinImage(Identifier skin, ResourceManager resourceManager) {

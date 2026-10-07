@@ -15,6 +15,8 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -49,12 +51,22 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     protected static final RawAnimation ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");
     private static final RawAnimation GNAW_ANIM = RawAnimation.begin().thenLoop("gnaw");
     private static final RawAnimation DEATH_ANIM = RawAnimation.begin().thenPlayAndHold("death_burst");
+    private static final RawAnimation CORPSE_ANIM = RawAnimation.begin().thenLoop("corpse_rest");
+    private static final EntityDataAccessor<Boolean> DATA_CORPSE =
+            SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> DATA_CORPSE_EYE =
             SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.BOOLEAN);
     public boolean hasCorpseEye(){return entityData.get(DATA_CORPSE_EYE);}
     public void setCorpseEye(boolean visible){entityData.set(DATA_CORPSE_EYE,visible);}
     private static final EntityDataAccessor<Boolean> DATA_CRACKED =
             SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_HEADLESS =
+            SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> DATA_FEIGNING =
+            SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.BOOLEAN);
+    private int feignTicks;
+    public boolean isHeadless() { return entityData.get(DATA_HEADLESS); }
+    public boolean isFeigning() { return entityData.get(DATA_FEIGNING); }
     public boolean isCracked(){return entityData.get(DATA_CRACKED);}
     public void setCracked(boolean cracked){entityData.set(DATA_CRACKED,cracked);}
     private static final EntityDataAccessor<Boolean> DATA_RIBS_VISIBLE =
@@ -101,12 +113,27 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         this.entityData.set(DATA_HUNGER, Math.max(0, Math.min(100, hunger)));
     }
 
+    /** 阈值可在 GUI"尸兄饥饿"页调整（corpseconfig reload / 重进存档生效） */
     public boolean isHungry() {
-        return getHunger() < HUNGER_THRESHOLD;
+        return getHunger() < xiaoshi2022.corpseorigin.config.CorpseConfig.get().spawn.zbHunger.hungerThreshold;
     }
 
     public boolean isStarving() {
         return getHunger() <= 0;
+    }
+
+    // ==================== 个体饥饿差异 ====================
+    /** 这只尸兄的饥饿衰减速度系数，生成时随机；-1 = 尚未掷出 */
+    private float hungerRate = -1F;
+    private int hungerDrainCounter;
+
+    /** 按配置在 ±X% 内随机个体衰减速度 —— "有的尸兄饿得快"（结果随存档持久化） */
+    private float hungerRate() {
+        if (hungerRate < 0) {
+            int pct = xiaoshi2022.corpseorigin.config.CorpseConfig.get().spawn.zbHunger.randomPercent;
+            hungerRate = 1F + (this.random.nextFloat() * 2F - 1F) * Math.max(0, Math.min(90, pct)) / 100F;
+        }
+        return hungerRate;
     }
 
     // ==================== GeckoLib ====================
@@ -179,6 +206,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>("movement", 5, this::movementController));
+        controllers.add(new AnimationController<LowerLevelZbEntity>("corpse_pose", 0,
+                test -> isCorpse() ? test.setAndContinue(CORPSE_ANIM) : PlayState.STOP));
         controllers.add(new AnimationController<>("attack", 2, this::attackController));
         // 挂在身上的突变器官各用自己的渲染状态取 clip（本体管理器读不到 clip，CONTINUE 即什么都不播）
         controllers.add(new AnimationController<LowerLevelZbEntity>("custom_organs", 4, test -> {
@@ -190,6 +219,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     private PlayState movementController(AnimationTest<LowerLevelZbEntity> test) {
         // Accessory managers must not also animate the host's body clips.
         if (test.getData(xiaoshi2022.corpseorigin.entity.animation.ZbLayerAnimationCache.CLIP) != null) return PlayState.STOP;
+        if (isCorpse()) return PlayState.STOP;
+        if (isFeigning()) return test.setAndContinue(IDLE_ANIM);
         if (isDeadOrDying() && xiaoshi2022.corpseorigin.growth.CorpseHorror.applies(this)) return test.setAndContinue(DEATH_ANIM);
         if (getGrappleTarget() >= 0) return test.setAndContinue(GNAW_ANIM);
         // A short grace period avoids repeatedly restarting idle on tiny movement fluctuations.
@@ -339,7 +370,10 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(DATA_CORPSE_EYE, false);
+        builder.define(DATA_CORPSE, false);
         builder.define(DATA_CRACKED, false);
+        builder.define(DATA_HEADLESS, false);
+        builder.define(DATA_FEIGNING, false);
         builder.define(DATA_RIBS_VISIBLE, false);
         builder.define(DATA_PLAYER_NAME, "");
         builder.define(DATA_CUSTOM_ID, "");
@@ -529,15 +563,18 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     private boolean corpse;
     private int corpseBites;
 
-    public boolean isCorpse() { return corpse; }
+    public boolean isCorpse() { return entityData.get(DATA_CORPSE); }
 
     /** 死亡动画结束后转为留场尸体（由 CorpseHorror.deathTick 调用）：返回 false = 不留尸（按原逻辑移除）。 */
     public boolean tryEnterCorpse() {
         if (this.isRemoved() || corpse) return false;
         corpse = true;
+        entityData.set(DATA_CORPSE, true);
         corpseBites = 2 + this.getEvolutionLevel() / 3; // 等级越高的尸体肉越多（2~5 口）
         this.getNavigation().stop();
         this.setTarget(null);
+        xiaoshi2022.corpseorigin.CorpseOrigin.LOGGER.info(
+                "[ZbCorpse] entity#{} entered corpse state (bites={})", this.getId(), corpseBites);
         return true;
     }
 
@@ -553,6 +590,18 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         return true;
     }
 
+    /** 侦察+防御：留尸状态绝不允许被回血（corpse+血>0 就会"站着不动"假复活）——谁回的血，堆栈直接指出来 */
+    @Override
+    public void setHealth(float health) {
+        if (corpse && health > 0.0F) {
+            xiaoshi2022.corpseorigin.CorpseOrigin.LOGGER.warn(
+                    "[ZbCorpse] BLOCKED setHealth({}) on corpse entity#{} — culprit stack:",
+                    health, this.getId(), new Exception("[ZbCorpse] corpse-heal trace"));
+            return;
+        }
+        super.setHealth(health);
+    }
+
     // ==================== Tick ====================
 
     @Override
@@ -560,13 +609,23 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         super.tick();
 
         if (!this.level().isClientSide()) {
+            if (feignTicks > 0 && --feignTicks == 0) {
+                entityData.set(DATA_FEIGNING, false);
+                setCracked(true);
+                this.setHealth(Math.max(1.0F, this.getMaxHealth() * 0.6F));
+                xiaoshi2022.corpseorigin.CorpseOrigin.LOGGER.info(
+                        "[ZbCorpse] feign revive: entity#{} headless={} hp={}",
+                        this.getId(), isHeadless(), this.getHealth());
+            }
             entityData.set(DATA_HORROR_ACTIVE, xiaoshi2022.corpseorigin.growth.CorpseHorror.applies(this));
             entityData.set(DATA_RIBS_VISIBLE, xiaoshi2022.corpseorigin.growth.CorpseHorror.ribsVisible(this));
             xiaoshi2022.corpseorigin.growth.CorpseHorror.tick(this);
             if (!isCorpse()) {
-                // ✅ 每 200 tick（10秒）降低 1 点饥饿值
-                if (this.tickCount % 200 == 0) {
+                // 尸兄饥饿：按配置速度衰减（每只生成时随机个体速度，GUI"尸兄饥饿"页可调）
+                var hungerCfg = xiaoshi2022.corpseorigin.config.CorpseConfig.get().spawn.zbHunger;
+                if (hungerCfg.secondsPerPoint > 0 && --hungerDrainCounter <= 0) {
                     setHunger(getHunger() - 1);
+                    hungerDrainCounter = Math.max(1, (int) (20F * hungerCfg.secondsPerPoint / hungerRate()));
                 }
 
                 // 突变器官效果（解剖属性 / 夜视 / 翅膀缓落）
@@ -595,13 +654,47 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     /** 尸体阶段完全停摆：不索敌、不寻路、不捡拾、不转头 */
     @Override
     public void aiStep() {
-        if (isCorpse()) return;
+        if (isCorpse() || isFeigning()) return;
         super.aiStep();
     }
 
     @Override
     public boolean isImmobile() {
-        return isCorpse() || super.isImmobile();
+        return isCorpse() || isFeigning() || super.isImmobile();
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        if (isFeigning() || isCorpse()) return false;
+        if (getType() == xiaoshi2022.corpseorigin.registry.ModEntities.LOWER_LEVEL_ZB
+                && !isHeadless() && getEvolutionLevel() <= 3
+                && source.getEntity() instanceof LivingEntity attacker
+                && source.getDirectEntity() == attacker
+                && !source.is(DamageTypeTags.IS_EXPLOSION)
+                && (attacker.getMainHandItem().is(net.minecraft.tags.ItemTags.AXES)
+                    || attacker.getMainHandItem().is(net.minecraft.tags.ItemTags.SWORDS))
+                && (amount >= 6.0F || amount >= getHealth())
+                && random.nextFloat() < (attacker.getMainHandItem().is(net.minecraft.tags.ItemTags.AXES) ? 0.99F : 0.7F)) {
+            entityData.set(DATA_HEADLESS, true);
+            entityData.set(DATA_FEIGNING, true);
+            feignTicks = 80 + random.nextInt(81);
+            setHealth(Math.max(1.0F, getHealth() - amount));
+            getNavigation().stop();
+            setTarget(null);
+            if (random.nextFloat() < 0.55F) {
+                var head = xiaoshi2022.corpseorigin.registry.ModEntities.SEVERED_ZB_HEAD.create(level, EntitySpawnReason.TRIGGERED);
+                if (head != null) {
+                    head.setAppearance(getPlayerSkinName(), hasCorpseEye(), isCracked());
+                    head.setSource(getId());
+                    head.setPos(getX(), getY() + 1.45, getZ());
+                    head.setDeltaMovement((random.nextDouble() - 0.5) * 0.35, 0.3, (random.nextDouble() - 0.5) * 0.35);
+                    level.addFreshEntity(head);
+                }
+            }
+            xiaoshi2022.corpseorigin.growth.CorpseHorror.blood(level, position().add(0, 1.5, 0), 18);
+            return true;
+        }
+        return super.hurtServer(level, source, amount);
     }
 
     @Environment(EnvType.CLIENT)
@@ -675,25 +768,38 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         super.addAdditionalSaveData(output);
         output.putBoolean("HasCorpseEye",hasCorpseEye());
         output.putBoolean("CrackedAppearance",isCracked());
+        output.putBoolean("Headless", isHeadless());
+        output.putInt("FeignTicks", feignTicks);
         if (hasFavoriteItems()) output.putString("FavoriteItems", favoriteItems);
         output.putString("PlayerSkinName", this.entityData.get(DATA_PLAYER_NAME));
         output.putString("CustomId", this.getCustomId());
         output.putInt("SkinState", this.entityData.get(DATA_SKIN_STATE));
         output.putInt("EvolutionLevel", this.getEvolutionLevel());
         output.putInt("Hunger", this.getHunger());
+        output.putFloat("HungerRate", hungerRate());
         output.putInt("FleshEnergy", this.fleshEnergy);
         output.putInt("BreakthroughFailures", this.breakthroughFailures);
         output.putString("OrganLoadout", this.getOrganLoadout());
         output.putBoolean("HorrorWormsReleased", horrorWormsReleased);
+        // 留场尸体状态必须持久化：否则实体块卸载重载后 corpse 丢失，尸体重新播死亡动画甚至复活
+        if (corpse) {
+            output.putBoolean("HorrorCorpse", true);
+            output.putInt("CorpseBites", corpseBites);
+            output.putInt("CorpseDeathTime", deathTime);
+        }
     }
 
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
+        float savedHealth = getHealth();
         // Old saves get one stable UUID-based roll; new saves retain the explicit choice.
         setCorpseEye(input.getBooleanOr("HasCorpseEye",Math.floorMod(getUUID().hashCode(),5)==0));
         setFavoriteItems(input.getStringOr("FavoriteItems", ""));
         setCracked(input.getBooleanOr("CrackedAppearance",Math.floorMod(Long.hashCode(getUUID().getMostSignificantBits()),10)<3));
+        entityData.set(DATA_HEADLESS, input.getBooleanOr("Headless", false));
+        feignTicks = Math.max(0, input.getIntOr("FeignTicks", 0));
+        entityData.set(DATA_FEIGNING, feignTicks > 0);
 
         Optional<String> skinNameOpt = input.getString("PlayerSkinName");
         skinNameOpt.ifPresent(name -> this.entityData.set(DATA_PLAYER_NAME, name));
@@ -706,10 +812,28 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
 
         Optional<Integer> levelOpt = input.getInt("EvolutionLevel");
         levelOpt.ifPresent(this::setEvolutionLevel);
+        // Evolution restores attributes, but loading must not heal living mobs or revive corpses.
+        setHealth(Math.min(savedHealth, getMaxHealth()));
 
         this.fleshEnergy = input.getIntOr("FleshEnergy", 0);
         this.breakthroughFailures = input.getIntOr("BreakthroughFailures", 0);
+        // 老存档只存了没读，这里补上；HungerRate 缺失时保持 -1（下次 tick 惰性重掷）
+        this.setHunger(input.getIntOr("Hunger", 100));
+        this.hungerRate = input.getFloatOr("HungerRate", -1F);
         this.setOrganLoadout(input.getStringOr("OrganLoadout", "[]"));
         this.horrorWormsReleased = input.getBooleanOr("HorrorWormsReleased", false);
+        // 恢复留场尸体状态（风化进度按 deathTime 续算）
+        if (input.getBooleanOr("HorrorCorpse", false)) {
+            this.corpse = true;
+            entityData.set(DATA_CORPSE, true);
+            feignTicks = 0;
+            entityData.set(DATA_FEIGNING, false);
+            setHealth(0.0F);
+            this.corpseBites = Math.max(1, input.getIntOr("CorpseBites", 2 + this.getEvolutionLevel() / 3));
+            this.deathTime = Math.max(48, input.getIntOr("CorpseDeathTime", 48));
+            xiaoshi2022.corpseorigin.CorpseOrigin.LOGGER.info(
+                    "[ZbCorpse] entity#{} restored corpse from save (deathTime={}, bites={}, hp={})",
+                    this.getId(), this.deathTime, this.corpseBites, this.getHealth());
+        }
     }
 }

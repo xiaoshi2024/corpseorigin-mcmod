@@ -1,0 +1,35 @@
+{
+  "parent": "corpseorigin:get_s_agent",
+  "display": {
+    "icon": {
+      "id": "corpseorigin:blue_s_agent"
+    },
+    "title": {
+      "translate": "advancements.corpseorigin.get_blue_s_agent.title"
+    },
+    "description": {
+      "translate": "advancements.corpseorigin.get_blue_s_agent.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "get_blue_s_agent": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "corpseorigin:blue_s_agent"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    ["get_blue_s_agent"]
+  ],
+  "rewards": {
+    "experience": 10
+  }
+}

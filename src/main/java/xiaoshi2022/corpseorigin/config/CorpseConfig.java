@@ -293,6 +293,21 @@ public final class CorpseConfig {
         /** 每次突破失败后叠加的成功率（0~0.5），直到突破为止。 */
         public float zbEvolutionBreakthroughBonus = 0.10F;
 
+        // ---- 尸兄饥饿：衰减速度与个体随机差异，GUI"尸兄饥饿"页可调（见 LowerLevelZbEntity）----
+        public ZbHunger zbHunger = new ZbHunger();
+
+        /** 尸兄饥饿参数：饿得越快，吃同类尸体（ZbCorpseFeedingGoal）越频繁 */
+        public static final class ZbHunger {
+            /** 每 X 秒掉 1 点饥饿；0 = 关闭自然衰减 */
+            public int secondsPerPoint = 5;
+            /** 个体随机幅度（%）：每只尸兄生成时在 ±X% 内随机自己的衰减速度 */
+            public int randomPercent = 50;
+            /** 饥饿判定阈值：低于此值视为"饿"，触发吃同类尸体等索食行为 */
+            public int hungerThreshold = 30;
+            /** 啃尸最低进化等级：低于此等级的尸兄不啃同类尸体（0 = 全员都会啃） */
+            public int feedingMinLevel = 5;
+        }
+
         /** Natural Corpse Brother spawn chance outside city chunks in a Lost Cities dimension. */
         public float lostCitiesOutsideSpawnChance = 0.025F;
     }
@@ -621,6 +636,14 @@ public final class CorpseConfig {
         if (spawn.worldThreat == null) {
             spawn.worldThreat = new Spawn.WorldThreat();
         }
+        // 同理：尸兄饥饿参数（老文件里没有这一节）
+        if (spawn.zbHunger == null) {
+            spawn.zbHunger = new Spawn.ZbHunger();
+        }
+        spawn.zbHunger.secondsPerPoint = (int) clamp(spawn.zbHunger.secondsPerPoint, 0, 600);
+        spawn.zbHunger.randomPercent = (int) clamp(spawn.zbHunger.randomPercent, 0, 90);
+        spawn.zbHunger.hungerThreshold = (int) clamp(spawn.zbHunger.hungerThreshold, 1, 100);
+        spawn.zbHunger.feedingMinLevel = (int) clamp(spawn.zbHunger.feedingMinLevel, 0, 20);
         // 同理：漫展尸兄事件召唤参数（老文件里没有这一节）
         if (spawn.manzhan == null) {
             spawn.manzhan = new Spawn.Manzhan();

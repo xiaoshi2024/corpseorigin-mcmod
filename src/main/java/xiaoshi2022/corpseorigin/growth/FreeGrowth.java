@@ -75,6 +75,9 @@ public final class FreeGrowth {
     }
     public static boolean hasQiSense(ServerPlayer p) { return InnerPowerManager.hasQiSense(p); }
     public static void opportunity(ServerPlayer p,String event){
+        opportunity(p,event,true);
+    }
+    public static void opportunity(ServerPlayer p,String event,boolean awakenQi){
         if(!isFree(p))return;
         var journal=p.getAttachedOrCreate(SurvivalGrowth.JOURNAL).copy();
         if(journal.getBooleanOr("free_event:"+event,false))return;
@@ -90,7 +93,7 @@ public final class FreeGrowth {
             discovery=cfg.explorationOpportunitiesEnabled && OpportunityRules.roll(p.getRandom().nextDouble(),cfg.explorationOpportunityChance);
             if(!discovery)p.sendSystemMessage(Component.translatable("message.corpseorigin.free_growth.text_03"));
         }else if(event.startsWith("flesh_count:"))discovery=cfg.fleshOpportunitiesEnabled;
-        if(!discovery){if(!event.startsWith("flesh_count:"))awaken(p);return;}
+        if(!discovery){if(awakenQi && !event.startsWith("flesh_count:"))awaken(p);return;}
         var data=PlayerCharacterData.get(p);
         int level=EvolutionManager.getLevel(data.getEarnedPoints(p.getUUID()));
         var choices=skills().stream().filter(s->s.getUnlockSources().isEmpty()
@@ -102,7 +105,7 @@ public final class FreeGrowth {
             // Discover the prerequisite chain too, so random opportunities cannot strand a branch.
             discoverChain(p,choice,new HashSet<>());
         } else p.sendOverlayMessage(Component.translatable("message.corpseorigin.free_growth.text_04"));
-        if (!event.startsWith("flesh_count:")) awaken(p);
+        if (awakenQi && !event.startsWith("flesh_count:")) awaken(p);
         xiaoshi2022.corpseorigin.skill.unlock.SkillUnlockManager.grantUnlocked(p,false);
         CorpseNetwork.sendEvolutionSync(p);
     }

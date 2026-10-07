@@ -36,10 +36,11 @@ public final class ZbCorpseFeedingGoal extends Goal {
         setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
     }
 
-    /** 高阶（≥临界线）、饿了、且没有活体要打时才会去啃尸体 */
+    /** 饿了、没有活体要打、且进化等级达到啃尸门槛（GUI"尸兄饥饿"页可调）时才会去啃尸体 */
     private boolean eligible() {
         if (zb.isDeadOrDying() || zb.isCorpse()) return false;
-        if (zb.getEvolutionLevel() < ZbEvolution.breakthroughLevel()) return false;
+        int minLevel = xiaoshi2022.corpseorigin.config.CorpseConfig.get().spawn.zbHunger.feedingMinLevel;
+        if (zb.getEvolutionLevel() < minLevel) return false;
         if (zb.getTarget() != null) return false;
         return zb.isHungry();
     }

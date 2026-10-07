@@ -463,6 +463,28 @@ public class CorpseConfigScreen extends Screen {
                         () -> threatDef.maxLevelsCounted, 1, 20, () -> String.valueOf(threat.maxLevelsCounted)));
         pages.add(new Page("gui.corpseorigin.config.page_threat", threatFields));
 
+        // ---- 第 8 页：尸兄饥饿（衰减速度/个体随机/阈值，见 LowerLevelZbEntity）----
+        var zbHunger = spawn.zbHunger;
+        var zbHungerDef = new CorpseConfig.Spawn.ZbHunger();
+        List<Field> zbHungerFields = List.of(
+                new IntF("gui.corpseorigin.config.f.zb_hunger_seconds",
+                        () -> zbHunger.secondsPerPoint, v -> zbHunger.secondsPerPoint = v,
+                        () -> zbHungerDef.secondsPerPoint, 0, 600,
+                        () -> zbHunger.secondsPerPoint == 0 ? "关闭" : zbHunger.secondsPerPoint + "秒/点"),
+                new IntF("gui.corpseorigin.config.f.zb_hunger_random",
+                        () -> zbHunger.randomPercent, v -> zbHunger.randomPercent = v,
+                        () -> zbHungerDef.randomPercent, 0, 90,
+                        () -> "±" + zbHunger.randomPercent + "%"),
+                new IntF("gui.corpseorigin.config.f.zb_hunger_threshold",
+                        () -> zbHunger.hungerThreshold, v -> zbHunger.hungerThreshold = v,
+                        () -> zbHungerDef.hungerThreshold, 1, 100,
+                        () -> "低于" + zbHunger.hungerThreshold + "算饿"),
+                new IntF("gui.corpseorigin.config.f.zb_hunger_feeding_level",
+                        () -> zbHunger.feedingMinLevel, v -> zbHunger.feedingMinLevel = v,
+                        () -> zbHungerDef.feedingMinLevel, 0, 20,
+                        () -> "≥" + zbHunger.feedingMinLevel + "级才啃尸"));
+        pages.add(new Page("gui.corpseorigin.config.page_zb_hunger", zbHungerFields));
+
         // ---- 第 2 页：尸兄虫事件 + 尸兄进化 ----
         List<Field> wormFields = List.of(
                 new IntF("gui.corpseorigin.config.f.worm_first_day",

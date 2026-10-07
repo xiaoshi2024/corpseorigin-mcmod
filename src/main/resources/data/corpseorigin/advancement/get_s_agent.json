@@ -1,0 +1,35 @@
+{
+  "parent": "corpseorigin:kill_zb_with_hair_dryer",
+  "display": {
+    "icon": {
+      "id": "corpseorigin:s_agent"
+    },
+    "title": {
+      "translate": "advancements.corpseorigin.get_s_agent.title"
+    },
+    "description": {
+      "translate": "advancements.corpseorigin.get_s_agent.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "criteria": {
+    "get_s_agent": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "corpseorigin:s_agent"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    ["get_s_agent"]
+  ],
+  "rewards": {
+    "experience": 10
+  }
+}

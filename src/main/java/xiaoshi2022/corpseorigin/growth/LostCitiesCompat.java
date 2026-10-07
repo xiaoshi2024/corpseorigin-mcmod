@@ -67,7 +67,7 @@ public final class LostCitiesCompat {
         var journal = player.getAttachedOrCreate(SurvivalGrowth.JOURNAL).copy();
         journal.putBoolean(EVENT, true);
         player.setAttached(SurvivalGrowth.JOURNAL, journal);
-        FreeGrowth.opportunity(player, EVENT);
+        FreeGrowth.opportunity(player, EVENT, false);
         int points = EvolutionEventHandler.awardPoints(player, cfg.lostCitiesDiscoveryPoints);
         player.sendSystemMessage(Component.translatable("growth.corpseorigin.lostcities_discovered", points));
     }

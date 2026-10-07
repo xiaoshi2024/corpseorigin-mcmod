@@ -222,6 +222,7 @@ public class CorpseOriginClient implements ClientModInitializer {
 
         // 2. 实体渲染
         EntityRendererRegistry.register(ModEntities.LOWER_LEVEL_ZB, LowerLevelZbRenderer::new);
+        EntityRendererRegistry.register(ModEntities.SEVERED_ZB_HEAD, xiaoshi2022.corpseorigin.client.renderer.entity.SeveredZbHeadRenderer::new);
         EntityRendererRegistry.register(ModEntities.ZISHU_ROBOT, xiaoshi2022.corpseorigin.client.renderer.entity.ZishuRobotRenderer::new);
         EntityRendererRegistry.register(ModEntities.ZISHU_ION_BALL, context -> new net.minecraft.client.renderer.entity.ThrownItemRenderer<>(context, 1.5f, true));
         EntityRendererRegistry.register(ModEntities.CORPSE_MAGGOT, xiaoshi2022.corpseorigin.client.renderer.entity.CorpseMaggotRenderer::new);

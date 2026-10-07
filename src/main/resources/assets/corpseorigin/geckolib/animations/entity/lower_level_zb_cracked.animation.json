@@ -1,6 +1,18 @@
 {
   "format_version": "1.8.0",
   "animations": {
+    "corpse_rest": {
+      "loop": true,
+      "animation_length": 1,
+      "bones": {
+        "Waist": {"rotation": [-90, 0, 0], "position": [0, -10, 0]},
+        "Head": {"rotation": [-20, 0, 0]},
+        "Right Arm": {"rotation": [-5, 0, 35]},
+        "Left Arm": {"rotation": [-5, 0, -35]},
+        "Right Leg": {"rotation": [-80, 0, 8], "position": [0, -10, 0]},
+        "Left Leg": {"rotation": [-85, 0, -10], "position": [0, -10, 0]}
+      }
+    },
     "attack": {
       "animation_length": 0.5,
       "bones": {
