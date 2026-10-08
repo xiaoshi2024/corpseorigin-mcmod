@@ -41,7 +41,7 @@ import java.util.Optional;
 
 // 删除: import xiaoshi2022.corpseorigin.client.renderer.state.ZbEntityRenderState;
 
-public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, ZombieKin, xiaoshi2022.corpseorigin.entity.FavoriteItemHolder {
+public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, ZombieKin, xiaoshi2022.corpseorigin.entity.FavoriteItemHolder, RealmRated {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -414,19 +414,40 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         updateAttributesForEvolution();
     }
 
+    /**
+     * Jade 境界显示：按进化等级映射到境界表绝对等级（1~20）。
+     * <p>
+     * 映射规则（进化等级 1~10 → 境界）：
+     * <ul>
+     *   <li>1 → 人1，2 → 人2，3 → 人3，4 → 人4</li>
+     *   <li>5 → 地1，6 → 地2，7 → 地3，8 → 地4</li>
+     *   <li>9 → 天，10 → 神初</li>
+     * </ul>
+     * 此前 Jade 显示走 {@code ZbRatings.of(type)} 基础评级表，低阶尸兄写死人3，
+     * 导致 {@code /summonzb level 1} 显示还是"人3"，现在按实际进化等级显示。
+     */
+    @Override
+    public int corpseRealmLevel() {
+        return Math.max(1, Math.min(10, getEvolutionLevel()));
+    }
+
     protected void updateAttributesForEvolution() {
         int level = getEvolutionLevel();
         if (this.getAttribute(Attributes.MAX_HEALTH) != null) {
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(30.0 + level * 8.0);
+            // 1级=26（铁剑5下/消防斧3下），5级=50，10级=80
+            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(20.0 + level * 6.0);
         }
         if (this.getAttribute(Attributes.ATTACK_DAMAGE) != null) {
-            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(5.0 + level * 2.5);
+            // 1级=4.5（无甲玩家20血挨5下才死），5级=10.5，10级=18
+            this.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(3.0 + level * 1.5);
         }
         if (this.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
-            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.33 + level * 0.02);
+            // 1级=0.26（≈玩家行走0.25，房间里躲得开），5级=0.30，10级=0.35
+            this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.25 + level * 0.01);
         }
         if (this.getAttribute(Attributes.ARMOR) != null) {
-            this.getAttribute(Attributes.ARMOR).setBaseValue(4.0 + level * 1.5);
+            // 1级=3，5级=7，10级=12
+            this.getAttribute(Attributes.ARMOR).setBaseValue(2.0 + level * 1.0);
         }
         this.setHealth(this.getMaxHealth());
     }
