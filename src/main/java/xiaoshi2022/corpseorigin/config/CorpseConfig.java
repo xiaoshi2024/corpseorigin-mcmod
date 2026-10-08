@@ -61,6 +61,11 @@ public final class CorpseConfig {
     /** 七星棺：沉棺事件 / 尸水污染 / 自动开馆参数 */
     public QiXingGuan qiXingGuan = new QiXingGuan();
     /**
+     * 感染领域（龙右主动技能）：可调半径的感染领域，范围内的原版怪物被周期性感染为半尸兄。
+     * 见 {@link xiaoshi2022.corpseorigin.skill.longyou.InfectionDomainHandler}。
+     */
+    public InfectionDomain infectionDomain = new InfectionDomain();
+    /**
      * 配置文件版本号：每次新增需要"老配置文件迁移"的字段时把它 +1。
      * <p>
      * 字段默认值是当前最新版本；老文件里没有这一项时 Gson 反序列化为 0，触发 sanitize 里的迁移分支。
@@ -84,6 +89,57 @@ public final class CorpseConfig {
         public int autoOpenSeconds = 300;
         /** 沉棺事件把周边多少格半径内的水源染成尸水。 */
         public int infectRadius = 8;
+    }
+
+    /**
+     * 感染领域参数（龙右主动技能）。
+     * <p>
+     * 见 {@link xiaoshi2022.corpseorigin.skill.longyou.InfectionDomainHandler}。
+     * 改完执行 {@code /corpseconfig reload} 生效；新增字段时记得在 {@link #sanitize()} 补 clamp。
+     */
+    public static final class InfectionDomain {
+        /** 总闸。关闭后龙右无法展开感染领域（已展开的会被立即清掉）。 */
+        public boolean enabled = true;
+        /**
+         * 领域半径（格）。范围 8~512。
+         * <p>
+         * 默认 32 格 ≈ 一个小型据落；想覆盖整座失落城市可调到 256+，
+         * 配合 {@link #cityCoverageMultiplier} 与 Lost City 模组联动可一次性笼罩整城。
+         */
+        public int radius = 32;
+        /**
+         * Lost City 城市覆盖半径倍率（1~4）。
+         * <p>
+         * Lost Cities 模组加载且 {@link #enableLostCityIntegration}=true 时，
+         * 实际扫描半径 = {@link #radius} × 此倍率，并优先取 LostCityAPI 提供的城市边界。
+         */
+        public float cityCoverageMultiplier = 2.0F;
+        /**
+         * 感染概率（0~1）：领域每次扫描命中 Monster 子类实体时施加感染效果的概率。
+         * <p>
+         * 默认 0.3（30%）—— 与龙右近战重伤目标的 35% 概率同档。
+         */
+        public float infectionChance = 0.3F;
+        /**
+         * 扫描间隔（tick）。默认 40 = 2 秒一次；大半径建议调到 100（5 秒）避免卡服。
+         */
+        public int scanIntervalTicks = 40;
+        /**
+         * 同族传播概率（0~1）：半尸兄攻击原版同类时感染对方的概率。
+         * <p>
+         * 默认 0.05（5%），远低于龙右本体的 30% —— 制造"尸潮蔓延"但不失控。
+         */
+        public float spreadChance = 0.05F;
+        /**
+         * 饱食度消耗间隔（tick）。开着领域期间每这么久扣一次 {@code 0.5} 饱食度。
+         * 默认 20 = 1 秒一次，约 8 秒掉 1 点饥饿。
+         */
+        public int hungerCostInterval = 20;
+        /**
+         * 是否启用 Lost Cities 模组联动。装了模组且此项为 true 时，
+         * 领域范围自动按 cityCoverageMultiplier 扩展并优先取城市边界。
+         */
+        public boolean enableLostCityIntegration = true;
     }
 
     /** 自然生成的权重与"尸水泉聚集"参数。权重参照原版僵尸 = 100 */
@@ -607,6 +663,14 @@ public final class CorpseConfig {
         if (qiXingGuan == null) qiXingGuan = new QiXingGuan();
         qiXingGuan.autoOpenSeconds = (int) clamp(qiXingGuan.autoOpenSeconds, 0, 86400);
         qiXingGuan.infectRadius = (int) clamp(qiXingGuan.infectRadius, 1, 32);
+        // 感染领域：老配置文件里没有这一节
+        if (infectionDomain == null) infectionDomain = new InfectionDomain();
+        infectionDomain.radius = (int) clamp(infectionDomain.radius, 8, 512);
+        infectionDomain.cityCoverageMultiplier = (float) clamp(infectionDomain.cityCoverageMultiplier, 1.0F, 4.0F);
+        infectionDomain.infectionChance = (float) clamp(infectionDomain.infectionChance, 0.0F, 1.0F);
+        infectionDomain.scanIntervalTicks = (int) clamp(infectionDomain.scanIntervalTicks, 20, 200);
+        infectionDomain.spreadChance = (float) clamp(infectionDomain.spreadChance, 0.0F, 1.0F);
+        infectionDomain.hungerCostInterval = (int) clamp(infectionDomain.hungerCostInterval, 20, 200);
         if (characterBooks == null) characterBooks = new CharacterBooks();
         if (characterBooks.disabledCharacters == null) characterBooks.disabledCharacters = new ArrayList<>();
         if (growth == null) growth = new xiaoshi2022.corpseorigin.growth.GrowthConfig();

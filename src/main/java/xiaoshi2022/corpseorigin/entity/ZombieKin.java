@@ -14,6 +14,20 @@ public interface ZombieKin {
         return true;
     }
 
+    /**
+     * 这只尸族是不是"半尸兄"（混血尸兄）。
+     * <p>
+     * 半尸兄由原版怪物（僵尸/末影人/苦力怕等）被龙右感染领域或近战感染后转换而来，
+     * 基底是 {@link LowerLevelZbEntity}，但通过 {@link HybridZombie#tagAsHybrid} 写入了
+     * {@link HybridZombie#ORIGINAL_SPECIES} 等标签，保留原宿主类型信息。
+     * <p>
+     * 默认 false：普通尸族（含 LowerLevelZbEntity 未带半尸兄标签的）不算半尸兄。
+     * 半尸兄仍属尸族（{@link #isZombieKin} 仍返回 true），但能继续参与同族传播。
+     */
+    default boolean isHybrid() {
+        return false;
+    }
+
     default int getHunger() {
         return 100;
     }

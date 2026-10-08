@@ -3,6 +3,7 @@ package xiaoshi2022.corpseorigin.event;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -22,9 +23,16 @@ import xiaoshi2022.corpseorigin.entity.ZombieKin;
 import xiaoshi2022.corpseorigin.registry.ModEffects;
 import xiaoshi2022.corpseorigin.registry.ModFluids;
 import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
+import xiaoshi2022.corpseorigin.skill.longyou.InfectionDomainHandler;
+import xiaoshi2022.corpseorigin.skill.longyou.InfectionDomainSkill;
 import xiaoshi2022.corpseorigin.skill.longyou.ThunderPowerSkill;
 import xiaoshi2022.corpseorigin.skill.longyou.ThunderStrikeHandler;
 import xiaoshi2022.corpseorigin.skill.longyou.WaterPollutionSkill;
+import xiaoshi2022.corpseorigin.entity.HybridZombie;
+import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
+import xiaoshi2022.corpseorigin.config.CorpseConfig;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.monster.Monster;
 
 /**
  * 龙右专属事件处理。
@@ -181,7 +189,85 @@ public final class LongYouEventHandler {
             }
         });
 
+        // ==================== 感染领域（龙右主动开关技能） ====================
+        // tick 推进：每 tick 推进所有活跃领域，按 scanIntervalTicks 节流做感染扫描
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            InfectionDomainHandler.tick(server);
+
+            // 感染领域饱食度消耗：与尸水之源同模式（开着的龙右按相位扣）
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                if (!isInfectionDomainActive(player)) {
+                    continue;
+                }
+                int phase = player.tickCount + player.getId();
+                if (phase % InfectionDomainSkill.HUNGER_INTERVAL == 0 && !drainHungerForDomain(player)) {
+                    continue;
+                }
+            }
+        });
+
+        // ==================== 同族传播：半尸兄攻击原版同类时有低概率感染 ====================
+        ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
+            if (blocked || damageTaken <= 0.0F) {
+                return;
+            }
+            if (!(source.getDirectEntity() instanceof LivingEntity attacker)
+                    || !(entity instanceof Monster target)) {
+                return;
+            }
+            // 攻击者必须是半尸兄（带 HybridZombie 标签的 LowerLevelZbEntity）
+            if (!(attacker instanceof LowerLevelZbEntity) || !HybridZombie.isHybrid(attacker)) {
+                return;
+            }
+            // 目标不能是尸族（已是尸族不感染）
+            if (ZombieKin.isZombieKin(target) || target.hasEffect(ModEffects.QIANS)) {
+                return;
+            }
+            // 同族判定：半尸兄的 original_species 必须等于目标的实体类型 id
+            String attackerSpecies = HybridZombie.speciesKey(attacker);
+            String targetSpecies = EntityType.getKey(target.getType()).toString();
+            if (attackerSpecies == null || !attackerSpecies.equals(targetSpecies)) {
+                return;
+            }
+            // 配置 spreadChance 概率感染（默认 5%，远低于龙右本体 30%）
+            CorpseConfig.InfectionDomain cfg = CorpseConfig.get().infectionDomain;
+            if (cfg == null || !cfg.enabled) {
+                return;
+            }
+            if (attacker.getRandom().nextFloat() >= cfg.spreadChance) {
+                return;
+            }
+            // 感染代数累加：半尸兄代数 +1（龙右本体感染=1，半尸兄传播=2，再下一级=3...）
+            int nextGeneration = HybridZombie.generation(attacker) + 1;
+            // 标记传播源为半尸兄（applyInfection 会写 infectionSource）
+            BYeffect.applyInfection(target, (ServerLevel) attacker.level(), attacker.getUUID());
+            // 把代数预标记到目标身上（通过 entityTags 临时存，转换时取出）
+            target.addTag(HybridZombie.INFECTION_GENERATION + "_pending:" + nextGeneration);
+            infectFeedback((ServerLevel) attacker.level(), target);
+        });
+
         CorpseOrigin.LOGGER.info("LongYou events registered");
+    }
+
+    /** 该玩家是不是"开着感染领域的龙右" */
+    private static boolean isInfectionDomainActive(ServerPlayer player) {
+        if (!LongYou.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(player))) {
+            return false;
+        }
+        return InfectionDomainHandler.isActive(player.getUUID());
+    }
+
+    /**
+     * 感染领域饱食度消耗：饿到见底自动关闭领域。
+     */
+    private static boolean drainHungerForDomain(ServerPlayer player) {
+        if (player.getFoodData().getFoodLevel() <= 0) {
+            InfectionDomainHandler.release(player.getUUID());
+            player.sendOverlayMessage(Component.translatable("skill.corpseorigin.infection_domain.starving"));
+            return false;
+        }
+        player.causeFoodExhaustion(InfectionDomainSkill.HUNGER_EXHAUSTION);
+        return true;
     }
 
     /** 该玩家是不是"开着尸水之源的龙右" */

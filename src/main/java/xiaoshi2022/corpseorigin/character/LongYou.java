@@ -49,6 +49,8 @@ public class LongYou implements ICharacter {
             new BallLightningSkill(),
             new CorpseKingInfrasoundSkill(),
             new WaterPollutionSkill(),
+            // 感染领域：龙右展开可调半径的感染领域，范围内的原版怪物被周期性感染为半尸兄
+            new InfectionDomainSkill(),
             new CorpseBrotherRallySkill(),
             new NestSenseSkill(),
             // 换身体的两手：缩进原体 / 重塑一具新身体（旧身体都会蜕成分身）

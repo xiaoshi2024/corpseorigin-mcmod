@@ -485,6 +485,42 @@ public class CorpseConfigScreen extends Screen {
                         () -> "≥" + zbHunger.feedingMinLevel + "级才啃尸"));
         pages.add(new Page("gui.corpseorigin.config.page_zb_hunger", zbHungerFields));
 
+        // ---- 第 9 页：感染领域（龙右主动技能） ----
+        var domain = c.infectionDomain;
+        var domainDef = new CorpseConfig.InfectionDomain();
+        List<Field> domainFields = List.of(
+                new BoolF("gui.corpseorigin.config.f.infection_domain_enabled",
+                        () -> domain.enabled, v -> domain.enabled = v,
+                        () -> domainDef.enabled),
+                new IntF("gui.corpseorigin.config.f.infection_domain_radius",
+                        () -> domain.radius, v -> domain.radius = v,
+                        () -> domainDef.radius, 8, 512,
+                        () -> domain.radius + "格"),
+                new FloatF("gui.corpseorigin.config.f.infection_domain_city_mult",
+                        () -> domain.cityCoverageMultiplier, v -> domain.cityCoverageMultiplier = (float) v,
+                        () -> (double) domainDef.cityCoverageMultiplier, 1F, 4F,
+                        () -> "×" + fmtFloat(domain.cityCoverageMultiplier)),
+                new FloatF("gui.corpseorigin.config.f.infection_domain_chance",
+                        () -> domain.infectionChance, v -> domain.infectionChance = (float) v,
+                        () -> (double) domainDef.infectionChance, 0F, 1F,
+                        () -> fmtPct(domain.infectionChance)),
+                new IntF("gui.corpseorigin.config.f.infection_domain_scan_interval",
+                        () -> domain.scanIntervalTicks, v -> domain.scanIntervalTicks = v,
+                        () -> domainDef.scanIntervalTicks, 20, 200,
+                        () -> (domain.scanIntervalTicks / 20) + "秒/次"),
+                new FloatF("gui.corpseorigin.config.f.infection_domain_spread",
+                        () -> domain.spreadChance, v -> domain.spreadChance = (float) v,
+                        () -> (double) domainDef.spreadChance, 0F, 1F,
+                        () -> fmtPct(domain.spreadChance)),
+                new IntF("gui.corpseorigin.config.f.infection_domain_hunger_cost",
+                        () -> domain.hungerCostInterval, v -> domain.hungerCostInterval = v,
+                        () -> domainDef.hungerCostInterval, 20, 200,
+                        () -> (domain.hungerCostInterval / 20) + "秒/口"),
+                new BoolF("gui.corpseorigin.config.f.infection_domain_lostcity",
+                        () -> domain.enableLostCityIntegration, v -> domain.enableLostCityIntegration = v,
+                        () -> domainDef.enableLostCityIntegration));
+        pages.add(new Page("gui.corpseorigin.config.page_infection_domain", domainFields));
+
         // ---- 第 2 页：尸兄虫事件 + 尸兄进化 ----
         List<Field> wormFields = List.of(
                 new IntF("gui.corpseorigin.config.f.worm_first_day",

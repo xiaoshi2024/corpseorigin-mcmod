@@ -66,7 +66,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
             SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.BOOLEAN);
     private int feignTicks;
     public boolean isHeadless() { return entityData.get(DATA_HEADLESS); }
+    public void setHeadless(boolean v) { entityData.set(DATA_HEADLESS, v); }
     public boolean isFeigning() { return entityData.get(DATA_FEIGNING); }
+    public void setFeigning(boolean v) { entityData.set(DATA_FEIGNING, v); }
     public boolean isCracked(){return entityData.get(DATA_CRACKED);}
     public void setCracked(boolean cracked){entityData.set(DATA_CRACKED,cracked);}
     private static final EntityDataAccessor<Boolean> DATA_RIBS_VISIBLE =
@@ -761,6 +763,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
             output.putInt("CorpseBites", corpseBites);
             output.putInt("CorpseDeathTime", deathTime);
         }
+        // 半尸兄（混血尸兄）标签持久化：原宿主类型/混血等级/感染代数
+        HybridZombie.writeNbt(output, this);
     }
 
     @Override
@@ -809,5 +813,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
                     "[ZbCorpse] entity#{} restored corpse from save (deathTime={}, bites={}, hp={})",
                     this.getId(), this.deathTime, this.corpseBites, this.getHealth());
         }
+        // 半尸兄标签从 NBT 回填到 entityTags（实体从磁盘读回时 entityTags() 是空的）
+        HybridZombie.readNbt(input, this);
     }
 }
