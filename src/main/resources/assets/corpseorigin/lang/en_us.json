@@ -631,6 +631,7 @@
   "skill.corpseorigin.infection_domain.anchored": "Infection Domain: ANCHORED (fixed / draining saturation)",
   "skill.corpseorigin.infection_domain.off": "Infection Domain: OFF",
   "skill.corpseorigin.infection_domain.starving": "Too hungry — the Infection Domain shuts off",
+  "skill.corpseorigin.infection_domain.need_realm": "§cInfection Domain requires §e%1$s §cor higher (current: %2$s). Creative mode exempt, or auto-released when detached from undead body.",
   "skill.corpseorigin.golden_cicada_shell": "Golden Cicada Shell",
   "skill.corpseorigin.golden_cicada_shell.desc": "Shed your current body as a clone avatar (your bag and equipment stay on the shell) and move your consciousness into the thumb-sized original body hidden within. 10s cooldown.",
   "skill.corpseorigin.golden_cicada_shell.done": "Shell shed! Your consciousness moved into the original body",

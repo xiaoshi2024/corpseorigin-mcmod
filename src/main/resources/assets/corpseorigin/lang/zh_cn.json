@@ -643,6 +643,7 @@
   "skill.corpseorigin.infection_domain.anchored": "感染领域已锚定（固定位置 / 持续消耗饱食度）",
   "skill.corpseorigin.infection_domain.off": "感染领域已收束",
   "skill.corpseorigin.infection_domain.starving": "太饿了，感染领域自动中断",
+  "skill.corpseorigin.infection_domain.need_realm": "§c感染领域需要 §e%1$s §c以上境界才能释放（当前：%2$s）。创造模式豁免，或不死髅体离体时自动释放。",
   "skill.corpseorigin.golden_cicada_shell": "金蝉脱壳",
   "skill.corpseorigin.golden_cicada_shell.desc": "把当前身体蜕成一个分身（背包、装备都留在壳上），意识直接转移进藏在体内的「原体」——拇指大小的真身。冷却 10 秒。",
   "skill.corpseorigin.golden_cicada_shell.done": "金蝉脱壳！意识已转入原体",
