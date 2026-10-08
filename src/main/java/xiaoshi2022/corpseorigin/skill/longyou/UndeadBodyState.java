@@ -88,60 +88,18 @@ public final class UndeadBodyState {
                 if (!eligible(p)) {
                     p.setAttached(STATE, 0);
                     removeXuanwuAttributes(p);           // ★ 不再合格：摘数值
-                    tickAutoInfection(p, 0);              // ★ 离体结束：收掉感染源泉
                     continue;
                 }
-                int state = p.getAttachedOrCreate(STATE);
                 // ★ 状态自洽：STATE == 1 就该有加成，其它状态就不该有
-                if (state == 1) {
+                if (p.getAttachedOrCreate(STATE) == 1) {
                     applyXuanwuAttributes(p);
                 } else {
                     removeXuanwuAttributes(p);
                 }
-                // ★ 不死髅体离体自动释放感染源泉：STATE == 1（披甲/夺舍）时肉体自动展开感染领域
-                tickAutoInfection(p, state);
                 if (p.isAlive() && !sealed(p) && p.tickCount % 20 == 0) p.heal(1);
             }
         });
     }
-
-    /**
-     * 不死髅体离体自动感染源泉（用户 2026-10-08 确认）。
-     * <p>
-     * 当玩家本体离体（{@link #STATE} == 1，即夺舍/披甲状态）时，
-     * 肉体会自动展开"感染领域"作为感染源泉，不受 {@link InfectionDomainSkill#REQUIRED_REALM} 门槛限制 ——
-     * 这是"不死髅体本身就是行走的感染源"的设定体现。
-     * <p>
-     * <b>自动模式 = 移动跟随</b>：领域跟着玩家走，不需要手动激活。
-     * 玩家手动激活过的领域（含锚点模式）不会被自动逻辑覆盖；
-     * 只有"未手动开启"且"处于离体状态"时才自动开。
-     * <p>
-     * <b>关闭时机</b>：离体结束（STATE 回到 0/2/3/4）时自动收掉自动开的领域。
-     * 如果玩家在离体期间手动激活过，按手动逻辑走，不会被自动关闭。
-     *
-     * @param p     玩家
-     * @param state 当前 {@link UndeadBodyState#STATE} 值
-     */
-    private static void tickAutoInfection(ServerPlayer p, int state) {
-        boolean detached = (state == 1);
-        boolean active = InfectionDomainHandler.isActive(p.getUUID());
-        if (detached && !active) {
-            // 离体且未手动开启 → 自动开启感染源泉（移动跟随模式）
-            InfectionDomainHandler.toggle(p, false);
-            // 标记为自动开启，便于离体结束时收掉
-            p.setAttached(AUTO_INFECTION, true);
-        } else if (!detached && active && p.getAttachedOrCreate(AUTO_INFECTION)) {
-            // 离体结束且是自动开的 → 自动收掉
-            InfectionDomainHandler.release(p.getUUID());
-            p.setAttached(AUTO_INFECTION, false);
-        }
-    }
-
-    /** 标记当前感染领域是"离体自动开"的，便于离体结束时收掉，不误伤玩家手动开的 */
-    public static final AttachmentType<Boolean> AUTO_INFECTION =
-            AttachmentRegistry.create(CorpseOrigin.id("auto_infection"),
-                    b -> b.initializer(() -> false).persistent(com.mojang.serialization.Codec.BOOL)
-                            .syncWith(ByteBufCodecs.BOOL, AttachmentSyncPredicate.all()));
 
     // ==================== 玄武体的数值加成 ====================
 

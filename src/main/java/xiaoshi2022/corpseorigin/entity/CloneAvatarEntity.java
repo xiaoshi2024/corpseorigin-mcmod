@@ -55,6 +55,7 @@ import xiaoshi2022.corpseorigin.skill.chapter.CloneCaster;
 import xiaoshi2022.corpseorigin.skill.chapter.CreatureAbilities;
 import xiaoshi2022.corpseorigin.skill.longyou.InfrasoundFieldHandler;
 
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -1002,6 +1003,13 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody,
     @Override
     public void tick() {
         super.tick();
+
+        // ★ 血肉抛弃后的离体肉体：本身就是行走的感染源（用户 2026-10-08 确认）
+        // 不受 InfectionDomainSkill.REQUIRED_REALM 门槛限制，自动展开感染领域
+        if (abandonedBody && !this.level().isClientSide() && this.level() instanceof ServerLevel serverLevel) {
+            tickAbandonedBodyInfection(serverLevel);
+        }
+
         if (abandonedBody) return;
 
         // BOSS 血条进度实时跟随血量
@@ -1036,6 +1044,70 @@ public class CloneAvatarEntity extends PathfinderMob implements TransferredBody,
         if (owner != null) {
             ShellBodyIndex.upsert(owner, new ShellBodyIndex.Entry(
                     this.level().dimension().identifier(), pos, this.getUUID()));
+        }
+    }
+
+    /**
+     * 血肉抛弃后的离体肉体自动释放感染源泉（用户 2026-10-08 确认）。
+     * <p>
+     * 被抛弃的肉体（{@code abandonedBody=true}）本身就是行走的感染源，
+     * 以自身为中心周期性扫描周围 {@link net.minecraft.world.entity.monster.Monster}，
+     * 按 {@link xiaoshi2022.corpseorigin.config.CorpseConfig.InfectionDomain#infectionChance} 概率施加感染
+     * （{@link xiaoshi2022.corpseorigin.effect.BYeffect#applyInfection}），感染期满后转化为半尸兄。
+     * <p>
+     * <b>不受 {@link xiaoshi2022.corpseorigin.skill.longyou.InfectionDomainSkill#REQUIRED_REALM} 门槛限制</b>
+     * —— 这是"尸王抛弃的肉体自带感染源"的设定体现，不需要玩家达到超神境界。
+     * <p>
+     * 扫描半径与间隔取自配置 {@code CorpseConfig.infectionDomain}，复用同一套参数。
+     * 感染源 UUID 用实体的 owner（抛弃肉体的玩家），便于追溯。
+     */
+    private void tickAbandonedBodyInfection(ServerLevel serverLevel) {
+        xiaoshi2022.corpseorigin.config.CorpseConfig.InfectionDomain cfg =
+                xiaoshi2022.corpseorigin.config.CorpseConfig.get().infectionDomain;
+        if (cfg == null || !cfg.enabled) return;
+
+        // 节流：按 scanIntervalTicks 控制扫描频率（和 InfectionDomainHandler 同节奏）
+        if (this.tickCount % cfg.scanIntervalTicks != 0) return;
+
+        // 半径：直接用配置 radius，不走 LostCity 城市扩展（离体肉体不是领域，是肉身辐射）
+        double r = cfg.radius;
+        AABB area = new AABB(
+                this.getX() - r, this.getY() - r, this.getZ() - r,
+                this.getX() + r, this.getY() + r, this.getZ() + r);
+
+        List<net.minecraft.world.entity.monster.Monster> monsters;
+        try {
+            monsters = serverLevel.getEntitiesOfClass(net.minecraft.world.entity.monster.Monster.class, area);
+        } catch (Exception e) {
+            return;
+        }
+
+        UUID sourceUuid = this.getOwnerUuid();
+        int infected = 0;
+        for (net.minecraft.world.entity.monster.Monster m : monsters) {
+            if (!m.isAlive() || m.isRemoved()) continue;
+            // 已是尸族（含半尸兄）：跳过
+            if (ZombieKin.isZombieKin(m)) continue;
+            // 已在感染中：跳过
+            if (m.hasEffect(xiaoshi2022.corpseorigin.registry.ModEffects.QIANS)) continue;
+
+            // 概率感染（和 InfectionDomainHandler.scanAndInfect 同概率）
+            if (this.getRandom().nextFloat() >= cfg.infectionChance) continue;
+
+            xiaoshi2022.corpseorigin.effect.BYeffect.applyInfection(m, serverLevel, sourceUuid);
+            infected++;
+            // 表现：一蓬尸水绿雾 + 咕嘟声
+            double x = m.getX();
+            double y = m.getY() + m.getBbHeight() * 0.5;
+            double z = m.getZ();
+            xiaoshi2022.corpseorigin.skill.chapter.QiEffects.burst(serverLevel, x, y, z, 0x3a8c3a, 6, 0.15);
+            serverLevel.playSound(null, x, y, z,
+                    SoundEvents.WATER_AMBIENT, SoundSource.HOSTILE, 0.6F, 0.5F);
+        }
+
+        if (infected > 0) {
+            xiaoshi2022.corpseorigin.CorpseOrigin.LOGGER.debug(
+                    "离体肉体感染扫描：实体={}，命中 {} 只", this.getUUID(), infected);
         }
     }
 
