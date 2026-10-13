@@ -49,6 +49,9 @@ public class SpawnPlacementsMixin {
     /** 开关打开时被拦的原版僵尸 id path（zombified_piglin 在下界，不算"禁用僵尸"的语义范围） */
     private static final Set<String> CORPSE_ORIGIN$VANILLA_ZOMBIES = Set.of("zombie", "husk", "zombie_villager");
 
+    /** "禁用原版苦力怕/骷髅/末影人"针对的 id path（只拦这三个本体，流髅/沼骸/凋灵骷髅等变种不在范围） */
+    private static final Set<String> CORPSE_ORIGIN$VANILLA_MOBS = Set.of("creeper", "skeleton", "enderman");
+
     /** 人工来源白名单：这些生成原因不受"禁用原版僵尸"影响（26.2 实际枚举名） */
     private static final Set<EntitySpawnReason> ALLOWED_REASONS = Set.of(
             EntitySpawnReason.SPAWN_ITEM_USE,   // 手持刷怪蛋右键
@@ -75,7 +78,16 @@ public class SpawnPlacementsMixin {
             return;
         }
         Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
-        if (id != null && CORPSE_ORIGIN$VANILLA_ZOMBIES.contains(id.getPath())) {
+        if (id == null) {
+            return;
+        }
+        String path = id.getPath();
+        var spawn = CorpseConfig.get().spawn;
+        if (spawn.disableVanillaZombieSpawns && CORPSE_ORIGIN$VANILLA_ZOMBIES.contains(path)) {
+            cir.setReturnValue(false);
+        } else if ((spawn.disableVanillaCreeperSpawns && "creeper".equals(path))
+                || (spawn.disableVanillaSkeletonSpawns && "skeleton".equals(path))
+                || (spawn.disableVanillaEndermanSpawns && "enderman".equals(path))) {
             cir.setReturnValue(false);
         }
     }

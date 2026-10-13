@@ -285,6 +285,15 @@ public final class CorpseConfig {
          * <b>刷怪蛋、{@code /summon} 不受影响</b>（玩家手动放的不拦）。
          */
         public boolean disableVanillaZombieSpawns = false;
+        /**
+         * 实时禁用原版苦力怕的生成（自然生成 + 刷怪笼/试炼刷怪笼）。
+         * 用 {@code /corpsespawn} 开关（自动写回文件），刷怪蛋、{@code /summon} 不受影响。
+         */
+        public boolean disableVanillaCreeperSpawns = false;
+        /** 实时禁用原版骷髅的生成，同上。 */
+        public boolean disableVanillaSkeletonSpawns = false;
+        /** 实时禁用原版末影人的生成，同上。 */
+        public boolean disableVanillaEndermanSpawns = false;
         /** 尸兄三兄弟 + CoCo 尸兄的生成权重，默认与原版僵尸持平（100）—— 想更稀有就调小 */
         public int lowerLevelZbWeight = 100;
         public int aotumanZbWeight = 100;

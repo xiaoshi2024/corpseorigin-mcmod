@@ -205,6 +205,7 @@ public class CorpseOrigin implements ModInitializer {
 				xiaoshi2022.corpseorigin.command.TenguLaserCommand.register(dispatcher);
 				xiaoshi2022.corpseorigin.command.ChessZbCommand.register(dispatcher);
 				xiaoshi2022.corpseorigin.command.ZbOrganCommand.register(dispatcher);
+				xiaoshi2022.corpseorigin.command.VanillaSpawnCommand.register(dispatcher);
 				}
 		);
 
