@@ -86,14 +86,16 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
             skinTexture = DefaultPlayerSkin.getDefaultTexture();
         }
 
-        // 色调变体：由玩家 ID 派生。
-        //   - 名字是随机拼的，去 api.mojang.com 查多半查不到 → 退回默认皮肤，这时靠变体让每只尸兄都不一样；
+        // 色调变体：由玩家 ID 派生并收敛到有限桶（见 CombinedSkinBuilder.tintBucket）。
+        //   - 名字是随机拼的，去 api.mojang.com 查多半查不到 → 退回默认皮肤，这时靠变体让尸兄色调有区分；
         //   - 万一运气好真查到了（或者名字是玩家本人），就是一张有辨识度的真皮肤，此时<b>不染色</b>，原样显示；
+        //   - 变体分桶后组合纹理总数有上界，暖机后新尸兄全部缓存命中，不再逐只现建纹理
+        //     （否则切屏回来的一帧里新进视野的尸兄会集体同步建纹理，造成卡顿）；
         //   - 整体开关与强度在 config/corpseorigin.json 的 skin 段。
         boolean tinted = playerName != null && !playerName.isEmpty()
                 && !corpseorigin$isResolvedSkin(playerName, skinTexture)
                 && CorpseConfig.get().skin.tintUnresolvedSkins;
-        int variant = tinted ? playerName.hashCode() : 0;
+        int variant = tinted ? CombinedSkinBuilder.tintBucket(playerName.hashCode()) : 0;
 
         // 2. 检查绑定
         EntitySkinBinding binding = ENTITY_BINDING.get(entityId);

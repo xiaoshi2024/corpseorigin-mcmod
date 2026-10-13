@@ -34,8 +34,11 @@ public class SeveredZbHeadRenderer extends GeoEntityRenderer<SeveredZbHeadEntity
                 && source.getSkinTexture() != null) skin = source.getSkinTexture();
         Identifier fallback = name.isEmpty() ? DefaultPlayerSkin.getDefaultTexture()
                 : DefaultPlayerSkin.get(UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes())).body().texturePath();
+        // 与 LowerLevelZbRenderer 同一套分桶派生（CombinedSkinBuilder.tintBucket）：
+        // 掉落头和它的本体共享同一张组合纹理，不再每颗头现建一张。
         int variant = !name.isEmpty() && skin.equals(fallback)
-                && xiaoshi2022.corpseorigin.config.CorpseConfig.get().skin.tintUnresolvedSkins ? name.hashCode() : 0;
+                && xiaoshi2022.corpseorigin.config.CorpseConfig.get().skin.tintUnresolvedSkins
+                ? CombinedSkinBuilder.tintBucket(name.hashCode()) : 0;
         long now = entity.level().getGameTime();
         Binding previous = bindings.get(entity.getId());
         if (previous == null || !previous.skin.equals(skin) || previous.variant != variant || previous.cracked != entity.isCracked()) {
