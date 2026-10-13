@@ -317,6 +317,11 @@ public class CorpseOriginClient implements ClientModInitializer {
                 ModBlockEntities.QI_XING_GUAN,
                 xiaoshi2022.corpseorigin.client.renderer.blockentity.QiXingGuanRenderer::new
         );
+        // 倒挂尸兄（GeckoLib 动画方块实体：idle / tongue 右键吐舌）
+        BlockEntityRendererRegistry.register(
+                ModBlockEntities.HANG_UPSIDE_DOWN_ZBR,
+                xiaoshi2022.corpseorigin.client.renderer.blockentity.HangUpsideDownZbrRenderer::new
+        );
 
         // 3. 模型层注
         ModModelLayers.register();

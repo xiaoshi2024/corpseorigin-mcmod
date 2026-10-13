@@ -84,6 +84,18 @@ public final class ModBlocks {
                     .setId(blockKey("qi_xing_guan")))
     );
 
+    /** 倒挂尸兄：剧情方块，倒挂在天花板上，右键播放吐舌动画（GeckoLib 渲染，无碰撞便于演出走位） */
+    public static final Block HANG_UPSIDE_DOWN_ZBR = register(
+            "hang_upside_down_zbr",
+            new xiaoshi2022.corpseorigin.block.HangUpsideDownZbrBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GREEN)
+                    .strength(1.0F)
+                    .sound(net.minecraft.world.level.block.SoundType.HONEY_BLOCK)
+                    .noOcclusion()
+                    .noCollision()
+                    .setId(blockKey("hang_upside_down_zbr")))
+    );
+
     private static Block register(String name, Block block) {
         return Registry.register(BuiltInRegistries.BLOCK, CorpseOrigin.id(name), block);
     }

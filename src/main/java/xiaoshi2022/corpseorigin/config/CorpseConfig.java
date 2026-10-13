@@ -294,6 +294,8 @@ public final class CorpseConfig {
         public boolean disableVanillaSkeletonSpawns = false;
         /** 实时禁用原版末影人的生成，同上。 */
         public boolean disableVanillaEndermanSpawns = false;
+        /** 实时禁用原版蜘蛛的生成，同上。 */
+        public boolean disableVanillaSpiderSpawns = false;
         /** 尸兄三兄弟 + CoCo 尸兄的生成权重，默认与原版僵尸持平（100）—— 想更稀有就调小 */
         public int lowerLevelZbWeight = 100;
         public int aotumanZbWeight = 100;

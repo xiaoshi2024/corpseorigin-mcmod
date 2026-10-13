@@ -17,11 +17,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
 
 /**
- * 拦截原版 {@link SpawnPlacements#checkSpawnRules}：当配置 {@code spawn.disableVanillaZombieSpawns}
- * 打开时，把原版僵尸（含尸壳、村民僵尸）的<b>一切非人工生成</b>直接挡掉。
+ * 拦截原版 {@link SpawnPlacements#checkSpawnRules}：按配置开关把原版生物的<b>一切非人工生成</b>直接挡掉。
  * <p>
- * 这个判是<b>实时</b>的 —— 配置文件改完跑 {@code /corpseconfig reload} 或者
- * {@code /corpseconfig zombies on|off} 之后下个生成判定就生效，不用重启服务器。
+ * 支持两组开关（均实时读取，改完即生效，不用重启服务器）：
+ * <ul>
+ *   <li>{@code spawn.disableVanillaZombieSpawns} —— 原版僵尸（含尸壳、村民僵尸），用 {@code /corpseconfig zombies on|off}；</li>
+ *   <li>{@code spawn.disableVanillaCreeperSpawns / SkeletonSpawns / EndermanSpawns / SpiderSpawns} ——
+ *       苦力怕/骷髅/末影人/蜘蛛（蜘蛛含洞穴蜘蛛），用 {@code /corpsespawn disable|enable}。</li>
+ * </ul>
  * <p>
  * <b>白名单放行</b>（人工来源，生成原因在 {@link #ALLOWED_REASONS} 里的照常过）：
  * <ul>
@@ -49,9 +52,6 @@ public class SpawnPlacementsMixin {
     /** 开关打开时被拦的原版僵尸 id path（zombified_piglin 在下界，不算"禁用僵尸"的语义范围） */
     private static final Set<String> CORPSE_ORIGIN$VANILLA_ZOMBIES = Set.of("zombie", "husk", "zombie_villager");
 
-    /** "禁用原版苦力怕/骷髅/末影人"针对的 id path（只拦这三个本体，流髅/沼骸/凋灵骷髅等变种不在范围） */
-    private static final Set<String> CORPSE_ORIGIN$VANILLA_MOBS = Set.of("creeper", "skeleton", "enderman");
-
     /** 人工来源白名单：这些生成原因不受"禁用原版僵尸"影响（26.2 实际枚举名） */
     private static final Set<EntitySpawnReason> ALLOWED_REASONS = Set.of(
             EntitySpawnReason.SPAWN_ITEM_USE,   // 手持刷怪蛋右键
@@ -74,21 +74,27 @@ public class SpawnPlacementsMixin {
         if (ALLOWED_REASONS.contains(reason)) {
             return;
         }
-        if (!CorpseConfig.get().spawn.disableVanillaZombieSpawns) {
-            return;
-        }
         Identifier id = BuiltInRegistries.ENTITY_TYPE.getKey(type);
         if (id == null) {
             return;
         }
-        String path = id.getPath();
-        var spawn = CorpseConfig.get().spawn;
-        if (spawn.disableVanillaZombieSpawns && CORPSE_ORIGIN$VANILLA_ZOMBIES.contains(path)) {
-            cir.setReturnValue(false);
-        } else if ((spawn.disableVanillaCreeperSpawns && "creeper".equals(path))
-                || (spawn.disableVanillaSkeletonSpawns && "skeleton".equals(path))
-                || (spawn.disableVanillaEndermanSpawns && "enderman".equals(path))) {
+        if (isBlocked(id.getPath())) {
             cir.setReturnValue(false);
         }
+    }
+
+    /** 按配置逐个判断该 id path 的自动生成是否被禁用（实时读配置，不用重启） */
+    private static boolean isBlocked(String path) {
+        var spawn = CorpseConfig.get().spawn;
+        if (spawn.disableVanillaZombieSpawns && CORPSE_ORIGIN$VANILLA_ZOMBIES.contains(path)) {
+            return true;
+        }
+        return switch (path) {
+            case "creeper" -> spawn.disableVanillaCreeperSpawns;
+            case "skeleton" -> spawn.disableVanillaSkeletonSpawns;
+            case "enderman" -> spawn.disableVanillaEndermanSpawns;
+            case "spider", "cave_spider" -> spawn.disableVanillaSpiderSpawns;
+            default -> false;
+        };
     }
 }

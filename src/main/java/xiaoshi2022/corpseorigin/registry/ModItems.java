@@ -209,6 +209,14 @@ public final class ModItems {
                     .useBlockDescriptionPrefix()
                     .setId(itemKey("zbr_flesh")))
     );
+
+    /** 倒挂尸兄（剧情方块：挂天花板上，右键吐舌） */
+    public static final Item HANG_UPSIDE_DOWN_ZBR = register(
+            "hang_upside_down_zbr",
+            new BlockItem(ModBlocks.HANG_UPSIDE_DOWN_ZBR, new Item.Properties()
+                    .useBlockDescriptionPrefix()
+                    .setId(itemKey("hang_upside_down_zbr")))
+    );
     
     //尸兄阵营天线宝宝尸兄盔甲
     public static final Supplier<AntennaZBRitem> ANTENNA_ZBR_ARMOR_HELMET = register(
@@ -414,6 +422,7 @@ public final class ModItems {
                 output.accept(CN_CHESS_ZBRS);
                 output.accept(MOSQUITO_COIL);
                 output.accept(MOSQUITO_ZBR_EGGS);
+                output.accept(HANG_UPSIDE_DOWN_ZBR);
             })
             .build();
 

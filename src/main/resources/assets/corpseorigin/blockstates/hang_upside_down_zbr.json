@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "tongue=false": { "model": "corpseorigin:block/hang_upside_down_zbr" },
+    "tongue=true": { "model": "corpseorigin:block/hang_upside_down_zbr" }
+  }
+}

@@ -6,6 +6,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.block.entity.CNChessZbrsBlockEntity;
 import xiaoshi2022.corpseorigin.block.entity.CloneChamberBlockEntity;
+import xiaoshi2022.corpseorigin.block.entity.HangUpsideDownZbrBlockEntity;
 import xiaoshi2022.corpseorigin.block.entity.MosquitoEggsBlockEntity;
 import xiaoshi2022.corpseorigin.block.entity.QiXingGuanBlockEntity;
 import xiaoshi2022.corpseorigin.block.entity.ZBRFleshBlockEntity;
@@ -52,6 +53,14 @@ public final class ModBlockEntities {
                     BuiltInRegistries.BLOCK_ENTITY_TYPE,
                     CorpseOrigin.id("qi_xing_guan"),
                     new BlockEntityType<>(QiXingGuanBlockEntity::new, Set.of(ModBlocks.QI_XING_GUAN))
+            );
+
+    /** 倒挂尸兄（GeckoLib 动画方块实体：idle / tongue，右键吐舌） */
+    public static final BlockEntityType<HangUpsideDownZbrBlockEntity> HANG_UPSIDE_DOWN_ZBR =
+            Registry.register(
+                    BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    CorpseOrigin.id("hang_upside_down_zbr"),
+                    new BlockEntityType<>(HangUpsideDownZbrBlockEntity::new, Set.of(ModBlocks.HANG_UPSIDE_DOWN_ZBR))
             );
 
     private ModBlockEntities() {
