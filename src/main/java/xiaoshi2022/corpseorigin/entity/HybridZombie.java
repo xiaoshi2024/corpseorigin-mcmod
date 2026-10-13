@@ -4,21 +4,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 
-/**
- * 半尸兄（混血尸兄）标签工具类。
- * <p>
- * 原版怪物被感染领域或龙右感染后，会转换为 {@link LowerLevelZbEntity} 基底，
- * 但通过 NBT 标签保留"原宿主类型"信息，形成"尸兄小黑/尸兄苦力怕"等混血概念。
- * <p> 
- * 标签三件套：
- * <ul>
- *   <li>{@link #ORIGINAL_SPECIES}：原宿主的实体类型 id（如 minecraft:enderman）</li>
- *   <li>{@link #HYBRID_GRADE}：混血等级（{@code half} / {@code full}）；{@code half} 表示由原版怪物感染而来</li>
- *   <li>{@link #INFECTION_GENERATION}：感染代数（龙右本体感染=1，半尸兄同族传播=2，以此类推）</li>
- * </ul>
- * 持久化走 {@link LowerLevelZbEntity#addAdditionalSaveData} / {@link LowerLevelZbEntity#readAdditionalSaveData}
- * 末尾的调用，区块重载不丢。
- */
+/** 原版感染生物与旧存档混血尸兄的物种、代数兼容工具。原版宿主保持原实体。 */
 public final class HybridZombie {
 
     private HybridZombie() {
@@ -37,7 +23,7 @@ public final class HybridZombie {
     public static final String GRADE_FULL = "full";
 
     /**
-     * 在 LowerLevelZbEntity 上写入半尸兄标签。
+     * 在原宿主或旧存档尸兄上写入半尸兄标签。
      * <p>
      * 通过 entityTags() / addTag() 写入：26.2 的 {@code Entity#addTag} 走的是 PersistentEntityTagSet，
      * 自动随实体 NBT 持久化（{@code Entity#save} 会写 "Tags" 列表）。
@@ -47,21 +33,21 @@ public final class HybridZombie {
      * 二来兜底：实体从磁盘读回时 {@code entityTags()} 在 {@link net.minecraft.world.entity.Entity#readAdditionalSaveData}
      * 之前是空的，需要 {@link #readNbt} 主动重建。
      *
-     * @param zb          被感染的 LowerLevelZbEntity
+     * @param zb          被感染的原宿主
      * @param speciesKey  原宿主实体类型 id（{@link net.minecraft.world.entity.EntityType#getKey} 的 toString）
      * @param grade       {@link #GRADE_HALF} 或 {@link #GRADE_FULL}
      * @param generation  感染代数（龙右本体感染=1，同族传播=上一代+1）
      */
-    public static void tagAsHybrid(LowerLevelZbEntity zb, String speciesKey, String grade, int generation) {
+    public static void tagAsHybrid(net.minecraft.world.entity.Mob zb, String speciesKey, String grade, int generation) {
         if (zb == null || speciesKey == null) return;
         zb.addTag(ORIGINAL_SPECIES + ":" + speciesKey);
         zb.addTag(HYBRID_GRADE + ":" + grade);
         zb.addTag(INFECTION_GENERATION + ":" + Math.max(1, generation));
     }
 
-    /** 这只 LowerLevelZbEntity 是不是半尸兄 */
+    /** 这只实体是不是半尸兄 */
     public static boolean isHybrid(Entity entity) {
-        return entity != null && speciesKey(entity) != null;
+        return entity != null && (xiaoshi2022.corpseorigin.growth.NativeCorpseState.infected(entity) || speciesKey(entity) != null);
     }
 
     /**
@@ -72,6 +58,7 @@ public final class HybridZombie {
      */
     public static String speciesKey(Entity entity) {
         if (entity == null) return null;
+        if (xiaoshi2022.corpseorigin.growth.NativeCorpseState.infected(entity)) return net.minecraft.world.entity.EntityType.getKey(entity.getType()).toString();
         String prefix = ORIGINAL_SPECIES + ":";
         for (String tag : entity.entityTags()) {
             if (tag.startsWith(prefix)) {
@@ -84,6 +71,7 @@ public final class HybridZombie {
     /** 取混血等级（half / full）；不是半尸兄返回 null */
     public static String grade(Entity entity) {
         if (entity == null) return null;
+        if (xiaoshi2022.corpseorigin.growth.NativeCorpseState.infected(entity)) return GRADE_HALF;
         String prefix = HYBRID_GRADE + ":";
         for (String tag : entity.entityTags()) {
             if (tag.startsWith(prefix)) {
@@ -96,6 +84,8 @@ public final class HybridZombie {
     /** 取感染代数；不是半尸兄返回 0 */
     public static int generation(Entity entity) {
         if (entity == null) return 0;
+        int nativeGeneration = xiaoshi2022.corpseorigin.growth.NativeCorpseState.generation(entity);
+        if (nativeGeneration > 0) return nativeGeneration;
         String prefix = INFECTION_GENERATION + ":";
         for (String tag : entity.entityTags()) {
             if (tag.startsWith(prefix)) {

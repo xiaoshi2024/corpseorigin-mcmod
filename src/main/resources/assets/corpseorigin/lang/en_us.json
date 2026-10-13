@@ -1,4 +1,5 @@
 {
+  "entity.corpseorigin.infected_native": "Corpse %s",
   "entity.corpseorigin.yu_doctor": "Dr. Yu",
   "item.corpseorigin.yu_doctor_spawn_egg": "Dr. Yu Spawn Egg",
   "item.corpseorigin.multi_head_corpse_worm_spawn_egg": "Multi-Head Corpse Worm Spawn Egg",

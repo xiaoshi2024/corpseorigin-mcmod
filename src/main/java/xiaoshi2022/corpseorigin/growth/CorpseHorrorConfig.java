@@ -6,11 +6,16 @@ public final class CorpseHorrorConfig {
     /** 尸族直接攻击命中玩家时的感染概率（上 QIANS 效果，60~300 秒后尸化；牛奶可清）。 */
     public double playerBiteInfectionChance=.15;
     public int fishInfectionTicks=200;
+    /** Independent, once-per-host rolls; veins are unconditional. */
+    public double nativeEyeChance=.2, nativeRibsChance=.1, nativeOrganChance=.35;
     public int packRadius=20,packAllies=8,maxGrapplers=3,grappleTicks=60,grappleCooldownTicks=60;
     public int maggotsPerCorpse=3,localMaggotCap=24,worldMaggotCap=128,maggotLifetimeTicks=1200;
     public boolean maggotParasitism=true;
     public int maggotsPerHost=2,maggotBurrowTicks=30,maggotInfectionTicks=200;
     public void sanitize(){
+        nativeEyeChance=Double.isFinite(nativeEyeChance)?Math.clamp(nativeEyeChance,0,1):.2;
+        nativeRibsChance=Double.isFinite(nativeRibsChance)?Math.clamp(nativeRibsChance,0,1):.1;
+        nativeOrganChance=Double.isFinite(nativeOrganChance)?Math.clamp(nativeOrganChance,0,1):.35;
         villagerInfectionChance=Double.isFinite(villagerInfectionChance)?Math.clamp(villagerInfectionChance,0,1):.3;
         playerBiteInfectionChance=Double.isFinite(playerBiteInfectionChance)?Math.clamp(playerBiteInfectionChance,0,1):.15;
         fishWaterInfectionChance=Double.isFinite(fishWaterInfectionChance)?Math.clamp(fishWaterInfectionChance,0,1):.35;

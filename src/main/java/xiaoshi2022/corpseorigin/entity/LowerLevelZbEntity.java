@@ -296,6 +296,12 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
                 UncleEntity.class,12,true,false,
                 (target, level)->ZombieKin.canAttack(this,target)&&!this.isAlliedTo(target)));
 
+        // Other original species can be bitten too; retain the existing player/villager priorities.
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this,
+                net.minecraft.world.entity.Mob.class, 10, true, false,
+                (target, level) -> xiaoshi2022.corpseorigin.effect.BYeffect.canInfect(target)
+                        && ZombieKin.canAttack(this, target) && !this.isAlliedTo(target)));
+
         // ✅ 优先级1：攻击非尸族玩家（永远）——但手持生前执念物品的除外（吹风机杀邻居名场面）
         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<Player>(
                 this,

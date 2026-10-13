@@ -8,6 +8,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
+import net.minecraft.world.entity.Mob;
 import xiaoshi2022.corpseorigin.growth.OrganDefinition;
 
 import java.util.List;
@@ -25,14 +26,19 @@ public final class ZbOrganEffects {
 
     private ZbOrganEffects() {}
 
-    public static boolean hasTrait(LowerLevelZbEntity self, String trait) {
-        return ZbOrganGrowth.activeDefinitions(self).stream()
+    private static List<OrganDefinition> definitions(Mob self) {
+        return self instanceof LowerLevelZbEntity zb ? ZbOrganGrowth.activeDefinitions(zb)
+                : xiaoshi2022.corpseorigin.growth.NativeCorpseState.activeDefinitions(self);
+    }
+
+    public static boolean hasTrait(Mob self, String trait) {
+        return definitions(self).stream()
                 .anyMatch(d -> trait.equals(d.trait()));
     }
 
     /** 每个服务端 tick 调用。 */
-    public static void tick(LowerLevelZbEntity self) {
-        List<OrganDefinition> organs = ZbOrganGrowth.activeDefinitions(self);
+    public static void tick(Mob self) {
+        List<OrganDefinition> organs = definitions(self);
 
         // ---- 解剖：额外肢体 ----
         var anatomyParts = organs.stream().filter(d -> d.anatomy() != null).map(OrganDefinition::anatomy).toList();
@@ -55,7 +61,7 @@ public final class ZbOrganEffects {
         }
     }
 
-    private static void applyModifier(LowerLevelZbEntity self, Holder<Attribute> type,
+    private static void applyModifier(Mob self, Holder<Attribute> type,
                                       String key, double value, AttributeModifier.Operation operation) {
         var instance = self.getAttribute(type);
         if (instance == null) return;

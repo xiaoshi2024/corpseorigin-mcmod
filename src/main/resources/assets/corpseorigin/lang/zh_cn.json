@@ -1,4 +1,5 @@
 {
+  "entity.corpseorigin.infected_native": "尸兄%s",
   "entity.corpseorigin.yu_doctor": "鱼博士",
   "item.corpseorigin.yu_doctor_spawn_egg": "鱼博士刷怪蛋",
   "item.corpseorigin.multi_head_corpse_worm_spawn_egg": "蜈蚣尸兄刷怪蛋",
@@ -640,7 +641,7 @@
   "skill.corpseorigin.water_pollution.off": "尸水之源已关闭",
   "skill.corpseorigin.water_pollution.starving": "太饿了，尸水之源自动中断",
   "skill.corpseorigin.infection_domain": "感染领域",
-  "skill.corpseorigin.infection_domain.desc": "主动开关：展开可调半径的感染领域，范围内的原版怪物（僵尸/末影人/苦力怕等）会被周期性感染为半尸兄（混血尸兄），保留原宿主类型标签。默认跟随移动；潜行+激活切换为固定锚点（可离开）。装了失落城市模组时自动按倍率扩展半径覆盖整城。代价是持续消耗饱食度，饿到见底自动中断。",
+  "skill.corpseorigin.infection_domain.desc": "主动开关：展开可调半径的感染领域，范围内的原版生物会被周期性感染为尸兄变种，保留原本的物种、模型和能力，并在原有关节上长出尸眼、肋骨，皮肤浮现血丝。默认跟随移动；潜行+激活切换为固定锚点（可离开）。装了失落城市模组时自动按倍率扩展半径覆盖整城。代价是持续消耗饱食度，饿到见底自动中断。",
   "skill.corpseorigin.infection_domain.on": "感染领域已展开（跟随移动 / 持续消耗饱食度）",
   "skill.corpseorigin.infection_domain.anchored": "感染领域已锚定（固定位置 / 持续消耗饱食度）",
   "skill.corpseorigin.infection_domain.off": "感染领域已收束",

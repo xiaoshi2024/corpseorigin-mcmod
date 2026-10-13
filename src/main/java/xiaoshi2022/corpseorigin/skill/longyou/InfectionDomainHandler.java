@@ -5,7 +5,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.monster.Monster;
+
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <b>Lost City 加成</b>：若 {@code enableLostCityIntegration=true} 且 Lost Cities 模组加载，
  * 用 {@link LostCitiesCompat#cityBoundsAround} 替代固定半径的 AABB（取城市边界并集）。
  * <p>
- * <b>感染扫描</b>：扫描领域内 {@link Monster} 子类实体，跳过已尸化（{@link ZombieKin#isZombieKin}）
+ * <b>感染扫描</b>：扫描领域内全部原版 {@link Mob} 生物，跳过已尸化（{@link ZombieKin#isZombieKin}）
  * 与已感染（带 {@link ModEffects#QIANS}），按 {@code infectionChance} 概率施加 {@link BYeffect#applyInfection}。
  */
 public final class InfectionDomainHandler {
@@ -149,20 +149,20 @@ public final class InfectionDomainHandler {
                 center.x + radius, center.y + radius, center.z + radius);
     }
 
-    /** 扫描领域内的 Monster 子类，按感染概率施加 BYeffect.applyInfection */
+    /** 扫描领域内的原版生物，按感染概率施加 BYeffect.applyInfection */
     private static void scanAndInfect(ServerLevel level, ServerPlayer caster, Field field,
                                       AABB area, CorpseConfig.InfectionDomain cfg) {
-        List<Monster> monsters;
+        List<Mob> monsters;
         try {
-            monsters = level.getEntitiesOfClass(Monster.class, area);
+            monsters = level.getEntitiesOfClass(Mob.class, area);
         } catch (Exception e) {
             CorpseOrigin.LOGGER.warn("感染领域扫描实体失败：{}", e.getMessage());
             return;
         }
 
         int infected = 0;
-        for (Monster m : monsters) {
-            if (!m.isAlive() || m.isRemoved()) continue;
+        for (Mob m : monsters) {
+            if (!BYeffect.canInfect(m) || m.isRemoved() || xiaoshi2022.corpseorigin.growth.NativeCorpseState.incubating(m)) continue;
             // 已是尸族（含半尸兄）：跳过
             if (ZombieKin.isZombieKin(m)) continue;
             // 已在感染中：跳过

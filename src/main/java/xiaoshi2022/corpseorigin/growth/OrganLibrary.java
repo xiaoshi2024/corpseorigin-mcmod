@@ -28,6 +28,9 @@ public final class OrganLibrary {
     public static Component packStatus = Component.empty();
     private OrganLibrary() {}
     public static List<OrganDefinition> definitions() { return server; }
+    public static boolean isCustomOrgan(String id) {
+        return origins.get(id) == Origin.CATALOG || origins.get(id) == Origin.PACK;
+    }
 
     /** 该器官是否来自随模组分发的示例内容。 */
     public static boolean isExampleOrgan(String id) {

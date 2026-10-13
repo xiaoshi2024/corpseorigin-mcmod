@@ -29,10 +29,9 @@ import xiaoshi2022.corpseorigin.skill.longyou.ThunderPowerSkill;
 import xiaoshi2022.corpseorigin.skill.longyou.ThunderStrikeHandler;
 import xiaoshi2022.corpseorigin.skill.longyou.WaterPollutionSkill;
 import xiaoshi2022.corpseorigin.entity.HybridZombie;
-import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
+
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.monster.Monster;
 
 /**
  * 龙右专属事件处理。
@@ -116,7 +115,8 @@ public final class LongYouEventHandler {
                 return;
             }
             // 尸族自己人不感染（他们本来就是尸兄）
-            if (ZombieKin.isZombieKin(target) || target.hasEffect(ModEffects.QIANS)) {
+            if (!BYeffect.canInfect(target) || target.hasEffect(ModEffects.QIANS)
+                    || xiaoshi2022.corpseorigin.growth.NativeCorpseState.incubating(target)) {
                 return;
             }
             if (!isPollutionActive(caster)) {
@@ -212,15 +212,16 @@ public final class LongYouEventHandler {
                 return;
             }
             if (!(source.getDirectEntity() instanceof LivingEntity attacker)
-                    || !(entity instanceof Monster target)) {
+                    || !(entity instanceof net.minecraft.world.entity.Mob target)) {
                 return;
             }
-            // 攻击者必须是半尸兄（带 HybridZombie 标签的 LowerLevelZbEntity）
-            if (!(attacker instanceof LowerLevelZbEntity) || !HybridZombie.isHybrid(attacker)) {
+            // 攻击者必须是半尸兄（保留原版物种的感染生物，兼容旧存档）
+            if (!HybridZombie.isHybrid(attacker)) {
                 return;
             }
             // 目标不能是尸族（已是尸族不感染）
-            if (ZombieKin.isZombieKin(target) || target.hasEffect(ModEffects.QIANS)) {
+            if (!BYeffect.canInfect(target) || target.hasEffect(ModEffects.QIANS)
+                    || xiaoshi2022.corpseorigin.growth.NativeCorpseState.incubating(target)) {
                 return;
             }
             // 同族判定：半尸兄的 original_species 必须等于目标的实体类型 id
@@ -237,12 +238,10 @@ public final class LongYouEventHandler {
             if (attacker.getRandom().nextFloat() >= cfg.spreadChance) {
                 return;
             }
-            // 感染代数累加：半尸兄代数 +1（龙右本体感染=1，半尸兄传播=2，再下一级=3...）
-            int nextGeneration = HybridZombie.generation(attacker) + 1;
             // 标记传播源为半尸兄（applyInfection 会写 infectionSource）
             BYeffect.applyInfection(target, (ServerLevel) attacker.level(), attacker.getUUID());
-            // 把代数预标记到目标身上（通过 entityTags 临时存，转换时取出）
-            target.addTag(HybridZombie.INFECTION_GENERATION + "_pending:" + nextGeneration);
+            // applyInfection centrally persists the next generation before incubation.
+
             infectFeedback((ServerLevel) attacker.level(), target);
         });
 

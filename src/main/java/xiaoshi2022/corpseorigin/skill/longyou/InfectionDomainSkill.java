@@ -15,9 +15,9 @@ import java.util.UUID;
 /**
  * 龙右·感染领域 —— <b>主动开关</b>技能。
  * <p>
- * 按下展开一个可调半径的"感染领域"，领域内的原版怪物（僵尸/末影人/苦力怕等）
+ * 按下展开一个可调半径的"感染领域"，领域内的原版生物（动物/村民/水生生物/怪物等）
  * 会被周期性施加 {@link xiaoshi2022.corpseorigin.effect.BYeffect#applyInfection}，
- * 感染期满后转换为 {@link xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity}，
+ * 感染期满后保留原宿主实体、模型和能力，附加尸眼、肋骨与血丝，
  * 同时通过 {@link xiaoshi2022.corpseorigin.entity.HybridZombie#tagAsHybrid} 写入"半尸兄"标签
  * （original_species / hybrid_grade / infection_generation），形成"尸兄小黑/尸兄苦力怕"等混血概念。
  * <p>

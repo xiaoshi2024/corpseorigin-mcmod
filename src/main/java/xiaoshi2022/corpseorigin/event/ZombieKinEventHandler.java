@@ -21,7 +21,8 @@ public class ZombieKinEventHandler {
             if (attacker == null) return true;
 
             // ✅ 只处理"攻击者是尸族 NPC"的情况
-            if (!(attacker instanceof LowerLevelZbEntity)) {
+            if (!(attacker instanceof LowerLevelZbEntity)
+                    && !xiaoshi2022.corpseorigin.growth.NativeCorpseState.infected(attacker)) {
                 return true;  // 玩家/其他生物的攻击，正常放行
             }
 

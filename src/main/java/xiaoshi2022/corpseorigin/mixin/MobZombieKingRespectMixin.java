@@ -36,7 +36,9 @@ public class MobZombieKingRespectMixin {
         if ((Object) this instanceof ZuoFloodLongEntity) {
             return;
         }
-        if (this instanceof ZombieKin && ZombieKin.isZombieKing(target)) {
+        if ((ZombieKin.isZombieKin((Mob)(Object)this) && ZombieKin.isZombieKing(target))
+                || (xiaoshi2022.corpseorigin.growth.NativeCorpseState.infected((Mob)(Object)this)
+                    && !ZombieKin.canAttack((Mob)(Object)this, target))) {
             cir.setReturnValue(false);
         }
     }
