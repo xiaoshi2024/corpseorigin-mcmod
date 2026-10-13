@@ -38,7 +38,7 @@ public final class CloneCreatureRenderer
     /** 与 {@link CreaturePlayerRenderer} 同一份模型名单 */
     public static final List<String> MODELS = List.of(
             "qingwa_zb", "hujie", "chongmu", "jingang_zb", "jingang_infant",
-            "xiongxing_zb", "red_fire_ant", "bullet_ant", "xiaohui_scene");
+            "xiongxing_zb", "red_fire_ant", "bullet_ant", "xiaohui_scene", "gordius_zbrz");
 
     private static final Map<String, CloneCreatureRenderer> RENDERERS = new HashMap<>();
 

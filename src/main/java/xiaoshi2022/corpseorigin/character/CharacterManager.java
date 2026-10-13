@@ -91,6 +91,10 @@ public class CharacterManager {
         // 其他既有角色
         registerCharacter(new WeiXin());
         registerCharacter(new NewChapterCharacter("xiaojingang",true));
+        // 寄生铁血虫尸兄：剧情演出角色（古棺剧情中待吸干的水中尸兄），技能全是播动画
+        registerCharacter(new GordiusZbrzCharacter());
+        // 大叔（少女漫画家）：人类剧情演出角色（企鹅尸兄袭击等桥段），技能全是播动画
+        registerCharacter(new UncleCharacter());
         registerCharacter(new NewChapterCharacter("guigun_human",false));
         registerCharacter(new NewChapterCharacter("guigun_corpse",true));
         registerCharacter(new NewChapterCharacter("hei_wuchou",true));
@@ -145,6 +149,8 @@ public class CharacterManager {
         factionMap.put("chongqun", CharacterFaction.CORPSE_KING);
         factionMap.put("siyangyuan_zb", CharacterFaction.CORPSE_KING);
         factionMap.put("kuaidiyuan_zb", CharacterFaction.CORPSE_KING);
+        factionMap.put(GordiusZbrzCharacter.ID, CharacterFaction.CORPSE_KING);
+        factionMap.put(UncleCharacter.ID, CharacterFaction.HUMAN);
 
         // ========== 东瀛 ==========
         factionMap.put("fengmohuitailang", CharacterFaction.TOYO);

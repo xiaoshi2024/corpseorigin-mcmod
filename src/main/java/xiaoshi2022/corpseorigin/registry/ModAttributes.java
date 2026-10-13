@@ -65,6 +65,7 @@ public final class ModAttributes {
         FabricDefaultAttributeRegistry.register(ModEntities.YU_DOCTOR, YuDoctorEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.ZB_WORM, ZbWormEntity.createAttributes());
         FabricDefaultAttributeRegistry.register(ModEntities.MULTI_HEAD_CORPSE_WORM, MultiHeadCorpseWormEntity.createAttributes());
+        FabricDefaultAttributeRegistry.register(ModEntities.GORDIUS_ZBRZ, GordiusZbrzEntity.createAttributes());
 
         // 初音尸兄
         FabricDefaultAttributeRegistry.register(ModEntities.MIKU_ZB, MikuZbEntity.createAttributes());

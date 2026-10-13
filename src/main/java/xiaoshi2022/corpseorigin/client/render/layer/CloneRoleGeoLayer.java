@@ -300,6 +300,10 @@ public final class CloneRoleGeoLayer extends RenderLayer<AvatarRenderState, Play
     /** 播哪条 clip：优先角色动作（施法 / 冲锋 / 扑击），否则按受击 / 挥击 / 走动 / 待机。 */
     private static String clipFor(CloneAvatarEntity entity, AvatarRenderState parent) {
         String action = entity.getAttachedOrCreate(ChapterScenes.ACTION);
+        if ("gordius_zbrz".equals(entity.getAttachedOrCreate(ChapterActorState.ROLE)))
+            // 寄生铁血虫尸兄：show / wizened 演出动画同名映射，游动 swing，静止铁线虫蜷在鱼腹（idle）
+            return action.equals("show") || action.equals("wizened") ? action
+                    : parent.walkAnimationSpeed > 0.02F ? "swing" : "idle";
         return switch (action) {
             case "cast", "threat" -> "cast";
             case "charge" -> "charge";

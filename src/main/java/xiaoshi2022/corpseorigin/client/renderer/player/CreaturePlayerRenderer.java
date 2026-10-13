@@ -26,7 +26,7 @@ public final class CreaturePlayerRenderer extends GeoReplacedEntityRenderer<Play
     private static final Map<String,CreaturePlayerRenderer> RENDERERS=new HashMap<>();
     private CreaturePlayerRenderer(EntityRendererProvider.Context context,String id){super(context,new DefaultedEntityGeoModel<>(CorpseOrigin.id(id)),null);PlayerHandLayers.attach(context,this);shadowRadius=.7f;}
     public static void create(EntityRendererProvider.Context context){
-        for(String id:List.of("qingwa_zb","hujie","chongmu","jingang_zb","jingang_infant","xiongxing_zb","red_fire_ant","bullet_ant","xiaohui_scene"))RENDERERS.put(id,new CreaturePlayerRenderer(context,id));
+        for(String id:List.of("qingwa_zb","hujie","chongmu","jingang_zb","jingang_infant","xiongxing_zb","red_fire_ant","bullet_ant","xiaohui_scene","gordius_zbrz","uncles"))RENDERERS.put(id,new CreaturePlayerRenderer(context,id));
     }
     public static CreaturePlayerRenderer get(AvatarRenderState state){return RENDERERS.get(state.getGeckolibData(MODEL));}
     public static boolean extract(AbstractClientPlayer p,AvatarRenderState state,float partial){
@@ -47,7 +47,15 @@ public final class CreaturePlayerRenderer extends GeoReplacedEntityRenderer<Play
         state.addGeckolibData(ARMS,p.getAttachedOrCreate(CreatureAbilities.BEAR_ARMS));
         state.addGeckolibData(INFANT,p.getAttachedOrCreate(CreatureAbilities.INFANT));
         String action=p.getAttachedOrCreate(ChapterScenes.ACTION);
-        String clip=switch(action){case "cast","threat"->"cast";case "charge"->"charge";case "pounce"->"pounce";case "transform"->"transform";case "attack"->"attack";default->p.hurtTime>0?"hurt":p.swinging?"attack":state.walkAnimationSpeed>.02f?"walk":"idle";};
+        String clip;
+        if(id.equals("gordius_zbrz"))
+            // 寄生铁血虫尸兄：show / wizened 为演出动画直接同名映射，游动时播 swing，静止时铁线虫蜷缩在鱼腹里（idle）
+            clip=action.equals("show")||action.equals("wizened")?action:state.walkAnimationSpeed>.02f?"swing":"idle";
+        else if(id.equals("uncles"))
+            // 大叔：walk / attack / flee / open / drop 演出动画同名映射，其余按走动 / 待机
+            clip=Set.of("walk","attack","flee","open","drop").contains(action)?action
+                    :state.walkAnimationSpeed>.02f?"walk":"idle";
+        else clip=switch(action){case "cast","threat"->"cast";case "charge"->"charge";case "pounce"->"pounce";case "transform"->"transform";case "attack"->"attack";default->p.hurtTime>0?"hurt":p.swinging?"attack":state.walkAnimationSpeed>.02f?"walk":"idle";};
         if(id.equals("xiaohui_scene"))clip=condition;
         state.addGeckolibData(CLIP,clip);state.addGeckolibData(DataTickets.PACKED_LIGHT,state.lightCoords);
         renderer.extractRenderState(p,state,partial);return true;

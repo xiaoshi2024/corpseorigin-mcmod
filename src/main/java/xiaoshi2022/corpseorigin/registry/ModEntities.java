@@ -148,6 +148,11 @@ public final class ModEntities {
             EntityType.Builder.<MultiHeadCorpseWormEntity>of(MultiHeadCorpseWormEntity::new, MobCategory.MONSTER)
                     .sized(2.4f, 3.6f).clientTrackingRange(32).updateInterval(1).notInPeaceful()
     );
+    /** 寄生铁血虫尸兄（{@code gordius_zbrz}）—— 肚子里藏着铁线虫的尸兄鱼，被龙右吸干会干瘪死亡。
+     *  碰撞箱按 geo 模型算：鱼体 x ±9.76u（宽 1.22 格）、鳍底 -0.4u 到背 28.88u（高 1.83 格）。 */
+    public static final EntityType<GordiusZbrzEntity> GORDIUS_ZBRZ = register("gordius_zbrz",
+            EntityType.Builder.<GordiusZbrzEntity>of(GordiusZbrzEntity::new, MobCategory.MONSTER)
+                    .sized(1.2f, 1.85f).clientTrackingRange(8).notInPeaceful());
     public static final EntityType<TianDoctorEntity> TIAN_DOCTOR = register("tian_doctor", EntityType.Builder.<TianDoctorEntity>of(TianDoctorEntity::new, MobCategory.CREATURE).sized(.7f,1.8f).clientTrackingRange(12));
     public static final EntityType<DoctorBeeRobotEntity> DOCTOR_BEE_ROBOT = register("doctor_bee_robot",
             EntityType.Builder.<DoctorBeeRobotEntity>of(DoctorBeeRobotEntity::new, MobCategory.MISC)

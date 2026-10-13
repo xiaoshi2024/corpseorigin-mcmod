@@ -43,6 +43,8 @@ public final class ModItems {
             new SpawnEggItem(spawnEggProperties("yu_doctor_spawn_egg", ModEntities.YU_DOCTOR)));
     public static final Item MULTI_HEAD_CORPSE_WORM_SPAWN_EGG = register("multi_head_corpse_worm_spawn_egg",
             new SpawnEggItem(spawnEggProperties("multi_head_corpse_worm_spawn_egg", ModEntities.MULTI_HEAD_CORPSE_WORM)));
+    public static final Item GORDIUS_ZBRZ_SPAWN_EGG = register("gordius_zbrz_spawn_egg",
+            new SpawnEggItem(spawnEggProperties("gordius_zbrz_spawn_egg", ModEntities.GORDIUS_ZBRZ)));
     public static final Item TIAN_DOCTOR_SPAWN_EGG = register("tian_doctor_spawn_egg",
             new SpawnEggItem(spawnEggProperties("tian_doctor_spawn_egg", ModEntities.TIAN_DOCTOR)));
     /** 尸兄·尔多兽王刷怪蛋 —— 仅创造栏 / 指令 / 剧情给玩家用，BOSS 不自然刷 */
@@ -395,6 +397,7 @@ public final class ModItems {
                 output.accept(DAMO_SPAWN_EGG);
                 output.accept(YU_DOCTOR_SPAWN_EGG);
                 output.accept(MULTI_HEAD_CORPSE_WORM_SPAWN_EGG);
+                output.accept(GORDIUS_ZBRZ_SPAWN_EGG);
                 output.accept(TIAN_DOCTOR_SPAWN_EGG);
                 output.accept(ELDOR_KING_ZBR_SPAWN_EGG);
                 output.accept(MU_DOCTOR_SPAWN_EGG);

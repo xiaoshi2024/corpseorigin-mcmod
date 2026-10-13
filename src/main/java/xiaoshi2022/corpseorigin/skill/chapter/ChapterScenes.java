@@ -32,7 +32,7 @@ public final class ChapterScenes {
     public static void register(){
         CommandRegistrationCallback.EVENT.register((dispatcher,registry,environment)->{
             var root=Commands.literal("corpse_scene").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS));
-            for(String cue:new String[]{"injured","parasitized","drain","poisoned","knockback","entrance","threat","bound","fear","black_general","infant","adult","clear"})
+            for(String cue:new String[]{"injured","parasitized","drain","poisoned","knockback","entrance","threat","bound","fear","black_general","infant","adult","show","swing","wizened","clear"})
                 root.then(Commands.literal(cue).then(Commands.argument("players",EntityArgument.players()).executes(ctx->{
                     int count=0;
                     for(ServerPlayer p:EntityArgument.getPlayers(ctx,"players")) {
@@ -46,6 +46,7 @@ public final class ChapterScenes {
                             case "threat" -> role.equals("hujie");
                             case "bound","fear","black_general" -> role.equals("bianselong_zb") && p.getAttachedOrCreate(ChapterActorState.DISGUISE).equals("xiaohui");
                             case "infant","adult" -> role.equals("jingang_zb");
+                            case "show","swing","wizened" -> role.equals("gordius_zbrz");
                             default -> true;
                         };
                         if(!valid)continue;
@@ -53,7 +54,7 @@ public final class ChapterScenes {
                         else if(cue.equals("clear")){p.setAttached(CONDITION,"");p.setAttached(ACTION,"");p.setAttached(UNTIL,0L);}
                         else if(Set.of("injured","parasitized","poisoned","bound","fear","black_general").contains(cue))p.setAttached(CONDITION,cue);
                         else {
-                            action(p,cue,cue.equals("drain")?80:30);
+                            action(p,cue,switch(cue){case "drain"->80;case "show"->100;case "wizened"->60;case "swing"->40;default->30;});
                             if(cue.equals("threat"))p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("scene.corpseorigin.hujie.threat"));
                             if(cue.equals("knockback")){p.setDeltaMovement(p.getLookAngle().scale(-1.1).add(0,.45,0));p.hurtMarked=true;}
                         }

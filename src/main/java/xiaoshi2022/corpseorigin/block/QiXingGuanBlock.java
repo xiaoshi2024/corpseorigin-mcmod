@@ -36,6 +36,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.block.entity.QiXingGuanBlockEntity;
 import xiaoshi2022.corpseorigin.config.CorpseConfig;
+import xiaoshi2022.corpseorigin.entity.GordiusZbrzEntity;
 import xiaoshi2022.corpseorigin.entity.LowerLevelZbEntity;
 import xiaoshi2022.corpseorigin.registry.ModBlocks;
 import xiaoshi2022.corpseorigin.registry.ModFluids;
@@ -169,6 +170,17 @@ public class QiXingGuanBlock extends Block implements EntityBlock, LiquidBlockCo
                 CorpseOrigin.LOGGER.info("七星棺周围检测到 {} 只尸兄，开馆！", zombies.size());
                 openCoffin(level, pos, state);
             }
+            // 铁线虫尸兄在附近游弋 → 惊破封印（古棺剧情：水中尸兄引出龙右）
+            else if (!level.getEntitiesOfClass(GordiusZbrzEntity.class,
+                    new AABB(pos).inflate(DETECTION_RADIUS)).isEmpty()) {
+                CorpseOrigin.LOGGER.info("七星棺附近出现铁线虫尸兄，开馆！");
+                openCoffin(level, pos, state);
+            }
+            // 扮演铁线虫尸兄的玩家使出「演出·破腹而出」→ 同样惊破封印
+            else if (gordiusShowNearby(level, pos)) {
+                CorpseOrigin.LOGGER.info("扮演铁线虫尸兄的玩家使出「演出·破腹而出」，开馆！");
+                openCoffin(level, pos, state);
+            }
         }
     }
 
@@ -187,8 +199,8 @@ public class QiXingGuanBlock extends Block implements EntityBlock, LiquidBlockCo
         int infected = infectNearbyWater(level, pos, radius);
         CorpseOrigin.LOGGER.info("七星棺坠入水中！已感染周边 {} 处水源（半径 {}）", infected, radius);
 
-        level.getServer().getPlayerList().broadcastSystemMessage(
-                Component.translatable("message.corpseorigin.qi_xing_guan.sunk"), false);
+//        level.getServer().getPlayerList().broadcastSystemMessage(
+//                Component.translatable("message.corpseorigin.qi_xing_guan.sunk"), false);
     }
 
     /** 把半径内的<b>水源</b>方块替换为尸水（流动的水保持原样，由尸水自己流动扩散）。 */
@@ -206,6 +218,25 @@ public class QiXingGuanBlock extends Block implements EntityBlock, LiquidBlockCo
 
     // ==================== 开馆 ====================
 
+    /**
+     * 附近是否有扮演铁线虫尸兄的玩家正在播「演出·破腹而出」（show 演出中）。
+     * <p>
+     * 检测半径与开馆检测半径一致；ACTION 过期时间以
+     * {@code chapter_action_until} 附件为准，双保险防止播已过期的动作。
+     */
+    private static boolean gordiusShowNearby(ServerLevel level, BlockPos pos) {
+        AABB box = new AABB(pos).inflate(DETECTION_RADIUS);
+        for (net.minecraft.server.level.ServerPlayer p : level.players()) {
+            if (!box.contains(p.getX(), p.getY(), p.getZ())) continue;
+            if (!xiaoshi2022.corpseorigin.character.GordiusZbrzCharacter.ID.equals(
+                    xiaoshi2022.corpseorigin.character.CharacterManager.getInstance().getPlayerCharacterId(p))) continue;
+            if (!"show".equals(p.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.ACTION))) continue;
+            if (p.level().getGameTime() >= p.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes.UNTIL)) continue;
+            return true;
+        }
+        return false;
+    }
+
     private void openCoffin(ServerLevel level, BlockPos pos, BlockState state) {
         if (state.getValue(SUMMONED)) {
             return;
@@ -219,9 +250,7 @@ public class QiXingGuanBlock extends Block implements EntityBlock, LiquidBlockCo
         level.sendParticles(ParticleTypes.SCULK_SOUL, pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5,
                 30, 0.8, 0.6, 0.8, 0.03);
 
-        CorpseOrigin.LOGGER.info("七星棺开启！龙右封印已破（等待扮演玩家登场）");
-        level.getServer().getPlayerList().broadcastSystemMessage(
-                Component.translatable("message.corpseorigin.qi_xing_guan.open"), false);
+        CorpseOrigin.LOGGER.info("七星棺开启！龙右封印已破（等待扮演玩家登场，无播报以便演戏）");
     }
 
     // ==================== 掉落物入水自动放置 ====================
@@ -247,7 +276,9 @@ public class QiXingGuanBlock extends Block implements EntityBlock, LiquidBlockCo
         if (!replaceable || !level.getFluidState(pos).is(FluidTags.WATER)) {
             return;
         }
-        level.setBlock(pos, ModBlocks.QI_XING_GUAN.defaultBlockState(), Block.UPDATE_ALL);
+        // 保留水体：含水状态落棺，否则水被销毁、棺变"干洞"，沉棺事件/开馆倒计时全部失灵
+        boolean waterlogged = level.getFluidState(pos).is(FluidTags.WATER);
+        level.setBlock(pos, ModBlocks.QI_XING_GUAN.defaultBlockState().setValue(WATERLOGGED, waterlogged), Block.UPDATE_ALL);
         self.discard();
         CorpseOrigin.LOGGER.info("七星棺掉落物入水，已在 {} 自动放置沉棺", pos.toShortString());
     }

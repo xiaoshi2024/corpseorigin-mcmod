@@ -265,6 +265,7 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.YU_DOCTOR, YuDoctorRenderer::new);
         EntityRendererRegistry.register(ModEntities.ZB_WORM, ZbWormRenderer::new);
         EntityRendererRegistry.register(ModEntities.MULTI_HEAD_CORPSE_WORM, MultiHeadCorpseWormRenderer::new);
+        EntityRendererRegistry.register(ModEntities.GORDIUS_ZBRZ, GordiusZbrzRenderer::new);
         EntityRendererRegistry.register(ModEntities.MIKU_ZB, MikuZbRenderer::new);
         EntityRendererRegistry.register(ModEntities.LEEK_PROJECTILE, LeekProjectileRenderer::new);
         EntityRendererRegistry.register(ModEntities.OSMIUM_ICE_SPEAR, OsmiumIceSpearRenderer::new);
