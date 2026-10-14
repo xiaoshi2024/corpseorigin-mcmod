@@ -4,7 +4,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.LongYou;
+import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.skill.AbstractSkill;
+import xiaoshi2022.corpseorigin.skill.EvolutionManager;
+import xiaoshi2022.corpseorigin.skill.EvolutionTier;
 import xiaoshi2022.corpseorigin.skill.SkillType;
 
 import java.util.Set;
@@ -28,6 +33,14 @@ public class WaterPollutionSkill extends AbstractSkill {
 
     public static final String PATH = "water_pollution";
 
+    /**
+     * 学习 / 释放门槛：天级（绝对等级 9）。
+     * <p>
+     * 龙右本体是「尸水之源」，走 innate 学习路径、释放也不受境界限制（行为保持不变）；
+     * 自由路线（尸兄 / 凡人）要学到天级才能学、才能用 —— 见 {@link #checkUsable}。
+     */
+    public static final int REQUIRED_REALM = 9;
+
     /** 扫描半径（格，水平方向） */
     public static final int RADIUS = 2;
     /** 脚下一圈的高度：往下 1 格到往上 1 格，游在水里时也能覆盖到身体周围 */
@@ -46,6 +59,32 @@ public class WaterPollutionSkill extends AbstractSkill {
     public WaterPollutionSkill() {
         // 主动技能 + 冷却 0 + 不消耗内力：开关不该有冷却，代价是饱食度
         super(PATH, SkillType.UTILITY, 0);
+    }
+
+    /** 学习门槛：天级（龙右走 innate 学习路径，不受此限制） */
+    @Override
+    public int getRequiredLevel() {
+        return REQUIRED_REALM;
+    }
+
+    /**
+     * 释放前校验：龙右本体与创造模式豁免；其余（尸兄 / 凡人等自由路线）
+     * 要求境界 ≥ {@link #REQUIRED_REALM}（天级），不满足给提示、不生效、不进冷却。
+     */
+    @Override
+    public Component checkUsable(ServerPlayer player) {
+        if (player.isCreative()
+                || LongYou.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(player))) {
+            return null;
+        }
+        int realm = EvolutionManager.getLevel(
+                PlayerCharacterData.get(player).getEarnedPoints(player.getUUID()));
+        if (realm < REQUIRED_REALM) {
+            return Component.translatable("skill.corpseorigin." + PATH + ".need_realm",
+                    EvolutionTier.formatShortName(REQUIRED_REALM),
+                    EvolutionTier.formatShortName(realm));
+        }
+        return null;
     }
 
     /** 按一下切换开关状态 */

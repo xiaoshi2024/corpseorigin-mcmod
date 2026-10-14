@@ -17,7 +17,9 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
+import xiaoshi2022.corpseorigin.character.CorpseBrother;
 import xiaoshi2022.corpseorigin.character.LongYou;
+import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.effect.BYeffect;
 import xiaoshi2022.corpseorigin.entity.ZombieKin;
 import xiaoshi2022.corpseorigin.registry.ModEffects;
@@ -45,8 +47,9 @@ import net.minecraft.world.entity.EntityType;
  *       （村民/玩家会变异成尸兄）—— 概率 + 血量门槛是为了不超模；</li>
  *   <li><b>吸食气血</b>：打「普通尸兄」时按伤害回血（尸王吸收同类气血的看家本事）。</li>
  * </ul>
- * 两个技能都要"该玩家是龙右 + 已学会"才生效；尸水之源还得自己按一下开启
- * （见 {@link WaterPollutionSkill}），代价是持续消耗饱食度。
+ * 「雷电之力」要"该玩家是龙右 + 已学会"才生效；「尸水之源」龙右直接可用，
+ * 尸兄玩家天级（境界 ≥ 9）学会后同样能开（释放校验见 {@link WaterPollutionSkill#checkUsable}）。
+ * 尸水之源还得自己按一下开启（见 {@link WaterPollutionSkill}），代价是持续消耗饱食度。
  */
 public final class LongYouEventHandler {
 
@@ -269,12 +272,20 @@ public final class LongYouEventHandler {
         return true;
     }
 
-    /** 该玩家是不是"开着尸水之源的龙右" */
+    /**
+     * 该玩家是不是"开着尸水之源"：
+     * 龙右本体直接生效；尸兄玩家天级学会后同样生效（激活时已校验境界，这里再兜底已学会）。
+     */
     private static boolean isPollutionActive(ServerPlayer player) {
-        if (!LongYou.ID.equals(CharacterManager.getInstance().getPlayerCharacterId(player))) {
+        if (!WaterPollutionSkill.isEnabled(player.getUUID())) {
             return false;
         }
-        return WaterPollutionSkill.isEnabled(player.getUUID());
+        String role = CharacterManager.getInstance().getPlayerCharacterId(player);
+        if (LongYou.ID.equals(role)) {
+            return true;
+        }
+        return CorpseBrother.ID.equals(role)
+                && PlayerCharacterData.get(player).hasLearned(player.getUUID(), WaterPollutionSkill.PATH);
     }
 
     /** 该玩家是不是"开着雷电之力的龙右" */
