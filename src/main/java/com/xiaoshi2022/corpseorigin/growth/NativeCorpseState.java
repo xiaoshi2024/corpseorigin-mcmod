@@ -35,6 +35,11 @@ public final class NativeCorpseState {
 
     // 客户端：服务端通过 CorpseOriginNetwork 同步过来的「实体 UUID -> 外观掩码」
     private static final Map<java.util.UUID, Integer> CLIENT_INFECTED = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final Map<java.util.UUID, String> CLIENT_ORGANS = new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static void acceptClientOrgans(java.util.UUID id, String json) {
+        CLIENT_ORGANS.put(id, OrganLibrary.toJson(OrganLibrary.parseSlots(json)));
+    }
 
     private NativeCorpseState() {}
 
@@ -90,6 +95,7 @@ public final class NativeCorpseState {
     /** 切换世界/退出时清空，避免 UUID 复用导致误渲染。 */
     public static void clearClientState() {
         CLIENT_INFECTED.clear();
+        CLIENT_ORGANS.clear();
     }
 
     /** 读取尸变同步标记：优先按对象匹配，失败则按注册名匹配（兼容客户端注册表实例差异）。 */
@@ -131,6 +137,7 @@ public final class NativeCorpseState {
     }
 
     public static String organLoadout(Entity entity) {
+        if (entity.level().isClientSide()) return CLIENT_ORGANS.getOrDefault(entity.getUUID(), "[]");
         String saved = ORGANS_CACHE.get(entity);
         return saved == null ? "[]" : saved;
     }
@@ -151,7 +158,7 @@ public final class NativeCorpseState {
     }
 
     public static void setOrganLoadout(Entity entity, String json) {
-        ORGANS_CACHE.put(entity, json);
+        ORGANS_CACHE.put(entity, OrganLibrary.toJson(OrganLibrary.parseSlots(json)));
     }
 
     public static void setIncubation(Entity entity, int ticks) {
@@ -165,7 +172,7 @@ public final class NativeCorpseState {
     public static void captureSource(Entity target, Entity source) {
         if (!(target instanceof Mob)) return;
         String json = "[]";
-        if (source != null && infected(source)) {
+        if (source != null && (infected(source) || source instanceof net.minecraft.world.entity.player.Player)) {
             json = organLoadout(source);
         }
         SOURCE_ORGANS_CACHE.put(target, json);
@@ -179,8 +186,16 @@ public final class NativeCorpseState {
         // 保证感染体至少有一处可见的骨骼/器官，避免「什么都没长」的观感
         if (flags == 0) flags = RIBS;
         APPEARANCE_CACHE.put(mob, flags);
-        ORGANS_CACHE.put(mob, "[]");
-        // 消费 source_organs 快照（如果有的话）
+        List<OrganSlot> inherited = new java.util.ArrayList<>();
+        var source = parseSlots(SOURCE_ORGANS_CACHE.getOrDefault(mob, "[]")).stream().filter(s -> !s.replacesBody()).toList();
+        for (var slot : source) {
+            if (OrganLibrary.find(slot.organ()) != null && rng.nextFloat() < .5F) inherited.add(slot);
+        }
+        if (source.isEmpty() && rng.nextFloat() < .5F) {
+            var pool = OrganLibrary.definitions().stream().filter(d -> OrganLibrary.isCustomOrgan(d.id())).toList();
+            if (!pool.isEmpty()) inherited.add(new OrganSlot(pool.get(rng.nextInt(pool.size())).id(), "body", 0, 0, 0, 0, 0, 0, 1, false));
+        }
+        ORGANS_CACHE.putIfAbsent(mob, OrganLibrary.toJson(inherited));
         SOURCE_ORGANS_CACHE.remove(mob);
     }
 
@@ -225,6 +240,7 @@ public final class NativeCorpseState {
         }
         // 自定义同步：UUID + 外观掩码，渲染层不再依赖 effect/tag 是否同步
         com.xiaoshi2022.corpseorigin.network.CorpseOriginNetwork.sync(mob);
+        com.xiaoshi2022.corpseorigin.network.OrganNetwork.sync(mob);
     }
 
     /** LivingEntity.tick() TAIL 处注入调用。 */
@@ -254,6 +270,8 @@ public final class NativeCorpseState {
         if (organs != null && !"[]".equals(organs)) tag.putString("co_nc_organs", organs);
         Integer inc = INCUBATION_CACHE.get(entity);
         if (inc != null) tag.putInt("co_nc_incubation", inc);
+        String source = SOURCE_ORGANS_CACHE.get(entity);
+        if (source != null) tag.putString("co_nc_source_organs", source);
     }
 
     /** 在 Entity#readAdditionalSaveData 中调用：从 CompoundTag 恢复缓存。 */
@@ -261,5 +279,6 @@ public final class NativeCorpseState {
         if (tag.contains("co_nc_appearance")) APPEARANCE_CACHE.put(entity, tag.getInt("co_nc_appearance"));
         if (tag.contains("co_nc_organs")) ORGANS_CACHE.put(entity, tag.getString("co_nc_organs"));
         if (tag.contains("co_nc_incubation")) INCUBATION_CACHE.put(entity, tag.getInt("co_nc_incubation"));
+        if (tag.contains("co_nc_source_organs")) SOURCE_ORGANS_CACHE.put(entity, tag.getString("co_nc_source_organs"));
     }
 }

@@ -47,6 +47,7 @@ public class CorpseOrigin {
 
         // 网络同步（尸变状态 -> 客户端渲染层）
         com.xiaoshi2022.corpseorigin.network.CorpseOriginNetwork.register();
+        com.xiaoshi2022.corpseorigin.network.OrganNetwork.register();
 
         // 客户端配置：尸水渲染色调等
         net.minecraftforge.fml.ModLoadingContext.get().registerConfig(

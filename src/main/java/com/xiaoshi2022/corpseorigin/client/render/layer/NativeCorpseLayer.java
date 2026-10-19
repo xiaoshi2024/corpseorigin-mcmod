@@ -95,7 +95,7 @@ public class NativeCorpseLayer extends RenderLayer<LivingEntity, EntityModel<Liv
                     diagAnchors.body() == null ? "null" : diagAnchors.body().name(),
                     diagAnchors.head() == null ? "null" : diagAnchors.head().name());
         }
-        if (!transformed) return;
+        if (!transformed || CustomOrganLayer.replacesBody(entity)) return;
         if (modelRoots.isEmpty()) return;
 
         // 1) 静脉：整个模型覆盖一层
@@ -316,6 +316,30 @@ public class NativeCorpseLayer extends RenderLayer<LivingEntity, EntityModel<Liv
     private static Anchor anchorFor(List<Anchor> parts, ModelPart joint) {
         return parts.stream().filter(a -> a.path().get(a.path().size() - 1) == joint)
                 .findFirst().orElse(null);
+    }
+
+    /** Resolve a portable editor joint without depending on obfuscated Java field names. */
+    public boolean applyCustomJoint(EntityModel<?> model, String name, PoseStack poses) {
+        List<Root> roots = roots(model);
+        List<Anchor> parts = new ArrayList<>();
+        Set<ModelPart> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Root root : roots) collectAnchors(root.part(), root.name(), List.of(), parts, visited);
+        var found = findAnchors(model, roots);
+        Anchor anchor = switch (name) {
+            case "head" -> found.head();
+            case "body" -> found.body();
+            default -> named(parts, switch (name) {
+                case "left_arm" -> List.of("left_arm", "left_front_leg", "left_front", "left_wing");
+                case "right_arm" -> List.of("right_arm", "right_front_leg", "right_front", "right_wing");
+                case "left_leg" -> List.of("left_leg", "left_hind_leg", "left_hind");
+                case "right_leg" -> List.of("right_leg", "right_hind_leg", "right_hind");
+                default -> List.of("body");
+            }, found.body());
+        };
+        if (anchor == null || anchor.path().stream().anyMatch(p -> !p.visible)) return false;
+        applyAgeTransform(model, anchor.path().get(0), poses);
+        for (ModelPart part : anchor.path()) part.translateAndRotate(poses);
+        return true;
     }
 
     private static void applyAgeTransform(EntityModel<?> model, ModelPart root, PoseStack poses) {
