@@ -27,20 +27,23 @@ import java.util.*;
 public final class CustomOrganLayer extends RenderLayer<LivingEntity, EntityModel<LivingEntity>> {
     private static final Map<LivingEntity, Host> HOSTS = new WeakHashMap<>();
     private static final Set<String> BROKEN = new HashSet<>(), VALIDATED = new HashSet<>();
+    /** Shared per texture so every entity of the same organ batches into one render type / buffer. */
+    private static final Map<String, RenderType> TYPES = new HashMap<>();
+    /** Render-thread scratch stack; its matrices are overwritten from the parent pose on every organ. */
+    private static PoseStack scratch = new PoseStack();
+    private static boolean scratchDirty;
     private static List<OrganSlot> preview;
     private static LivingEntity previewHost;
     private static String previewMotion;
     private final NativeCorpseLayer joints;
-    private record Entry(OrganSlot slot, Adapter adapter, Renderer renderer) {}
-    private record Host(String json, int generation, List<Entry> entries) {}
+    private record Entry(OrganSlot slot, Adapter adapter, Renderer renderer, RenderType type) {}
+    private record Host(String loadout, List<OrganSlot> slots, int generation, List<Entry> entries, boolean replacesBody) {}
     public CustomOrganLayer(RenderLayerParent<LivingEntity, EntityModel<LivingEntity>> parent) { super(parent); joints = new NativeCorpseLayer(parent); }
-    public static void clear() { HOSTS.clear(); BROKEN.clear(); VALIDATED.clear(); }
-    public static void beginPreview(LivingEntity host, List<OrganSlot> slots, String motion) { previewHost=host; preview=List.copyOf(slots); previewMotion=motion; }
-    public static void endPreview() { previewHost=null; preview=null; }
+    public static void clear() { HOSTS.clear(); BROKEN.clear(); VALIDATED.clear(); TYPES.clear(); }
+    public static void beginPreview(LivingEntity host, List<OrganSlot> slots, String motion) { previewHost=host; preview=slots; previewMotion=motion; }
+    public static void endPreview() { if(previewHost!=null)HOSTS.remove(previewHost); previewHost=null; preview=null; }
     private static List<OrganSlot> slots(LivingEntity e) { return e==previewHost && preview!=null ? preview : NativeCorpseState.organSlots(e); }
-    public static boolean replacesBody(LivingEntity e) {
-        return slots(e).stream().anyMatch(s -> s.replacesBody() && OrganClient.catalog.stream().anyMatch(d -> d.id().equals(s.organ()) && validate(d)));
-    }
+    public static boolean replacesBody(LivingEntity e) { return host(e).replacesBody; }
     private static boolean validate(OrganDefinition d) {
         if (BROKEN.contains(d.id())) return false;
         if (VALIDATED.contains(d.id())) return true;
@@ -62,23 +65,55 @@ public final class CustomOrganLayer extends RenderLayer<LivingEntity, EntityMode
     private static void broken(String id, Exception ex) {
             if(BROKEN.add(id)) { OrganClient.status=OrganText.text("render_error",id,OrganText.failure(ex)); CorpseOrigin.LOGGER.warn("Cannot render custom organ {}",id,ex); }
     }
+    /**
+     * Cached per entity. The previous implementation parsed and re-serialised the organ JSON on every frame;
+     * the loadout string is already the authoritative and normalised form, so comparing it is allocation-free.
+     */
+    private static Host host(LivingEntity entity) {
+        Host cached=HOSTS.get(entity);
+        if(entity==previewHost && preview!=null) {
+            if(cached!=null && cached.loadout==null && cached.generation==OrganClient.generation && cached.slots.equals(preview)) return cached;
+            return build(entity,null,preview);
+        }
+        String loadout=NativeCorpseState.organLoadout(entity);
+        if(cached!=null && loadout.equals(cached.loadout) && cached.generation==OrganClient.generation) return cached;
+        return build(entity,loadout,slots(entity));
+    }
+    private static Host build(LivingEntity entity, String loadout, List<OrganSlot> source) {
+        List<OrganSlot> slots=List.copyOf(source);
+        List<Entry> entries=new ArrayList<>(slots.size());
+        boolean replacesBody=false;
+        for(OrganSlot slot:slots) {
+            OrganDefinition def=find(slot.organ());
+            if(def==null || !validate(def)) continue;
+            replacesBody|=slot.replacesBody();
+            entries.add(new Entry(slot,new Adapter(def),new Renderer(new Model(def)),type(def.texture())));
+        }
+        Host host=new Host(loadout,slots,OrganClient.generation,List.copyOf(entries),replacesBody);
+        HOSTS.put(entity,host);
+        return host;
+    }
+    private static OrganDefinition find(String id) {
+        for(int i=0;i<OrganClient.catalog.size();i++) { var d=OrganClient.catalog.get(i); if(d.id().equals(id)) return d; }
+        return null;
+    }
+    private static RenderType type(String texture) {
+        return TYPES.computeIfAbsent(texture, t -> RenderType.entityCutoutNoCull(new ResourceLocation(t)));
+    }
+    /** Reuse a single stack; a failed render may have left pushed poses behind, so replace it then. */
+    private static PoseStack scratch() {
+        if(scratchDirty) { scratch=new PoseStack(); scratchDirty=false; }
+        return scratch;
+    }
     @Override public void render(PoseStack poses, MultiBufferSource buffers, int light, LivingEntity entity,
             float swing, float amount, float partial, float age, float yaw, float pitch) {
         if(entity.isInvisible())return;
-        String json=OrganLibrary.toJson(slots(entity));
-        Host host=HOSTS.get(entity);
-        if(host==null || !host.json.equals(json) || host.generation!=OrganClient.generation) {
-            var entries=new ArrayList<Entry>();
-            for(var slot:slots(entity)) {
-                var def=OrganClient.catalog.stream().filter(d->d.id().equals(slot.organ())).findFirst().orElse(null);
-                if(def!=null && validate(def)) { var a=new Adapter(def); entries.add(new Entry(slot,a,new Renderer(new Model(def)))); }
-            }
-            host=new Host(json,OrganClient.generation,List.copyOf(entries));HOSTS.put(entity,host);
-        }
-        for(var entry:host.entries) {
+        List<Entry> entries=host(entity).entries;
+        for(int i=0;i<entries.size();i++) {
+            Entry entry=entries.get(i);
             var s=entry.slot;if(BROKEN.contains(s.organ()))continue;
             // Keep malformed GEO exceptions from leaking a pushed pose into the host's renderer.
-            var local=new PoseStack();local.last().pose().set(poses.last().pose());local.last().normal().set(poses.last().normal());
+            var local=scratch();local.last().pose().set(poses.last().pose());local.last().normal().set(poses.last().normal());
             if(s.replacesBody())local.translate(0,1.5,0);
             else if(!joints.applyCustomJoint(getParentModel(),s.joint(),local))continue;
             local.translate(s.x()/16D,s.y()/16D,s.z()/16D);
@@ -87,33 +122,39 @@ public final class CustomOrganLayer extends RenderLayer<LivingEntity, EntityMode
             String motion=entity==previewHost?previewMotion:entity.isInWater()?"swim":entity.swinging?"attack":entity.isFallFlying()?"glide":!entity.onGround()?"fly":entity.isShiftKeyDown()?"crouch":amount>.02F?"walk":"idle";
             entry.adapter.clip=entry.adapter.def.clips().getOrDefault(motion,entry.adapter.def.clips().get("idle"));
             entry.adapter.tick=age;
-            try { var type=RenderType.entityCutoutNoCull(new ResourceLocation(entry.adapter.def.texture()));
-                entry.renderer.render(local,entry.adapter,buffers,type,buffers.getBuffer(type),light);
-            } catch(Exception ex) { broken(s.organ(),ex); }
+            try { entry.renderer.render(local,entry.adapter,buffers,entry.type,buffers.getBuffer(entry.type),light);
+            } catch(Exception ex) { scratchDirty=true; broken(s.organ(),ex); }
         }
     }
     private static final class Adapter implements GeoAnimatable {
         final OrganDefinition def; String clip; double tick;
+        private String rawClip; private RawAnimation raw;
         final AnimatableInstanceCache cache=GeckoLibUtil.createInstanceCache(this);
         Adapter(OrganDefinition def){this.def=def;}
         public AnimatableInstanceCache getAnimatableInstanceCache(){return cache;}
         public double getTick(Object object){return tick;}
         public void registerControllers(AnimatableManager.ControllerRegistrar controllers){
-            controllers.add(new AnimationController<Adapter>(this,"organ",4,s->clip==null?PlayState.STOP:s.setAndContinue(RawAnimation.begin().thenLoop(clip))));
+            controllers.add(new AnimationController<Adapter>(this,"organ",4,s->{
+                if(clip==null)return PlayState.STOP;
+                if(!clip.equals(rawClip)) { rawClip=clip; raw=RawAnimation.begin().thenLoop(clip); }
+                return s.setAndContinue(raw);
+            }));
         }
     }
     private static final class Model extends GeoModel<Adapter> {
-        final OrganDefinition def; Model(OrganDefinition def){this.def=def;}
-        public ResourceLocation getModelResource(Adapter a){return new ResourceLocation(def.model());}
-        public ResourceLocation getTextureResource(Adapter a){return new ResourceLocation(def.texture());}
-        public ResourceLocation getAnimationResource(Adapter a){return new ResourceLocation(def.animation());}
+        final OrganDefinition def;
+        private final ResourceLocation model,texture,animation;
+        Model(OrganDefinition def){this.def=def;this.model=new ResourceLocation(def.model());this.texture=new ResourceLocation(def.texture());this.animation=new ResourceLocation(def.animation());}
+        public ResourceLocation getModelResource(Adapter a){return model;}
+        public ResourceLocation getTextureResource(Adapter a){return texture;}
+        public ResourceLocation getAnimationResource(Adapter a){return animation;}
     }
     private static final class Renderer extends GeoObjectRenderer<Adapter> {
         Renderer(Model model){super(model);}
         @Override public void preRender(PoseStack poses, Adapter a, BakedGeoModel model, MultiBufferSource buffers, VertexConsumer buffer,
                 boolean rerender, float partial, int light, int overlay, float r,float g,float b,float alpha) {
             // GeoObjectRenderer adds a block-centre offset; attached organs already have a joint origin.
-            objectRenderTranslations=new org.joml.Matrix4f(poses.last().pose());
+            objectRenderTranslations.set(poses.last().pose());
         }
     }
 }

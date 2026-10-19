@@ -48,6 +48,18 @@ public class NativeCorpseLayer extends RenderLayer<LivingEntity, EntityModel<Liv
             List.of("body", "upper_body", "torso", "chest", "shell", "main", "waist");
     private static final List<String> HEAD_NAMES =
             List.of("head", "head_main", "center_head", "middle_head");
+    private static final List<String> LEFT_ARM_NAMES =
+            List.of("left_arm", "left_front_leg", "left_front", "left_wing");
+    private static final List<String> RIGHT_ARM_NAMES =
+            List.of("right_arm", "right_front_leg", "right_front", "right_wing");
+    private static final List<String> LEFT_LEG_NAMES = List.of("left_leg", "left_hind_leg", "left_hind");
+    private static final List<String> RIGHT_LEG_NAMES = List.of("right_leg", "right_hind_leg", "right_hind");
+    private static final List<String> BODY = List.of("body");
+
+    /** RenderTypes are immutable descriptors; creating them per frame also creates a fresh BufferBuilder per frame. */
+    private static final RenderType VEINS_TYPE = RenderType.entityCutoutNoCullZOffset(NativeCorpseOrgans.VEINS);
+    private static final RenderType TISSUE_TYPE = RenderType.entityCutoutNoCull(NativeCorpseOrgans.TISSUE);
+    private static final RenderType EYE_TYPE = RenderType.entityTranslucent(NativeCorpseOrgans.EYE);
 
     /**
      * 外层装饰部件（帽子、帽檐、外套、壳）。
@@ -88,7 +100,7 @@ public class NativeCorpseLayer extends RenderLayer<LivingEntity, EntityModel<Liv
         if (localPlayer != null && entity.distanceToSqr(localPlayer) > 48.0D * 48.0D) return;
 
         // 1) 静脉：整个模型覆盖一层
-        VertexConsumer veinsBuffer = bufferSource.getBuffer(RenderType.entityCutoutNoCullZOffset(NativeCorpseOrgans.VEINS));
+        VertexConsumer veinsBuffer = bufferSource.getBuffer(VEINS_TYPE);
         for (Root root : modelRoots) {
             poseStack.pushPose();
             applyAgeTransform(model, root.part(), poseStack);
@@ -100,7 +112,7 @@ public class NativeCorpseLayer extends RenderLayer<LivingEntity, EntityModel<Liv
         if (mask == 0) return;
 
         // 2/3) 肋骨 + 眼睛：按锚点叠加
-        Anchors found = anchorsByRoot.computeIfAbsent(modelRoots.get(0).part(), key -> findAnchors(model, modelRoots));
+        Anchors found = anchors(model, modelRoots);
         if ((mask & NativeCorpseState.RIBS) != 0) {
             attach(found.body(), NativeCorpseOrgans.ribs(), false, poseStack, bufferSource, packedLight);
         }
@@ -122,7 +134,11 @@ public class NativeCorpseLayer extends RenderLayer<LivingEntity, EntityModel<Liv
         NativeCorpseModelPartAccessor access = (NativeCorpseModelPartAccessor) (Object) part;
         List<ModelPart.Cube> cubes = access.corpseorigin$cubes();
         if (!part.skipDraw && !cubes.isEmpty()) {
-            ModelPart surface = surfaces.computeIfAbsent(part, ignored -> new ModelPart(cubes, Map.of()));
+            ModelPart surface = surfaces.get(part);
+            if (surface == null) {
+                surface = new ModelPart(cubes, Map.of());
+                surfaces.put(part, surface);
+            }
             // 深度偏移由 RenderType 处理，保持每个子骨骼的原始变换。
 
             surface.render(poses, buffer, light, OverlayTexture.NO_OVERLAY);
@@ -168,10 +184,7 @@ public class NativeCorpseLayer extends RenderLayer<LivingEntity, EntityModel<Liv
                     (frontZ - 0.05F - organBox.maxZ() * scaleZ) / 16.0F);
             poses.scale(width / 9.0F, height / 12.0F, scaleZ);
         }
-        organ.render(poses,
-                bufferSource.getBuffer(isEye
-                        ? RenderType.entityTranslucent(NativeCorpseOrgans.EYE)
-                        : RenderType.entityCutoutNoCull(NativeCorpseOrgans.TISSUE)),
+        organ.render(poses, bufferSource.getBuffer(isEye ? EYE_TYPE : TISSUE_TYPE),
                 light, OverlayTexture.NO_OVERLAY);
         poses.popPose();
     }
@@ -279,7 +292,7 @@ public class NativeCorpseLayer extends RenderLayer<LivingEntity, EntityModel<Liv
 
     private record Anchor(String name, List<ModelPart> path, ModelPart.Cube cube) {}
 
-    private record Anchors(Anchor head, Anchor body) {}
+    private record Anchors(Anchor head, Anchor body, List<Anchor> parts) {}
 
     private static Anchors findAnchors(EntityModel<?> model, List<Root> roots) {
         List<Anchor> parts = new ArrayList<>();
@@ -287,19 +300,20 @@ public class NativeCorpseLayer extends RenderLayer<LivingEntity, EntityModel<Liv
         for (Root root : roots) {
             collectAnchors(root.part(), root.name(), List.of(), parts, visited);
         }
-        Anchor largest = parts.stream()
-                .max((a, b) -> Double.compare(volume(a.cube()), volume(b.cube())))
-                .orElse(null);
+        List<Anchor> snapshot = List.copyOf(parts);
         // CreeperModel does not retain a body field; bind using the baked child names.
         if (model instanceof CreeperModel<?> creeper) {
             ModelPart root = creeper.root();
-            return new Anchors(anchorFor(parts, root.getChild("head")),
-                    anchorFor(parts, root.getChild("body")));
+            return new Anchors(anchorFor(snapshot, root.getChild("head")),
+                    anchorFor(snapshot, root.getChild("body")), snapshot);
         }
-        Anchor body = named(parts, BODY_NAMES, largest);
-        Anchor head = named(parts, HEAD_NAMES, null);
+        Anchor largest = snapshot.stream()
+                .max((a, b) -> Double.compare(volume(a.cube()), volume(b.cube())))
+                .orElse(null);
+        Anchor body = named(snapshot, BODY_NAMES, largest);
+        Anchor head = named(snapshot, HEAD_NAMES, null);
         if (head == null) head = body;
-        return new Anchors(head, body);
+        return new Anchors(head, body, snapshot);
     }
 
     private static Anchor anchorFor(List<Anchor> parts, ModelPart joint) {
@@ -307,27 +321,38 @@ public class NativeCorpseLayer extends RenderLayer<LivingEntity, EntityModel<Liv
                 .findFirst().orElse(null);
     }
 
+    /** Anchor discovery walks every bone; cache per model instead of rebuilding it for every organ every frame. */
+    private Anchors anchors(EntityModel<?> model, List<Root> roots) {
+        ModelPart key = roots.get(0).part();
+        Anchors found = anchorsByRoot.get(key);
+        if (found == null) {
+            found = findAnchors(model, roots);
+            anchorsByRoot.put(key, found);
+        }
+        return found;
+    }
+
     /** Resolve a portable editor joint without depending on obfuscated Java field names. */
     public boolean applyCustomJoint(EntityModel<?> model, String name, PoseStack poses) {
         List<Root> roots = roots(model);
-        List<Anchor> parts = new ArrayList<>();
-        Set<ModelPart> visited = Collections.newSetFromMap(new IdentityHashMap<>());
-        for (Root root : roots) collectAnchors(root.part(), root.name(), List.of(), parts, visited);
-        var found = findAnchors(model, roots);
+        if (roots.isEmpty()) return false;
+        Anchors found = anchors(model, roots);
         Anchor anchor = switch (name) {
             case "head" -> found.head();
             case "body" -> found.body();
-            default -> named(parts, switch (name) {
-                case "left_arm" -> List.of("left_arm", "left_front_leg", "left_front", "left_wing");
-                case "right_arm" -> List.of("right_arm", "right_front_leg", "right_front", "right_wing");
-                case "left_leg" -> List.of("left_leg", "left_hind_leg", "left_hind");
-                case "right_leg" -> List.of("right_leg", "right_hind_leg", "right_hind");
-                default -> List.of("body");
+            default -> named(found.parts(), switch (name) {
+                case "left_arm" -> LEFT_ARM_NAMES;
+                case "right_arm" -> RIGHT_ARM_NAMES;
+                case "left_leg" -> LEFT_LEG_NAMES;
+                case "right_leg" -> RIGHT_LEG_NAMES;
+                default -> BODY;
             }, found.body());
         };
-        if (anchor == null || anchor.path().stream().anyMatch(p -> !p.visible)) return false;
-        applyAgeTransform(model, anchor.path().get(0), poses);
-        for (ModelPart part : anchor.path()) part.translateAndRotate(poses);
+        if (anchor == null) return false;
+        List<ModelPart> path = anchor.path();
+        for (int i = 0; i < path.size(); i++) if (!path.get(i).visible) return false;
+        applyAgeTransform(model, path.get(0), poses);
+        for (int i = 0; i < path.size(); i++) path.get(i).translateAndRotate(poses);
         return true;
     }
 
