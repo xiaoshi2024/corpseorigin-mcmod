@@ -142,6 +142,8 @@ mixin {
 
 // 【修复 5】processResources 补齐 mod_group_id，确保 mods.toml 占位符全部能替换
 tasks.named('processResources', ProcessResources).configure {
+    // MixinGradle packages the generated refmap; the old source copy is stale.
+    exclude 'corpseorigin.refmap.json'
     var replaceProperties = [
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,

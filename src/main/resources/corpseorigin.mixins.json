@@ -5,9 +5,14 @@
   "minVersion": "0.8",
   "refmap": "corpseorigin.refmap.json",
   "mixins": [
+    "NativeCorpseDataMixin",
+    "NativeCorpseAiMixin",
+    "NativeCorpseTickMixin"
   ],
   "client": [
-
+    "NativeCorpseAgeableAccessor",
+    "NativeCorpseModelPartAccessor",
+    "NativeCorpseRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

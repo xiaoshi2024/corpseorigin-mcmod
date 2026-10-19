@@ -1,0 +1,36 @@
+{
+  "mappings": {
+    "com/xiaoshi2022/corpseorigin/mixin/NativeCorpseModelPartAccessor": {
+      "children": "f_104213_:Ljava/util/Map;",
+      "cubes": "f_104212_:Ljava/util/List;"
+    },
+    "com/xiaoshi2022/corpseorigin/mixin/NativeCorpseDataMixin": {
+      "addAdditionalSaveData": "Lnet/minecraft/world/entity/LivingEntity;m_7380_(Lnet/minecraft/nbt/CompoundTag;)V",
+      "readAdditionalSaveData": "Lnet/minecraft/world/entity/LivingEntity;m_7378_(Lnet/minecraft/nbt/CompoundTag;)V"
+    },
+    "com/xiaoshi2022/corpseorigin/mixin/NativeCorpseAiMixin": {
+      "serverAiStep": "Lnet/minecraft/world/entity/Mob;m_6140_()V"
+    },
+    "com/xiaoshi2022/corpseorigin/mixin/NativeCorpseTickMixin": {
+      "baseTick": "Lnet/minecraft/world/entity/LivingEntity;m_6075_()V"
+    }
+  },
+  "data": {
+    "searge": {
+      "com/xiaoshi2022/corpseorigin/mixin/NativeCorpseModelPartAccessor": {
+        "children": "f_104213_:Ljava/util/Map;",
+        "cubes": "f_104212_:Ljava/util/List;"
+      },
+      "com/xiaoshi2022/corpseorigin/mixin/NativeCorpseDataMixin": {
+        "addAdditionalSaveData": "Lnet/minecraft/world/entity/LivingEntity;m_7380_(Lnet/minecraft/nbt/CompoundTag;)V",
+        "readAdditionalSaveData": "Lnet/minecraft/world/entity/LivingEntity;m_7378_(Lnet/minecraft/nbt/CompoundTag;)V"
+      },
+      "com/xiaoshi2022/corpseorigin/mixin/NativeCorpseAiMixin": {
+        "serverAiStep": "Lnet/minecraft/world/entity/Mob;m_6140_()V"
+      },
+      "com/xiaoshi2022/corpseorigin/mixin/NativeCorpseTickMixin": {
+        "baseTick": "Lnet/minecraft/world/entity/LivingEntity;m_6075_()V"
+      }
+    }
+  }
+}
