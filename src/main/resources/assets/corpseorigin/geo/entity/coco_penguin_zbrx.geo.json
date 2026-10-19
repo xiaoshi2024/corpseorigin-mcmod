@@ -1965,6 +1965,11 @@
 					]
 				},
 				{
+					"name": "RightHandItem",
+					"parent": "Right Arm",
+					"pivot": [-4.9, 11, -8]
+				},
+				{
 					"name": "Left Arm",
 					"parent": "Uncles",
 					"pivot": [4.8, 20, -8],
@@ -1982,6 +1987,11 @@
 							}
 						}
 					]
+				},
+				{
+					"name": "LeftHandItem",
+					"parent": "Left Arm",
+					"pivot": [4.8, 10, -8]
 				},
 				{
 					"name": "legs",

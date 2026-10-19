@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "part=body_lower":       { "model": "corpseorigin:block/clone_chamber_body_lower" },
+    "part=body_upper":       { "model": "corpseorigin:block/clone_chamber_body_upper" },
+    "part=door_left_lower":  { "model": "corpseorigin:block/clone_chamber_door_left_lower" },
+    "part=door_left_upper":  { "model": "corpseorigin:block/clone_chamber_door_left_upper" },
+    "part=door_right_lower": { "model": "corpseorigin:block/clone_chamber_door_right_lower" },
+    "part=door_right_upper": { "model": "corpseorigin:block/clone_chamber_door_right_upper" }
+  }
+}

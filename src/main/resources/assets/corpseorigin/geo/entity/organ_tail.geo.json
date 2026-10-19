@@ -1,0 +1,182 @@
+{
+  "format_version": "1.12.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.organ_tail",
+        "texture_width": 64,
+        "texture_height": 64,
+        "visible_bounds_width": 5,
+        "visible_bounds_height": 4,
+        "visible_bounds_offset": [
+          0,
+          1,
+          0
+        ]
+      },
+      "bones": [
+        {
+          "name": "organ_root",
+          "pivot": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "name": "wing_left",
+          "parent": "organ_root",
+          "pivot": [
+            3,
+            -4,
+            3
+          ],
+          "cubes": []
+        },
+        {
+          "name": "wing_left_tip",
+          "parent": "wing_left",
+          "pivot": [
+            14,
+            -5,
+            3
+          ],
+          "cubes": []
+        },
+        {
+          "name": "wing_right",
+          "parent": "organ_root",
+          "pivot": [
+            -3,
+            -4,
+            3
+          ],
+          "cubes": []
+        },
+        {
+          "name": "wing_right_tip",
+          "parent": "wing_right",
+          "pivot": [
+            -14,
+            -5,
+            3
+          ],
+          "cubes": []
+        },
+        {
+          "name": "tail_base",
+          "parent": "organ_root",
+          "pivot": [
+            0,
+            -12,
+            2
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -2,
+                -15,
+                2
+              ],
+              "size": [
+                4,
+                4,
+                7
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "tail_mid",
+          "parent": "tail_base",
+          "pivot": [
+            0,
+            -14,
+            8
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -1.5,
+                -16.5,
+                8
+              ],
+              "size": [
+                3,
+                3,
+                8
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "name": "tail_tip",
+          "parent": "tail_mid",
+          "pivot": [
+            0,
+            -15.5,
+            15
+          ],
+          "cubes": [
+            {
+              "origin": [
+                -1,
+                -17,
+                15
+              ],
+              "size": [
+                2,
+                2,
+                6
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -5,
+                -17.2,
+                20
+              ],
+              "size": [
+                10,
+                0.6,
+                4
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            },
+            {
+              "origin": [
+                -3,
+                -17.2,
+                24
+              ],
+              "size": [
+                6,
+                0.6,
+                3
+              ],
+              "uv": [
+                0,
+                0
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

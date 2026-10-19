@@ -1,0 +1,238 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "fish_idle": {
+      "loop": true,
+      "animation_length": 2,
+      "bones": {
+        "fish_tail_0": {
+          "rotation": [
+            0,
+            "math.sin(query.anim_time * 90 - 0) * 5",
+            0
+          ]
+        },
+        "fish_tail_1": {
+          "rotation": [
+            0,
+            "math.sin(query.anim_time * 90 - 35) * 5",
+            0
+          ]
+        },
+        "fish_tail_2": {
+          "rotation": [
+            0,
+            "math.sin(query.anim_time * 90 - 70) * 5",
+            0
+          ]
+        },
+        "fish_tail_3": {
+          "rotation": [
+            0,
+            "math.sin(query.anim_time * 90 - 105) * 5",
+            0
+          ]
+        },
+        "fish_root": {
+          "position": [
+            0,
+            "math.sin(query.anim_time * 120) * 0.5",
+            0
+          ]
+        },
+        "fish_fin_-1_0": {
+          "rotation": [
+            "math.sin(query.anim_time * 90 - 0) * 12",
+            0,
+            0
+          ]
+        },
+        "fish_fin_-1_1": {
+          "rotation": [
+            "math.sin(query.anim_time * 90 - 30) * 12",
+            0,
+            0
+          ]
+        },
+        "fish_fin_-1_2": {
+          "rotation": [
+            "math.sin(query.anim_time * 90 - 60) * 12",
+            0,
+            0
+          ]
+        },
+        "fish_fin_1_0": {
+          "rotation": [
+            "math.sin(query.anim_time * 90 - 0) * 12",
+            0,
+            0
+          ]
+        },
+        "fish_fin_1_1": {
+          "rotation": [
+            "math.sin(query.anim_time * 90 - 30) * 12",
+            0,
+            0
+          ]
+        },
+        "fish_fin_1_2": {
+          "rotation": [
+            "math.sin(query.anim_time * 90 - 60) * 12",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "fish_swim": {
+      "loop": true,
+      "animation_length": 2,
+      "bones": {
+        "fish_tail_0": {
+          "rotation": [
+            0,
+            "math.sin(query.anim_time * 320 - 0) * 18",
+            0
+          ]
+        },
+        "fish_tail_1": {
+          "rotation": [
+            0,
+            "math.sin(query.anim_time * 320 - 35) * 18",
+            0
+          ]
+        },
+        "fish_tail_2": {
+          "rotation": [
+            0,
+            "math.sin(query.anim_time * 320 - 70) * 18",
+            0
+          ]
+        },
+        "fish_tail_3": {
+          "rotation": [
+            0,
+            "math.sin(query.anim_time * 320 - 105) * 18",
+            0
+          ]
+        },
+        "fish_root": {
+          "position": [
+            0,
+            "math.sin(query.anim_time * 120) * 0.5",
+            0
+          ]
+        },
+        "fish_fin_-1_0": {
+          "rotation": [
+            "math.sin(query.anim_time * 320 - 0) * 12",
+            0,
+            0
+          ]
+        },
+        "fish_fin_-1_1": {
+          "rotation": [
+            "math.sin(query.anim_time * 320 - 30) * 12",
+            0,
+            0
+          ]
+        },
+        "fish_fin_-1_2": {
+          "rotation": [
+            "math.sin(query.anim_time * 320 - 60) * 12",
+            0,
+            0
+          ]
+        },
+        "fish_fin_1_0": {
+          "rotation": [
+            "math.sin(query.anim_time * 320 - 0) * 12",
+            0,
+            0
+          ]
+        },
+        "fish_fin_1_1": {
+          "rotation": [
+            "math.sin(query.anim_time * 320 - 30) * 12",
+            0,
+            0
+          ]
+        },
+        "fish_fin_1_2": {
+          "rotation": [
+            "math.sin(query.anim_time * 320 - 60) * 12",
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "fish_bite": {
+      "animation_length": 0.6,
+      "bones": {
+        "fish_jaw": {
+          "rotation": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.15": [
+              -35,
+              0,
+              0
+            ],
+            "0.3": [
+              0,
+              0,
+              0
+            ],
+            "0.6": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "fish_root": {
+          "position": {
+            "0.0": [
+              0,
+              0,
+              0
+            ],
+            "0.2": [
+              0,
+              0,
+              -7
+            ],
+            "0.6": [
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "fish_tail_0": {
+          "rotation": {
+            "0.0": [
+              0,
+              -20,
+              0
+            ],
+            "0.3": [
+              0,
+              20,
+              0
+            ],
+            "0.6": [
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      }
+    }
+  }
+}

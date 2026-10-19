@@ -517,6 +517,11 @@
 					]
 				},
 				{
+					"name": "LeftHandItem",
+					"parent": "body",
+					"pivot": [-9, 16, 0]
+				},
+				{
 					"name": "Insect leg",
 					"parent": "body",
 					"pivot": [0, 10, 0]
@@ -686,6 +691,11 @@
 							}
 						}
 					]
+				},
+				{
+					"name": "RightHandItem",
+					"parent": "group22",
+					"pivot": [-3.22078, 13.75, 7.35386]
 				},
 				{
 					"name": "group4",
