@@ -32,6 +32,12 @@ public final class NativeCorpseState {
     private static final Map<Entity, Integer> APPEARANCE_CACHE = new WeakHashMap<>();
     private static final Map<Entity, String> ORGANS_CACHE = new WeakHashMap<>();
     private static final Map<Entity, Integer> INCUBATION_CACHE = new WeakHashMap<>();
+    /** 进化等级（1~10） */
+    private static final Map<Entity, Integer> EVOLUTION_CACHE = new WeakHashMap<>();
+    /** 血肉能量 */
+    private static final Map<Entity, Integer> FLESH_CACHE = new WeakHashMap<>();
+    /** 临界突破失败次数（每次失败提高下次成功率） */
+    private static final Map<Entity, Integer> BREAKTHROUGH_CACHE = new WeakHashMap<>();
 
     // 客户端：服务端通过 CorpseOriginNetwork 同步过来的「实体 UUID -> 外观掩码」
     private static final Map<java.util.UUID, Integer> CLIENT_INFECTED = new java.util.concurrent.ConcurrentHashMap<>();
@@ -90,6 +96,12 @@ public final class NativeCorpseState {
     /** 客户端收到服务端同步后写入。 */
     public static void acceptClientState(java.util.UUID entityId, int mask) {
         CLIENT_INFECTED.put(entityId, mask);
+    }
+
+    /** 客户端读取同步过来的进化等级（同步包高 8 位）。 */
+    public static int clientEvolutionLevel(Entity entity) {
+        Integer synced = CLIENT_INFECTED.get(entity.getUUID());
+        return synced == null ? 0 : (synced >> 8) & 0xFF;
     }
 
     /** 切换世界/退出时清空，避免 UUID 复用导致误渲染。 */
@@ -165,6 +177,36 @@ public final class NativeCorpseState {
         INCUBATION_CACHE.put(entity, Math.max(0, ticks));
     }
 
+    // ========== 进化 / 血肉能量 ==========
+
+    public static int evolutionLevel(Entity entity) {
+        Integer level = EVOLUTION_CACHE.get(entity);
+        if (level == null) return 1;
+        return Math.max(1, Math.min(ZbEvolution.MAX_LEVEL, level));
+    }
+
+    public static void setEvolutionLevel(Entity entity, int level) {
+        EVOLUTION_CACHE.put(entity, Math.max(1, Math.min(ZbEvolution.MAX_LEVEL, level)));
+    }
+
+    public static int fleshEnergy(Entity entity) {
+        Integer energy = FLESH_CACHE.get(entity);
+        return energy == null ? 0 : Math.max(0, energy);
+    }
+
+    public static void setFleshEnergy(Entity entity, int energy) {
+        FLESH_CACHE.put(entity, Math.max(0, energy));
+    }
+
+    public static int breakthroughFailures(Entity entity) {
+        Integer failures = BREAKTHROUGH_CACHE.get(entity);
+        return failures == null ? 0 : Math.max(0, failures);
+    }
+
+    public static void setBreakthroughFailures(Entity entity, int failures) {
+        BREAKTHROUGH_CACHE.put(entity, Math.max(0, failures));
+    }
+
     // 感染源器官快照缓存（per-target，消费一次后清除）
     private static final Map<Entity, String> SOURCE_ORGANS_CACHE = new WeakHashMap<>();
 
@@ -212,6 +254,10 @@ public final class NativeCorpseState {
         }
         HybridZombie.tagAsHybrid(mob, EntityType.getKey(mob.getType()).toString(), HybridZombie.GRADE_HALF, generation);
         initializeAppearance(mob);
+        // 新感染的尸兄从「人1」开始，靠吞噬血肉成长
+        setEvolutionLevel(mob, 1);
+        setFleshEnergy(mob, 0);
+        setBreakthroughFailures(mob, 0);
         INCUBATION_CACHE.remove(mob);
     }
 
@@ -249,6 +295,8 @@ public final class NativeCorpseState {
         if (infected(mob)) {
             initializeAppearance(mob);
             ensureSyncMarker(mob);
+            // 读档/首次转化后把境界属性补上（已应用过则直接返回）
+            ZbEvolution.ensureAttributes(mob);
         }
         Integer remaining = INCUBATION_CACHE.get(mob);
         if (remaining == null) return;
@@ -270,6 +318,12 @@ public final class NativeCorpseState {
         if (organs != null && !"[]".equals(organs)) tag.putString("co_nc_organs", organs);
         Integer inc = INCUBATION_CACHE.get(entity);
         if (inc != null) tag.putInt("co_nc_incubation", inc);
+        Integer evolution = EVOLUTION_CACHE.get(entity);
+        if (evolution != null) tag.putInt("co_nc_evolution", evolution);
+        Integer flesh = FLESH_CACHE.get(entity);
+        if (flesh != null) tag.putInt("co_nc_flesh", flesh);
+        Integer failures = BREAKTHROUGH_CACHE.get(entity);
+        if (failures != null) tag.putInt("co_nc_breakthrough", failures);
         String source = SOURCE_ORGANS_CACHE.get(entity);
         if (source != null) tag.putString("co_nc_source_organs", source);
     }
@@ -279,6 +333,9 @@ public final class NativeCorpseState {
         if (tag.contains("co_nc_appearance")) APPEARANCE_CACHE.put(entity, tag.getInt("co_nc_appearance"));
         if (tag.contains("co_nc_organs")) ORGANS_CACHE.put(entity, tag.getString("co_nc_organs"));
         if (tag.contains("co_nc_incubation")) INCUBATION_CACHE.put(entity, tag.getInt("co_nc_incubation"));
+        if (tag.contains("co_nc_evolution")) setEvolutionLevel(entity, tag.getInt("co_nc_evolution"));
+        if (tag.contains("co_nc_flesh")) setFleshEnergy(entity, tag.getInt("co_nc_flesh"));
+        if (tag.contains("co_nc_breakthrough")) setBreakthroughFailures(entity, tag.getInt("co_nc_breakthrough"));
         if (tag.contains("co_nc_source_organs")) SOURCE_ORGANS_CACHE.put(entity, tag.getString("co_nc_source_organs"));
     }
 }

@@ -36,6 +36,7 @@ public class CorpseOrigin {
 
         // DeferredRegister 注册
         com.xiaoshi2022.corpseorigin.registry.ModEffects.EFFECTS.register(modEventBus);
+        com.xiaoshi2022.corpseorigin.registry.ModSounds.SOUNDS.register(modEventBus);
         com.xiaoshi2022.corpseorigin.registry.ModFluids.FLUIDS.register(modEventBus);
         com.xiaoshi2022.corpseorigin.registry.ModFluids.BLOCKS.register(modEventBus);
         com.xiaoshi2022.corpseorigin.registry.ModItems.ITEMS.register(modEventBus);
@@ -53,6 +54,11 @@ public class CorpseOrigin {
         net.minecraftforge.fml.ModLoadingContext.get().registerConfig(
                 net.minecraftforge.fml.config.ModConfig.Type.CLIENT,
                 com.xiaoshi2022.corpseorigin.config.CorpseOriginConfig.SPEC);
+
+        // 服务端配置：尸水浸泡感染 / 尸兄血雨（运行中改 serverconfig/corpseorigin-server.toml 即时生效）
+        net.minecraftforge.fml.ModLoadingContext.get().registerConfig(
+                net.minecraftforge.fml.config.ModConfig.Type.SERVER,
+                com.xiaoshi2022.corpseorigin.config.CorpseOriginServerConfig.SPEC);
 
         LOGGER.info("CorpseOrigin 1.20.1 Forge skeleton loaded");
     }

@@ -7,16 +7,28 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ambient.AmbientCreature;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.RangedAttackMob;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 
 /**
- * 感染后的 AI 替换：所有被感染的原版 Mob 用「尸兄猎手」AI，
- * 但仍使用原宿主的身体、导航、攻击动画（不替换实体类型）。
+ * 感染后的尸兄 AI（1.20.1 Forge 简化版）。
  * <p>
- * 1.20.1 Forge 简化版：移除 ZbOrganEffects、GourdCapture 等上游依赖，
- * 保留目标搜索、追击、近战攻击核心链路。
+ * 分两种处理方式：
+ * <ul>
+ *   <li><b>友好生物</b>（动物 / 村民 / 水生生物 / 蝙蝠等，且不是敌人）：
+ *       取消原版 {@code serverAiStep}，整个替换为尸兄猎手 AI；</li>
+ *   <li><b>带机制的生物</b>（Boss、苦力怕、末影人、模组生物等 {@link Enemy}）：
+ *       保留自己的 Goal / customServerAiStep / 技能，只在没有目标时叠加一层
+ *       "锁定附近猎物"的尸兄行为，不抢导航与攻击。</li>
+ * </ul>
+ * 两种方式都保留宿主身体、导航、攻击动画（不替换实体类型），
+ * 境界属性与吞噬进化照常生效。
  */
 public final class NativeCorpseAi {
     private static final double RANGE = 24;
@@ -28,8 +40,60 @@ public final class NativeCorpseAi {
         return target != null && target != mob && target.isAlive() && !target.isSpectator()
                 && (target instanceof Mob || target instanceof Player)
                 && !(target instanceof Player player && player.isCreative())
-                && !ZombieKin.isZombieKin(target)
+                // 同类默认不互殴；但高阶尸兄会猎食比自己低阶的尸兄（互相吞噬进化）
+                && (!ZombieKin.isZombieKin(target) || canDevour(mob, target))
                 && !mob.isAlliedTo(target) && mob.distanceToSqr(target) <= RANGE * RANGE;
+    }
+
+    /** 高阶吞噬低阶：只有对方是已转化尸兄且进化等级更低时才允许猎食。 */
+    private static boolean canDevour(Mob hunter, LivingEntity target) {
+        return target instanceof Mob other
+                && NativeCorpseState.infected(other)
+                && NativeCorpseState.evolutionLevel(other) < NativeCorpseState.evolutionLevel(hunter);
+    }
+
+    /**
+     * 是否需要整体替换 AI。
+     * <p>
+     * 只有"没有自身战斗机制"的友好生物才整只换成猎手；
+     * 敌人（Boss / 怪物）与模组机制生物保留原 AI，走 {@link #overlay} 叠加。
+     */
+    public static boolean shouldReplaceAi(Mob mob) {
+        if (mob instanceof Enemy) return false;
+        return mob instanceof Animal
+                || mob instanceof AbstractVillager
+                || mob instanceof WaterAnimal
+                || mob instanceof AmbientCreature;
+    }
+
+    /**
+     * 机制生物的"叠加层"：不碰它自己的 Goal / 导航 / 技能，
+     * 只在其没有有效目标时，帮忙锁定附近猎物。
+     * 这样巫妖王仍会放法术、苦力怕仍会膨胀、模组 Boss 仍会走自己的阶段。
+     */
+    public static void overlay(Mob mob, ServerLevel level) {
+        if (mob.isNoAi() || !mob.isAlive() || mob.isRemoved()) return;
+
+        LivingEntity current = mob.getTarget();
+        if (current != null && current.isAlive() && !current.isSpectator()) {
+            // 已经有目标：完全交给它自己的 AI / 技能
+            return;
+        }
+
+        State state = STATES.computeIfAbsent(mob, ignored -> new State());
+        if (mob.tickCount < state.scan) return;
+        state.scan = mob.tickCount + 20;
+
+        LivingEntity found = level.getEntitiesOfClass(LivingEntity.class,
+                        mob.getBoundingBox().inflate(RANGE),
+                        entity -> prey(mob, entity) && mob.hasLineOfSight(entity))
+                .stream()
+                .min(java.util.Comparator.comparingDouble(mob::distanceToSqr))
+                .orElse(null);
+        if (found != null) {
+            mob.setTarget(found);
+            mob.setAggressive(true);
+        }
     }
 
     private static LivingEntity target(Mob mob, State state, ServerLevel level) {
@@ -50,6 +114,10 @@ public final class NativeCorpseAi {
 
     public static void tick(Mob mob, ServerLevel level) {
         if (mob.isNoAi() || !mob.isAlive()) return;
+        // serverAiStep 被本模组整体取消，原版 checkDespawn 也随之跳过。
+        // 不补这一句的话感染体会永久滞留、越积越多（血雨后尤其明显），最终拖慢服务端与渲染。
+        mob.checkDespawn();
+        if (!mob.isAlive() || mob.isRemoved()) return;
         State state = STATES.computeIfAbsent(mob, ignored -> new State());
         mob.getSensing().tick();
         LivingEntity target = target(mob, state, level);

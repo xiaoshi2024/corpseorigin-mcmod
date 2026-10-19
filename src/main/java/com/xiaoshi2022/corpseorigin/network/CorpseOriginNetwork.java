@@ -46,13 +46,19 @@ public final class CorpseOriginNetwork {
     public static void sync(Mob mob) {
         if (mob.level().isClientSide()) return;
         CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> mob),
-                new SyncInfection(mob.getUUID(), NativeCorpseState.appearance(mob)));
+                new SyncInfection(mob.getUUID(), payload(mob)));
     }
 
     /** 单独发给某个玩家（用于玩家开始追踪/进入世界时补发）。 */
     public static void syncTo(ServerPlayer player, Mob mob) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                new SyncInfection(mob.getUUID(), NativeCorpseState.appearance(mob)));
+                new SyncInfection(mob.getUUID(), payload(mob)));
+    }
+
+    /** 低 8 位外观掩码 + 高 8 位进化等级（客户端显示境界用）。 */
+    private static int payload(Mob mob) {
+        return (NativeCorpseState.appearance(mob) & 0xFF)
+                | ((NativeCorpseState.evolutionLevel(mob) & 0xFF) << 8);
     }
 
     public record SyncInfection(UUID entityId, int mask) {

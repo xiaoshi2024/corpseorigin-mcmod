@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.xiaoshi2022.corpseorigin.client.render.NativeCorpseOrgans;
 import com.xiaoshi2022.corpseorigin.growth.NativeCorpseState;
 import com.xiaoshi2022.corpseorigin.mixin.NativeCorpseModelPartAccessor;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.CreeperModel;
 import net.minecraft.client.model.AgeableListModel;
@@ -69,10 +70,6 @@ public class NativeCorpseLayer extends RenderLayer<LivingEntity, EntityModel<Liv
     private final Map<ModelPart, ModelPart> surfaces = new IdentityHashMap<>();
     private final Map<ModelPart, NativeCorpseGeometry.Bounds> organBounds = new IdentityHashMap<>();
 
-    /** 【临时诊断】每种实体只打印一次。 */
-    private static final java.util.Set<String> DIAG_LOGGED =
-            java.util.Collections.synchronizedSet(new java.util.HashSet<>());
-
     public NativeCorpseLayer(RenderLayerParent<LivingEntity, EntityModel<LivingEntity>> parent) {
         super(parent);
     }
@@ -84,19 +81,11 @@ public class NativeCorpseLayer extends RenderLayer<LivingEntity, EntityModel<Liv
         EntityModel<LivingEntity> model = getParentModel();
         List<Root> modelRoots = roots(model);
         boolean transformed = !entity.isInvisible() && NativeCorpseState.transformed(entity);
-        if (DIAG_LOGGED.add(entity.getType().toString())) {
-            List<String> rootNames = new ArrayList<>();
-            for (Root root : modelRoots) rootNames.add(root.name());
-            Anchors diagAnchors = findAnchors(model, modelRoots);
-            com.xiaoshi2022.corpseorigin.CorpseOrigin.LOGGER.info(
-                    "[diag2] {} model={} transformed={} mask={} roots={} body={} head={}",
-                    entity.getType(), model.getClass().getSimpleName(), transformed,
-                    NativeCorpseState.renderAppearance(entity), rootNames,
-                    diagAnchors.body() == null ? "null" : diagAnchors.body().name(),
-                    diagAnchors.head() == null ? "null" : diagAnchors.head().name());
-        }
         if (!transformed || CustomOrganLayer.replacesBody(entity)) return;
         if (modelRoots.isEmpty()) return;
+        // 远处（>48 格）细节几乎不可见，跳过整层重绘，避免血雨后感染体扎堆时帧率骤降
+        var localPlayer = Minecraft.getInstance().player;
+        if (localPlayer != null && entity.distanceToSqr(localPlayer) > 48.0D * 48.0D) return;
 
         // 1) 静脉：整个模型覆盖一层
         VertexConsumer veinsBuffer = bufferSource.getBuffer(RenderType.entityCutoutNoCullZOffset(NativeCorpseOrgans.VEINS));

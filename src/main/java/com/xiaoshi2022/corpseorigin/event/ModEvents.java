@@ -31,6 +31,32 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 public final class ModEvents {
     private ModEvents() {}
 
+    /** 注册尸兄血雨指令。 */
+    @SubscribeEvent
+    public static void onRegisterCommands(net.minecraftforge.event.RegisterCommandsEvent event) {
+        com.xiaoshi2022.corpseorigin.command.BloodRainCommand.register(event.getDispatcher());
+        com.xiaoshi2022.corpseorigin.command.ZbRealmCommand.register(event.getDispatcher());
+    }
+
+    /** 尸兄击杀活体 → 吞噬血肉、积攒进化能量（同类相食收益最高）。 */
+    @SubscribeEvent
+    public static void onLivingDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
+        LivingEntity victim = event.getEntity();
+        if (victim.level().isClientSide()) return;
+        net.minecraft.world.entity.Entity attacker = event.getSource().getEntity();
+        if (attacker instanceof net.minecraft.world.entity.Mob mob) {
+            com.xiaoshi2022.corpseorigin.growth.ZbEvolution.onKill(mob, victim);
+        }
+    }
+
+    /** 服务端主循环：驱动尸兄血雨事件（自然触发 / 范围判定 / 粒子）。 */
+    @SubscribeEvent
+    public static void onServerTick(net.minecraftforge.event.TickEvent.ServerTickEvent event) {
+        if (event.phase != net.minecraftforge.event.TickEvent.Phase.END) return;
+        var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server != null) BloodRainManager.tick(server);
+    }
+
     /** Forge LivingHurtEvent：每次 LivingEntity 受伤后，攻击者是尸族则按概率感染。 */
     @SubscribeEvent
     public static void onLivingHurt(LivingHurtEvent event) {
@@ -56,47 +82,6 @@ public final class ModEvents {
             com.xiaoshi2022.corpseorigin.growth.NativeCorpseState.clearClientState();
         }
     }
-
-    /** 【临时诊断】生成一只感染苦力怕，验证骨骼渲染。 */
-    @SubscribeEvent
-    public static void onDiagServerTick(net.minecraftforge.event.TickEvent.ServerTickEvent event) {
-        if (event.phase != net.minecraftforge.event.TickEvent.Phase.END) return;
-        var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
-        if (server == null) return;
-        var level = server.overworld();
-        if (level == null) return;
-        DIAG_TICKS++;
-        if (DIAG_TICKS == 80) {
-            var player = level.players().stream().findFirst().orElse(null);
-            if (player == null) return;
-            var creeper = net.minecraft.world.entity.EntityType.CREEPER.create(level);
-            if (creeper == null) return;
-            var look = player.getLookAngle();
-            var eye = player.getEyePosition();
-            creeper.moveTo(eye.x + look.x * 3.0D, eye.y + look.y * 3.0D - 1.2D, eye.z + look.z * 3.0D,
-                    0.0F, 0.0F);
-            level.addFreshEntity(creeper);
-            DIAG_ENTITY = creeper.getUUID();
-            com.xiaoshi2022.corpseorigin.effect.BYeffect.applyInfection(creeper, level, 40, null);
-            com.xiaoshi2022.corpseorigin.CorpseOrigin.LOGGER.info("[diag2] spawned creeper {}", DIAG_ENTITY);
-        }
-        if (DIAG_ENTITY != null && DIAG_TICKS % 40 == 0) {
-            var entity = level.getEntity(DIAG_ENTITY);
-            if (entity instanceof LivingEntity living) {
-                var instance = living.getEffect(com.xiaoshi2022.corpseorigin.registry.ModEffects.QIANS.get());
-                com.xiaoshi2022.corpseorigin.CorpseOrigin.LOGGER.info(
-                        "[diag2] server t={} infected={} infinite={} amp={} tags={}",
-                        DIAG_TICKS,
-                        com.xiaoshi2022.corpseorigin.growth.NativeCorpseState.infected(living),
-                        instance != null && instance.isInfiniteDuration(),
-                        instance == null ? -99 : instance.getAmplifier(),
-                        living.getTags());
-            }
-        }
-    }
-
-    private static int DIAG_TICKS = 0;
-    private static java.util.UUID DIAG_ENTITY = null;
 
     /**
      * 玻璃瓶舀尸水：右击尸水水源 → 获得尸水瓶（bywater_bottle）。
