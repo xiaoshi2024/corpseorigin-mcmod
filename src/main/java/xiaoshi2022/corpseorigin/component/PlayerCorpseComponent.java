@@ -472,16 +472,57 @@ public class PlayerCorpseComponent {
                 && variant != VARIANT_SHICHAOZHIZI;
     }
 
-    /** Appearance follows the authoritative player realm, independently of legacy corpse levels. */
+    // ==================== 尸眼手动开关（/corpseeye 作弊指令写入） ====================
+    /** 跟随境界自动显隐（生存默认：境界 ≥5 自动收起尸眼骨骼） */
+    public static final int EYE_PREF_AUTO = 0;
+    /** 强制长出尸眼骨骼 */
+    public static final int EYE_PREF_SHOW = 1;
+    /** 强制隐藏尸眼骨骼 */
+    public static final int EYE_PREF_HIDE = 2;
+    private static final String KEY_EYE_PREF = "eye_pref";
+
+    /**
+     * Appearance follows the authoritative player realm, independently of legacy corpse levels.
+     * <p>
+     * {@code /corpseeye} 写入的手动开关（{@link #KEY_EYE_PREF}）优先于境界：show/hide 直接
+     * 定显隐，auto（生存默认）才按境界走。
+     */
     public static void syncEvolvedEye(ServerPlayer player) {
         var component=get(player);
         if(!component.isCorpse())return;
-        boolean hidden=xiaoshi2022.corpseorigin.growth.RealmProgression.level(player)>=5;
         var tag=component.getData();
+        int pref=tag.getInt(KEY_EYE_PREF).orElse(EYE_PREF_AUTO);
+        boolean hidden;
+        if(pref==EYE_PREF_SHOW)hidden=false;
+        else if(pref==EYE_PREF_HIDE)hidden=true;
+        else hidden=xiaoshi2022.corpseorigin.growth.RealmProgression.level(player)>=5;
         if(tag.getBooleanOr("evolved_eye_hidden",false)!=hidden){
             tag.putBoolean("evolved_eye_hidden",hidden);
             component.setData(tag);
         }
+    }
+
+    /**
+     * 作弊指令（/corpseeye）写入手动开关，并立即按新开关校正一次显隐。
+     *
+     * @return false —— 目标不是尸兄、或走了自带外观变种（本来就不长尸眼骨骼），设置无意义
+     */
+    public static boolean setEyePref(ServerPlayer player, int pref) {
+        var component=get(player);
+        if(!component.isCorpse())return false;
+        var tag=component.getData();
+        if(!hasExoskeleton(tag.getInt(KEY_VARIANT).orElse(0)))return false;
+        if(tag.getInt(KEY_EYE_PREF).orElse(EYE_PREF_AUTO)==pref)return true;
+        tag.putInt(KEY_EYE_PREF,pref);
+        component.setData(tag);
+        syncEvolvedEye(player);
+        return true;
+    }
+
+    /** 当前尸眼手动开关：{@link #EYE_PREF_AUTO} / {@link #EYE_PREF_SHOW} / {@link #EYE_PREF_HIDE} */
+    public static int getEyePref(Player player) {
+        var tag=player.getAttached(ModDataAttachments.PLAYER_CORPSE);
+        return tag==null?EYE_PREF_AUTO:tag.getInt(KEY_EYE_PREF).orElse(EYE_PREF_AUTO);
     }
 
     /**

@@ -1,6 +1,7 @@
 package xiaoshi2022.corpseorigin.item;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -9,6 +10,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
@@ -23,7 +25,7 @@ import java.util.function.Consumer;
 /**
  * 角色选择书。两种用法，同一个物品：
  * <ul>
- *   <li><b>统一书</b>（不带 {@link ModDataComponents#CHARACTER_ID}）—— 生存开局那一本。
+ *   <li><b>统一书</b>（不带角色 ID）—— 生存开局那一本。
  *       右键打开 {@link CharacterBookScreen}，从全部已注册角色里挑一位，选完这本书就消耗掉；</li>
  *   <li><b>绑定书</b>（带角色 ID，{@link #createStack}）—— 右键直接切换成书里写的那个角色，
  *       方便成就奖励 / 指令 / 整合包定向发某一角色。</li>
@@ -32,6 +34,15 @@ import java.util.function.Consumer;
  */
 public class CharacterBookItem extends Item {
 
+    /**
+     * 角色 ID 在 {@code minecraft:custom_data} 里的键名。
+     * <p>
+     * 不用自定义数据组件存储：组件 id 由 Fabric 的 mod 加载顺序决定，换一个 mod 集合或版本
+     * 就会整体漂移，回放（Flashback）时按旧 id 解析会读到错位的组件而崩溃。
+     * {@code minecraft:custom_data} 是 vanilla 固定组件，id 永远不变，跨会话/回放都稳定。
+     */
+    private static final String CHARACTER_ID_KEY = "corpseorigin:character_id";
+
     public CharacterBookItem(Properties properties) {
         super(properties);
     }
@@ -39,7 +50,7 @@ public class CharacterBookItem extends Item {
     /** 生成指定角色的「角色选择书」 */
     public static ItemStack createStack(String characterId) {
         ItemStack stack = new ItemStack(ModItems.CHARACTER_BOOK);
-        stack.set(ModDataComponents.CHARACTER_ID, characterId);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putString(CHARACTER_ID_KEY, characterId));
         return stack;
     }
 
@@ -53,9 +64,14 @@ public class CharacterBookItem extends Item {
         return new ItemStack(ModItems.CHARACTER_BOOK);
     }
 
-    /** 读取书里记录的角色 ID（没有则为 null） */
+    /** 读取书里记录的角色 ID（没有则为 null）。新书读 {@code custom_data}，旧存档回退旧组件。 */
     public static String getCharacterId(ItemStack stack) {
-        return stack.get(ModDataComponents.CHARACTER_ID);
+        String id = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)
+                .copyTag().getStringOr(CHARACTER_ID_KEY, null);
+        if (id != null) {
+            return id;
+        }
+        return stack.get(ModDataComponents.CHARACTER_ID);   // 向后兼容旧存档
     }
 
     @Override
