@@ -17,7 +17,7 @@ public final class OrganLibrary {
     public static final int MAX_SLOTS = 8;
     /** 自动生成的示例目录文件名：只作格式参照，不算玩家自定义内容。 */
     public static final String EXAMPLE_FILE = "examples.json";
-    /** F8「打开器官资源包目录」释放到 organ 根目录的示例包名。 */
+    /** 小键盘 9「打开器官资源包目录」释放到 organ 根目录的示例包名。 */
     public static final String EXAMPLE_PACK_ZIP = "CorpseOrigin-Organs.zip";
 
     /** 器官来源。示例内容只给玩家预览，尸兄突变只吃内置与玩家自定义。 */

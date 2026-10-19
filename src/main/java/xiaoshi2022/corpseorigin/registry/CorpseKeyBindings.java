@@ -33,7 +33,7 @@ public final class CorpseKeyBindings {
 
     public static void register() {
         organAbility=KeyMappingHelper.registerKeyMapping(new KeyMapping("key.corpseorigin.organ_ability",InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_G,CATEGORY));
-        openOrganEditor=KeyMappingHelper.registerKeyMapping(new KeyMapping("key.corpseorigin.organ_editor",InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_F8,CATEGORY));
+        openOrganEditor=KeyMappingHelper.registerKeyMapping(new KeyMapping("key.corpseorigin.organ_editor",InputConstants.Type.KEYSYM,GLFW.GLFW_KEY_KP_9,CATEGORY));
         openSkillWheel = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.corpseorigin.open_skill_wheel",
                 InputConstants.Type.KEYSYM,

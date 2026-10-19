@@ -82,7 +82,8 @@ public final class NativeCustomOrgans {
             }
             host = new Host(json, List.copyOf(entries)); HOSTS.put(entity, host);
         }
-        var frames = new ArrayList<Frame>();
+        if (host.entries.isEmpty()) return;
+        var frames = new ArrayList<Frame>(host.entries.size());
         for (Entry entry : host.entries) {
             if (BROKEN.contains(entry.slot.organ())) continue;
             try {
@@ -90,7 +91,8 @@ public final class NativeCustomOrgans {
                         : !entity.onGround() ? "fly" : entity.getDeltaMovement().horizontalDistanceSqr() > .0004 ? "walk" : "idle";
                 var state = new LivingEntityRenderState();
                 state.addGeckolibData(CLIP, entry.renderer.def.clips().getOrDefault(motion, entry.renderer.def.clips().get("idle")));
-                entry.renderer.getAnimatable().host = new java.lang.ref.WeakReference<>(entity);
+                if (entry.renderer.getAnimatable().host == null || entry.renderer.getAnimatable().host.get() != entity)
+                    entry.renderer.getAnimatable().host = new java.lang.ref.WeakReference<>(entity);
                 entry.renderer.extractRenderState(entity, state, partial);
                 frames.add(new Frame(entry, state));
             } catch (Exception e) { broken(entry.slot.organ(), e); }
@@ -105,7 +107,7 @@ public final class NativeCustomOrgans {
             if (!(value instanceof Frame frame) || BROKEN.contains(frame.entry.slot.organ())) continue;
             var slot = frame.entry.slot;
             var path = joints.apply(slot.joint());
-            if (path.isEmpty() || path.stream().anyMatch(p -> !p.visible)) continue;
+            if (path.isEmpty() || !visible(path)) continue;
             var local = new PoseStack(); local.last().set(poses.last());
             for (var part : path) part.translateAndRotate(local);
             local.translate(slot.x()/16.0, slot.y()/16.0, slot.z()/16.0);
@@ -118,6 +120,10 @@ public final class NativeCustomOrgans {
             catch (Exception e) { broken(slot.organ(), e); }
         }
     }
+    private static boolean visible(List<ModelPart> path) {
+        for (ModelPart part : path) if (!part.visible) return false;
+        return true;
+    }
     /** Molang entity queries must read the host, while animation caches belong to the independent organ. */
     public static Object queryHost(Object animatable) {
         if (animatable instanceof Adapter adapter && adapter.host != null) {
@@ -128,21 +134,28 @@ public final class NativeCustomOrgans {
     }
     private static final class Adapter implements GeoAnimatable {
         private java.lang.ref.WeakReference<LivingEntity> host;
+        private final Map<String, RawAnimation> clips = new HashMap<>();
         private final AnimatableInstanceCache cache = new InstancedAnimatableInstanceCache(this);
         public AnimatableInstanceCache getAnimatableInstanceCache() { return cache; }
         public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
             controllers.add(new AnimationController<Adapter>("organ", 4, test -> {
                 String clip = test.getData(CLIP);
-                return clip == null ? PlayState.STOP : test.setAndContinue(RawAnimation.begin().thenLoop(clip));
+                return clip == null ? PlayState.STOP : test.setAndContinue(clips.computeIfAbsent(clip, key -> RawAnimation.begin().thenLoop(key)));
             }));
         }
     }
     private static final class Model extends DefaultedEntityGeoModel<Adapter> {
         final OrganDefinition def;
-        Model(OrganDefinition def) { super(Identifier.parse("corpseorigin:organ_bat")); this.def = def; }
-        @Override public Identifier getModelResource(GeoRenderState s) { return Identifier.parse(OrganResourceIds.model(def.model())); }
-        @Override public Identifier getTextureResource(GeoRenderState s) { return Identifier.parse(def.texture()); }
-        @Override public Identifier getAnimationResource(Adapter a) { return Identifier.parse(OrganResourceIds.animation(def.animation())); }
+        private final Identifier modelId, textureId, animationId;
+        Model(OrganDefinition def) {
+            super(Identifier.parse("corpseorigin:organ_bat")); this.def = def;
+            modelId = Identifier.parse(OrganResourceIds.model(def.model()));
+            textureId = Identifier.parse(def.texture());
+            animationId = Identifier.parse(OrganResourceIds.animation(def.animation()));
+        }
+        @Override public Identifier getModelResource(GeoRenderState s) { return modelId; }
+        @Override public Identifier getTextureResource(GeoRenderState s) { return textureId; }
+        @Override public Identifier getAnimationResource(Adapter a) { return animationId; }
     }
     private static final class Renderer extends GeoReplacedEntityRenderer<Adapter, LivingEntity, LivingEntityRenderState> {
         final OrganDefinition def;

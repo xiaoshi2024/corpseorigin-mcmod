@@ -954,7 +954,7 @@
   "skill.corpseorigin.flesh_abandon.done": "血肉外皮已抛弃",
   "skill.corpseorigin.flesh_abandon.possessed": "已进入不死髅体",
   "entity.corpseorigin.abandoned_body": "不死髅体",
-  "message.yourmod.growth.info": "自由成长：拜师、探索遗迹获得机遇；潜行使用尸肉积攒成长点。按F8打开器官进化天梯，使用进化点依次解锁、强化、特化；不再通过猎物击杀或生鱼随机解锁器官。",
+  "message.yourmod.growth.info": "自由成长：拜师、探索遗迹获得机遇；潜行使用尸肉积攒成长点。按小键盘 9打开器官进化天梯，使用进化点依次解锁、强化、特化；不再通过猎物击杀或生鱼随机解锁器官。",
   "message.corpseorigin.organ_editor_screen.text_01": "进化器官装配",
   "message.corpseorigin.organ_editor_screen.text_02": "服务器未提供器官目录",
   "message.corpseorigin.organ_editor_screen.text_03": "器官特性键（默认G）：喷射；潜行+该键：吸水或吞入主手泥土/沙子。",

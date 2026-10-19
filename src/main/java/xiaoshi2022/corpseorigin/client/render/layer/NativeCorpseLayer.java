@@ -38,6 +38,7 @@ public final class NativeCorpseLayer<S extends LivingEntityRenderState, M extend
     /** Also shared by the dragon's separate renderer. Cache paths, never entity poses or render states. */
     public static final class Organs {
         private static final Identifier VEINS = CorpseOrigin.id("textures/entity/native_corpse_veins.png");
+        private static final Identifier EYE = CorpseOrigin.id("textures/entity/lower_level_zb_eye.png");
         private static final Identifier TISSUE = CorpseOrigin.id("textures/entity/native_corpse_organs.png");
         private final Map<ModelPart, Anchors> anchors = new IdentityHashMap<>();
         private final ModelPart ribs;
@@ -73,20 +74,7 @@ public final class NativeCorpseLayer<S extends LivingEntityRenderState, M extend
             int mask = flags == null ? 0 : flags;
             if ((mask & 2) != 0) attach(found.body(), ribs, false, poses, collector, light, state.outlineColor);
             if ((mask & 1) != 0) attach(found.head(), eye, true, poses, collector, light, state.outlineColor);
-            NativeCustomOrgans.submit(state, poses, collector, joint -> {
-                var parts = new ArrayList<Anchor>();
-                collect(model.root(), "root", new ArrayList<>(), parts);
-                var names = switch (joint) {
-                    case "head" -> List.of("head", "head_main", "center_head");
-                    case "left_arm" -> List.of("left_arm", "left_front_leg", "left_front", "left_wing");
-                    case "right_arm" -> List.of("right_arm", "right_front_leg", "right_front", "right_wing");
-                    case "left_leg" -> List.of("left_leg", "left_hind_leg", "left_hind");
-                    case "right_leg" -> List.of("right_leg", "right_hind_leg", "right_hind");
-                    default -> List.of("body", "torso", "chest");
-                };
-                Anchor anchor = named(parts, names, found.body());
-                return anchor == null ? List.of() : anchor.path();
-            });
+            NativeCustomOrgans.submit(state, poses, collector, found.joints());
         }
 
         private final Map<ModelPart, ModelPart> surfaces = new IdentityHashMap<>();
@@ -96,16 +84,19 @@ public final class NativeCorpseLayer<S extends LivingEntityRenderState, M extend
             part.translateAndRotate(poses);
             var access = (NativeCorpseModelPartAccessor)(Object)part;
             if (!part.skipDraw && !access.corpseorigin$cubes().isEmpty()) {
-                ModelPart surface = surfaces.computeIfAbsent(part, p -> new ModelPart(access.corpseorigin$cubes(), Map.of()));
+                ModelPart surface = surfaces.get(part);
+                if (surface == null) { surface = new ModelPart(access.corpseorigin$cubes(), Map.of()); surfaces.put(part, surface); }
                 collector.order(1).submitModelPart(surface, poses, RenderTypes.entityCutoutZOffset(VEINS),
                         light, OverlayTexture.NO_OVERLAY, null, -1, null, outline);
             }
-            access.corpseorigin$children().forEach((childName, child) -> veins(child, childName, poses, collector, light, outline));
+            for (var child : access.corpseorigin$children().entrySet())
+                veins(child.getValue(), child.getKey(), poses, collector, light, outline);
             poses.popPose();
         }
         private static void attach(Anchor anchor, ModelPart organ, boolean eye, PoseStack poses,
                                    SubmitNodeCollector collector, int light, int outline) {
-            if (anchor == null || anchor.path().stream().anyMatch(part -> !part.visible)) return;
+            if (anchor == null) return;
+            for (ModelPart part : anchor.path()) if (!part.visible) return;
             ModelPart joint = anchor.path().getLast();
             if (joint.skipDraw) return;
             var box = anchor.cube();
@@ -122,13 +113,13 @@ public final class NativeCorpseLayer<S extends LivingEntityRenderState, M extend
             } else {
                 poses.scale(width / 9f, height / 12f, Math.min(width, height) / 8f);
             }
-            collector.order(2).submitModelPart(organ, poses, eye ? RenderTypes.entityTranslucent(CorpseOrigin.id("textures/entity/lower_level_zb_eye.png")) : RenderTypes.entityCutout(TISSUE),
+            collector.order(2).submitModelPart(organ, poses, eye ? RenderTypes.entityTranslucent(EYE) : RenderTypes.entityCutout(TISSUE),
                     light, OverlayTexture.NO_OVERLAY, null, -1, null, outline);
             poses.popPose();
         }
 
         private record Anchor(String name, List<ModelPart> path, ModelPart.Cube cube) {}
-        private record Anchors(Anchor head, Anchor body) {}
+        private record Anchors(Anchor head, Anchor body, java.util.function.Function<String, List<ModelPart>> joints) {}
 
         private static Anchors findAnchors(ModelPart root) {
             var parts = new ArrayList<Anchor>();
@@ -136,8 +127,17 @@ public final class NativeCorpseLayer<S extends LivingEntityRenderState, M extend
             Anchor largest = parts.stream().max(Comparator.comparingDouble(a -> volume(a.cube()))).orElse(null);
             Anchor body = named(parts, List.of("body", "upper_body", "torso", "chest", "shell", "main"), largest);
             Anchor head = named(parts, List.of("head", "head_main", "center_head", "middle_head"), body);
-            return new Anchors(head, body);
+            Map<String, List<ModelPart>> paths = new HashMap<>();
+            paths.put("head", path(named(parts, List.of("head", "head_main", "center_head"), body)));
+            paths.put("left_arm", path(named(parts, List.of("left_arm", "left_front_leg", "left_front", "left_wing"), body)));
+            paths.put("right_arm", path(named(parts, List.of("right_arm", "right_front_leg", "right_front", "right_wing"), body)));
+            paths.put("left_leg", path(named(parts, List.of("left_leg", "left_hind_leg", "left_hind"), body)));
+            paths.put("right_leg", path(named(parts, List.of("right_leg", "right_hind_leg", "right_hind"), body)));
+            List<ModelPart> fallback = path(named(parts, List.of("body", "torso", "chest"), body));
+            return new Anchors(head, body, joint -> paths.getOrDefault(joint, fallback));
         }
+
+        private static List<ModelPart> path(Anchor anchor) { return anchor == null ? List.of() : anchor.path(); }
 
         private static Anchor named(List<Anchor> parts, List<String> names, Anchor fallback) {
             for (String name : names)
