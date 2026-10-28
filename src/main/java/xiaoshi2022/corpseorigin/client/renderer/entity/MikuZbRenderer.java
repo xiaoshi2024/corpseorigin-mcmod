@@ -24,6 +24,7 @@ public class MikuZbRenderer extends GeoEntityRenderer<MikuZbEntity, LivingEntity
         super.extractRenderState(entity, renderState, partialTick);
         // 饱食度过高 → 切换为「消化不良」大肚子模型
         renderState.addGeckolibData(RenderStateData.MIKU_OVERFULL, entity.isOverfull());
+        renderState.addGeckolibData(RenderStateData.MIKU_BEING_EATEN, entity.isBeingEaten());
     }
 
     @Override

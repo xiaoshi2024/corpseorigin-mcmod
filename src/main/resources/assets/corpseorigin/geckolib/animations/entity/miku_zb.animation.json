@@ -331,6 +331,14 @@
 					}
 				}
 			}
+		},
+		"being_eaten": {
+			"animation_length": 5.0,
+			"bones": {
+				"Waist": { "scale": { "0.0": { "vector": [1, 1, 1] }, "5.0": { "vector": [0.02, 0.02, 0.02] } } },
+				"Right Leg": { "scale": { "0.0": { "vector": [1, 1, 1] }, "5.0": { "vector": [0.02, 0.02, 0.02] } } },
+				"Left Leg": { "scale": { "0.0": { "vector": [1, 1, 1] }, "5.0": { "vector": [0.02, 0.02, 0.02] } } }
+			}
 		}
 	}
 }

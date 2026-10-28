@@ -195,7 +195,8 @@ public class CorpseOrigin implements ModInitializer {
 		net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback.EVENT.register(
 				(dispatcher, registryAccess, environment) -> {
 					CharacterCommands.register(dispatcher);
-				SummonZbCommand.register(dispatcher);
+					SummonZbCommand.register(dispatcher);
+					xiaoshi2022.corpseorigin.command.MikuDevourCommand.register(dispatcher);
 				xiaoshi2022.corpseorigin.command.SummonEldorCommand.register(dispatcher);
 				xiaoshi2022.corpseorigin.command.RoleplayModeCommand.register(dispatcher);
 				xiaoshi2022.corpseorigin.command.CorpseConfigCommand.register(dispatcher);

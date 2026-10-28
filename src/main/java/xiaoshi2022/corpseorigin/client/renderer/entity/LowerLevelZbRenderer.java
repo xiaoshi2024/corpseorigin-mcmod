@@ -72,6 +72,7 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
         renderState.addGeckolibData(RenderStateData.CORPSE_EYE,entity.hasCorpseEye());
         renderState.addGeckolibData(RenderStateData.CRACKED,entity.isCracked());
         renderState.addGeckolibData(RenderStateData.HEADLESS, entity.isHeadless());
+        renderState.addGeckolibData(RenderStateData.MIKU_EVOLVED, entity.isMikuEvolved());
         if (xiaoshi2022.corpseorigin.growth.CorpseHorror.applies(entity)) renderState.deathTime = 0;
         if (entity.isCorpse()) renderState.hasRedOverlay = false;
         if (entity.isFeigning()) renderState.deathTime = 12;
@@ -186,6 +187,9 @@ public class LowerLevelZbRenderer extends GeoEntityRenderer<LowerLevelZbEntity, 
 
     @Override
     public Identifier getTextureLocation(LivingEntityRenderState renderState) {
+        if (Boolean.TRUE.equals(renderState.getGeckolibData(RenderStateData.MIKU_EVOLVED))) {
+            return model.getTextureResource(renderState);
+        }
         Identifier customSkin = renderState.getGeckolibData(RenderStateData.CUSTOM_SKIN_TEXTURE);
         ZbSkinState skinState = renderState.getGeckolibData(RenderStateData.SKIN_STATE);
 

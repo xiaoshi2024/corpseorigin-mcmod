@@ -57,11 +57,87 @@ import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
  * </ul>
  */
 public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin {
+    public static final int EATEN_DURATION = 100;
+    public static final EntityDataAccessor<Boolean> DATA_BEING_EATEN =
+            SynchedEntityData.defineId(MikuZbEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DATA_EATEN_TICKS =
+            SynchedEntityData.defineId(MikuZbEntity.class, EntityDataSerializers.INT);
+    private java.util.UUID eaterUuid;
+    private int missingEaterTicks;
+
+    public boolean isBeingEaten() { return entityData.get(DATA_BEING_EATEN); }
+    public float getEatenProgress() { return entityData.get(DATA_EATEN_TICKS) / (float) EATEN_DURATION; }
+
+    @Override
+    public void die(DamageSource source) {
+        if (!isBeingEaten() && source.getDirectEntity() == source.getEntity()
+                && source.getEntity() instanceof LowerLevelZbEntity eater
+                && eater.canEatMiku() && distanceToSqr(eater) <= 16) {
+            setHealth(1);
+            eaterUuid = eater.getUUID();
+            entityData.set(DATA_BEING_EATEN, true);
+            entityData.set(DATA_EATEN_TICKS, 0);
+            entityData.set(DATA_ATTACKING, false);
+            getNavigation().stop();
+            setTarget(null);
+            eater.beginEatingMiku(this);
+            return;
+        }
+        super.die(source);
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        return !isBeingEaten() && super.hurtServer(level, source, amount);
+    }
+
+    @Override
+    public void aiStep() {
+        if (!isBeingEaten()) super.aiStep();
+    }
+
+    private void tickBeingEaten(ServerLevel level) {
+        Entity found = eaterUuid == null ? null : level.getEntity(eaterUuid);
+        if (!(found instanceof LowerLevelZbEntity eater)) {
+            // Allow the other entity's chunk time to load; never award an orphaned meal.
+            if (++missingEaterTicks < 200) return;
+            cancelBeingEaten();
+            return;
+        }
+        if (!eater.isAlive() || eater.isCorpse() || eater.isFeigning() || eater.isHeadless()) {
+            eater.stopEatingMiku();
+            cancelBeingEaten();
+            return;
+        }
+        missingEaterTicks = 0;
+        eater.beginEatingMiku(this);
+        int ticks = entityData.get(DATA_EATEN_TICKS) + 1;
+        entityData.set(DATA_EATEN_TICKS, ticks);
+        eater.setMikuMealProgress(getEatenProgress());
+        var facing = eater.getLookAngle().multiply(1, 0, 1).normalize();
+        var mouth = eater.position().add(facing.scale(0.85 * eater.getScale()));
+        double remaining = 1 - getEatenProgress();
+        setPos(mouth.x, eater.getY() + remaining * eater.getBbHeight() * .7, mouth.z);
+        setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+        if (ticks % 20 == 0) eater.playSound(ModSounds.GROUND_CHI, .8F, .7F);
+        if (ticks >= EATEN_DURATION) {
+            eater.finishEatingMiku();
+            discard();
+        }
+    }
+
+    private void cancelBeingEaten() {
+        entityData.set(DATA_BEING_EATEN, false);
+        entityData.set(DATA_EATEN_TICKS, 0);
+        eaterUuid = null;
+        missingEaterTicks = 0;
+    }
 
     // ==================== 动画（复用 lower_level_zb 的人形骨架动画） ====================
     private static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
     private static final RawAnimation WALK_ANIM = RawAnimation.begin().thenLoop("walk");
     private static final RawAnimation ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");
+    private static final RawAnimation BEING_EATEN_ANIM = RawAnimation.begin().thenPlayAndHold("being_eaten");
 
     // ==================== 同步数据 ====================
     /** 正在播放吸食/投掷动画 */
@@ -116,6 +192,8 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
         builder.define(DATA_ATTACKING, false);
         builder.define(DATA_ATTACK_TICKS, 0);
         builder.define(DATA_BELLY, 40);
+        builder.define(DATA_BEING_EATEN, false);
+        builder.define(DATA_EATEN_TICKS, 0);
     }
 
     // ==================== AI ====================
@@ -150,6 +228,7 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
 
     @Override
     public boolean doHurtTarget(ServerLevel level, Entity target) {
+        if (isBeingEaten()) return false;
         // 挥手 + 吸食动画
         this.swing(InteractionHand.MAIN_HAND, true);
         triggerAttackAnimation();
@@ -286,6 +365,7 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
     }
 
     private PlayState movementController(AnimationTest<MikuZbEntity> test) {
+        if (isBeingEaten()) return test.setAndContinue(BEING_EATEN_ANIM);
         if (test.isMoving()) {
             return test.setAndContinue(WALK_ANIM);
         }
@@ -293,6 +373,7 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
     }
 
     private PlayState attackController(AnimationTest<MikuZbEntity> test) {
+        if (isBeingEaten()) return PlayState.STOP;
         if (this.entityData.get(DATA_ATTACKING)) {
             return test.setAndContinue(ATTACK_ANIM);
         }
@@ -323,6 +404,10 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
         super.tick();
 
         if (!this.level().isClientSide()) {
+            if (isBeingEaten()) {
+                tickBeingEaten((ServerLevel) level());
+                return;
+            }
             tickAttackAnimation();
             tickLeekThrow();
             tickDigest();
@@ -356,11 +441,22 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
     protected void addAdditionalSaveData(ValueOutput output) {
         super.addAdditionalSaveData(output);
         output.putInt("Belly", getBelly());
+        output.putBoolean("BeingEaten", isBeingEaten());
+        output.putInt("EatenTicks", entityData.get(DATA_EATEN_TICKS));
+        if (eaterUuid != null) output.putString("MikuEater", eaterUuid.toString());
     }
 
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
         this.entityData.set(DATA_BELLY, input.getIntOr("Belly", 40));
+        entityData.set(DATA_BEING_EATEN, input.getBooleanOr("BeingEaten", false));
+        entityData.set(DATA_EATEN_TICKS, Math.clamp(input.getIntOr("EatenTicks", 0), 0, EATEN_DURATION));
+        String savedEater = input.getStringOr("MikuEater", "");
+        if (savedEater.isEmpty()) eaterUuid = null;
+        else {
+            try { eaterUuid = java.util.UUID.fromString(savedEater); }
+            catch (IllegalArgumentException ignored) { cancelBeingEaten(); }
+        }
     }
 }

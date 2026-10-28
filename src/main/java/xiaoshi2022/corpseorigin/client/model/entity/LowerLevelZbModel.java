@@ -17,18 +17,23 @@ public class LowerLevelZbModel extends DefaultedEntityGeoModel<LowerLevelZbEntit
 
     @Override
     public Identifier getModelResource(GeoRenderState state) {
+        if (Boolean.TRUE.equals(state.getGeckolibData(RenderStateData.MIKU_EVOLVED)))
+            return CorpseOrigin.id("entity/miku_evolved_zb");
         return Boolean.TRUE.equals(state.getGeckolibData(RenderStateData.CRACKED))
                 ? CorpseOrigin.id("entity/lower_level_zb_cracked") : super.getModelResource(state);
     }
 
     @Override
     public Identifier getAnimationResource(LowerLevelZbEntity entity) {
+        if (entity.isMikuEvolved()) return CorpseOrigin.id("entity/miku_evolved_zb");
         return entity.isCracked()
                 ? CorpseOrigin.id("entity/lower_level_zb_cracked") : super.getAnimationResource(entity);
     }
 
     @Override
     public Identifier getTextureResource(GeoRenderState renderState) {
+        if (Boolean.TRUE.equals(renderState.getGeckolibData(RenderStateData.MIKU_EVOLVED)))
+            return buildFormattedTexturePath(CorpseOrigin.id("miku_evolved_zb"));
         Identifier customSkin = renderState.getGeckolibData(RenderStateData.CUSTOM_SKIN_TEXTURE);
         ZbSkinState skinState = renderState.getGeckolibData(RenderStateData.SKIN_STATE);
 

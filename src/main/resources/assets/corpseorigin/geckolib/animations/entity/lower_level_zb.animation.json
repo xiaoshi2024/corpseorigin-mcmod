@@ -2047,6 +2047,18 @@
           }
         }
       }
+    },
+    "miku_belly_grow": {
+      "loop": true,
+      "animation_length": 5.0,
+      "bones": {
+        "Body": {
+          "scale": {
+            "0.0": { "vector": [1.0, 1.0, 1.0], "lerp_mode": "catmullrom" },
+            "5.0": { "vector": [1.28, 1.08, 1.08], "lerp_mode": "catmullrom" }
+          }
+        }
+      }
     }
   },
   "geckolib_format_version": 2

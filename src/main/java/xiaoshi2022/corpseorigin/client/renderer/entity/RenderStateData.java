@@ -20,6 +20,10 @@ public final class RenderStateData {
     /** 初音尸兄是否处于「消化不良」大肚子状态 */
     public static final DataTicket<Boolean> MIKU_OVERFULL =
             DataTicket.create("miku_overfull", Boolean.class);
+    public static final DataTicket<Boolean> MIKU_EVOLVED =
+            DataTicket.create("miku_evolved", Boolean.class);
+    public static final DataTicket<Boolean> MIKU_BEING_EATEN =
+            DataTicket.create("miku_being_eaten", Boolean.class);
 
     private RenderStateData() {}
 }

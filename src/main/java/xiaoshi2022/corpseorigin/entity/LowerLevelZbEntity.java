@@ -42,6 +42,73 @@ import java.util.Optional;
 // 删除: import xiaoshi2022.corpseorigin.client.renderer.state.ZbEntityRenderState;
 
 public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, ZombieKin, xiaoshi2022.corpseorigin.entity.FavoriteItemHolder, RealmRated {
+    private static final EntityDataAccessor<Float> DATA_MIKU_MEAL =
+            SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Integer> DATA_SIZE =
+            SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_MIKU_EVOLVED =
+            SynchedEntityData.defineId(LowerLevelZbEntity.class, EntityDataSerializers.BOOLEAN);
+    private MikuZbEntity mikuMeal;
+    private MikuZbEntity commandedMiku;
+    private int mikuCommandTicks;
+
+    public boolean canEatMiku() {
+        return getType() == xiaoshi2022.corpseorigin.registry.ModEntities.LOWER_LEVEL_ZB
+                && isAlive() && !isCorpse() && !isFeigning() && !isHeadless()
+                && !isMikuEvolved() && !isEatingMiku() && mikuMeal == null;
+    }
+    public boolean isMikuEvolved() { return entityData.get(DATA_MIKU_EVOLVED); }
+    public int getSize() { return entityData.get(DATA_SIZE); }
+    public float getMikuMealProgress() { return entityData.get(DATA_MIKU_MEAL); }
+    public boolean isEatingMiku() { return getMikuMealProgress() >= 0; }
+    public void setMikuMealProgress(float progress) { entityData.set(DATA_MIKU_MEAL, progress); }
+    public boolean commandEatMiku(MikuZbEntity prey) {
+        if (!canEatMiku() || isNoAi() || !prey.isAlive() || prey.isBeingEaten() || prey.level() != level()) return false;
+        commandedMiku = prey;
+        mikuCommandTicks = 1200;
+        setTarget(prey);
+        return true;
+    }
+    public boolean isCommandedMiku(Entity prey) { return prey == commandedMiku; }
+    public void beginEatingMiku(MikuZbEntity prey) {
+        mikuMeal = prey;
+        commandedMiku = null;
+        setMikuMealProgress(prey.getEatenProgress());
+        getNavigation().stop();
+        setTarget(null);
+        setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+    }
+    public void stopEatingMiku() {
+        mikuMeal = null;
+        setMikuMealProgress(-1);
+    }
+    public void finishEatingMiku() {
+        if (isMikuEvolved()) { stopEatingMiku(); return; }
+        entityData.set(DATA_MIKU_EVOLVED, true);
+        entityData.set(DATA_SIZE, getSize() + 1);
+        applyMikuEvolution();
+        setHealth(getMaxHealth());
+        setHunger(100);
+        stopEatingMiku();
+        playSound(net.minecraft.sounds.SoundEvents.PLAYER_BURP, 1F, .7F);
+    }
+    private void applyMikuEvolution() {
+        if (!isMikuEvolved()) return;
+        addMikuModifier(Attributes.MAX_HEALTH, "miku_health", 1,
+                net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+        addMikuModifier(Attributes.ATTACK_DAMAGE, "miku_attack", .5,
+                net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+        addMikuModifier(Attributes.SCALE, "miku_size", (double) getSize() - 1,
+                net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADD_VALUE);
+    }
+    private void addMikuModifier(net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> attribute,
+                                 String name, double amount, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation operation) {
+        var instance = getAttribute(attribute);
+        if (instance == null) return;
+        var id = xiaoshi2022.corpseorigin.CorpseOrigin.id(name);
+        instance.removeModifier(id);
+        instance.addPermanentModifier(new net.minecraft.world.entity.ai.attributes.AttributeModifier(id, amount, operation));
+    }
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -50,6 +117,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
     protected static final RawAnimation ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");
     private static final RawAnimation GNAW_ANIM = RawAnimation.begin().thenLoop("gnaw");
+    private static final RawAnimation MIKU_BELLY_ANIM = RawAnimation.begin().thenPlayAndHold("miku_belly_grow");
     private static final RawAnimation DEATH_ANIM = RawAnimation.begin().thenPlayAndHold("death_burst");
     private static final RawAnimation CORPSE_ANIM = RawAnimation.begin().thenLoop("corpse_rest");
     private static final EntityDataAccessor<Boolean> DATA_CORPSE =
@@ -182,6 +250,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>("movement", 5, this::movementController));
+        controllers.add(new AnimationController<LowerLevelZbEntity>("miku_belly", 0,
+                test -> isEatingMiku() ? test.setAndContinue(MIKU_BELLY_ANIM) : PlayState.STOP));
         controllers.add(new AnimationController<LowerLevelZbEntity>("corpse_pose", 0,
                 test -> isCorpse() ? test.setAndContinue(CORPSE_ANIM) : PlayState.STOP));
         controllers.add(new AnimationController<>("attack", 2, this::attackController));
@@ -196,6 +266,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         // Accessory managers must not also animate the host's body clips.
         if (test.getData(xiaoshi2022.corpseorigin.entity.animation.ZbLayerAnimationCache.CLIP) != null) return PlayState.STOP;
         if (isCorpse()) return PlayState.STOP;
+        if (isEatingMiku()) return test.setAndContinue(GNAW_ANIM);
         if (isFeigning()) return test.setAndContinue(IDLE_ANIM);
         if (isDeadOrDying() && xiaoshi2022.corpseorigin.growth.CorpseHorror.applies(this)) return test.setAndContinue(DEATH_ANIM);
         if (getGrappleTarget() >= 0) return test.setAndContinue(GNAW_ANIM);
@@ -272,6 +343,27 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     // ==================== AI 目标 ====================
     @Override
     protected void registerGoals() {
+        this.goalSelector.addGoal(0, new Goal() {
+            { setFlags(java.util.EnumSet.of(Flag.MOVE, Flag.LOOK, Flag.TARGET)); }
+            @Override public boolean canUse() { return commandedMiku != null && canEatMiku(); }
+            @Override public boolean requiresUpdateEveryTick() { return true; }
+            @Override public void tick() {
+                MikuZbEntity prey = commandedMiku;
+                if (prey == null) return;
+                if (!prey.isAlive() || prey.isBeingEaten() || prey.level() != level() || --mikuCommandTicks <= 0) {
+                    commandedMiku = null;
+                    return;
+                }
+                setTarget(prey);
+                getLookControl().setLookAt(prey, 30, 30);
+                getNavigation().moveTo(prey, 1.2);
+                if (distanceToSqr(prey) <= 2.5 && hasLineOfSight(prey) && tickCount % 20 == 0) {
+                    swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
+                    doHurtTarget((ServerLevel) level(), prey);
+                }
+            }
+            @Override public void stop() { commandedMiku = null; getNavigation().stop(); setTarget(null); }
+        });
         this.goalSelector.addGoal(0, new FloatGoal(this));
         // 生前执念：追吹风机等生前爱物（压过一切移动 AI，注意力转移的喜剧演出）
         this.goalSelector.addGoal(1, new xiaoshi2022.corpseorigin.entity.evolution.ZbFavoriteItemGoal<>(this));
@@ -365,6 +457,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         builder.define(DATA_ORGAN_LOADOUT, "[]");
         builder.define(DATA_GRAPPLE_TARGET, -1);
         builder.define(DATA_HORROR_ACTIVE, false);
+        builder.define(DATA_MIKU_MEAL, -1F);
+        builder.define(DATA_SIZE, 1);
+        builder.define(DATA_MIKU_EVOLVED, false);
     }
 
     // ==================== 血肉能量 / 临界突破（仅服务端，走 NBT） ====================
@@ -611,6 +706,11 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     public void tick() {
         super.tick();
 
+        if (!level().isClientSide() && isEatingMiku()) {
+            if (mikuMeal == null || mikuMeal.isRemoved() || !mikuMeal.isBeingEaten()) stopEatingMiku();
+            else { setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO); return; }
+        }
+
         if (!this.level().isClientSide()) {
             if (feignTicks > 0 && --feignTicks == 0) {
                 entityData.set(DATA_FEIGNING, false);
@@ -657,13 +757,13 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     /** 尸体阶段完全停摆：不索敌、不寻路、不捡拾、不转头 */
     @Override
     public void aiStep() {
-        if (isCorpse() || isFeigning()) return;
+        if (isCorpse() || isFeigning() || isEatingMiku()) return;
         super.aiStep();
     }
 
     @Override
     public boolean isImmobile() {
-        return isCorpse() || isFeigning() || super.isImmobile();
+        return isCorpse() || isFeigning() || isEatingMiku() || super.isImmobile();
     }
 
     @Override
@@ -769,6 +869,8 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     @Override
     protected void addAdditionalSaveData(ValueOutput output) {
         super.addAdditionalSaveData(output);
+        output.putInt("Size", getSize());
+        output.putBoolean("MikuEvolved", isMikuEvolved());
         output.putBoolean("HasCorpseEye",hasCorpseEye());
         output.putBoolean("CrackedAppearance",isCracked());
         output.putBoolean("Headless", isHeadless());
@@ -798,6 +900,9 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     protected void readAdditionalSaveData(ValueInput input) {
         super.readAdditionalSaveData(input);
         float savedHealth = getHealth();
+        entityData.set(DATA_SIZE, Math.max(1, input.getIntOr("Size", 1)));
+        entityData.set(DATA_MIKU_EVOLVED, input.getBooleanOr("MikuEvolved", false));
+        applyMikuEvolution();
         // Old saves get one stable UUID-based roll; new saves retain the explicit choice.
         setCorpseEye(input.getBooleanOr("HasCorpseEye",Math.floorMod(getUUID().hashCode(),5)==0));
         setFavoriteItems(input.getStringOr("FavoriteItems", ""));

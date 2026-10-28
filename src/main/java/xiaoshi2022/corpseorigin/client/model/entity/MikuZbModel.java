@@ -21,6 +21,8 @@ public class MikuZbModel extends DefaultedEntityGeoModel<MikuZbEntity> {
 
     @Override
     public Identifier getModelResource(GeoRenderState renderState) {
+        if (Boolean.TRUE.equals(renderState.getGeckolibData(RenderStateData.MIKU_BEING_EATEN)))
+            return super.getModelResource(renderState);
         if (isOverfull(renderState)) {
             return buildFormattedModelPath(
                     Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "miku_zb_flatulence"));
@@ -30,6 +32,8 @@ public class MikuZbModel extends DefaultedEntityGeoModel<MikuZbEntity> {
 
     @Override
     public Identifier getTextureResource(GeoRenderState renderState) {
+        if (Boolean.TRUE.equals(renderState.getGeckolibData(RenderStateData.MIKU_BEING_EATEN)))
+            return buildFormattedTexturePath(Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "miku_zb"));
         if (isOverfull(renderState)) {
             return buildFormattedTexturePath(
                     Identifier.fromNamespaceAndPath(CorpseOrigin.MOD_ID, "miku_zb_flatulence"));
