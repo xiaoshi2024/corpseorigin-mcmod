@@ -58,6 +58,7 @@ import xiaoshi2022.corpseorigin.skill.chapter.QiEffects;
  */
 public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin {
     public static final int EATEN_DURATION = 100;
+    public static final int KISS_DURATION = 40;
     public static final EntityDataAccessor<Boolean> DATA_BEING_EATEN =
             SynchedEntityData.defineId(MikuZbEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> DATA_EATEN_TICKS =
@@ -66,14 +67,13 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
     private int missingEaterTicks;
 
     public boolean isBeingEaten() { return entityData.get(DATA_BEING_EATEN); }
-    public float getEatenProgress() { return entityData.get(DATA_EATEN_TICKS) / (float) EATEN_DURATION; }
+    public float getEatenProgress() { return Math.max(0, entityData.get(DATA_EATEN_TICKS) - KISS_DURATION) / (float) EATEN_DURATION; }
+    public boolean isKissing() { return isBeingEaten() && entityData.get(DATA_EATEN_TICKS) <= KISS_DURATION; }
 
-    @Override
-    public void die(DamageSource source) {
-        if (!isBeingEaten() && source.getDirectEntity() == source.getEntity()
-                && source.getEntity() instanceof LowerLevelZbEntity eater
-                && eater.canEatMiku() && distanceToSqr(eater) <= 16) {
-            setHealth(1);
+    public boolean beginKissing(LowerLevelZbEntity eater) {
+        if (!level().isClientSide() && isAlive() && !isBeingEaten()
+                && eater.canEatMiku() && eater.level() == level()
+                && distanceToSqr(eater) <= 2.5 && hasLineOfSight(eater)) {
             eaterUuid = eater.getUUID();
             entityData.set(DATA_BEING_EATEN, true);
             entityData.set(DATA_EATEN_TICKS, 0);
@@ -81,9 +81,9 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
             getNavigation().stop();
             setTarget(null);
             eater.beginEatingMiku(this);
-            return;
+            return true;
         }
-        super.die(source);
+        return false;
     }
 
     @Override
@@ -118,9 +118,15 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
         var mouth = eater.position().add(facing.scale(0.85 * eater.getScale()));
         double remaining = 1 - getEatenProgress();
         setPos(mouth.x, eater.getY() + remaining * eater.getBbHeight() * .7, mouth.z);
+        if (isKissing()) {
+            setPos(mouth.x, eater.getEyeY() - getEyeHeight(), mouth.z);
+        }
+        setYRot(eater.getYRot() + 180);
+        setYHeadRot(getYRot());
+        yBodyRot = getYRot();
         setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
-        if (ticks % 20 == 0) eater.playSound(ModSounds.GROUND_CHI, .8F, .7F);
-        if (ticks >= EATEN_DURATION) {
+        if (!isKissing() && ticks % 20 == 0) eater.playSound(ModSounds.GROUND_CHI, .8F, .7F);
+        if (ticks >= KISS_DURATION + EATEN_DURATION) {
             eater.finishEatingMiku();
             discard();
         }
@@ -138,6 +144,7 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
     private static final RawAnimation WALK_ANIM = RawAnimation.begin().thenLoop("walk");
     private static final RawAnimation ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");
     private static final RawAnimation BEING_EATEN_ANIM = RawAnimation.begin().thenPlayAndHold("being_eaten");
+    private static final RawAnimation KISS_ANIM = RawAnimation.begin().thenLoop("kiss");
 
     // ==================== 同步数据 ====================
     /** 正在播放吸食/投掷动画 */
@@ -229,6 +236,7 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
     @Override
     public boolean doHurtTarget(ServerLevel level, Entity target) {
         if (isBeingEaten()) return false;
+        if (target instanceof LowerLevelZbEntity zb && zb.isCommandedMiku(this)) return false;
         // 挥手 + 吸食动画
         this.swing(InteractionHand.MAIN_HAND, true);
         triggerAttackAnimation();
@@ -365,6 +373,7 @@ public class MikuZbEntity extends PathfinderMob implements GeoEntity, ZombieKin 
     }
 
     private PlayState movementController(AnimationTest<MikuZbEntity> test) {
+        if (isKissing()) return test.setAndContinue(KISS_ANIM);
         if (isBeingEaten()) return test.setAndContinue(BEING_EATEN_ANIM);
         if (test.isMoving()) {
             return test.setAndContinue(WALK_ANIM);

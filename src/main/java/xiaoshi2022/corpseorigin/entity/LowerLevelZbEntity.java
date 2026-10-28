@@ -66,7 +66,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         if (!canEatMiku() || isNoAi() || !prey.isAlive() || prey.isBeingEaten() || prey.level() != level()) return false;
         commandedMiku = prey;
         mikuCommandTicks = 1200;
-        setTarget(prey);
+        setTarget(null);
         return true;
     }
     public boolean isCommandedMiku(Entity prey) { return prey == commandedMiku; }
@@ -117,6 +117,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     protected static final RawAnimation IDLE_ANIM = RawAnimation.begin().thenLoop("idle");
     protected static final RawAnimation ATTACK_ANIM = RawAnimation.begin().thenPlay("attack");
     private static final RawAnimation GNAW_ANIM = RawAnimation.begin().thenLoop("gnaw");
+    private static final RawAnimation KISS_ANIM = RawAnimation.begin().thenLoop("kiss");
     private static final RawAnimation MIKU_BELLY_ANIM = RawAnimation.begin().thenPlayAndHold("miku_belly_grow");
     private static final RawAnimation DEATH_ANIM = RawAnimation.begin().thenPlayAndHold("death_burst");
     private static final RawAnimation CORPSE_ANIM = RawAnimation.begin().thenLoop("corpse_rest");
@@ -251,7 +252,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
         controllers.add(new AnimationController<>("movement", 5, this::movementController));
         controllers.add(new AnimationController<LowerLevelZbEntity>("miku_belly", 0,
-                test -> isEatingMiku() ? test.setAndContinue(MIKU_BELLY_ANIM) : PlayState.STOP));
+                test -> isEatingMiku() && getMikuMealProgress() > 0 ? test.setAndContinue(MIKU_BELLY_ANIM) : PlayState.STOP));
         controllers.add(new AnimationController<LowerLevelZbEntity>("corpse_pose", 0,
                 test -> isCorpse() ? test.setAndContinue(CORPSE_ANIM) : PlayState.STOP));
         controllers.add(new AnimationController<>("attack", 2, this::attackController));
@@ -266,7 +267,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
         // Accessory managers must not also animate the host's body clips.
         if (test.getData(xiaoshi2022.corpseorigin.entity.animation.ZbLayerAnimationCache.CLIP) != null) return PlayState.STOP;
         if (isCorpse()) return PlayState.STOP;
-        if (isEatingMiku()) return test.setAndContinue(GNAW_ANIM);
+        if (isEatingMiku()) return test.setAndContinue(getMikuMealProgress() <= 0 ? KISS_ANIM : GNAW_ANIM);
         if (isFeigning()) return test.setAndContinue(IDLE_ANIM);
         if (isDeadOrDying() && xiaoshi2022.corpseorigin.growth.CorpseHorror.applies(this)) return test.setAndContinue(DEATH_ANIM);
         if (getGrappleTarget() >= 0) return test.setAndContinue(GNAW_ANIM);
@@ -296,6 +297,7 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
 
     @Override
     public boolean doHurtTarget(ServerLevel level, Entity target) {
+        if (isEatingMiku() || isCommandedMiku(target)) return false;
         // ✅ 检查是否可以攻击
         if (!ZombieKin.canAttack(this, target)) {
             return false;
@@ -354,12 +356,13 @@ public class LowerLevelZbEntity extends PathfinderMob implements GeoEntity, Zomb
                     commandedMiku = null;
                     return;
                 }
-                setTarget(prey);
+                setTarget(null);
                 getLookControl().setLookAt(prey, 30, 30);
                 getNavigation().moveTo(prey, 1.2);
-                if (distanceToSqr(prey) <= 2.5 && hasLineOfSight(prey) && tickCount % 20 == 0) {
-                    swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
-                    doHurtTarget((ServerLevel) level(), prey);
+                if (distanceToSqr(prey) <= 2.5 && hasLineOfSight(prey)) {
+                    getNavigation().stop();
+                    lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, prey.getEyePosition());
+                    prey.beginKissing(LowerLevelZbEntity.this);
                 }
             }
             @Override public void stop() { commandedMiku = null; getNavigation().stop(); setTarget(null); }

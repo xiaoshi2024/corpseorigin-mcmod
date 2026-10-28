@@ -22,9 +22,10 @@ public class MikuZbRenderer extends GeoEntityRenderer<MikuZbEntity, LivingEntity
     @Override
     public void extractRenderState(MikuZbEntity entity, LivingEntityRenderState renderState, float partialTick) {
         super.extractRenderState(entity, renderState, partialTick);
-        // 饱食度过高 → 切换为「消化不良」大肚子模型
-        renderState.addGeckolibData(RenderStateData.MIKU_OVERFULL, entity.isOverfull());
-        renderState.addGeckolibData(RenderStateData.MIKU_BEING_EATEN, entity.isBeingEaten());
+        // 接吻时使用吃饱的大肚子模型及贴图；进入吞噬阶段再切回普通模型。
+        renderState.addGeckolibData(RenderStateData.MIKU_OVERFULL, entity.isOverfull() || entity.isKissing());
+        renderState.addGeckolibData(RenderStateData.MIKU_BEING_EATEN,
+                entity.isBeingEaten() && !entity.isKissing());
     }
 
     @Override
