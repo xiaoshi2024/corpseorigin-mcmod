@@ -432,6 +432,10 @@ public class CorpseOriginClient implements ClientModInitializer {
                     PersistentCameraEntity.setup(client, cameraGoal);
                 }));
         
+        // 蓝海「灵魂出窍」：服务端说开始 / 结束，客户端接管或交还视角
+        ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.SoulProjectionS2C.TYPE, (payload, context) ->
+                context.client().execute(() -> xiaoshi2022.corpseorigin.client.soul.SoulProjectionClient.accept(payload.active())));
+
         // 接收玩家尸兄数据同步（用 UUID
         ClientPlayNetworking.registerGlobalReceiver(CorpsePayloads.PlayerCorpseSyncS2C.TYPE, (payload, context) -> {
             context.client().execute(() -> {
@@ -677,6 +681,8 @@ public class CorpseOriginClient implements ClientModInitializer {
             BloodLotusLaserManager.getInstance().render(poseStack, collector);
             // 尸王雷电（紫色）
             ThunderFxManager.getInstance().render(poseStack, collector);
+            // 蓝海灵魂出窍的半透明蓝色残影
+            xiaoshi2022.corpseorigin.client.soul.SoulProjectionRenderer.render(poseStack, collector);
 
             // 鉁姘村ⅷ鎰忓
             Minecraft mc = Minecraft.getInstance();
@@ -747,6 +753,8 @@ public class CorpseOriginClient implements ClientModInitializer {
             xiaoshi2022.corpseorigin.client.render.laser.TianGangBeamState.tick();
             xiaoshi2022.corpseorigin.client.render.QiAuraRenderer.tick();
             ThunderFxManager.getInstance().tick();
+            // 灵魂残影跟随 + 灵魂粒子
+            xiaoshi2022.corpseorigin.client.soul.SoulProjectionClient.tick();
         });
 
         CorpseOrigin.LOGGER.debug("CorpseOrigin client initialized");

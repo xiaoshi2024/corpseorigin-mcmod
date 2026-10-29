@@ -273,6 +273,9 @@ public final class SkillManager {
             case "xuanwu_body" -> player.getAttachedOrCreate(xiaoshi2022.corpseorigin.skill.longyou.UndeadBodyState.STATE) == 1;
             case "son_of_corpse_nest" -> xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.get(player).getVariant()
                     == xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.VARIANT_SHICHAOZHIZI;
+            // 蓝海·灵魂出窍：出窍中按同一个键 = 回窍，不校验冷却
+            case xiaoshi2022.corpseorigin.skill.lanhai.SoulProjectionSkill.PATH ->
+                    xiaoshi2022.corpseorigin.skill.lanhai.SoulProjectionHandler.isActive(player.getUUID());
             default -> false;
         };
     }

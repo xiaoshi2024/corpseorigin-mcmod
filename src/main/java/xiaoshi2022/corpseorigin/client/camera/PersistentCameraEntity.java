@@ -4,12 +4,15 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.Options;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Input;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.phys.Vec3;
 import xiaoshi2022.corpseorigin.client.gui.CameraBlackoutScreen;
 
@@ -53,6 +56,27 @@ public class PersistentCameraEntity extends LocalPlayer {
     private static int handoffSettleTicks;
     /** true = 直角分支：不播"下落附身"，落位后直接在黑幕里把视角交还 */
     private static boolean handoffDirectRelease;
+
+    // ==================== 灵魂出窍 ====================
+
+    /** 灵魂出窍中（含出窍 / 回窍两段过场） */
+    private static boolean soulActive;
+    /** 出窍上升过场播完、已经进入自由飞行 */
+    private static boolean soulFreeFlight;
+    /** 回窍过场进行中（灵魂还没钻回胸口，本体继续保持躺姿） */
+    private static boolean soulReturning;
+    /** 出窍前的视角类型，回窍时还原 */
+    private static CameraType soulPreviousCameraType;
+
+    /** 灵魂自由飞行的基础速度（格 / tick） */
+    private static final double SOUL_FLY_SPEED = 0.35;
+    /** 按住疾跑时的速度倍率 */
+    private static final double SOUL_SPRINT_SPEED = 0.85;
+    /** 出窍上升 / 回窍下降的过场时长（毫秒） */
+    private static final long SOUL_RISE_MS = 300;
+    private static final long SOUL_RETURN_MS = 250;
+    /** 灵魂飘出胸口的高度 */
+    private static final double SOUL_RISE_HEIGHT = 1.15;
 
     private PersistentCameraEntity(Minecraft client) {
         super(client,
@@ -138,7 +162,162 @@ public class PersistentCameraEntity extends LocalPlayer {
         handoffDirectRelease = true;
     }
 
-    /** @return true 表示镜头还在等落位（本次 tick 已经处理过了） */
+    /**
+     * 进入「灵魂出窍」：把视角交给灵魂摄像机，从玩家胸口位置往上飘一小段，然后进入自由飞行。
+     * <p>
+     * 和换身过场不同，这里<b>不隐藏 HUD</b> —— 玩家要靠快捷栏里的技能键再按一次回窍。
+     */
+    public static void startSoulProjection(Minecraft client) {
+        LocalPlayer player = client.player;
+        if (player == null || client.level == null) {
+            return;
+        }
+        if (soulActive) {
+            return;
+        }
+        clearHandoff();
+
+        PersistentCameraEntity camera;
+        if (client.getCameraEntity() instanceof PersistentCameraEntity existing) {
+            camera = existing;
+            soulPreviousCameraType = null;   // 视角已被别的东西接管：结束时不动它
+        } else {
+            camera = cameraFor(client);
+            soulPreviousCameraType = client.options.getCameraType();
+            // 第一人称会把镜头塞进灵魂模型脑袋里，出窍期间强制第三人称
+            client.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+            client.setCameraEntity(camera);
+        }
+
+        soulActive = true;
+        soulFreeFlight = false;
+        soulReturning = false;
+
+        double chestY = player.getY() + player.getBbHeight() * 0.55;
+        camera.setPos(player.getX(), chestY, player.getZ());
+        camera.setYRot(player.getYRot());
+        camera.setXRot(player.getXRot());
+        camera.setYHeadRot(player.getYRot());
+        camera.setYBodyRot(player.getYRot());
+        camera.updateLastTickValues();
+        camera.setGoal(PersistentCameraEntityGoal.create(
+                new Vec3(player.getX(), chestY + SOUL_RISE_HEIGHT, player.getZ()),
+                player.getYRot(), player.getXRot(), 0, SOUL_RISE_MS,
+                __ -> soulFreeFlight = true));
+    }
+
+    /**
+     * 回窍：从灵魂当前位置钻回玩家胸口，播完再把视角交还本体并还原视角类型。
+     * <p>
+     * 服务端状态已经在收到包时就结束了（躯壳解锁、效果摘除），这边只负责表现。
+     */
+    public static void endSoulProjection(Minecraft client) {
+        if (!soulActive && !soulFreeFlight) {
+            return;
+        }
+        soulActive = false;
+        soulFreeFlight = false;
+
+        LocalPlayer player = client.player;
+        if (player != null && client.getCameraEntity() instanceof PersistentCameraEntity camera) {
+            soulReturning = true;
+            // 灵魂开始回窍，本体同时起身（服务端 end() 也已在同一刻解除躺姿），
+            // 回窍终点按站姿胸口计算，镜头交还时不会从地面猛地弹到眼睛高度
+            player.setPose(Pose.STANDING);
+            Vec3 chest = new Vec3(player.getX(), player.getY() + player.getBbHeight() * 0.55, player.getZ());
+            camera.setGoal(PersistentCameraEntityGoal.create(chest, player.getYRot(), player.getXRot(),
+                    0, SOUL_RETURN_MS, __ -> releaseSoul(client)));
+        } else {
+            releaseSoul(client);
+        }
+    }
+
+    /** 清空出窍状态、把视角还给玩家并还原视角类型（无过场版本） */
+    private static void releaseSoul(Minecraft client) {
+        soulActive = false;
+        soulFreeFlight = false;
+        soulReturning = false;
+        if (client.getCameraEntity() instanceof PersistentCameraEntity camera) {
+            camera.setGoal(null);
+            if (client.player != null) {
+                client.setCameraEntity(client.player);
+            }
+        }
+        if (soulPreviousCameraType != null) {
+            client.options.setCameraType(soulPreviousCameraType);
+            soulPreviousCameraType = null;
+        }
+    }
+
+    /** 灵魂是否已经进入自由飞行（= 鼠标可以转向、键盘可以推着灵魂飞） */
+    public static boolean isSoulFlightFree() {
+        return soulFreeFlight;
+    }
+
+    /** 是否正处于出窍 / 回窍过场（此时本体不该接受任何移动输入） */
+    public static boolean isSoulProjectionActive() {
+        return soulActive || soulFreeFlight || soulReturning;
+    }
+
+    /**
+     * 放弃出窍状态（别的过场要接管视角、或镜头被强行还给玩家时用）。
+     * <p>
+     * 只清标志并还原视角类型，不动 {@code cameraEntity} —— 交给调用方决定。
+     */
+    private static void abortSoul(Minecraft client) {
+        if (!soulActive && !soulFreeFlight && !soulReturning) {
+            return;
+        }
+        soulActive = false;
+        soulFreeFlight = false;
+        soulReturning = false;
+        if (soulPreviousCameraType != null) {
+            client.options.setCameraType(soulPreviousCameraType);
+            soulPreviousCameraType = null;
+        }
+    }
+
+    /** 灵魂自由飞行：读按键推着摄像机走，朝向跟随本体（本体被服务端钉在原地，只转不跑） */
+    private void tickSoulFlight(Minecraft client) {
+        LocalPlayer player = client.player;
+        if (player == null) {
+            return;
+        }
+        // 出窍期间鼠标转的是本体，灵魂跟着转 —— 第一人称/第三人称都用同一套朝向
+        if (client.options.getCameraType().isFirstPerson()) {
+            client.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+        }
+        this.setYRot(player.getYRot());
+        this.setXRot(player.getXRot());
+        this.setYHeadRot(player.getYRot());
+        this.setYBodyRot(player.getYRot());
+
+        Options options = client.options;
+        Vec3 forward = Vec3.directionFromRotation(this.getXRot(), this.getYRot());
+        Vec3 right = Vec3.directionFromRotation(0.0F, this.getYRot() + 90.0F);
+
+        Vec3 move = Vec3.ZERO;
+        if (options.keyUp.isDown()) move = move.add(forward);
+        if (options.keyDown.isDown()) move = move.subtract(forward);
+        if (options.keyRight.isDown()) move = move.add(right);
+        if (options.keyLeft.isDown()) move = move.subtract(right);
+
+        double vertical = 0.0;
+        if (options.keyJump.isDown()) vertical += 1.0;
+        if (options.keyShift.isDown()) vertical -= 1.0;
+
+        double speed = options.keySprint.isDown() ? SOUL_SPRINT_SPEED : SOUL_FLY_SPEED;
+        Vec3 velocity = Vec3.ZERO;
+        if (move.lengthSqr() > 1.0E-6) {
+            velocity = velocity.add(move.normalize().scale(speed));
+        }
+        velocity = velocity.add(0.0, vertical * speed, 0.0);
+
+        this.setDeltaMovement(velocity);
+        this.setPos(this.getX() + velocity.x, this.getY() + velocity.y, this.getZ() + velocity.z);
+        this.updateLastTickValues();
+    }
+
     private static boolean tickHandoff(Minecraft client) {
         if (handoffTargetPos == null) {
             return false;
@@ -309,6 +488,7 @@ public class PersistentCameraEntity extends LocalPlayer {
         }
 
         clearHandoff();
+        abortSoul(client);
 
         PersistentCameraEntity camera;
         if (client.getCameraEntity() instanceof PersistentCameraEntity existing) {
@@ -331,6 +511,7 @@ public class PersistentCameraEntity extends LocalPlayer {
 
     public static void unset(Minecraft client) {
         clearHandoff();
+        abortSoul(client);
 
         if (client.getCameraEntity() instanceof PersistentCameraEntity camera) {
             camera.setGoal(null);
@@ -397,7 +578,21 @@ public class PersistentCameraEntity extends LocalPlayer {
             return;
         }
 
-        if (!(client.getCameraEntity() instanceof PersistentCameraEntity camera) || camera.goal == null) {
+        if (!(client.getCameraEntity() instanceof PersistentCameraEntity camera)) {
+            return;
+        }
+
+        // 灵魂出窍：出窍 / 回窍过场走 goal，播完进入自由飞行
+        if (soulActive) {
+            if (camera.goal != null) {
+                camera.tickMovement();
+            } else if (soulFreeFlight) {
+                camera.tickSoulFlight(client);
+            }
+            return;
+        }
+
+        if (camera.goal == null) {
             return;
         }
         camera.tickMovement();

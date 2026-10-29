@@ -147,6 +147,9 @@ public final class CorpseNetwork {
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.CooldownSyncS2C.TYPE, CorpsePayloads.CooldownSyncS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.InnerPowerSyncS2C.TYPE, CorpsePayloads.InnerPowerSyncS2C.CODEC);
         PayloadTypeRegistry.clientboundPlay().register(CorpsePayloads.ThunderBoltFxS2C.TYPE, CorpsePayloads.ThunderBoltFxS2C.CODEC);
+        // 蓝海·灵魂出窍开关（S2C）
+        PayloadTypeRegistry.clientboundPlay().register(
+                CorpsePayloads.SoulProjectionS2C.TYPE, CorpsePayloads.SoulProjectionS2C.CODEC);
 
         ServerPlayNetworking.registerGlobalReceiver(CorpsePayloads.SelectCharacterC2S.TYPE, (payload, context) -> {
             ServerPlayer player = context.player();
@@ -272,6 +275,8 @@ public final class CorpseNetwork {
             xiaoshi2022.corpseorigin.skill.longyou.WaterPollutionSkill.clearOnDisconnect(uuid);
             // 雷电之力同样是开关，清掉免得重登后还开着
             xiaoshi2022.corpseorigin.skill.longyou.ThunderPowerSkill.clearOnDisconnect(uuid);
+            // 灵魂出窍同样是开关：状态与昏迷效果都要摘掉
+            xiaoshi2022.corpseorigin.skill.lanhai.SoulProjectionHandler.clearOnDisconnect(player);
             xiaoshi2022.corpseorigin.event.HeiXiaoFeiEventHandler.cleanupDisconnect(uuid);
             BYeffect.clearTotalDuration(uuid);
             BYeffect.clearInfectionSource(uuid);
@@ -907,6 +912,12 @@ public final class CorpseNetwork {
         int current = xiaoshi2022.corpseorigin.character.InnerPowerManager.getInnerPower(player);
         int max = xiaoshi2022.corpseorigin.character.InnerPowerManager.getMaxInnerPower(player);
         ServerPlayNetworking.send(player, new CorpsePayloads.InnerPowerSyncS2C(current, max));
+    }
+
+    /** 同步灵魂出窍开关给客户端（S2C）：true = 视角交给灵魂，false = 回窍 */
+    public static void sendSoulProjection(ServerPlayer player, boolean active) {
+        ServerPlayNetworking.send(player, new CorpsePayloads.SoulProjectionS2C(
+                active, xiaoshi2022.corpseorigin.skill.lanhai.SoulProjectionHandler.MAX_DURATION));
     }
 
     /**

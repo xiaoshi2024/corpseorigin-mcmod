@@ -138,6 +138,10 @@ public final class ServerEvents {
         ServerTickEvents.END_SERVER_TICK.register(
                 xiaoshi2022.corpseorigin.skill.shichaozhizi.GiantStompHandler::tick);
 
+        // 每 tick 推进蓝海「灵魂出窍」：锁住本体、维持昏迷效果、超时/死亡自动回窍
+        ServerTickEvents.END_SERVER_TICK.register(
+                xiaoshi2022.corpseorigin.skill.lanhai.SoulProjectionHandler::tick);
+
         // 金蝉脱壳后：右键旧身体穿回去（只在缩在原体里的时候接管）
         xiaoshi2022.corpseorigin.skill.longyou.BodyTransplantHandler.register();
         xiaoshi2022.corpseorigin.skill.longyou.UndeadBodyState.register();

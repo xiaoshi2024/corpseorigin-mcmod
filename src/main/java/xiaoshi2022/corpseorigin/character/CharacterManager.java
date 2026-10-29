@@ -90,6 +90,8 @@ public class CharacterManager {
 
         // 其他既有角色
         registerCharacter(new WeiXin());
+        // 蓝海（炎黄特能队第四小队）：人类角色，特异功能是睡觉时灵魂出窍
+        registerCharacter(new LanHai());
         registerCharacter(new NewChapterCharacter("xiaojingang",true));
         // 寄生铁血虫尸兄：剧情演出角色（古棺剧情中待吸干的水中尸兄），技能全是播动画
         registerCharacter(new GordiusZbrzCharacter());
@@ -133,6 +135,8 @@ public class CharacterManager {
         factionMap.put("yanhuang_budui", CharacterFaction.HUMAN);
         factionMap.put("chuangshang_xingcunzhe", CharacterFaction.HUMAN);
         factionMap.put("bianyi_guiyu", CharacterFaction.HUMAN);
+        // 蓝海：炎黄特能队成员，人类阵营
+        factionMap.put(LanHai.ID, CharacterFaction.HUMAN);
 
         // ========== 尸王阵营 ==========
         // 龙右本人 + 效忠龙右的尸兄

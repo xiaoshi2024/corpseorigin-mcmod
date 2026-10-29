@@ -156,6 +156,10 @@ public final class InfrasoundFieldHandler {
             if (caster.tickCount % 10 == 0) {
                 orderControlled(level, caster, field);
             }
+            // 声场期间持续"震魂"：谁躲在半径里出窍，照样把他震回体内
+            if (caster.tickCount % 10 == 0) {
+                expelSouls(level, caster);
+            }
             // 声场期间持续震断：有人躲进半径里也会被震开
             if (caster.tickCount % 10 == 0) {
                 FiveElementsCombat.breakBindingsNear(caster, FIELD_RADIUS);
@@ -215,7 +219,13 @@ public final class InfrasoundFieldHandler {
                         && (ownerUuid == null || !ownerUuid.equals(e.getUUID())));
 
         for (LivingEntity target : targets) {
-            // ① 尸族生物 → 操控，不伤害
+            // ① 灵魂出窍中的玩家：次声波直接把灵魂挣回体内，不再走内力判定
+            if (target instanceof ServerPlayer player
+                    && xiaoshi2022.corpseorigin.skill.lanhai.SoulProjectionHandler.isActive(player.getUUID())) {
+                xiaoshi2022.corpseorigin.skill.lanhai.SoulProjectionHandler.forceReturn(player);
+                continue;
+            }
+            // ② 尸族生物 → 操控，不伤害
             if (target instanceof Mob mob && ZombieKin.isZombieKin(target)) {
                 mob.addTag(CONTROL_TAG);
                 field.controlled.add(mob.getUUID());
@@ -265,6 +275,21 @@ public final class InfrasoundFieldHandler {
         target.hurtServer(level, caster instanceof ServerPlayer player
                 ? xiaoshi2022.corpseorigin.skill.QiSkillDamageSource.wrap(level.damageSources().playerAttack(player))
                 : level.damageSources().mobAttack(caster), damage);
+    }
+
+    // ==================== 震魂 ====================
+
+    /**
+     * 声场把范围内「灵魂出窍」的玩家震回体内。
+     * <p>
+     * 只认躯壳位置：灵魂飞得再远，只要本体还躺在声场里，就会被次声波拽回去。
+     */
+    private static void expelSouls(ServerLevel level, LivingEntity caster) {
+        double radiusSqr = FIELD_RADIUS * FIELD_RADIUS;
+        for (ServerPlayer player : level.getPlayers(p -> p.distanceToSqr(caster) <= radiusSqr
+                && xiaoshi2022.corpseorigin.skill.lanhai.SoulProjectionHandler.isActive(p.getUUID()))) {
+            xiaoshi2022.corpseorigin.skill.lanhai.SoulProjectionHandler.forceReturn(player);
+        }
     }
 
     // ==================== 操控尸兄 ====================

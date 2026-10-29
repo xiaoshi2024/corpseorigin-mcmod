@@ -37,6 +37,7 @@ public final class CharacterAuraColors {
             Map.entry("chongqun", 0xB4E63C),            // 虫群：同色
             Map.entry("hujie", 0xC060C0),               // 胡姐：紫红
             Map.entry("weixin", 0x8CA0B8),              // 威信：钢灰蓝
+            Map.entry("lanhai", 0x4FA8FF),              // 蓝海：灵魂幽蓝
             Map.entry("corpse_brother", 0x7FA05A),      // 尸兄：浊绿
             Map.entry("zuohufa", 0x8C3050),             // 左护法：暗绛紫
             Map.entry("bianyi_guiyu", 0x3C8C8C),        // 变异怪鱼：深海青

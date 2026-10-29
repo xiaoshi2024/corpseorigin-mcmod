@@ -53,7 +53,9 @@ public final class SkillLearningRules {
                 || "guigun_human".equals(role) && GUIGUN_HUMAN_SKILLS.contains(path)
                 || "guigun_corpse".equals(role) && GUIGUN_CORPSE_SKILLS.contains(path)
                 || "hei_wuchou".equals(role) && path.startsWith("wuchou_")
-                || "bai_wusheng".equals(role) && path.startsWith("wusheng_");
+                || "bai_wusheng".equals(role) && path.startsWith("wusheng_")
+                // 蓝海：异能「灵魂出窍」是角色自带，进角色就学会
+                || "lanhai".equals(role) && path.startsWith("lanhai_");
     }
     /**
      * 学习消耗的进化点（技能树用）。

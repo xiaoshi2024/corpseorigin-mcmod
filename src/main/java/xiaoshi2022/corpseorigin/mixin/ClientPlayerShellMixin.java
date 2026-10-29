@@ -29,6 +29,10 @@ public abstract class ClientPlayerShellMixin implements ClientShell, CameraLock 
 
     @Override
     public boolean isCameraLocked() {
-        return Minecraft.getInstance().getCameraEntity() instanceof PersistentCameraEntity;
+        // 灵魂出窍进入自由飞行后要允许鼠标转向（本体被服务端钉在原地，只转不跑）
+        if (Minecraft.getInstance().getCameraEntity() instanceof PersistentCameraEntity camera) {
+            return !camera.isSoulFlightFree();
+        }
+        return false;
     }
 }

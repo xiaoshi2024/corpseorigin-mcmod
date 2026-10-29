@@ -8,13 +8,15 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import xiaoshi2022.corpseorigin.skill.heixiaofei.HeartImplant;
+import xiaoshi2022.corpseorigin.skill.lanhai.SoulProjectionHandler;
 
 @Mixin(Player.class)
 public class HeartFeignPoseMixin {
     @Inject(method = "updatePlayerPose", at = @At("HEAD"), cancellable = true)
     private void corpseorigin$lieDown(CallbackInfo ci) {
         Player player = (Player)(Object)this;
-        if (player.isAlive() && HeartImplant.active(player)) {
+        // 黑金心脏假死 / 灵魂出窍：都像睡着一样躺在地上（出窍状态靠同步附件，别的客户端也能看到）
+        if (player.isAlive() && (HeartImplant.active(player) || SoulProjectionHandler.active(player))) {
             player.setPose(Pose.SLEEPING);
             ci.cancel();
         }

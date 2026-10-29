@@ -134,6 +134,7 @@ public class CorpseOrigin implements ModInitializer {
 		CorpseNetwork.register();
         xiaoshi2022.corpseorigin.growth.OrganNetwork.register();
         xiaoshi2022.corpseorigin.skill.heixiaofei.HeartImplant.register();
+        xiaoshi2022.corpseorigin.skill.lanhai.SoulProjectionHandler.register();
         xiaoshi2022.corpseorigin.skill.zhaoritian.CrimsonBloodSpearSkill.register();
         xiaoshi2022.corpseorigin.skill.zhaoritian.TianGangKeySkill.register();
         xiaoshi2022.corpseorigin.skill.longyou.CorpseNestLighting.register();

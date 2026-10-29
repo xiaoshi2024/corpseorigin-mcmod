@@ -46,6 +46,7 @@
   },
   "client": [
     "AvatarRendererMixin",
+    "ClientInputMixin",
     "ClientPlayerGeoAnimatableMixin",
     "ClientPlayerInteractionManagerMixin",
     "ClientPlayerShellMixin",
@@ -63,6 +64,8 @@
     "HumanoidModelLimbArmorMixin",
     "InventoryHeartPreviewMixin",
     "ItemInHandRendererMixin",
+    "KeyboardInputMixin",
+    "LevelExtractorMixin",
     "LevelRendererAccessor",
     "LivingEntityRendererLayersAccessor",
     "LivingEntityRendererMixin",

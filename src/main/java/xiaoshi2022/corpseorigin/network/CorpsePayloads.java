@@ -394,6 +394,30 @@ public final class CorpsePayloads {
         }
     }
 
+    // ==================== ✅ 蓝海·灵魂出窍（S2C） ====================
+
+    /**
+     * 灵魂出窍开关（S2C）。
+     * <p>
+     * {@code active = true} 时客户端把视角交给灵魂摄像机（从胸口飘出 → 自由飞行），
+     * {@code false} 时播回窍动画并把视角交还本体。判定与状态全在服务端
+     * （{@code SoulProjectionHandler}），这条包只管表现。
+     */
+    public record SoulProjectionS2C(boolean active, int durationTicks) implements CustomPacketPayload {
+        public static final Type<SoulProjectionS2C> TYPE = new Type<>(id("soul_projection"));
+        public static final StreamCodec<ByteBuf, SoulProjectionS2C> CODEC = StreamCodec.composite(
+                ByteBufCodecs.BOOL,
+                SoulProjectionS2C::active,
+                ByteBufCodecs.INT,
+                SoulProjectionS2C::durationTicks,
+                SoulProjectionS2C::new);
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
     // ==================== ✅ 内力同步（S2C） ====================
 
     public record InnerPowerSyncS2C(int current, int max) implements CustomPacketPayload {
