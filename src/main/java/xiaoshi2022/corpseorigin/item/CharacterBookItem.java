@@ -74,6 +74,31 @@ public class CharacterBookItem extends Item {
         return stack.get(ModDataComponents.CHARACTER_ID);   // 向后兼容旧存档
     }
 
+    /**
+     * 旧存档兼容：把物品上遗留的 {@link ModDataComponents#CHARACTER_ID} 搬进 {@code minecraft:custom_data}
+     * 后把旧组件抹掉。
+     * <p>
+     * 自定义数据组件的注册表 id 会随 mod 集合 / 加载顺序漂移 —— 录制回放时组件 id 被原样写进物品栈，
+     * 回放时按当前 id 解析到<b>别的</b>组件，只消费一部分字节，Flashback 就抛
+     * {@code Action flashback:action/game_packet failed to fully read} 崩掉。搬空旧组件后回放包里
+     * 只剩 {@code minecraft:custom_data}（vanilla 固定 id 0），跨会话 / 回放都稳定。
+     *
+     * @return 是否真的迁移了（调用方可用它决定要不要把槽位重新同步给客户端）
+     */
+    public static boolean migrateLegacy(ItemStack stack) {
+        String legacy = stack.get(ModDataComponents.CHARACTER_ID);
+        if (legacy == null) {
+            return false;
+        }
+        String stored = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)
+                .copyTag().getStringOr(CHARACTER_ID_KEY, null);
+        if (stored == null) {
+            CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.putString(CHARACTER_ID_KEY, legacy));
+        }
+        stack.remove(ModDataComponents.CHARACTER_ID);
+        return true;
+    }
+
     @Override
     public Component getName(ItemStack stack) {
         String characterId = getCharacterId(stack);

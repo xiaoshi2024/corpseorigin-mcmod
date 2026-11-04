@@ -9,11 +9,14 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import xiaoshi2022.corpseorigin.CorpseOrigin;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
 import xiaoshi2022.corpseorigin.character.PlayerCharacterData;
 import xiaoshi2022.corpseorigin.component.PlayerCorpseComponent;
 import xiaoshi2022.corpseorigin.item.CharacterBookItem;
+import xiaoshi2022.corpseorigin.item.CharacterMemoryItem;
+import xiaoshi2022.corpseorigin.item.weapon.BloodLotusLamp;
 import xiaoshi2022.corpseorigin.network.CorpseNetwork;
 
 import java.util.UUID;
@@ -93,6 +96,10 @@ public final class ServerEvents {
             //   （readNbt 用「或」合并，换身/换壳永远无法把它翻回 false）——
             //   所以不管玩家之后怎么克隆、夺舍、换身体，都不会再发第二本。
             giveStarterBookOnce(player);
+            // ★ 老存档里的角色书 / 记忆书 / 宝莲灯还把数据挂在自定义数据组件上，
+            //   自定义组件 id 跨会话会漂移，录回放时能写出错位的包（Flashback 崩溃）。
+            //   这里把旧组件搬进 vanilla 的 minecraft:custom_data，并把旧组件摘掉。
+            migrateLegacyItemComponents(player);
         });
 
         // 每 tick 末尾：把本 tick 改过尸兄数据的玩家统一广播一次
@@ -111,6 +118,15 @@ public final class ServerEvents {
         });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> RESPAWN_SYNC.remove(handler.player.getUUID()));
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STOPPED.register(server -> RESPAWN_SYNC.clear());
+
+        // 每秒扫一遍在线玩家背包：把还挂在自定义数据组件上的旧物品迁进 custom_data。
+        // 只能每秒扫（背包没有"槽位变更"事件），但迁移是幂等的，第二次起就是空转。
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            if (server.getTickCount() % 20 != 0) return;
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+                migrateLegacyItemComponents(player);
+            }
+        });
 
         // 每 tick 推进象棋尸兄背上生物的滑动（走子时乘客与模型同步滑过去）
         xiaoshi2022.corpseorigin.block.entity.CNChessZbrsBlockEntity.registerCarryTick();
@@ -184,5 +200,27 @@ public final class ServerEvents {
         player.getInventory().placeItemBackInInventory(CharacterBookItem.createUnboundStack());
         player.sendOverlayMessage(Component.translatable("message.corpseorigin.character_book.starter")
                 .withStyle(ChatFormatting.GOLD));
+    }
+
+    /**
+     * 把玩家背包里仍挂着自定义数据组件的旧物品迁进 {@code minecraft:custom_data}。
+     * <p>
+     * 自定义 {@code DataComponentType} 的注册表 id 会随 mod 集合 / 加载顺序漂移，
+     * 回放（Flashback）按旧 id 解析就会读到错位的组件 —— 这就是"蓝海"回放
+     * {@code game_packet failed to fully read} 的成因。vanilla 组件 id 固定，跨会话稳定。
+     * <p>
+     * 迁移是幂等的：迁完就 {@code remove} 掉旧组件，后面再扫到就是空转。
+     * 返回 true 表示这一格被改过（背包会把改动同步给客户端）。
+     */
+    private static void migrateLegacyItemComponents(ServerPlayer player) {
+        var inventory = player.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            ItemStack stack = inventory.getItem(i);
+            if (stack.isEmpty()) continue;
+            boolean changed = CharacterBookItem.migrateLegacy(stack);
+            changed |= CharacterMemoryItem.migrateLegacy(stack);
+            changed |= BloodLotusLamp.migrateLegacy(stack);
+            if (changed) inventory.setItem(i, stack);
+        }
     }
 }

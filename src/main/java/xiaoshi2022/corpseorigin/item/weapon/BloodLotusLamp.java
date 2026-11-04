@@ -12,6 +12,8 @@ import com.geckolib.renderer.GeoItemRenderer;
 import com.geckolib.util.GeckoLibUtil;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
@@ -28,6 +30,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -60,6 +63,13 @@ public class BloodLotusLamp extends Item implements GeoItem {
     private static final double MELEE_DRAIN_RANGE = 4.0;
     private static final float MELEE_DRAIN_DAMAGE = 5.0F;
 
+    /**
+     * 储存的血气放在 {@code minecraft:custom_data} 里，不用自定义数据组件 ——
+     * 组件 id 由 mod 集合 / 加载顺序决定，换个环境就会漂移；回放（Flashback）按旧 id 解析
+     * 会读到错位的组件而崩（game_packet failed to fully read）。vanilla 组件 id 固定，跨会话稳定。
+     */
+    private static final String STORED_BLOOD_QI_KEY = "corpseorigin:stored_blood_qi";
+
     public BloodLotusLamp(Properties properties) {
         super(properties);
     }
@@ -71,6 +81,41 @@ public class BloodLotusLamp extends Item implements GeoItem {
                 .setId(id));
     }
 
+    // ==================== 血气存取（custom_data + 旧组件回退） ====================
+
+    private static int storedQi(ItemStack stack) {
+        CompoundTag data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        if (data.contains(STORED_BLOOD_QI_KEY)) {
+            return data.getIntOr(STORED_BLOOD_QI_KEY, 0);
+        }
+        // 旧存档里还挂在自定义组件上，读一次兜底
+        return stack.getOrDefault(ModDataComponents.STORED_BLOOD_QI, 0);
+    }
+
+    private static void setStoredQi(ItemStack stack, int value) {
+        CustomData.update(DataComponents.CUSTOM_DATA, stack,
+                tag -> tag.putInt(STORED_BLOOD_QI_KEY, value));
+        stack.remove(ModDataComponents.STORED_BLOOD_QI);
+    }
+
+    /**
+     * 把旧数据组件里的血气搬到 {@code minecraft:custom_data}，并摘掉旧组件。
+     * 老存档 / 老回放里的物品栈必须走这一步，否则它还会继续往网络包里写自定义组件 id。
+     */
+    public static boolean migrateLegacy(ItemStack stack) {
+        Integer legacy = stack.get(ModDataComponents.STORED_BLOOD_QI);
+        if (legacy == null) {
+            return false;
+        }
+        CompoundTag data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        if (!data.contains(STORED_BLOOD_QI_KEY)) {
+            CustomData.update(DataComponents.CUSTOM_DATA, stack,
+                    tag -> tag.putInt(STORED_BLOOD_QI_KEY, legacy));
+        }
+        stack.remove(ModDataComponents.STORED_BLOOD_QI);
+        return true;
+    }
+
     // ==================== 长按机制（仅玩家） ====================
 
     @Override
@@ -79,11 +124,11 @@ public class BloodLotusLamp extends Item implements GeoItem {
 
         // 潜行 + 右键 = 释放血气
         if (player.isShiftKeyDown()) {
-            int stored = stack.getOrDefault(ModDataComponents.STORED_BLOOD_QI, 0);
+            int stored = storedQi(stack);
             if (stored > 0 && !level.isClientSide()) {
                 level.playSound(null,player.getX(),player.getY(),player.getZ(),xiaoshi2022.corpseorigin.registry.ModSounds.BLOOD_LOTUS_DRAIN,net.minecraft.sounds.SoundSource.PLAYERS,.8f,.8f);
                 player.heal(stored);
-                stack.set(ModDataComponents.STORED_BLOOD_QI, 0);
+                setStoredQi(stack, 0);
 
                 player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 200, 1, false, true, true));
                 player.addEffect(new MobEffectInstance(MobEffects.STRENGTH,   200, 1, false, true, true));
@@ -155,9 +200,8 @@ public class BloodLotusLamp extends Item implements GeoItem {
 
         // 吸血归属
         if (attacker instanceof Player player) {
-            int current = stack.getOrDefault(ModDataComponents.STORED_BLOOD_QI, 0);
-            stack.set(ModDataComponents.STORED_BLOOD_QI,
-                    Math.min(current + bloodGained, MAX_STORED_BLOOD_QI));
+            int current = storedQi(stack);
+            setStoredQi(stack, Math.min(current + bloodGained, MAX_STORED_BLOOD_QI));
         } else {
             attacker.heal(bloodGained * 0.5F);
         }
@@ -176,12 +220,12 @@ public class BloodLotusLamp extends Item implements GeoItem {
         if (!(entity instanceof LivingEntity living)) return;
         if (slot != EquipmentSlot.MAINHAND && slot != EquipmentSlot.OFFHAND) return;
 
-        int stored = stack.getOrDefault(ModDataComponents.STORED_BLOOD_QI, 0);
+        int stored = storedQi(stack);
         if (stored <= 0) return;
         if (living.getHealth() >= living.getMaxHealth()) return;
 
         int cost = Math.min(HEAL_COST_PER_TICK, stored);
-        stack.set(ModDataComponents.STORED_BLOOD_QI, stored - cost);
+        setStoredQi(stack, stored - cost);
         living.heal(cost * HEAL_PER_TICK);
 
         if (living instanceof Player && level.getGameTime() % 10 == 0) {
@@ -235,9 +279,9 @@ public class BloodLotusLamp extends Item implements GeoItem {
 
         // 存血气
         if (bloodGained > 0) {
-            int current = stack.getOrDefault(ModDataComponents.STORED_BLOOD_QI, 0);
+            int current = storedQi(stack);
             int newValue = Math.min(current + bloodGained, MAX_STORED_BLOOD_QI);
-            stack.set(ModDataComponents.STORED_BLOOD_QI, newValue);
+            setStoredQi(stack, newValue);
         }
 
         // 视觉
@@ -325,7 +369,7 @@ public class BloodLotusLamp extends Item implements GeoItem {
     public void appendHoverText(ItemStack stack, TooltipContext context,
                                 TooltipDisplay display, Consumer<Component> builder,
                                 TooltipFlag flag) {
-        int stored = stack.getOrDefault(ModDataComponents.STORED_BLOOD_QI, 0);
+        int stored = storedQi(stack);
         int max = MAX_STORED_BLOOD_QI;
 
         builder.accept(Component.translatable("item.corpseorigin.blood_lotus_lantern.desc"));

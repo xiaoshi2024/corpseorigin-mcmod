@@ -1,5 +1,6 @@
 package xiaoshi2022.corpseorigin.item;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -9,6 +10,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 import xiaoshi2022.corpseorigin.character.CharacterManager;
@@ -42,16 +44,43 @@ public class CharacterMemoryItem extends Item {
         super(properties);
     }
 
+    /**
+     * 角色数据在 {@code minecraft:custom_data} 里的键名。
+     * <p>
+     * 不用自定义数据组件存：组件 id 由 mod 集合 / 加载顺序决定，换个环境就会漂移；
+     * 回放（Flashback）按旧 id 解析会读到错位的组件而崩（game_packet failed to fully read）。
+     */
+    private static final String MEMORY_KEY = "corpseorigin:character_memory";
+
     /** 把一份角色数据 NBT（{@code CharacterShellStateComponent#writeNbt} 的输出）封成记忆书 */
     public static ItemStack create(CompoundTag memory) {
         ItemStack stack = new ItemStack(ModItems.CHARACTER_MEMORY);
-        stack.set(ModDataComponents.CHARACTER_MEMORY, memory.copy());
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.put(MEMORY_KEY, memory.copy()));
         return stack;
     }
 
-    /** 书里那份记忆；空书返回 null */
+    /** 书里那份记忆；空书返回 null。新书读 {@code custom_data}，旧存档回退旧组件。 */
     public static CompoundTag memoryOf(ItemStack stack) {
-        return stack.get(ModDataComponents.CHARACTER_MEMORY);
+        CompoundTag data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        var stored = data.getCompound(MEMORY_KEY);
+        if (stored.isPresent()) {
+            return stored.get();
+        }
+        return stack.get(ModDataComponents.CHARACTER_MEMORY);   // 向后兼容旧存档
+    }
+
+    /** 旧存档兼容：把物品上遗留的 {@link ModDataComponents#CHARACTER_MEMORY} 搬进 {@code custom_data} 后抹掉旧组件 */
+    public static boolean migrateLegacy(ItemStack stack) {
+        CompoundTag legacy = stack.get(ModDataComponents.CHARACTER_MEMORY);
+        if (legacy == null) {
+            return false;
+        }
+        CompoundTag data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        if (!data.contains(MEMORY_KEY)) {
+            CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> tag.put(MEMORY_KEY, legacy.copy()));
+        }
+        stack.remove(ModDataComponents.CHARACTER_MEMORY);
+        return true;
     }
 
     /** 记忆里记的是谁的角色（原主人 UUID）；读不出来返回 null */
