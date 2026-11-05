@@ -90,12 +90,6 @@ public final class ModAttributes {
 
         // ======== 第3期新增实体属性注册 ========
 
-        // 八头长颈尸兄（BOSS：八个脑袋、脑筋急转弯能淦晕）
-        FabricDefaultAttributeRegistry.register(
-                ModEntities.EIGHT_HEAD_LONG_NECK,
-                EightHeadLongNeckEntity.createAttributes()
-        );
-
         // 贝奇（晓佳的宠物小狗）+ 变异贝奇（被针筒注射后的狂躁形态）
         FabricDefaultAttributeRegistry.register(
                 ModEntities.BEIQI,

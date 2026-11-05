@@ -26,7 +26,9 @@ public final class CreaturePlayerRenderer extends GeoReplacedEntityRenderer<Play
     private static final Map<String,CreaturePlayerRenderer> RENDERERS=new HashMap<>();
     private CreaturePlayerRenderer(EntityRendererProvider.Context context,String id){super(context,new DefaultedEntityGeoModel<>(CorpseOrigin.id(id)),null);PlayerHandLayers.attach(context,this);shadowRadius=.7f;}
     public static void create(EntityRendererProvider.Context context){
-        for(String id:List.of("qingwa_zb","hujie","chongmu","jingang_zb","jingang_infant","xiongxing_zb","red_fire_ant","bullet_ant","xiaohui_scene","gordius_zbrz","uncles"))RENDERERS.put(id,new CreaturePlayerRenderer(context,id));
+        for(String id:List.of("qingwa_zb","hujie","chongmu","jingang_zb","jingang_infant","xiongxing_zb","red_fire_ant","bullet_ant","xiaohui_scene","gordius_zbrz","uncles",
+            // ======== 第3期新增角色 ========
+            "mu_doctor","long_neck_zb","zbr_gourd","eight_head_long_neck"))RENDERERS.put(id,new CreaturePlayerRenderer(context,id));
     }
     public static CreaturePlayerRenderer get(AvatarRenderState state){return RENDERERS.get(state.getGeckolibData(MODEL));}
     public static boolean extract(AbstractClientPlayer p,AvatarRenderState state,float partial){
@@ -38,18 +40,23 @@ public final class CreaturePlayerRenderer extends GeoReplacedEntityRenderer<Play
         }
         String role=p.getAttachedOrCreate(ChapterActorState.ROLE),id=role.equals("chongqun")?"bullet_ant":role;
         if(role.equals("jingang_zb") && p.getAttachedOrCreate(CreatureAbilities.INFANT))id="jingang_infant";
+        // ======== 第3期：角色 → 模型 id 映射 ========
+        // xiaojingang 已进化出葫芦 → 用 zbr_gourd 模型；
+        // xiaojingang_lame 还没进化出葫芦（穆博士实验打断腿）→ 走默认玩家模型，
+        //   瘸腿/半截爬/游泳姿态由 PlayerModelLimbMixin 负责（GeckoLib renderer 不注册这个 id）；
+        // mu_doctor / long_neck_zb 是独立 GeckoLib 模型
+        switch (role) {
+            case "xiaojingang" -> id = "zbr_gourd";
+            case "mu_doctor" -> id = "mu_doctor";
+            case "long_neck_zb" -> id = "long_neck_zb";
+            case "eight_head_long_neck" -> id = "eight_head_long_neck";
+        }
         String condition=p.getAttachedOrCreate(ChapterScenes.CONDITION);
-        // ======== 捆绑触发：任何角色只要调了 BoundPose.bind() → 整身换成 xiaohui_scene 场景模型 ========
-        // xiaohui_scene.geo.json 自带 ropes（绳索绕身）+ fear（泪痕）+ chess（棋盘）部件，
-        // 动画 clip = condition（bound / fear / black_general），默认显示 ropes + fear。
-        boolean boundByPose = xiaoshi2022.corpseorigin.client.render.BoundPose.active(p);
-        if (boundByPose) {
-            id = "xiaohui_scene";
-            // 挣扎态走 "bound_lying_struggle" clip；平静态走 "bound_lying" clip
-            // （xiaohui_scene.animation.json 里已加这两个 clip：root 旋转 -90° 躺平）
-            condition = "bound_struggle".equals(xiaoshi2022.corpseorigin.client.render.BoundPose.pose(p))
-                    ? "bound_lying_struggle" : "bound_lying";
-        } else if(role.equals("bianselong_zb") && p.getAttachedOrCreate(ChapterActorState.DISGUISE).equals("xiaohui")
+        // ======== 捆绑：只在 bianlongse_zb 伪装小惠时切 xiaohui_scene ========
+        // zb_bind 指令不应该强迫所有玩家换成小惠的场景模型/皮肤！
+        // BoundPose 的视觉层由 PlayerModelLimbMixin 锁姿态（双手交叉/挣扎）+ 流血粒子负责，
+        // 玩家保留自己原本的角色皮肤。
+        if(role.equals("bianselong_zb") && p.getAttachedOrCreate(ChapterActorState.DISGUISE).equals("xiaohui")
                 && Set.of("bound","fear","black_general").contains(condition)) {
             id="xiaohui_scene";
         }
@@ -68,6 +75,20 @@ public final class CreaturePlayerRenderer extends GeoReplacedEntityRenderer<Play
             // 大叔：walk / attack / flee / open / drop 演出动画同名映射，其余按走动 / 待机
             clip=Set.of("walk","attack","flee","open","drop").contains(action)?action
                     :state.walkAnimationSpeed>.02f?"walk":"idle";
+        else if(id.equals("mu_doctor"))
+            // ======== 第3期：穆博士演出角色 ========
+            // idle / walk / run / think / press / speech / grab —— 全部与 action cue 同名
+            clip=Set.of("walk","run","think","press","speech","grab").contains(action)?action
+                    :state.walkAnimationSpeed>.02f?"walk":"idle";
+        else if(id.equals("long_neck_zb"))
+            // ======== 第3期：长颈尸兄演出角色 ========
+            // walk / approach / lunge / growl 与 cue 同名；其余按走动/待机
+            clip=Set.of("walk","approach","lunge","growl").contains(action)?action
+                    :state.walkAnimationSpeed>.02f?"walk":"idle";
+        else if(id.equals("eight_head_long_neck"))
+            // 八头长颈尸兄演出角色：attack / stunned 与 cue 同名；受击播 hurt；其余按走动/待机
+            clip=Set.of("walk","attack","stunned").contains(action)?action
+                    :p.hurtTime>0?"hurt":state.walkAnimationSpeed>.02f?"walk":"idle";
         else clip=switch(action){case "cast","threat"->"cast";case "charge"->"charge";case "pounce"->"pounce";case "transform"->"transform";case "attack"->"attack";default->p.hurtTime>0?"hurt":p.swinging?"attack":state.walkAnimationSpeed>.02f?"walk":"idle";};
         if(id.equals("xiaohui_scene"))clip=condition;
         state.addGeckolibData(CLIP,clip);state.addGeckolibData(DataTickets.PACKED_LIGHT,state.lightCoords);

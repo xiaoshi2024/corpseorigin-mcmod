@@ -26,9 +26,8 @@ import xiaoshi2022.corpseorigin.skill.chapter.ChapterScenes;
  *   /zb_unbind @a        ← 解捆
  * </pre>
  * <p>
- * 视觉层在 CreaturePlayerRenderer.extract() 里：
- * BoundPose.active(player) == true 时 → 切 xiaohui_scene 场景模型。
- * 姿态层在 PlayerModelLimbMixin.TAIL：双手锁在胸前。
+ * 视觉层在 {@code BoundRopeLayer}：BoundPose.active(player) == true 时，
+ * 在玩家原有皮肤/动画之上叠加胸口、手腕、脚踝的绳索，不改任何骨骼姿态。
  */
 public final class BoundPose {
     public static final String ACTION_BOUND       = "bound";

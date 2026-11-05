@@ -73,7 +73,9 @@ public final class ChapterScenes {
                 if(!p.isAlive() || !role.equals(p.getAttachedOrCreate(ChapterActorState.ROLE))) {
                     p.setAttached(CONDITION,"");p.setAttached(ACTION,"");continue;
                 }
-                if(!action.isEmpty() && p.level().getGameTime()>=p.getAttachedOrCreate(UNTIL))p.setAttached(ACTION,"");
+                // UNTIL == 0 表示永久（/zb_bind 不带时长），只有限时动作才按到期清除
+                long until=p.getAttachedOrCreate(UNTIL);
+                if(!action.isEmpty() && until>0 && p.level().getGameTime()>=until)p.setAttached(ACTION,"");
                 if(Set.of("bound","fear","black_general").contains(condition)
                         && (!role.equals("bianselong_zb") || !p.getAttachedOrCreate(ChapterActorState.DISGUISE).equals("xiaohui"))) {
                     p.setAttached(CONDITION,"");continue;

@@ -256,21 +256,6 @@ public final class ModEntities {
     );
 
     /**
-     * 八头长颈尸兄（{@code eight_head_long_neck}）—— 精神病院 BOSS。
-     * <p>
-     * 穆博士通过广播器操控的 BOSS，八个脑袋各说各的，脑筋急转弯能让它淦晕。
-     * 不进自然生成表：刷怪蛋 / {@code /summon}。
-     */
-    public static final EntityType<EightHeadLongNeckEntity> EIGHT_HEAD_LONG_NECK = register(
-            "eight_head_long_neck",
-            EntityType.Builder.<EightHeadLongNeckEntity>of(EightHeadLongNeckEntity::new, MobCategory.MONSTER)
-                    .sized(2.0f, 3.2f)
-                    .clientTrackingRange(32)
-                    .updateInterval(2)
-                    .notInPeaceful()
-    );
-
-    /**
      * 贝奇（{@code beiqi}）—— 晓佳的宠物小狗。
      * <p>
      * 剧情中被穆博士针筒注射后变异。可驯养。

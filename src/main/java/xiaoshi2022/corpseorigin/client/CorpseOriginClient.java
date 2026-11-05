@@ -237,6 +237,18 @@ public class CorpseOriginClient implements ClientModInitializer {
         EntityRendererRegistry.register(ModEntities.HAM, HamRenderer::new);
         EntityRendererRegistry.register(ModEntities.RED_FIRE_ANT, c->new xiaoshi2022.corpseorigin.client.renderer.entity.CorpseAntRenderer(c,"red_fire_ant"));
         EntityRendererRegistry.register(ModEntities.BULLET_ANT, c->new xiaoshi2022.corpseorigin.client.renderer.entity.CorpseAntRenderer(c,"bullet_ant"));
+        // ======== 第3期：新实体 Renderer 注册 ========
+        // （八头长颈尸兄已改为玩家扮演角色，走 CreaturePlayerRenderer，不再注册实体 Renderer）
+        /// 贝奇（小狗宠物）—— 如果是 GeckoLib 模型用 DefaultedEntityGeoModel；否则先占位,等模型建模好后取消注释
+//        EntityRendererRegistry.register(ModEntities.BEIQI,
+//                context -> new com.geckolib.renderer.GeoEntityRenderer<>(context,
+//                        new com.geckolib.model.DefaultedEntityGeoModel<>(
+//                                ModEntities.BEIQI.getId())));
+        // 变异贝奇
+//        EntityRendererRegistry.register(ModEntities.BEIQI_MUTANT,
+//                context -> new com.geckolib.renderer.GeoEntityRenderer<>(context,
+//                        new com.geckolib.model.DefaultedEntityGeoModel<>(
+//                                ModEntities.BEIQI_MUTANT.getId())));
         ChapterCinematics.register();
         ClientPlayNetworking.registerGlobalReceiver(xiaoshi2022.corpseorigin.network.ChameleonDisguisePayload.Result.TYPE,(payload,context)->context.client().execute(()->{
             if(context.client().gui.screen() instanceof ChameleonDisguiseScreen screen)screen.result(payload.error());
@@ -762,12 +774,12 @@ public class CorpseOriginClient implements ClientModInitializer {
                             xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE))
                     && client.player.tickCount % 2 == 0) {
                 var engine = client.particleEngine;
-                // 腰部（身体被切断的位置）：半截身体趴在地上，cut 面离地约 0.25 格
+                // 腰部（身体被切断的位置）：双腿藏掉、整具身体下移后断口已经贴地
                 double baseX = client.player.getX()
                         + Math.sin(Math.toRadians(client.player.getYRot())) * 0.1;
                 double baseZ = client.player.getZ()
                         - Math.cos(Math.toRadians(client.player.getYRot())) * 0.1;
-                double cutY = client.player.getY() + 0.25;
+                double cutY = client.player.getY() + 0.05;
                 var blood = net.minecraft.core.particles.PowerParticleOption.create(
                         net.minecraft.core.particles.ParticleTypes.DRAGON_BREATH, 0.9f);
                 for (int i = 0; i < 4; i++) {

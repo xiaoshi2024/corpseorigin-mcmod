@@ -109,6 +109,8 @@ public class CharacterManager {
         registerCharacter(new NewChapterCharacter("xiaojingang_lame", true));
         // 长颈尸兄：穆博士用精神病病人改造的控制尸兄，玩家扮演，演出角色（播动画）
         registerCharacter(new LongNeckCharacter());
+        // 八头长颈尸兄：长颈尸兄的进化版 BOSS（一个巨型长颈 + 顶上 8 个脑袋），玩家扮演，演出角色
+        registerCharacter(new EightHeadLongNeckCharacter());
 
         // ==== 阵营映射 —— 后期想调整阵营只改这里 ====
         populateFactionMap();

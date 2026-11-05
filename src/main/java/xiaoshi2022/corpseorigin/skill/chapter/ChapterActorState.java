@@ -46,7 +46,8 @@ public final class ChapterActorState {
                 "jingang_zb", "shichaozhizi", "bianselong_zb", "qingwa_zb", "hujie", "chongmu",
                 "chongqun", "xiongxing_zb", "siyangyuan_zb", "kuaidiyuan_zb", "bianyi_guiyu",
                   "corpse_brother", "xiaojingang", "xiaojingang_lame", "guigun_corpse",
-                  "hei_wuchou", "bai_wusheng", "gordius_zbrz", "long_neck_zb").contains(role)) {
+                  "hei_wuchou", "bai_wusheng", "gordius_zbrz", "long_neck_zb",
+                  "eight_head_long_neck").contains(role)) {
             var comp = xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.get(player);
             if (!comp.isCorpse()) {
                 xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.setPlayerAsCorpse(player,
@@ -65,10 +66,11 @@ public final class ChapterActorState {
                 xiaoshi2022.corpseorigin.network.CorpseNetwork.broadcastPlayerCorpseSync(player);
             }
         }
-        // 演出角色（铁血虫 / 大叔 / 穆博士 / 长颈尸兄）：动画技能自动解锁 —— 技能只是播动画，不进进化树、不耗点。
+        // 演出角色（铁血虫 / 大叔 / 穆博士 / 长颈尸兄 / 八头长颈尸兄）：动画技能自动解锁 —— 技能只是播动画，不进进化树、不耗点。
         // 放在每 tick 校正里：切角色、重登、旧存档缺技能都能自愈，学完再同步一次客户端。
         if ("gordius_zbrz".equals(role) || "uncles".equals(role)
-                || "mu_doctor".equals(role) || "long_neck_zb".equals(role)) {
+                || "mu_doctor".equals(role) || "long_neck_zb".equals(role)
+                || "eight_head_long_neck".equals(role)) {
             var pdata = xiaoshi2022.corpseorigin.character.PlayerCharacterData.get(player);
             boolean learnedNew = false;
             for (xiaoshi2022.corpseorigin.skill.ISkill skill : CharacterManager.getInstance().getCharacter(role).getSkills()) {

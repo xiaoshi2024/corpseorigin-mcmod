@@ -37,6 +37,36 @@ import xiaoshi2022.corpseorigin.config.CorpseConfig;
  */
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererSubmitMixin {
+
+    /**
+     * 半截葫芦小金刚（xiaojingang_lame）双腿被藏掉后，原版模型的身体离地 12 像素（模型像素）。
+     * 这里在 submit 刚 {@code pushPose()} 之后把整具身体下压同样距离 —— 模型、盔甲、手持物和
+     * 所有挂在玩家身上的渲染层一起走，断口才会贴地。名字牌是在 {@code popPose()} 之后才提交的，
+     * 位置不受影响。下压量按格换算（12px / 16），并乘上 {@code state.scale} 跟随体型缩放。
+     */
+    private static final double LAME_BODY_Y_OFFSET = -12.0 / 16.0;
+
+    @Inject(
+            method = "submit(Lnet/minecraft/client/renderer/entity/state/LivingEntityRenderState;"
+                    + "Lcom/mojang/blaze3d/vertex/PoseStack;"
+                    + "Lnet/minecraft/client/renderer/SubmitNodeCollector;"
+                    + "Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V",
+            at = @At(value = "INVOKE",
+                    target = "Lcom/mojang/blaze3d/vertex/PoseStack;pushPose()V",
+                    shift = At.Shift.AFTER)
+    )
+    private void corpseorigin$lowerLameBody(LivingEntityRenderState state, PoseStack poses,
+                                            SubmitNodeCollector collector, CameraRenderState camera,
+                                            CallbackInfo ci) {
+        if (!(state instanceof AvatarRenderState avatar) || !((Object) this instanceof AvatarRenderer<?>)) return;
+        var level = net.minecraft.client.Minecraft.getInstance().level;
+        var actor = level == null ? null : level.getEntity(avatar.id);
+        if (actor == null) return;
+        if (!"xiaojingang_lame".equals(actor.getAttachedOrCreate(
+                xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE))) return;
+        poses.translate(0.0, LAME_BODY_Y_OFFSET * avatar.scale, 0.0);
+    }
+
     @Inject(method = "submit", at = @At("HEAD"))
     private void corpseorigin$evolutionParts(LivingEntityRenderState state, PoseStack poses,
                                             SubmitNodeCollector collector, CameraRenderState camera, CallbackInfo ci) {
