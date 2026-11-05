@@ -102,6 +102,14 @@ public class CharacterManager {
         registerCharacter(new NewChapterCharacter("hei_wuchou",true));
         registerCharacter(new NewChapterCharacter("bai_wusheng",true));
 
+        // ======== 第3期：精神病院剧情角色 ========
+        // 穆博士：人类反派（邪恶科学家，本体是人），把晓佳/小惠捆起来叫嚣建立新国度
+        registerCharacter(new MuDoctorCharacter());
+        // 瘸腿葫芦小金刚：xiaojingang 变种（穆博士实验品打残了一条腿），模型资源共用，渲染层瘸腿姿态
+        registerCharacter(new NewChapterCharacter("xiaojingang_lame", true));
+        // 长颈尸兄：穆博士用精神病病人改造的控制尸兄，玩家扮演，演出角色（播动画）
+        registerCharacter(new LongNeckCharacter());
+
         // ==== 阵营映射 —— 后期想调整阵营只改这里 ====
         populateFactionMap();
     }
@@ -116,6 +124,8 @@ public class CharacterManager {
     private void populateFactionMap() {
         factionMap.put("guigun_human",CharacterFaction.HUMAN);
         factionMap.put("xiaojingang",CharacterFaction.OTHER);
+        // 瘸腿葫芦小金刚：xiaojingang 变种（半尸兄），同归 OTHER
+        factionMap.put("xiaojingang_lame",CharacterFaction.OTHER);
         for(String role:List.of("guigun_corpse","hei_wuchou","bai_wusheng"))factionMap.put(role,CharacterFaction.CORPSE_KING);
         // ========== 人类阵营 ==========
         // 凡人 / 被感染但仍有理智的主角团 / 炎黄特能队 / 收复部队
@@ -154,7 +164,12 @@ public class CharacterManager {
         factionMap.put("siyangyuan_zb", CharacterFaction.CORPSE_KING);
         factionMap.put("kuaidiyuan_zb", CharacterFaction.CORPSE_KING);
         factionMap.put(GordiusZbrzCharacter.ID, CharacterFaction.CORPSE_KING);
+        // 长颈尸兄：穆博士改造的控制尸兄（精神病病人实验体），属于尸兄阵营
+        factionMap.put(LongNeckCharacter.ID, CharacterFaction.CORPSE_KING);
         factionMap.put(UncleCharacter.ID, CharacterFaction.HUMAN);
+
+        // 第3期：穆博士（人类反派科学家，本体是人）
+        factionMap.put(MuDoctorCharacter.ID, CharacterFaction.HUMAN);
 
         // ========== 东瀛 ==========
         factionMap.put("fengmohuitailang", CharacterFaction.TOYO);

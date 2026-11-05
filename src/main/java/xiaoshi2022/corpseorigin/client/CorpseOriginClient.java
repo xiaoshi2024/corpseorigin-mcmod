@@ -755,6 +755,32 @@ public class CorpseOriginClient implements ClientModInitializer {
             ThunderFxManager.getInstance().tick();
             // 灵魂残影跟随 + 灵魂粒子
             xiaoshi2022.corpseorigin.client.soul.SoulProjectionClient.tick();
+            // ======== 第3期：半截葫芦小金刚腰部流血 ========
+            // 两条腿都断了 → 半截身体趴在地上爬，血从腰部（身体根部）喷
+            if (client.level != null && client.player != null
+                    && "xiaojingang_lame".equals(client.player.getAttachedOrCreate(
+                            xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE))
+                    && client.player.tickCount % 2 == 0) {
+                var engine = client.particleEngine;
+                // 腰部（身体被切断的位置）：半截身体趴在地上，cut 面离地约 0.25 格
+                double baseX = client.player.getX()
+                        + Math.sin(Math.toRadians(client.player.getYRot())) * 0.1;
+                double baseZ = client.player.getZ()
+                        - Math.cos(Math.toRadians(client.player.getYRot())) * 0.1;
+                double cutY = client.player.getY() + 0.25;
+                var blood = net.minecraft.core.particles.PowerParticleOption.create(
+                        net.minecraft.core.particles.ParticleTypes.DRAGON_BREATH, 0.9f);
+                for (int i = 0; i < 4; i++) {
+                    engine.createParticle(
+                            blood,
+                            baseX + (Math.random() - 0.5) * 0.3,   // 腰部横向更宽
+                            cutY + Math.random() * 0.08,
+                            baseZ + (Math.random() - 0.5) * 0.3,
+                            (Math.random() - 0.5) * 0.04,
+                            -Math.random() * 0.06 - 0.02,
+                            (Math.random() - 0.5) * 0.04);
+                }
+            }
         });
 
         CorpseOrigin.LOGGER.debug("CorpseOrigin client initialized");

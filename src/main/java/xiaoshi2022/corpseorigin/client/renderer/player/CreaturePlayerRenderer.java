@@ -39,7 +39,20 @@ public final class CreaturePlayerRenderer extends GeoReplacedEntityRenderer<Play
         String role=p.getAttachedOrCreate(ChapterActorState.ROLE),id=role.equals("chongqun")?"bullet_ant":role;
         if(role.equals("jingang_zb") && p.getAttachedOrCreate(CreatureAbilities.INFANT))id="jingang_infant";
         String condition=p.getAttachedOrCreate(ChapterScenes.CONDITION);
-        if(role.equals("bianselong_zb") && p.getAttachedOrCreate(ChapterActorState.DISGUISE).equals("xiaohui") && Set.of("bound","fear","black_general").contains(condition))id="xiaohui_scene";
+        // ======== 捆绑触发：任何角色只要调了 BoundPose.bind() → 整身换成 xiaohui_scene 场景模型 ========
+        // xiaohui_scene.geo.json 自带 ropes（绳索绕身）+ fear（泪痕）+ chess（棋盘）部件，
+        // 动画 clip = condition（bound / fear / black_general），默认显示 ropes + fear。
+        boolean boundByPose = xiaoshi2022.corpseorigin.client.render.BoundPose.active(p);
+        if (boundByPose) {
+            id = "xiaohui_scene";
+            // 挣扎态走 "bound_lying_struggle" clip；平静态走 "bound_lying" clip
+            // （xiaohui_scene.animation.json 里已加这两个 clip：root 旋转 -90° 躺平）
+            condition = "bound_struggle".equals(xiaoshi2022.corpseorigin.client.render.BoundPose.pose(p))
+                    ? "bound_lying_struggle" : "bound_lying";
+        } else if(role.equals("bianselong_zb") && p.getAttachedOrCreate(ChapterActorState.DISGUISE).equals("xiaohui")
+                && Set.of("bound","fear","black_general").contains(condition)) {
+            id="xiaohui_scene";
+        }
         state.addGeckolibData(MODEL,"");
         var renderer=RENDERERS.get(id);if(renderer==null)return false;
         state.addGeckolibData(MODEL,id);state.addGeckolibData(MutantBodyRenderData.ACTIVE,false);

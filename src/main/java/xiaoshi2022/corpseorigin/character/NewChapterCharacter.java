@@ -22,21 +22,42 @@ public final class NewChapterCharacter implements ICharacter {
     public boolean isPassive(){return false;}
     public List<Component> getTraits(){return List.of(Component.translatable(corpse?"character.corpseorigin.form.corpse":"character.corpseorigin.form.human"),getDescription());}
     public int getMaxInnerPower(){return id.equals("guigun_human")?80:0;}
-    public List<ISkill> getSkills(){return switch(id){
-        case "xiaojingang"->List.of(new NewChapterSkill("gourd_link",20,0,0),
-            new NewChapterSkill("gourd_arms",120,15,2),
-            new NewChapterSkill("gourd_acid",160,20,4),
-            new NewChapterSkill("gourd_devour",200,0,3),
-            new NewChapterSkill("gourd_fire",240,30,5),
-            new NewChapterSkill("gourd_eyes",240,10,1),
-            new NewChapterSkill("gourd_power",300,20,6),
-            new xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceSkill(0),
-            new xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceSkill(1),
-            new xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceSkill(2));
-        case "guigun_human"->List.of(new GuigunCombat.Sweep(),new GuigunCombat.Guard());
-        case "guigun_corpse"->List.of(new GuigunCombat.Resonance(),new GuigunCombat.Crush());
-        case "hei_wuchou"->List.of(new WuchangCombat.WuchouBlade(),new WuchangCombat.WuchouStep());
-        default->List.of(new WuchangCombat.WushengTwin(),new WuchangCombat.WushengCross());};}
+    @Override
+    public List<ISkill> getSkills() {
+        return switch (id) {
+            case "xiaojingang" -> List.of(
+                    new NewChapterSkill("gourd_link", 20, 0, 0),
+                    new NewChapterSkill("gourd_arms", 120, 15, 2),
+                    new NewChapterSkill("gourd_acid", 160, 20, 4),
+                    new NewChapterSkill("gourd_devour", 200, 0, 3),
+                    new NewChapterSkill("gourd_fire", 240, 30, 5),
+                    new NewChapterSkill("gourd_eyes", 240, 10, 1),
+                    new NewChapterSkill("gourd_power", 300, 20, 6),
+                    new xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceSkill(0),
+                    new xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceSkill(1),
+                    new xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceSkill(2));
+            // ======== 第3期：瘸腿葫芦小金刚 ========
+            // 葫芦小金刚在超市被穆博士实验品打残了一条腿，瘸着走进超市找物资。
+            // 本体是 xiaojingang 的变种 —— 模型资源共用，但走瘸腿动画。
+            // 技能组和本体一样（葫芦七兄弟全套 + 继承技能），战斗能力没削。
+            case "xiaojingang_lame" -> List.of(
+                    new NewChapterSkill("gourd_link", 20, 0, 0),
+                    new NewChapterSkill("gourd_arms", 120, 15, 2),
+                    new NewChapterSkill("gourd_acid", 160, 20, 4),
+                    new NewChapterSkill("gourd_devour", 200, 0, 3),
+                    new NewChapterSkill("gourd_fire", 240, 30, 5),
+                    new NewChapterSkill("gourd_eyes", 240, 10, 1),
+                    new NewChapterSkill("gourd_power", 300, 20, 6),
+                    new xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceSkill(0),
+                    new xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceSkill(1),
+                    new xiaoshi2022.corpseorigin.skill.chapter.GourdInheritanceSkill(2));
+            // ======== 第3期结束 ========
+            case "guigun_human" -> List.of(new GuigunCombat.Sweep(), new GuigunCombat.Guard());
+            case "guigun_corpse" -> List.of(new GuigunCombat.Resonance(), new GuigunCombat.Crush());
+            case "hei_wuchou" -> List.of(new WuchangCombat.WuchouBlade(), new WuchangCombat.WuchouStep());
+            default -> List.of(new WuchangCombat.WushengTwin(), new WuchangCombat.WushengCross());
+        };
+    }
     @Override public void onAcquire(Player p){if(corpse){xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.setPlayerAsCorpse(p,xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.TYPE_ELITE,xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.VARIANT_NO_EXOSKELETON);xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.get(p).restoreConsciousness();if(p instanceof net.minecraft.server.level.ServerPlayer sp)xiaoshi2022.corpseorigin.network.CorpseNetwork.broadcastPlayerCorpseSync(sp);}}
     @Override public void onLose(Player p){if(corpse)xiaoshi2022.corpseorigin.component.PlayerCorpseComponent.removeCorpseState(p);}
 }

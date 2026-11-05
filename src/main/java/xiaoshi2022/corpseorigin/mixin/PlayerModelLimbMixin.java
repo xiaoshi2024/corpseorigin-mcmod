@@ -106,6 +106,62 @@ public abstract class PlayerModelLimbMixin {
         self.leftPants.visible &= !leftLeg && state.showLeftPants;
 
         // 躯干（body / jacket）永远由原版渲染：它上面挂着胸甲，位置必须和盔甲一致
+
+        // ======== 第3期：半截葫芦小金刚（两条腿都断了，腰部半截爬着走） ========
+        if (actor instanceof net.minecraft.world.entity.player.Player player) {
+            String role = player.getAttachedOrCreate(
+                    xiaoshi2022.corpseorigin.skill.chapter.ChapterActorState.ROLE);
+            if ("xiaojingang_lame".equals(role)) {
+                // 两条腿 + 裤腿全藏掉 → 只剩上半身
+                self.rightLeg.visible = false;
+                self.leftLeg.visible  = false;
+                self.rightPants.visible = false;
+                self.leftPants.visible  = false;
+                // 身体整体往下趴：xRot 前倾 + body 根部 Y 轴下移，让屁股贴近地面
+                self.body.xRot -= 0.35f;     // 身体前倾 20°，上半身趴平
+                self.body.y = 4.5f;           // 身体根部原 Y=24（站立），这里压到 4.5，半截屁股贴地
+                // 两只手撑地：手臂向前伸 + 下垂，像用胳膊拖着半截身体爬
+                self.rightArm.xRot = -2.2f;   // 右臂往前趴平（接近地面）
+                self.rightArm.zRot = 0.25f;   // 手臂稍微外撇，不要贴身体
+                self.leftArm.xRot  = -2.2f;   // 左臂同
+                self.leftArm.zRot  = -0.25f;
+                // 头稍微抬起来点（别让脸贴地）
+                self.head.xRot = Math.min(self.head.xRot + 0.2f, 0.4f);
+                // 走路时手臂前后摆动由原版 walk animation 负责
+            }
+        }
+
+        // ======== 第3期：捆绑姿态（被穆博士捆在地上躺着的晓佳/小惠） ========
+        // GeckoLib 场景模型（xiaohui_scene）在 CreaturePlayerRenderer 里切，
+        // 这里 PlayerModelLimbMixin 处理没切场景模型的普通玩家被 GM 指令捆时的躺着姿态。
+        if (actor instanceof net.minecraft.world.entity.player.Player player
+                && xiaoshi2022.corpseorigin.client.render.BoundPose.active(actor)) {
+            // 整体躺平：身体轴线水平贴地（xRot = -PI/2）
+            self.body.xRot = (float) (-Math.PI / 2);
+            // 头稍微抬起来（别让脸贴地）
+            self.head.xRot = 0.2f;
+            self.head.yRot = 0;
+            self.head.zRot = 0;
+            // 两条腿也跟着身体躺平
+            self.rightLeg.xRot = (float) (-Math.PI / 2);
+            self.rightLeg.zRot = 0.2f;     // 稍微分开点
+            self.leftLeg.xRot  = (float) (-Math.PI / 2);
+            self.leftLeg.zRot  = -0.2f;
+            // 双手放在身上/两侧被捆住（不做自由摆动）
+            self.rightArm.xRot = (float) (-Math.PI / 2);
+            self.rightArm.zRot = 0.6f;     // 右手放在身上
+            self.leftArm.xRot  = (float) (-Math.PI / 2);
+            self.leftArm.zRot  = -0.6f;    // 左手同
+            self.body.yRot = 0;
+            // 挣扎态：躺着扭身体想挣脱
+            if ("bound_struggle".equals(xiaoshi2022.corpseorigin.client.render.BoundPose.pose(actor))) {
+                float t = (float) Math.sin(state.ageInTicks * 0.45);
+                self.body.zRot += t * 0.08f;   // 左右扭动
+                self.head.yRot += t * 0.15f;   // 头跟着晃
+                self.rightArm.zRot += t * 0.2f;
+                self.leftArm.zRot  -= t * 0.2f;
+            }
+        }
     }
 
     private static boolean severed(int mask, int slot) {

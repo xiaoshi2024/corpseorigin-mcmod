@@ -32,9 +32,10 @@ public final class GourdInheritance {
 
     private GourdInheritance() {}
     public static boolean role(Player p) {
-        return "xiaojingang".equals(p.level().isClientSide()
+        String id = p.level().isClientSide()
                 ? p.getAttachedOrCreate(ChapterActorState.ROLE)
-                : CharacterManager.getInstance().getPlayerCharacterId(p));
+                : CharacterManager.getInstance().getPlayerCharacterId(p);
+        return "xiaojingang".equals(id) || "xiaojingang_lame".equals(id);
     }
     public static boolean disguised(Player p) { return role(p) && p.isAlive() && p.getAttachedOrCreate(DISGUISED); }
     public static boolean active(ServerPlayer p) {

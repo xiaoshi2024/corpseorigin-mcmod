@@ -212,6 +212,9 @@ public class CorpseOrigin implements ModInitializer {
 				}
 		);
 
+		// ======== 第3期：捆绑指令 + 自动解捆 ========
+		xiaoshi2022.corpseorigin.client.render.BoundPose.register();
+
 		net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents.ALLOW_DEATH.register(
 				(entity, source, amount) -> {
 					if (!(entity instanceof ServerPlayer player)) {

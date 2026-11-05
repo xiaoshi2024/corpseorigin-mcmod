@@ -256,6 +256,46 @@ public final class ModEntities {
     );
 
     /**
+     * 八头长颈尸兄（{@code eight_head_long_neck}）—— 精神病院 BOSS。
+     * <p>
+     * 穆博士通过广播器操控的 BOSS，八个脑袋各说各的，脑筋急转弯能让它淦晕。
+     * 不进自然生成表：刷怪蛋 / {@code /summon}。
+     */
+    public static final EntityType<EightHeadLongNeckEntity> EIGHT_HEAD_LONG_NECK = register(
+            "eight_head_long_neck",
+            EntityType.Builder.<EightHeadLongNeckEntity>of(EightHeadLongNeckEntity::new, MobCategory.MONSTER)
+                    .sized(2.0f, 3.2f)
+                    .clientTrackingRange(32)
+                    .updateInterval(2)
+                    .notInPeaceful()
+    );
+
+    /**
+     * 贝奇（{@code beiqi}）—— 晓佳的宠物小狗。
+     * <p>
+     * 剧情中被穆博士针筒注射后变异。可驯养。
+     */
+    public static final EntityType<BeiQiEntity> BEIQI = register(
+            "beiqi",
+            EntityType.Builder.<BeiQiEntity>of(BeiQiEntity::new, MobCategory.CREATURE)
+                    .sized(0.5f, 0.8f)
+                    .clientTrackingRange(8)
+    );
+
+    /**
+     * 变异贝奇（{@code beiqi_mutant}）—— 被针筒注射后的狂躁形态。
+     * <p>
+     * 六亲不认地追着人咬。体型变大、属性翻倍。
+     */
+    public static final EntityType<BeiQiMutantEntity> BEIQI_MUTANT = register(
+            "beiqi_mutant",
+            EntityType.Builder.<BeiQiMutantEntity>of(BeiQiMutantEntity::new, MobCategory.MONSTER)
+                    .sized(1.0f, 1.4f)
+                    .clientTrackingRange(12)
+                    .notInPeaceful()
+    );
+
+    /**
      * 蚊子尸兄（{@code mosquito_zbr}）—— 蚊群核心 BOSS，"一个 Boss，多个判定"的载体。
      * <p>
      * 本体极小（0.5 × 0.5）、飞行速度快、难以命中；血量独立，攻击判定全在环绕的

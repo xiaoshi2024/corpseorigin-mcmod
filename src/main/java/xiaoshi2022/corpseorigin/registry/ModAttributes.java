@@ -88,6 +88,26 @@ public final class ModAttributes {
                 MuDoctorEntity.createAttributes()
         );
 
+        // ======== 第3期新增实体属性注册 ========
+
+        // 八头长颈尸兄（BOSS：八个脑袋、脑筋急转弯能淦晕）
+        FabricDefaultAttributeRegistry.register(
+                ModEntities.EIGHT_HEAD_LONG_NECK,
+                EightHeadLongNeckEntity.createAttributes()
+        );
+
+        // 贝奇（晓佳的宠物小狗）+ 变异贝奇（被针筒注射后的狂躁形态）
+        FabricDefaultAttributeRegistry.register(
+                ModEntities.BEIQI,
+                BeiQiEntity.createAttributes()
+        );
+        FabricDefaultAttributeRegistry.register(
+                ModEntities.BEIQI_MUTANT,
+                BeiQiMutantEntity.createAttributes()
+        );
+
+        // ======== 第3期新增结束 ========
+
         // 蚊子尸兄（蚊群核心 BOSS）+ 蚊群子实体
         FabricDefaultAttributeRegistry.register(
                 ModEntities.MOSQUITO_ZBR,
