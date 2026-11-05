@@ -16,7 +16,9 @@ public class HeartFeignPoseMixin {
     private void corpseorigin$lieDown(CallbackInfo ci) {
         Player player = (Player)(Object)this;
         // 黑金心脏假死 / 灵魂出窍：都像睡着一样躺在地上（出窍状态靠同步附件，别的客户端也能看到）
-        if (player.isAlive() && (HeartImplant.active(player) || SoulProjectionHandler.active(player))) {
+        // 被 /zb_bind 捆住的玩家同样直接复用原版 SLEEPING 躺姿（没有床 → 原地贴地躺平）。
+        if (player.isAlive() && (HeartImplant.active(player) || SoulProjectionHandler.active(player)
+                || xiaoshi2022.corpseorigin.client.render.BoundPose.active(player))) {
             player.setPose(Pose.SLEEPING);
             ci.cancel();
         }

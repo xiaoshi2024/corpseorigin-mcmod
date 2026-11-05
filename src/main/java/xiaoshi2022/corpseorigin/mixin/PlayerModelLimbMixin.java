@@ -124,7 +124,8 @@ public abstract class PlayerModelLimbMixin {
         }
 
         // ======== 第3期：捆绑（被穆博士捆住的晓佳/小惠） ========
-        // 不再改任何骨骼姿态：玩家保持自己的站姿/走动动画，
+        // 这里不再手写骨骼姿态：躺平由原版 SLEEPING 姿势负责
+        // （HeartFeignPoseMixin 在被捆期间强制 Pose.SLEEPING），
         // 绳子由客户端渲染层 BoundRopeLayer 叠加在胸口、手腕、脚踝上。
     }
 
